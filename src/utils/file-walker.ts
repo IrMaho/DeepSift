@@ -3,13 +3,17 @@ import path from 'path';
 import ignore from 'ignore';
 
 const DEFAULT_IGNORES = [
-    'node_modules/**',
-    '.git/**',
-    'dist/**',
-    'build/**',
-    'coverage/**',
-    '.next/**',
-    '.cache/**',
+    'node_modules',
+    '.git',
+    'dist',
+    'build',
+    'coverage',
+    '.next',
+    '.cache',
+    '.dart_tool',
+    '.gradle',
+    '.idea',
+    '.vscode',
     '**/*.min.js',
     '**/*.map',
     '**/*.svg',
@@ -74,13 +78,15 @@ export async function getFiles(rootDir: string): Promise<string[]> {
         for (const entry of entries) {
             const fullPath = path.join(currentDir, entry.name);
             const relativePath = path.relative(rootDir, fullPath).replace(/\\/g, '/');
+            const isDirectory = entry.isDirectory();
+            const checkPath = isDirectory ? `${relativePath}/` : relativePath;
 
             // Check if ignored
-            if (ig.ignores(relativePath)) {
+            if (ig.ignores(checkPath)) {
                 continue;
             }
 
-            if (entry.isDirectory()) {
+            if (isDirectory) {
                 await walk(fullPath);
             } else if (entry.isFile()) {
                 files.push(fullPath);

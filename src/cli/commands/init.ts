@@ -116,7 +116,11 @@ export async function initCommand(projectPath: string) {
     try {
         const store = new SQLiteStore(getDbPath(projectPath));
         const indexer = new Indexer(store);
-        const stats = await indexer.indexProject(projectPath);
+        const stats = await indexer.indexProject(projectPath, false, (current, total, file) => {
+            process.stdout.write(`\rIndexing: ${current}/${total} files (Processing: ${file})`);
+            process.stdout.write('\x1b[K');
+        });
+        process.stdout.write('\n'); // newline after progress
         printSuccess(`Initial index complete: ${stats.files} files, ${stats.chunks} chunks`);
     } catch (err: any) {
         printError(`Indexing failed: ${err.message}`);
