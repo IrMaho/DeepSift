@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Semantic Search Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon"></div>
+                <h1>Ternlight MCP</h1>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    Dashboard
+                </a>
+            </nav>
+
+            <div class="server-status">
+                <div class="status-indicator online"></div>
+                <span>Server Online (Port 3000)</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h2>Live AI Interactions</h2>
+                <div class="pulse-container">
+                    <span class="pulse-text">Listening to MCP client</span>
+                    <div class="pulse-ring"></div>
+                </div>
+            </header>
+
+            <!-- Stats Overview -->
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon files">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Files Indexed</h3>
+                        <p class="stat-value" id="stat-files">0</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon chunks">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Vector Chunks</h3>
+                        <p class="stat-value" id="stat-chunks">0</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon time">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Last Updated</h3>
+                        <p class="stat-value text-sm" id="stat-time">Never</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Live Feed -->
+            <section class="feed-section">
+                <div class="feed-header">
+                    <h3>Activity Feed</h3>
+                    <button id="clear-feed" class="btn-ghost">Clear</button>
+                </div>
+                
+                <div class="feed-container" id="feed-container">
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-icon">✨</div>
+                        <p>Waiting for AI to call MCP tools...</p>
+                    </div>
+                    <!-- Feed items injected via JS -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Details Modal -->
+    <div class="modal-overlay" id="details-modal">
+        <div class="modal-content glass-panel">
+            <header class="modal-header">
+                <h3 id="modal-title">Search Results</h3>
+                <button class="close-btn" id="close-modal">&times;</button>
+            </header>
+            <div class="modal-body">
+                <pre><code id="modal-code" class="language-json"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
