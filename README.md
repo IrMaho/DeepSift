@@ -1,72 +1,128 @@
-# 🔍 DeepSift — Semantic Codebase Search
+# 🔍 DeepSift — Local Semantic Codebase Search Engine & AI Agent Bridge
 
-یک موتور **جستجوی معنایی لوکال** برای کدهای پروژه. هم به عنوان **MCP Server** (برای IDE های دارای ساپورت MCP) و هم به عنوان **CLI** (برای IDE هایی که MCP ساپورت ندارند) قابل استفاده است.
+[![License](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/language-TypeScript-blue.svg)](https://www.typescriptlang.org/)
+[![Model](https://img.shields.io/badge/Embedder-Ternlight%20%3C7MB-orange.svg)](https://github.com/ternlight/base)
+[![MCP](https://img.shields.io/badge/MCP-Supported-brightgreen.svg)](https://modelcontextprotocol.io)
 
-ویژگی بارز: مدل `Ternlight` با حجم کمتر از ۷ مگابایت، کاملاً لوکال (بدون اینترنت)، نتایج در چند میلی‌ثانیه، با الگوریتم ترکیبی **Hybrid Search (Vector + BM25 + RRF)**.
+**DeepSift** is an ultra-fast, local semantic codebase search engine and AI agent bridge. It runs 100% offline using the lightweight **Ternlight** transformer model (384-dimensional vector embeddings, <7MB footprint) to process queries and codebase chunks in milliseconds without any external API calls or internet connection.
 
-## ✨ قابلیت‌ها
-- **کاملاً لوکال:** هیچ بخشی از کدها به اینترنت ارسال نمی‌شود.
-- **تیکه‌بندی هوشمند:** Tree-sitter برای تیکه‌بندی AST-aware.
-- **جستجوی ترکیبی:** Semantic + Keyword با Reciprocal Rank Fusion.
-- **ایندکس‌سازی افزایشی:** فقط فایل‌های تغییریافته بروز می‌شوند.
-- **دو حالت کار:** MCP Server + CLI Bridge.
+It is designed to work in two modes:
+1. **MCP Server Mode:** Seamlessly connects to AI-driven IDEs (like Cursor, VSCode with Antigravity, or Claude Desktop) providing rich codebase analysis tools.
+2. **CLI Bridge Mode:** Acts as a standalone terminal utility for manual queries, scripting, or environments without native MCP support.
 
 ---
 
-## 🚀 حالت CLI (برای IDE های بدون MCP Support)
+## 🏗️ System Architecture
 
-### نصب و اتصال به پروژه
+DeepSift coordinates AST-aware parsing, local vector generation, and hybrid index searching into a single pipeline:
+
+```
+                               ┌────────────────────────┐
+                               │     Target Project     │
+                               └──────────┬─────────────┘
+                                          │
+                            [deepsift init / index]
+                                          ▼
+                         ┌────────────────────────────────┐
+                         │      DeepSift Core Engine      │
+                         │ ┌────────────────────────────┐ │
+                         │ │ AST Parser (Tree-sitter)   │ │
+                         │ ├────────────────────────────┤ │
+                         │ │ Embedder (Ternlight Model) │ │
+                         │ ├────────────────────────────┤ │
+                         │ │ Store (SQLite + FTS5)      │ │
+                         │ └────────────────────────────┘ │
+                         └────────────────┬───────────────┘
+                                          │
+                                 ┌────────┴────────┐
+                                 ▼                 ▼
+                       ┌──────────────────┐ ┌─────────────┐
+                       │    CLI Bridge    │ │ MCP Server  │
+                       │   (deepsift s)   │ │  (Stdio)    │
+                       └──────────────────┘ └──────┬──────┘
+                                                   │
+                                                   ▼
+                                           ┌──────────────┐
+                                           │   Web UI     │
+                                           │ (Port 3000)  │
+                                           └──────────────┘
+```
+
+---
+
+## ✨ Key Features
+
+*   **100% Offline & Local:** Code privacy is fully respected. Embeddings are generated locally using the `@ternlight/base` library. No data ever leaves your machine.
+*   **AST-Aware Code Chunking:** Uses `tree-sitter` parsers to break code down into logical constructs (such as classes, functions, and imports) while maintaining correct scope. Falls back to intelligent line-based chunking for unsupported formats.
+*   **Hybrid Search Engine (Vector + BM25 + RRF):** Combines dense vector search (Cosine Similarity) with sparse lexical search (SQLite FTS5 BM25 scoring) using **Reciprocal Rank Fusion (RRF)** to deliver highly relevant results.
+*   **Antigravity Brain Protocol (Drill-Down & Dependencies):** Equips AI agents to analyze very large repositories (100MB+) in steps. Agents can scan the project architecture, map dependencies, search globally, and then "drill down" strictly within cached logs—reducing context window consumption from megabytes to kilobytes.
+*   **Incremental Indexing:** Stores file hashes in SQLite. DeepSift only re-indexes modified or new files during runs, making index synchronizations complete in milliseconds.
+*   **Token Payload Optimization:** Includes a custom n-gram compression utility that compresses retrieved code payloads to minimize LLM token usage.
+*   **Web Dashboard UI:** Spins up a local web server (running on `http://localhost:3000`) using Server-Sent Events (SSE) to stream indexing progress, search triggers, and MCP tool invocations in real-time.
+
+---
+
+## 🚀 Quick Start (CLI Mode)
+
+To use DeepSift globally in your terminal:
+
+### 1. Installation
+
+Clone the repository and build the project:
 ```bash
-cd c:/Users/ASUS/Desktop/flutter_project/mcp_search
+git clone https://github.com/IrMaho/DeepSift.git
+cd DeepSift
 npm install
 npm run build
 npm link
 ```
 
-سپس در ریشه پروژه هدف:
+### 2. Initialization in Target Project
+
+Navigate to your target codebase and initialize DeepSift:
 ```bash
-cd /path/to/your/project
+cd /path/to/your/work-project
 deepsift init
 ```
+This command will:
+1. Create a local `.deepsift/` directory to store the SQLite database and output history.
+2. Ingest the workspace and trigger the initial index generation.
+3. Automatically copy the AI agent guidelines into your `.agents/rules/deepsift.md` file to configure any LLM IDE extensions inside that workspace.
 
-دستور `init` سه کار انجام می‌دهد:
-1. ساخت `.deepsift/` (فولدر کش و دیتابیس لوکال)
-2. تزریق `AGENTS.md` به `.agents/rules/deepsift.md` (آموزش ایجنت IDE)
-3. ایندکس اولیه اتوماتیک پروژه
+### 3. Searching the Codebase
+```bash
+# Semantic search
+deepsift search "JWT token verification handler"
 
-### دستورات CLI
+# Search strictly within a folder
+deepsift search "database config" --include "src/config"
 
-| دستور | عملکرد |
-|---|---|
-| `deepsift init` | تزریق به پروژه + ایندکس اولیه |
-| `deepsift search "query"` | جستجوی معنایی |
-| `deepsift search "q1" "q2" "q3"` | چند جستجوی همزمان |
-| `deepsift index [--force]` | ایندکس/بروزرسانی |
-| `deepsift status` | وضعیت ایندکس |
-| `deepsift arch [--depth N]` | معماری پروژه |
-| `deepsift deps "target"` | تحلیل وابستگی‌ها |
-| `deepsift feature "path"` | خلاصه فیچر |
-| `deepsift history` | تاریخچه جستجوها |
-| `deepsift drill "logfile" "keyword"` | جستجوی عمیق |
-
-### فلگ‌های خروجی
-- `--json` — خروجی JSON (ماشین‌خوان)
-- `--plain` — خروجی ساده بدون markdown
+# Multi-query search (saves time by running multiple queries at once)
+deepsift search "auth check" "user schema" "password hashing"
+```
 
 ---
 
-## ⚙️ حالت MCP Server (برای Antigravity, Cursor, Claude Desktop)
+## ⚙️ MCP Server Configuration
 
+You can plug DeepSift directly into AI editors or LLM tools supporting the Model Context Protocol (Stdio transport).
+
+### 1. Build the Server
+Ensure the project is compiled:
 ```bash
-npm install
+cd /path/to/DeepSift
 npm run build
 ```
 
-در فایل تنظیمات MCP:
+### 2. Configure Your IDE / Client
+
+Add the following to your MCP settings file (e.g., `mcp_settings.json` in Cursor, Claude Desktop, or your IDE's workspace configuration):
+
 ```json
 {
   "mcpServers": {
-    "codebase-semantic-search": {
+    "deepsift": {
       "command": "node",
       "args": [
         "C:\\Users\\ASUS\\Desktop\\flutter_project\\mcp_search\\dist\\server.js"
@@ -76,40 +132,94 @@ npm run build
   }
 }
 ```
+> **Note:** Replace the path in `args` with the absolute path to your built `dist/server.js` file.
 
-### ابزارهای MCP
-1. **`search_code`** — جستجوی معنایی
-2. **`multi_search`** — چند جستجوی همزمان
-3. **`index_project`** — ایندکس/بروزرسانی
-4. **`search_status`** — وضعیت ایندکس
-5. **`get_search_history`** — تاریخچه
-6. **`read_search_log`** — خواندن لاگ خاص
-7. **`project_architecture`** — معماری
-8. **`analyze_dependencies`** — وابستگی‌ها
-9. **`deep_isolated_search`** — جستجوی عمیق
-10. **`explore_feature`** — خلاصه فیچر
+Once running, the server also starts the **Web Dashboard** at **[http://localhost:3000](http://localhost:3000)** for monitoring queries.
 
 ---
 
-## 🎛️ داشبورد وب (فقط حالت MCP)
+## 🛠️ Commands & Tools Reference
 
-وقتی MCP Server استارت می‌خورد: [http://localhost:3000](http://localhost:3000)
+### CLI Commands
+
+| Command | Arguments / Flags | Description |
+| :--- | :--- | :--- |
+| **`init`** | None | Initializes `.deepsift/` and executes the initial indexing scan. |
+| **`search`** | `"query1"` `["query2"...]` | Executes one or more hybrid semantic search queries. <br>Flags: `--include <path>`, `--no-sync` (skips file hashing updates), `--verbose` |
+| **`index`** | None | Re-indexes the project (incremental). Add `--force` to rebuild from scratch. |
+| **`status`** | None | Prints database size, total files indexed, and total chunk counts. |
+| **`arch`** | `--depth <N>` | Prints a formatted directory layout and highlights the top-5 central core files. |
+| **`deps`** | `"target_module"` | Traces files that import or reference the target module. |
+| **`feature`** | `"dir_path"` | Analyzes code surface, returning class/function declarations without full implementation. |
+| **`history`**| None | Prints a list of previously saved search logs. |
+| **`drill`** | `"logfile.md"` `"keyword"` | Isolates and extracts matching context lines from a past search history log. |
+| **`clean`** | None | Empties the database, cached indexes, and history logs. |
+
+*Global Flags:*
+*   `--json`: Outputs results in JSON format.
+*   `--plain`: Outputs plain text without Markdown colors/decorations.
+*   `--no-compress`: Disables payload n-gram token compression.
 
 ---
 
-## 🏗 معماری
+### MCP Tools List
+
+When connected via MCP, the LLM agent gains access to these 10 tools:
+
+1.  **`search_code`**: Semantic and lexical hybrid search for code chunks.
+2.  **`multi_search`**: Runs multiple queries simultaneously.
+3.  **`index_project`**: Manually requests a full or incremental project index run.
+4.  **`search_status`**: Provides the current indexing status and details.
+5.  **`get_search_history`**: Reads `INDEX.md` containing the cached logs of all queries.
+6.  **`read_search_log`**: Fetches the full contents of a specific query log.
+7.  **`project_architecture`**: Maps the project structure and highlights core files.
+8.  **`analyze_dependencies`**: Identifies dependent modules and imports.
+9.  **`deep_isolated_search`**: Filters context from a previous query log (Drill-Down).
+10. **`explore_feature`**: Outlines API surfaces (functions/classes) of a specific directory.
+
+---
+
+## 📂 Project Directory Structure
 
 ```
-DeepSift Engine (هسته مشترک)
-├── Embedder    → Ternlight (384-dim, <7MB)
-├── Indexer     → Incremental + SQLite
-├── Searcher    → Hybrid (Vector + BM25 + RRF)
-├── Parsers     → Tree-sitter + Simple fallback
-└── Storage     → SQLite + FTS5
-
-         ┌──── MCP Server (server.ts → StdioTransport)
-         │
-Engine ──┤
-         │
-         └──── CLI Bridge (cli-entry.ts → Terminal Commands)
+DeepSift /
+├── src/
+│   ├── cli/                  # CLI Commands, formatting, and path resolver
+│   │   ├── commands/         # Implementation of CLI endpoints (search, index, arch...)
+│   │   ├── cli-entry.ts      # Main CLI entry point
+│   │   └── cli-output.ts     # Terminal printer and option parser
+│   │
+│   ├── core/                 # Engine logic
+│   │   ├── embedder.ts       # Ternlight local model integration
+│   │   ├── indexer.ts        # AST parsing and DB persistence orchestrator
+│   │   └── searcher.ts       # Hybrid search and Reciprocal Rank Fusion (RRF) matching
+│   │
+│   ├── parsers/              # Code structure parsing
+│   │   ├── simple-parser.ts  # Fallback line-by-line scanner
+│   │   └── tree-sitter-parser.ts # AST parser for JS/TS structure chunking
+│   │
+│   ├── storage/              # Database drivers
+│   │   └── sqlite-store.ts   # SQLite schemas, FTS5 indexes, and vector operations
+│   │
+│   ├── ui/                   # Real-time SSE Dashboard HTML, JS, and CSS
+│   │
+│   ├── utils/                # General utilities
+│   │   ├── architecture.ts   # Central file and hierarchy computation
+│   │   ├── binary-check.ts   # Skips processing binaries
+│   │   ├── file-walker.ts    # Walks paths obeying project .gitignore rules
+│   │   ├── history.ts        # Manages search logs and cache indexes
+│   │   ├── outline.ts        # Parses directory signatures (Feature surface)
+│   │   ├── similarity.ts     # Consine similarity & BM25 scorers
+│   │   └── token-compressor.ts # N-gram compression logic for context optimization
+│   │
+│   └── server.ts             # MCP server entry point and SSE server initializer
+│
+├── tsconfig.json             # TypeScript compiler settings
+└── package.json              # Node packages and build script configs
 ```
+
+---
+
+## 📄 License
+
+This project is licensed under the ISC License. See the [LICENSE](LICENSE) file for details.

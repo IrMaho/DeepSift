@@ -113,10 +113,6 @@ export class TokenOptimizerService {
             if (idIndex >= 600) break;
             const id = this.generateId(idIndex);
 
-        for (const entry of allEntries) {
-            if (idIndex >= 600) break;
-            const id = this.generateId(idIndex);
-
             const entryOverhead = id.length + 2 + entry.text.length;
             const actualSavings = entry.savings - (id.length * entry.frequency) - entryOverhead;
 
