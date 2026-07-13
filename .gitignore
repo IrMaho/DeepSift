@@ -4,3 +4,5 @@ dist/
 *.db
 *.db-journal
 temp
+# DeepSift local cache
+.deepsift/

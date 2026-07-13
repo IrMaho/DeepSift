@@ -1,13 +1,18 @@
 {
-  "name": "mcp_search",
+  "name": "deepsift",
   "version": "1.0.0",
-  "description": "MCP Server for Semantic Codebase Search using Ternlight",
+  "description": "Semantic Codebase Search — MCP Server + CLI Bridge for any IDE",
   "type": "module",
   "main": "dist/server.js",
+  "bin": {
+    "deepsift": "dist/cli/cli-entry.js"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/server.ts",
+    "dev:cli": "tsx src/cli/cli-entry.ts",
     "start": "node dist/server.js",
+    "start:cli": "node dist/cli/cli-entry.js",
     "test": "vitest run"
   },
   "keywords": [

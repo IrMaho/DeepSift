@@ -1,0 +1,162 @@
+#!/usr/bin/env node
+
+import path from 'path';
+import { parseGlobalFlags, printError, printInfo } from './cli-output.js';
+import { searchCommand } from './commands/search.js';
+import { indexCommand } from './commands/index-cmd.js';
+import { statusCommand } from './commands/status.js';
+import { archCommand } from './commands/arch.js';
+import { depsCommand } from './commands/deps.js';
+import { featureCommand } from './commands/feature.js';
+import { historyCommand, drillCommand } from './commands/history.js';
+import { initCommand } from './commands/init.js';
+import fs from 'fs';
+
+const VERSION = '1.0.0';
+
+const HELP_TEXT = `
+\x1b[36m🔍 DeepSift v${VERSION}\x1b[0m — Semantic Codebase Search (CLI)
+
+\x1b[33mUsage:\x1b[0m
+  deepsift <command> [options]
+
+\x1b[33mCommands:\x1b[0m
+  init                          Initialize DeepSift for the current project
+  search "query" ["query2" ...]  Semantic search (single or multi-query)
+  index [--force]               Index/re-index the project
+  status                        Show index statistics
+  arch [--depth N]              Project architecture blueprint
+  deps "target"                 Trace dependencies for a file/module
+  feature "path"                Feature outline (classes, functions)
+  history                       Show past search results
+  drill "logfile" "keyword"     Deep-search within a previous result
+
+\x1b[33mGlobal Flags:\x1b[0m
+  --json                        Output in JSON format
+  --plain                       Output in plain text (no markdown)
+  --help, -h                    Show this help message
+  --version, -v                 Show version
+
+\x1b[33mExamples:\x1b[0m
+  deepsift init
+  deepsift search "authentication logic"
+  deepsift search "db setup" "error handler" --json
+  deepsift arch --depth 3
+  deepsift deps "auth-service.ts"
+`;
+
+async function main() {
+    const rawArgs = process.argv.slice(2);
+
+    if (rawArgs.length === 0 || rawArgs.includes('--help') || rawArgs.includes('-h')) {
+        process.stdout.write(HELP_TEXT);
+        process.exit(0);
+    }
+
+    if (rawArgs.includes('--version') || rawArgs.includes('-v')) {
+        process.stdout.write(`DeepSift v${VERSION}\n`);
+        process.exit(0);
+    }
+
+    const { format, cleanArgs } = parseGlobalFlags(rawArgs);
+    const command = cleanArgs[0];
+    const commandArgs = cleanArgs.slice(1);
+    const projectPath = resolveProjectPath();
+
+    ensureDeepsiftDir(projectPath);
+
+    try {
+        switch (command) {
+            case 'init':
+                await initCommand(projectPath);
+                break;
+
+            case 'search':
+            case 's':
+                if (commandArgs.length === 0) {
+                    printError('Please provide at least one search query.\nUsage: deepsift search "your query"');
+                    process.exit(1);
+                }
+                await searchCommand(projectPath, commandArgs, format);
+                break;
+
+            case 'index':
+            case 'i':
+                const force = commandArgs.includes('--force') || commandArgs.includes('-f');
+                await indexCommand(projectPath, force, format);
+                break;
+
+            case 'status':
+            case 'st':
+                statusCommand(projectPath, format);
+                break;
+
+            case 'arch':
+            case 'a': {
+                let maxDepth = 5;
+                const depthIdx = commandArgs.indexOf('--depth');
+                if (depthIdx !== -1 && commandArgs[depthIdx + 1]) {
+                    maxDepth = parseInt(commandArgs[depthIdx + 1], 10) || 5;
+                }
+                archCommand(projectPath, maxDepth, format);
+                break;
+            }
+
+            case 'deps':
+            case 'd':
+                if (commandArgs.length === 0) {
+                    printError('Please provide a target name.\nUsage: deepsift deps "filename"');
+                    process.exit(1);
+                }
+                await depsCommand(projectPath, commandArgs[0], format);
+                break;
+
+            case 'feature':
+            case 'f':
+                if (commandArgs.length === 0) {
+                    printError('Please provide a feature path.\nUsage: deepsift feature "src/path"');
+                    process.exit(1);
+                }
+                featureCommand(projectPath, commandArgs[0], format);
+                break;
+
+            case 'history':
+            case 'h':
+                historyCommand(projectPath, format);
+                break;
+
+            case 'drill':
+            case 'dr':
+                if (commandArgs.length < 2) {
+                    printError('Please provide a log filename and keyword.\nUsage: deepsift drill "logfile.md" "keyword"');
+                    process.exit(1);
+                }
+                drillCommand(projectPath, commandArgs[0], commandArgs[1], format);
+                break;
+
+            default:
+                printError(`Unknown command: "${command}"\nRun 'deepsift --help' for available commands.`);
+                process.exit(1);
+        }
+    } catch (err: any) {
+        printError(err.message || String(err));
+        process.exit(1);
+    }
+}
+
+function resolveProjectPath(): string {
+    return process.cwd();
+}
+
+function ensureDeepsiftDir(projectPath: string) {
+    const deepsiftDir = path.join(projectPath, '.deepsift');
+    const outputsDir = path.join(deepsiftDir, 'outputs');
+    if (!fs.existsSync(outputsDir)) {
+        fs.mkdirSync(outputsDir, { recursive: true });
+    }
+}
+
+main().catch((err) => {
+    printError(err.message || String(err));
+    process.exit(1);
+});
