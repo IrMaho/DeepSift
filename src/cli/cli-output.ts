@@ -39,8 +39,9 @@ export function printInfo(message: string) {
     process.stderr.write(`\x1b[36mℹ\x1b[0m ${message}\n`);
 }
 
-export function parseGlobalFlags(args: string[]): { format: OutputFormat; cleanArgs: string[] } {
+export function parseGlobalFlags(args: string[]): { format: OutputFormat; compress: boolean; cleanArgs: string[] } {
     let format: OutputFormat = 'markdown';
+    let compress = true;
     const cleanArgs: string[] = [];
 
     for (const arg of args) {
@@ -48,10 +49,12 @@ export function parseGlobalFlags(args: string[]): { format: OutputFormat; cleanA
             format = 'json';
         } else if (arg === '--plain') {
             format = 'plain';
+        } else if (arg === '--no-compress') {
+            compress = false;
         } else {
             cleanArgs.push(arg);
         }
     }
 
-    return { format, cleanArgs };
+    return { format, compress, cleanArgs };
 }

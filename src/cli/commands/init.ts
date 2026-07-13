@@ -61,7 +61,8 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 3. Use multi-query (\`deepsift search "q1" "q2"\`) when you have multiple questions.
 4. Use \`--json\` flag for machine-readable output.
 5. Use \`--plain\` flag for plain text without markdown formatting.
-6. After major refactors, run \`deepsift index --force\` to rebuild the index.
+6. Search results are compressed by default to save tokens (using DEC_v2 standard). If you need raw, uncompressed text outputs, use the \`--no-compress\` global flag.
+7. After major refactors, run \`deepsift index --force\` to rebuild the index.
 
 ## 💡 Examples
 

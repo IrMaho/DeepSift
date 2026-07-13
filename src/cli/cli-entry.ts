@@ -41,6 +41,7 @@ const HELP_TEXT = `
 \x1b[33mGlobal Flags:\x1b[0m
   --json                        Output in JSON format
   --plain                       Output in plain text (no markdown)
+  --no-compress                 Disable output token compression (enabled by default)
   --help, -h                    Show this help message
   --version, -v                 Show version
 
@@ -65,7 +66,7 @@ async function main() {
         process.exit(0);
     }
 
-    const { format, cleanArgs } = parseGlobalFlags(rawArgs);
+    const { format, compress, cleanArgs } = parseGlobalFlags(rawArgs);
     const command = cleanArgs[0];
     const commandArgs = cleanArgs.slice(1);
     const projectPath = resolveProjectPath();
@@ -99,7 +100,7 @@ async function main() {
                     printError('Please provide at least one search query.\nUsage: deepsift search "your query"');
                     process.exit(1);
                 }
-                await searchCommand(projectPath, searchQueries, format, skipSync, verboseSearch, filterPath);
+                await searchCommand(projectPath, searchQueries, format, skipSync, verboseSearch, filterPath, compress);
                 break;
 
             case 'index':
