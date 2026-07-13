@@ -35,7 +35,14 @@ const DEFAULT_IGNORES = [
     '**/*.mp4',
     '**/*.avi',
     '**/*.mov',
-    '**/*.lock'
+    '**/*.lock',
+    '**/*.dll',
+    '**/*.pdb',
+    '**/*.exe',
+    '**/*.so',
+    '**/*.dylib',
+    '**/*.lib',
+    '**/*.exp'
 ];
 
 /**

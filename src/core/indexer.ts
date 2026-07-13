@@ -2,6 +2,7 @@ import { SQLiteStore } from '../storage/sqlite-store.js';
 import { getFiles } from '../utils/file-walker.js';
 import { parseAST } from '../parsers/tree-sitter-parser.js';
 import { getEmbeddings } from './embedder.js';
+import { isBinaryFile } from '../utils/binary-check.js';
 import * as crypto from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -39,6 +40,10 @@ export class Indexer {
                 }
 
                 try {
+                    if (await isBinaryFile(file)) {
+                        continue; // Automatically skip any binary files (images, compiled blobs, etc.)
+                    }
+
                     const content = await fs.readFile(file, 'utf-8');
                     const hash = crypto.createHash('md5').update(content).digest('hex');
                     const existingMeta = this.store.getMetadata(file);
