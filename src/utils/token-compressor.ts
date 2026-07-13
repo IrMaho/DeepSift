@@ -113,6 +113,10 @@ export class TokenOptimizerService {
             if (idIndex >= 600) break;
             const id = this.generateId(idIndex);
 
+        for (const entry of allEntries) {
+            if (idIndex >= 600) break;
+            const id = this.generateId(idIndex);
+
             const entryOverhead = id.length + 2 + entry.text.length;
             const actualSavings = entry.savings - (id.length * entry.frequency) - entryOverhead;
 
@@ -123,53 +127,12 @@ export class TokenOptimizerService {
             }
         }
 
-        // Layer 4: Cognitive Prompts
+        // Layer 4: Cognitive Prompts (REMOVED - Focus purely on compression)
         const cognitiveEntries: Record<string, string> = {};
-        if (this.config.enableCognitivePrompts) {
-            // Simple pseudo-shuffle using md5 hash of the text to keep it deterministic but randomized
-            const hash = crypto.createHash('md5').update(text).digest('hex');
-            const seed = parseInt(hash.substring(0, 8), 16);
-            const selectedPrompts = [...TokenOptimizerService.cognitivePrompts];
-            
-            // Pseudo-random selection
-            const idx1 = seed % selectedPrompts.length;
-            const idx2 = (seed + 7) % selectedPrompts.length;
-            cognitiveEntries['Ψ0'] = selectedPrompts[idx1];
-            cognitiveEntries['Ψ1'] = selectedPrompts[idx2 === idx1 ? (idx2 + 1) % selectedPrompts.length : idx2];
-        }
 
-        // Layer 5: Math-Based Encoding
+        // Layer 5: Math-Based Encoding (REMOVED - Focus purely on compression)
         let mathEncodedCount = 0;
-        const mathDictionary: Record<string, string> = {};
-        const entries = Object.entries(dictionary);
-        const targetMathCount = Math.max(2, Math.min(10, Math.floor(entries.length * 0.04)));
-        const mathIndices = new Set<number>();
-
-        if (entries.length > 0) {
-            const hash = crypto.createHash('md5').update(text + 'math').digest('hex');
-            let seed = parseInt(hash.substring(0, 8), 16);
-            while (mathIndices.size < targetMathCount && mathIndices.size < entries.length) {
-                seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-                mathIndices.add(seed % entries.length);
-            }
-        }
-
-        for (let i = 0; i < entries.length; i++) {
-            const [key, value] = entries[i];
-            if (mathIndices.has(i)) {
-                // Determine a pseudo-random multiplier for codepoint encoding
-                const codepoint = value.charCodeAt(0);
-                let a = 1;
-                if (codepoint > 2) {
-                    a = Math.floor(Math.random() * (codepoint - 1)) + 1;
-                }
-                const b = codepoint - a;
-                mathDictionary[key] = `§(${a}+${b})${value}`;
-                mathEncodedCount++;
-            } else {
-                mathDictionary[key] = value;
-            }
-        }
+        const mathDictionary = { ...dictionary };
 
         // Layer 6: Replace Text
         const processedTokens = this.replaceNGrams(tokens, reverseDictionary);
@@ -190,8 +153,8 @@ export class TokenOptimizerService {
             optimizedContent,
             dictionary: mathDictionary,
             cognitiveEntries,
-            cognitiveCount: Object.keys(cognitiveEntries).length,
-            mathEncodedCount,
+            cognitiveCount: 0,
+            mathEncodedCount: 0,
             nGramCount: Object.keys(nGramMap).length
         };
 
@@ -212,12 +175,6 @@ export class TokenOptimizerService {
                 md += '## Word Mapping Table\n\n| Code | Original Word |\n|---|---|\n';
                 for (const [k, v] of Object.entries(this.dictionary)) {
                     md += `| \`${k}\` | ${v} |\n`;
-                }
-                if (Object.keys(this.cognitiveEntries).length > 0) {
-                    md += '\n## Context Markers\n\n';
-                    for (const [k, v] of Object.entries(this.cognitiveEntries)) {
-                        md += `- \`${k}\` → ${v}\n`;
-                    }
                 }
                 md += '\n## Project Content (Encoded)\n\n' + this.optimizedContent + '\n';
                 return md;
