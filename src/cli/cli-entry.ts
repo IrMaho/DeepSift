@@ -73,17 +73,22 @@ async function main() {
 
             case 'search':
             case 's':
-                if (commandArgs.length === 0) {
+                const skipSync = commandArgs.includes('--no-sync') || commandArgs.includes('-n');
+                const verboseSearch = commandArgs.includes('--verbose') || commandArgs.includes('-v');
+                const searchQueries = commandArgs.filter(arg => !arg.startsWith('-'));
+                
+                if (searchQueries.length === 0) {
                     printError('Please provide at least one search query.\nUsage: deepsift search "your query"');
                     process.exit(1);
                 }
-                await searchCommand(projectPath, commandArgs, format);
+                await searchCommand(projectPath, searchQueries, format, skipSync, verboseSearch);
                 break;
 
             case 'index':
             case 'i':
                 const force = commandArgs.includes('--force') || commandArgs.includes('-f');
-                await indexCommand(projectPath, force, format);
+                const verboseIndex = commandArgs.includes('--verbose') || commandArgs.includes('-v');
+                await indexCommand(projectPath, force, format, verboseIndex);
                 break;
 
             case 'status':

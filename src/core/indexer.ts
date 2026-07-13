@@ -14,7 +14,11 @@ export class Indexer {
         this.store = store;
     }
 
-    public async indexProject(rootDir: string, forceReindex: boolean = false): Promise<{ files: number; chunks: number }> {
+    public async indexProject(
+        rootDir: string, 
+        forceReindex: boolean = false,
+        onProgress?: (current: number, total: number, currentFile: string) => void
+    ): Promise<{ files: number; chunks: number }> {
         if (this.isIndexing) {
             throw new Error('Indexing is already in progress');
         }
@@ -25,8 +29,15 @@ export class Indexer {
 
         try {
             const files = await getFiles(rootDir);
+            const totalFiles = files.length;
+            let currentFileIndex = 0;
 
             for (const file of files) {
+                currentFileIndex++;
+                if (onProgress) {
+                    onProgress(currentFileIndex, totalFiles, path.relative(rootDir, file));
+                }
+
                 try {
                     const content = await fs.readFile(file, 'utf-8');
                     const hash = crypto.createHash('md5').update(content).digest('hex');

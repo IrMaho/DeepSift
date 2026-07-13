@@ -5,13 +5,33 @@ import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-outpu
 import { saveSearchLog } from '../../utils/history.js';
 import { getDbPath } from '../cli-paths.js';
 
-export async function searchCommand(projectPath: string, queries: string[], format: OutputFormat) {
+export async function searchCommand(projectPath: string, queries: string[], format: OutputFormat, skipSync: boolean = false, verbose: boolean = false) {
     const store = new SQLiteStore(getDbPath(projectPath));
     const indexer = new Indexer(store);
     const searcher = new Searcher(store);
 
-    printInfo('Syncing index before search...');
-    await indexer.indexProject(projectPath);
+    if (!skipSync) {
+        printInfo('Syncing index before search...');
+        try {
+            await indexer.indexProject(projectPath, false, (current, total, file) => {
+                if (verbose && format !== 'json') {
+                    process.stdout.write(`\rIndexing: ${current}/${total} files (Processing: ${file})`);
+                    process.stdout.write('\x1b[K');
+                }
+            });
+            if (verbose && format !== 'json') {
+                process.stdout.write('\n');
+            }
+        } catch (e: any) {
+            if (e.message.includes('locked')) {
+                printInfo('Database is locked by another process. Skipping sync and searching current index...');
+            } else {
+                throw e;
+            }
+        }
+    } else {
+        printInfo('Skipping index sync (--no-sync provided). Searching current index...');
+    }
 
     if (queries.length === 1) {
         return executeSingleSearch(searcher, projectPath, queries[0], format);
