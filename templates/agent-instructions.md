@@ -12,15 +12,16 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 
 | Command | Description |
 |---|---|
-| `deepsift search "query"` | Semantic search for code snippets, functions, classes |
+| `deepsift search "query"` | Semantic search. Options: `--include` or `-i <path>` (filter path), `--no-sync` or `-n` (skip index update), `--verbose` or `-v` (show file index progress) |
 | `deepsift search "q1" "q2" "q3"` | Multi-query batch search (saves time) |
-| `deepsift index` | Re-index the project (incremental) |
+| `deepsift index` | Re-index the project (incremental). Options: `--verbose` or `-v` (show files being indexed) |
 | `deepsift index --force` | Full re-index from scratch |
 | `deepsift status` | Check index statistics |
-| `deepsift arch` | Get project architecture blueprint |
+| `deepsift arch` | Get project architecture blueprint (options: `--depth N` to limit tree depth) |
 | `deepsift deps "filename"` | Find which files import/depend on a target |
 | `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) |
 | `deepsift history` | Read past search results (avoid redundant searches) |
+| `deepsift clean` | Clear search history logs and index |
 | `deepsift drill "logfile.md" "keyword"` | Deep-search within previous results |
 
 ## 📋 Usage Rules

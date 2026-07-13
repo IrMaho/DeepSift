@@ -43,13 +43,19 @@ export function applyRRF(
     });
 
     // Sort by RRF score descending
+    const maxPossibleRrf = 2 / (k + 1); // Max RRF if rank 1 in both keyword & semantic (approx 0.03278)
+
     const combined = Array.from(scoreMap.values())
         .sort((a, b) => b.rrfScore - a.rrfScore)
         .map(entry => {
-            // Assign the rrfScore to the final result's score for downstream sorting/display
+            // Normalize score to a human-readable 0..1 scale
+            // If it matched both at rank 1, normalized score is 1.0
+            // If it matched only one at rank 1, normalized score is 0.5
+            const normalizedScore = Math.min(1.0, entry.rrfScore / maxPossibleRrf);
+            
             return {
                 ...entry.result,
-                score: entry.rrfScore
+                score: normalizedScore
             };
         });
 

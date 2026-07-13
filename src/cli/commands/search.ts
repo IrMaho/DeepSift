@@ -5,7 +5,7 @@ import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-outpu
 import { saveSearchLog } from '../../utils/history.js';
 import { getDbPath } from '../cli-paths.js';
 
-export async function searchCommand(projectPath: string, queries: string[], format: OutputFormat, skipSync: boolean = false, verbose: boolean = false) {
+export async function searchCommand(projectPath: string, queries: string[], format: OutputFormat, skipSync: boolean = false, verbose: boolean = false, filterPath?: string) {
     const store = new SQLiteStore(getDbPath(projectPath));
     const indexer = new Indexer(store);
     const searcher = new Searcher(store);
@@ -34,14 +34,14 @@ export async function searchCommand(projectPath: string, queries: string[], form
     }
 
     if (queries.length === 1) {
-        return executeSingleSearch(searcher, projectPath, queries[0], format);
+        return executeSingleSearch(searcher, projectPath, queries[0], format, filterPath);
     }
 
-    return executeMultiSearch(searcher, projectPath, queries, format);
+    return executeMultiSearch(searcher, projectPath, queries, format, filterPath);
 }
 
-async function executeSingleSearch(searcher: Searcher, projectPath: string, query: string, format: OutputFormat) {
-    const results = await searcher.search({ query, topK: 10 });
+async function executeSingleSearch(searcher: Searcher, projectPath: string, query: string, format: OutputFormat, filterPath?: string) {
+    const results = await searcher.search({ query, topK: 10, filterPath });
 
     if (results.length === 0) {
         printResult('No relevant code found.', format);
@@ -58,12 +58,12 @@ async function executeSingleSearch(searcher: Searcher, projectPath: string, quer
     printSuccess('Results cached in .deepsift/outputs/');
 }
 
-async function executeMultiSearch(searcher: Searcher, projectPath: string, queries: string[], format: OutputFormat) {
+async function executeMultiSearch(searcher: Searcher, projectPath: string, queries: string[], format: OutputFormat, filterPath?: string) {
     const allResults: string[] = [];
     let totalHits = 0;
 
     for (let i = 0; i < queries.length; i++) {
-        const results = await searcher.search({ query: queries[i], topK: 5 });
+        const results = await searcher.search({ query: queries[i], topK: 5, filterPath });
         totalHits += results.length;
 
         const formattedResults = results.map((res: any, j: number) => {

@@ -8,7 +8,7 @@ import { statusCommand } from './commands/status.js';
 import { archCommand } from './commands/arch.js';
 import { depsCommand } from './commands/deps.js';
 import { featureCommand } from './commands/feature.js';
-import { historyCommand, drillCommand } from './commands/history.js';
+import { historyCommand, cleanHistoryCommand, drillCommand } from './commands/history.js';
 import { initCommand } from './commands/init.js';
 import fs from 'fs';
 
@@ -23,12 +23,19 @@ const HELP_TEXT = `
 \x1b[33mCommands:\x1b[0m
   init                          Initialize DeepSift for the current project
   search "query" ["query2" ...]  Semantic search (single or multi-query)
+                                  Options:
+                                    --include, -i <path>  Only search within path
+                                    --no-sync, -n         Skip index synchronization
+                                    --verbose, -v         Show file indexing progress
   index [--force]               Index/re-index the project
+                                  Options:
+                                    --verbose, -v         Show files being processed
   status                        Show index statistics
   arch [--depth N]              Project architecture blueprint
   deps "target"                 Trace dependencies for a file/module
   feature "path"                Feature outline (classes, functions)
   history                       Show past search results
+  clean                         Clear search history logs and index
   drill "logfile" "keyword"     Deep-search within a previous result
 
 \x1b[33mGlobal Flags:\x1b[0m
@@ -39,10 +46,10 @@ const HELP_TEXT = `
 
 \x1b[33mExamples:\x1b[0m
   deepsift init
-  deepsift search "authentication logic"
-  deepsift search "db setup" "error handler" --json
+  deepsift search "authentication logic" --include "lib/controllers"
+  deepsift search "db setup" --no-sync
+  deepsift index --force --verbose
   deepsift arch --depth 3
-  deepsift deps "auth-service.ts"
 `;
 
 async function main() {
@@ -75,13 +82,24 @@ async function main() {
             case 's':
                 const skipSync = commandArgs.includes('--no-sync') || commandArgs.includes('-n');
                 const verboseSearch = commandArgs.includes('--verbose') || commandArgs.includes('-v');
-                const searchQueries = commandArgs.filter(arg => !arg.startsWith('-'));
+                
+                let filterPath: string | undefined;
+                const includeIdx = commandArgs.findIndex(arg => arg === '--include' || arg === '-i');
+                if (includeIdx !== -1 && commandArgs[includeIdx + 1]) {
+                    filterPath = commandArgs[includeIdx + 1];
+                }
+
+                const searchQueries = commandArgs.filter((arg, idx) => {
+                    if (arg.startsWith('-')) return false;
+                    if (idx > 0 && (commandArgs[idx - 1] === '--include' || commandArgs[idx - 1] === '-i')) return false;
+                    return true;
+                });
                 
                 if (searchQueries.length === 0) {
                     printError('Please provide at least one search query.\nUsage: deepsift search "your query"');
                     process.exit(1);
                 }
-                await searchCommand(projectPath, searchQueries, format, skipSync, verboseSearch);
+                await searchCommand(projectPath, searchQueries, format, skipSync, verboseSearch, filterPath);
                 break;
 
             case 'index':
@@ -128,6 +146,11 @@ async function main() {
             case 'history':
             case 'h':
                 historyCommand(projectPath, format);
+                break;
+
+            case 'clean':
+            case 'c':
+                cleanHistoryCommand(projectPath, format);
                 break;
 
             case 'drill':

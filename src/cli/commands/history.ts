@@ -1,9 +1,35 @@
 import { getSearchHistory, getSearchLog } from '../../utils/history.js';
-import { printResult, OutputFormat } from '../cli-output.js';
+import { printResult, printSuccess, OutputFormat } from '../cli-output.js';
+import fs from 'fs';
+import path from 'path';
 
 export function historyCommand(projectPath: string, format: OutputFormat) {
     const historyText = getSearchHistory(projectPath);
     printResult(historyText, format);
+}
+
+export function cleanHistoryCommand(projectPath: string, format: OutputFormat) {
+    const targets = ['.deepsift/outputs', '.mcp_search_outputs'];
+    let count = 0;
+
+    for (const target of targets) {
+        const outputsDir = path.join(projectPath, target);
+        if (fs.existsSync(outputsDir)) {
+            const files = fs.readdirSync(outputsDir);
+            for (const file of files) {
+                if (file.endsWith('.md')) {
+                    fs.unlinkSync(path.join(outputsDir, file));
+                    count++;
+                }
+            }
+        }
+    }
+
+    if (format === 'json') {
+        printResult(JSON.stringify({ status: 'success', clearedCount: count }), format);
+    } else {
+        printSuccess(`Cleared ${count} cached search result logs and history index.`);
+    }
 }
 
 export function drillCommand(projectPath: string, logFilename: string, keyword: string, format: OutputFormat) {
