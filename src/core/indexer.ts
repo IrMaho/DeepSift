@@ -2,6 +2,7 @@ import { SQLiteStore } from '../storage/sqlite-store.js';
 import { getFiles } from '../utils/file-walker.js';
 import { parseAST } from '../parsers/tree-sitter-parser.js';
 import { getEmbeddings } from './embedder.js';
+import { isBinaryFile } from '../utils/binary-check.js';
 import * as crypto from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -14,7 +15,11 @@ export class Indexer {
         this.store = store;
     }
 
-    public async indexProject(rootDir: string, forceReindex: boolean = false): Promise<{ files: number; chunks: number }> {
+    public async indexProject(
+        rootDir: string, 
+        forceReindex: boolean = false,
+        onProgress?: (current: number, total: number, currentFile: string) => void
+    ): Promise<{ files: number; chunks: number }> {
         if (this.isIndexing) {
             throw new Error('Indexing is already in progress');
         }
@@ -25,9 +30,20 @@ export class Indexer {
 
         try {
             const files = await getFiles(rootDir);
+            const totalFiles = files.length;
+            let currentFileIndex = 0;
 
             for (const file of files) {
+                currentFileIndex++;
+                if (onProgress) {
+                    onProgress(currentFileIndex, totalFiles, path.relative(rootDir, file));
+                }
+
                 try {
+                    if (await isBinaryFile(file)) {
+                        continue; // Automatically skip any binary files (images, compiled blobs, etc.)
+                    }
+
                     const content = await fs.readFile(file, 'utf-8');
                     const hash = crypto.createHash('md5').update(content).digest('hex');
                     const existingMeta = this.store.getMetadata(file);

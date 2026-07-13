@@ -6,7 +6,8 @@ export class SQLiteStore {
     private db: Database.Database;
 
     constructor(dbPath: string) {
-        this.db = new Database(dbPath);
+        this.db = new Database(dbPath, { timeout: 10000 }); // 10 seconds busy timeout
+        this.db.pragma('journal_mode = WAL'); // Better concurrency
         this.init();
     }
 

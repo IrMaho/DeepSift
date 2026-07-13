@@ -45,4 +45,23 @@
 ## فاز ۸ — بهینه‌سازی و پولیش
 - [x] بهینه‌سازی سرعت ایندکس‌سازی اولیه
 - [x] مدیریت خطاها و edge cases
-- [ ] مستندسازی نصب و استفاده
+- [x] مستندسازی نصب و استفاده
+
+## فاز ۹ — CLI Bridge (ایزوله‌سازی برای IDE های بدون MCP)
+- [x] ساخت cli-entry.ts (Entry point + Argument Parser)
+- [x] ساخت cli-output.ts (فرمت‌بندی خروجی: MD/JSON/Plain)
+- [x] ساخت cli-paths.ts (مسیردهی لوکال .deepsift/)
+- [x] پیاده‌سازی search command (تک‌کوئری + چندکوئری)
+- [x] پیاده‌سازی index command (عادی + force)
+- [x] پیاده‌سازی status command
+- [x] پیاده‌سازی arch command
+- [x] پیاده‌سازی deps command
+- [x] پیاده‌سازی feature command
+- [x] پیاده‌سازی history + drill commands
+- [x] پیاده‌سازی init command (تزریق AGENTS.md + ایندکس اولیه)
+- [x] ساخت templates/agent-instructions.md
+- [x] بروزرسانی history.ts برای dual-mode (CLI + MCP)
+- [x] تنظیم bin field در package.json
+- [x] npm link و تست گلوبال
+- [x] بروزرسانی README
+- [ ] پابلیش npm (اختیاری)
