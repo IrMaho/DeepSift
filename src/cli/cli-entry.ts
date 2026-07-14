@@ -129,7 +129,7 @@ async function main() {
                 if (depthIdx !== -1 && commandArgs[depthIdx + 1]) {
                     maxDepth = parseInt(commandArgs[depthIdx + 1], 10) || 5;
                 }
-                archCommand(projectPath, maxDepth, format);
+                archCommand(projectPath, maxDepth, format, compress);
                 break;
             }
 
@@ -138,7 +138,7 @@ async function main() {
                 if (commandArgs.length === 0) {
                     throw new Error('Please provide a target name.\nUsage: deepsift deps "filename"');
                 }
-                await depsCommand(projectPath, commandArgs[0], format);
+                await depsCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
             case 'feature':
@@ -146,7 +146,7 @@ async function main() {
                 if (commandArgs.length === 0) {
                     throw new Error('Please provide a feature path.\nUsage: deepsift feature "src/path"');
                 }
-                featureCommand(projectPath, commandArgs[0], format);
+                featureCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
             case 'history':

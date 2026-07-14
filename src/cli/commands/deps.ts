@@ -4,8 +4,13 @@ import { Searcher } from '../../core/searcher.js';
 import { saveSearchLog } from '../../utils/history.js';
 import { printResult, printInfo, OutputFormat } from '../cli-output.js';
 import { getDbPath } from '../cli-paths.js';
+import { TokenOptimizerService } from '../../utils/token-compressor.js';
 
-export async function depsCommand(projectPath: string, targetName: string, format: OutputFormat) {
+/**
+ * Traces file dependents and outputs them as a tree.
+ * Outputs are token-compressed by default.
+ */
+export async function depsCommand(projectPath: string, targetName: string, format: OutputFormat, compress: boolean = true) {
     const store = new SQLiteStore(getDbPath(projectPath));
     const indexer = new Indexer(store);
     const searcher = new Searcher(store);
@@ -27,6 +32,12 @@ export async function depsCommand(projectPath: string, targetName: string, forma
         });
     }
 
-    saveSearchLog(projectPath, [`[Dependencies] ${targetName}`], output);
-    printResult(output, format);
+    let finalOutput = output;
+    if (compress && format !== 'json') {
+        const optimizer = new TokenOptimizerService();
+        finalOutput = optimizer.optimize(output).toUnifiedString();
+    }
+
+    saveSearchLog(projectPath, [`[Dependencies] ${targetName}`], finalOutput);
+    printResult(finalOutput, format);
 }
