@@ -58,6 +58,8 @@ DeepSift coordinates AST-aware parsing, local vector generation, and hybrid inde
 *   **Hybrid Search Engine (Vector + BM25 + RRF):** Combines dense vector search (Cosine Similarity) with sparse lexical search (SQLite FTS5 BM25 scoring) using **Reciprocal Rank Fusion (RRF)** to deliver highly relevant results.
 *   **Antigravity Brain Protocol (Drill-Down & Dependencies):** Equips AI agents to analyze very large repositories (100MB+) in steps. Agents can scan the project architecture, map dependencies, search globally, and then "drill down" strictly within cached logs—reducing context window consumption from megabytes to kilobytes.
 *   **Advanced Config System (`deepsift.config.json`):** Allows fine-grained control over directories to index or ignore (interactive configuration via `deepsift config`), file extensions to include/exclude, and default search options.
+*   **DeepSift V2 Context Intelligence Engine:** Understands project philosophy and conventions. It analyzes code to extract naming conventions, design tokens, similarities, and modularity into a `Project DNA`.
+*   **Pre-Generation Checklists:** Features a `deepsift context` command to instruct LLMs on project conventions *before* writing new code.
 *   **Incremental Indexing:** Stores file hashes in SQLite. DeepSift only re-indexes modified or new files during runs, making index synchronizations complete in milliseconds.
 *   **Smart Token Compression (DEC_v2):** Includes a custom n-gram compression utility that minimizes LLM token usage. Important structural details (file paths, line references, code block fences, and search scores) are automatically kept uncompressed to avoid AI hallucinations.
 *   **Web Dashboard UI:** Spins up a local web server (running on `http://localhost:3000`) using Server-Sent Events (SSE) to stream indexing progress, search triggers, and MCP tool invocations in real-time.
@@ -153,7 +155,10 @@ Once running, the server also starts the **Web Dashboard** at **[http://localhos
 | :--- | :--- | :--- |
 | **`init`** | None | Initializes `.deepsift/` and executes the initial indexing scan. |
 | **`config`** | None | Launches an interactive console checklist to configure directories to index, generating a customizable `deepsift.config.json`. |
-| **`search`** | `"query1"` `["query2"...]` | Executes one or more hybrid semantic search queries. <br>Flags: `--include <path>`, `--no-sync` (skips file hashing updates), `--verbose`, `--context-lines <N>` (or `-C <N>`) |
+| **`dna`** | `[--show]` | Generate or display the Project DNA (Context Intelligence). |
+| **`context`** | `"path"` | Returns a checklist of rules and design tokens before file generation. |
+| **`scan`** | `<target>` | Runs specific DNA analyzers (tokens, i18n, conventions, assets). |
+| **`search`** | `"query1"` `["query2"...]` | Executes one or more hybrid semantic search queries. <br>Flags: `--include <path>`, `--no-sync` (skips file hashing updates), `--verbose` |
 | **`index`** | None | Re-indexes the project (incremental). Add `--force` to rebuild from scratch. |
 | **`status`** | None | Prints database size, total files indexed, and total chunk counts. |
 | **`arch`** | `--depth <N>` | Prints a formatted directory layout and highlights the top-5 central core files. |

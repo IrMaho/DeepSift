@@ -122,12 +122,13 @@
 - [x] Convention reminder
 
 ### F10 — Resource Mapper
-- [ ] Asset/icon/font discovery
-- [ ] Unused asset detection
-- [ ] Icon system pattern detection
+- [x] Asset/icon/font discovery
+- [x] Unused asset detection
+- [x] Icon system pattern detection
 
 ### F11 — MCP + CLI Integration
-- [ ] ابزارهای MCP جدید (generate_project_dna, get_project_dna, find_similar, etc.)
-- [ ] آپدیت agent-instructions.md v2
-- [ ] آپدیت README
-
+- [x] ابزارهای MCP جدید (generate_project_dna, get_project_dna, find_similar, etc.)
+- [x] ادغام context-injector با `deepsift search`
+- [x] دستور `deepsift context` در CLI
+- [x] آپدیت agent-instructions.md v2
+- [x] آپدیت README

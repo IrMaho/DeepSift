@@ -25,18 +25,22 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 | `deepsift clean` | Clear search history logs and index |
 | `deepsift drill "logfile.md" "keyword"` | Deep-search within previous results |
 | `deepsift resolve "token"` | Decode a compressed token from the most recent cached dictionary |
+| `deepsift dna` | Generate or display the Project DNA (Context Intelligence). Use to understand project philosophy. |
+| `deepsift scan <target>` | Runs specific DNA analyzers (tokens, i18n, conventions, assets). |
+| `deepsift context "path"` | **MANDATORY**: Run before generating a new file to get rules, design tokens, and similar existing components. |
 
 ## 📋 Mandatory Usage Rules
 
 1. **DeepSift-First Mandate:** You **MUST NOT** use any general grep search, manual directory listing, or file viewing tools to find files or logic *unless* you have first executed a relevant `deepsift search`, `deepsift deps`, or `deepsift arch` command.
-2. **Search History Check:** You **MUST** run `deepsift history` at the start of any codebase investigation to see if the required search results have already been cached.
-3. **Cache First:** Read the cached files under `.deepsift/outputs/` before running a new search query. The exact absolute path of the cached file is printed in the terminal as a clickable file link (e.g. `file:///...`) at the end of each search, architecture, feature, or dependency command.
-4. **No Manual Codebase Exploration:** Do not traverse directories or search files using generic commands. Use `deepsift arch` to understand the codebase skeleton, `deepsift feature` to analyze a specific feature folder, and `deepsift deps` to find file dependencies.
-5. **DEC_v2 Compression Priority:** By default, allow search results to be compressed to save tokens. File paths, folder paths, and file names are NEVER compressed; they are kept verbatim to prevent hallucinations. Only use the `--no-compress` flag as a fallback if you struggle to decode/reconstruct other compressed words after multiple attempts, or when you need to inspect the exact literal syntax of a code snippet for precise copying.
-6. **Retrieving Surrounding Context:** Always append `--context-lines N` (or `-C N`, where N is typically 10 to 30) when searching to retrieve the surrounding code lines around matches.
-7. **Multi-Query Efficiency:** For multiple distinct questions or features, batch them into a single command (`deepsift search "q1" "q2"`) to optimize execution speed.
-8. **Token Decoding:** If you run into a compressed DEC_v2 token in cached files, use `deepsift resolve "token"` to lookup the raw value immediately.
-9. **Index Maintenance:** Run `deepsift index --force` after performing major refactorings or code changes to ensure search queries reflect the latest code state.
+2. **Pre-Generation Context (MANDATORY):** You **MUST** run `deepsift context "target_path"` **BEFORE** creating any new file or component. This gives you project conventions, required design tokens, i18n rules, and similar existing components to prevent code duplication and style drift.
+3. **Search History Check:** You **MUST** run `deepsift history` at the start of any codebase investigation to see if the required search results have already been cached.
+4. **Cache First:** Read the cached files under `.deepsift/outputs/` before running a new search query. The exact absolute path of the cached file is printed in the terminal as a clickable file link (e.g. `file:///...`) at the end of each search, architecture, feature, or dependency command.
+5. **No Manual Codebase Exploration:** Do not traverse directories or search files using generic commands. Use `deepsift arch` to understand the codebase skeleton, `deepsift feature` to analyze a specific feature folder, and `deepsift deps` to find file dependencies.
+6. **DEC_v2 Compression Priority:** By default, allow search results to be compressed to save tokens. File paths, folder paths, and file names are NEVER compressed; they are kept verbatim to prevent hallucinations. Only use the `--no-compress` flag as a fallback if you struggle to decode/reconstruct other compressed words after multiple attempts, or when you need to inspect the exact literal syntax of a code snippet for precise copying.
+7. **Retrieving Surrounding Context:** Always append `--context-lines N` (or `-C N`, where N is typically 10 to 30) when searching to retrieve the surrounding code lines around matches.
+8. **Multi-Query Efficiency:** For multiple distinct questions or features, batch them into a single command (`deepsift search "q1" "q2"`) to optimize execution speed.
+9. **Token Decoding:** If you run into a compressed DEC_v2 token in cached files, use `deepsift resolve "token"` to lookup the raw value immediately.
+10. **Index Maintenance:** Run `deepsift index --force` after performing major refactorings or code changes to ensure search queries reflect the latest code state.
 
 ## 💡 Examples
 
@@ -59,7 +63,12 @@ deepsift feature "src/features/auth"
 # Decode a compressed token you cannot understand
 deepsift resolve "0A"
 
+# MANDATORY: Before creating a new file
+deepsift context "src/components/MyNewButton.tsx"
+
+# Understand project philosophy
+deepsift dna
+
 # Configure which folders to index
 deepsift config
 ```
-

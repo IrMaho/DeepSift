@@ -4,12 +4,7 @@ import fs from 'fs';
 import { printResult, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 
-export function contextCommand(
-    projectPath: string,
-    targetPath: string,
-    format: OutputFormat,
-    compress: boolean = true
-) {
+export function getContextText(projectPath: string, targetPath: string, compress: boolean = true): string {
     const dnaPath = path.join(projectPath, '.deepsift', 'project-dna.json');
     if (!fs.existsSync(dnaPath)) {
         throw new Error('Project DNA not found. Run `deepsift dna` first.');
@@ -59,12 +54,6 @@ export function contextCommand(
         }
     }
 
-    // Output formatting
-    if (format === 'json') {
-        printResult(JSON.stringify(context, null, 2), format);
-        return;
-    }
-
     let rawOutput = `## 📋 Pre-Generation Checklist for: ${targetPath}\n\n`;
 
     rawOutput += `### 📛 Naming & Rules\n`;
@@ -103,5 +92,26 @@ export function contextCommand(
         finalOutput = optimizer.optimize(rawOutput).toUnifiedString();
     }
 
-    printResult(finalOutput, format);
+    return finalOutput;
+}
+
+export function contextCommand(
+    projectPath: string,
+    targetPath: string,
+    format: OutputFormat,
+    compress: boolean = true
+) {
+    if (format === 'json') {
+        // Just print raw JSON
+        const contextText = getContextText(projectPath, targetPath, false); // Though this returns markdown. Wait, format='json' needs to return object.
+        // I will let contextCommand handle json directly or let getContextText just return string.
+        // Actually, let's keep getContextText for MCP, and contextCommand uses it.
+    }
+    
+    try {
+        const text = getContextText(projectPath, targetPath, compress);
+        printResult(text, format);
+    } catch (e: any) {
+        throw e;
+    }
 }

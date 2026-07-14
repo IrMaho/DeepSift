@@ -4,6 +4,7 @@ import { mineConventions } from '../analyzers/convention-miner.js';
 import { detectLocalization } from '../analyzers/l10n-detector.js';
 import { analyzeArchitecture } from '../analyzers/graph-analyzer.js';
 import { detectSimilarities } from '../analyzers/similarity-engine.js';
+import { mapResources } from '../analyzers/resource-mapper.js';
 import { SQLiteStore } from '../storage/sqlite-store.js';
 import fs from 'fs';
 import path from 'path';
@@ -89,6 +90,9 @@ export async function generateDNA(
 
     if (onProgress) onProgress('similarity', 'Detecting component similarities...');
     integrateSimilarityEngine(projectPath, dna, onProgress);
+
+    if (onProgress) onProgress('resources', 'Mapping static resources and icons...');
+    integrateResourceMapper(projectPath, dna, onProgress);
 
     if (onProgress) onProgress('rules', 'Generating rules from discovered data...');
     generateRules(dna);
@@ -303,6 +307,10 @@ function integrateSimilarityEngine(projectPath: string, dna: ProjectDNA, onProgr
     } catch { /* ignore */ }
     
     dna.components.totalCount = totalCount;
+}
+
+function integrateResourceMapper(projectPath: string, dna: ProjectDNA, onProgress?: (phase: string, detail: string) => void): void {
+    dna.assets = mapResources(projectPath, onProgress);
 }
 
 function generateRules(dna: ProjectDNA): void {
