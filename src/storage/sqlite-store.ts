@@ -40,7 +40,8 @@ export class SQLiteStore {
                 content,
                 file_path,
                 content='chunks',
-                content_rowid='rowid'
+                content_rowid='rowid',
+                tokenize='unicode61 tokenchars ''[]{}()_#-'''
             );
         `);
     }
@@ -114,8 +115,8 @@ export class SQLiteStore {
     }
 
     public searchKeyword(query: string, topK: number = 20): SearchResult[] {
-        // Strip punctuation and special characters for FTS5
-        const safeTokens = query.replace(/[^\w\s]/g, ' ').trim().split(/\s+/).filter(t => t.length > 0);
+        // Strip punctuation but keep special characters like []{}()_#- for FTS5
+        const safeTokens = query.replace(/[^\w\s\[\]\{\}\(\)\_\#\-]/g, ' ').trim().split(/\s+/).filter(t => t.length > 0);
         if (safeTokens.length === 0) return [];
         const safeQuery = safeTokens.map(t => `"${t}"*`).join(' OR ');
         const stmt = this.db.prepare(`

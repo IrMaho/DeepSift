@@ -6,6 +6,7 @@ import { CodeChunk, ChunkType } from '../types/index.js';
 import * as crypto from 'crypto';
 import path from 'path';
 import { parseSimple } from './simple-parser.js';
+import { parseHeuristic } from './heuristic-parser.js';
 
 const parsers = new Map<string, Parser>();
 
@@ -46,6 +47,8 @@ function getParser(language: string): Parser | null {
 export function parseAST(content: string, filePath: string, language: string): CodeChunk[] {
     const parser = getParser(language);
     if (!parser) {
+        const heuristicChunks = parseHeuristic(content, filePath, language);
+        if (heuristicChunks.length > 0) return heuristicChunks;
         return parseSimple(content, filePath, language);
     }
 
@@ -57,6 +60,8 @@ export function parseAST(content: string, filePath: string, language: string): C
         
         // If we didn't extract any meaningful chunks, fallback
         if (chunks.length === 0) {
+            const heuristicChunks = parseHeuristic(content, filePath, language);
+            if (heuristicChunks.length > 0) return heuristicChunks;
             return parseSimple(content, filePath, language);
         }
         

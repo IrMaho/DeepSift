@@ -65,3 +65,70 @@
 - [x] npm link و تست گلوبال
 - [x] بروزرسانی README
 - [ ] پابلیش npm (اختیاری)
+
+## فاز ۱۰ — PCIE v2: Project Context Intelligence Engine
+
+### F1 — DNA Core + Types
+- [x] تعریف تایپ‌های DNA (`dna-types.ts`)
+- [x] پیاده‌سازی DNA orchestrator (`project-dna.ts`)
+- [x] تشخیص هویت پروژه (زبان، فریم‌ورک، package manager)
+- [x] فرمت‌دهی و نمایش DNA
+- [x] دستور CLI `deepsift dna` + `deepsift dna --show`
+- [x] دستور CLI `deepsift scan <target>` (ساختار stub)
+- [x] گسترش `CodeChunk` با `family` و `metadata`
+- [x] بیلد و تست موفق
+
+### F2 — Property Miner (Design Tokens)
+- [x] Value Classifier (تشخیص مشتق‌پذیر رنگ، سایز، فاصله از شکل مقدار)
+- [x] Assignment Pattern Mining (استخراج الگوی انتساب عمومی)
+- [x] Token Clustering (خوشه‌بندی و تشخیص Design System)
+- [x] اتصال به DNA generator
+
+### F3 — Heuristic Parser
+- [x] Universal regex-heuristic engine (Strategy 2)
+- [x] الگوهای عمومی function/class/import/constant
+- [x] اتصال آبشاری: Tree-sitter → Heuristic → Simple
+
+### F4 — Similarity Engine
+- [x] Embedding-based component similarity
+- [x] Near-duplicate detection (cosine > 0.85)
+- [x] Similarity group clustering
+- [x] اتصال به DNA generator
+
+### F5 — Convention Miner
+- [x] Naming convention statistics (file/class/function/variable)
+- [x] Structure template detection (feature pattern mining)
+- [x] اتصال به DNA generator
+
+### F6 — L10n Detector
+- [x] Generic i18n signal detection
+- [x] Hardcoded string finder (مشتق‌پذیر)
+- [x] اتصال به DNA generator
+
+### F7 — Graph Analyzer
+- [x] Dependency graph builder از import ها
+- [x] Community detection (cluster formation)
+- [x] Topology classification
+- [x] اتصال به DNA generator
+
+### F8 — Context Injector
+- [x] Smart context injection به نتایج سرچ
+- [x] Relevance matching (query ↔ DNA section)
+- [x] حجم injection محدود (max 2KB)
+
+### F9 — Pre-Generation Checklist
+- [x] Creation context generator
+- [x] Similar component warning
+- [x] Convention reminder
+
+### F10 — Resource Mapper
+- [x] Asset/icon/font discovery
+- [x] Unused asset detection
+- [x] Icon system pattern detection
+
+### F11 — MCP + CLI Integration
+- [x] ابزارهای MCP جدید (generate_project_dna, get_project_dna, find_similar, etc.)
+- [x] ادغام context-injector با `deepsift search`
+- [x] دستور `deepsift context` در CLI
+- [x] آپدیت agent-instructions.md v2
+- [x] آپدیت README

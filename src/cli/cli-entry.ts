@@ -12,7 +12,10 @@ import { historyCommand, cleanHistoryCommand, drillCommand } from './commands/hi
 import { initCommand } from './commands/init.js';
 import { watchCommand } from './commands/watch.js';
 import { configCommand } from './commands/config.js';
+import { dnaCommand } from './commands/dna.js';
+import { scanCommand } from './commands/scan.js';
 import { resolveCommand } from './commands/resolve.js';
+import { contextCommand } from './commands/context.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
@@ -27,6 +30,16 @@ const HELP_TEXT = `
 \x1b[33mCommands:\x1b[0m
   init                          Initialize DeepSift for the current project
   config                        Interactive menu to configure DeepSift (e.g. excluded folders)
+  dna [--show]                  Generate or display Project DNA (context intelligence)
+                                   Options:
+                                    --section <name>      Filter DNA to a specific section (e.g. tokens, conventions, architecture)
+                                    --query, -q <term>    Search DNA and return only matching JSON structures
+                                    --limit <number>      Limit the number of array items returned
+                                    --offset <number>     Start index for pagination of array items
+                                    --path-filter <path>  Filter DNA records by file path prefix
+                                    --meta                Only return metadata and record counts (no content)
+  scan <target>                 Run a specific analyzer (tokens|i18n|duplicates|conventions|assets)
+  context "path"                Generate a pre-creation checklist for a new component/feature
   search "query" ["query2" ...]  Semantic search (single or multi-query)
                                   Options:
                                     --include, -i <path>  Only search within path
@@ -89,6 +102,59 @@ async function main() {
 
             case 'config':
                 await configCommand(projectPath);
+                break;
+
+            case 'dna': {
+                const showOnly = commandArgs.includes('--show') || commandArgs.includes('-s');
+                
+                let section: string | undefined;
+                const sectionIdx = commandArgs.indexOf('--section');
+                if (sectionIdx !== -1 && commandArgs[sectionIdx + 1]) {
+                    section = commandArgs[sectionIdx + 1];
+                }
+
+                let dnaQuery: string | undefined;
+                const queryIdx = commandArgs.findIndex(arg => arg === '--query' || arg === '-q');
+                if (queryIdx !== -1 && commandArgs[queryIdx + 1]) {
+                    dnaQuery = commandArgs[queryIdx + 1];
+                }
+
+                let limit: number | undefined;
+                const limitIdx = commandArgs.indexOf('--limit');
+                if (limitIdx !== -1 && commandArgs[limitIdx + 1]) {
+                    limit = parseInt(commandArgs[limitIdx + 1], 10);
+                }
+
+                let offset: number | undefined;
+                const offsetIdx = commandArgs.indexOf('--offset');
+                if (offsetIdx !== -1 && commandArgs[offsetIdx + 1]) {
+                    offset = parseInt(commandArgs[offsetIdx + 1], 10);
+                }
+
+                let pathFilter: string | undefined;
+                const pathFilterIdx = commandArgs.indexOf('--path-filter');
+                if (pathFilterIdx !== -1 && commandArgs[pathFilterIdx + 1]) {
+                    pathFilter = commandArgs[pathFilterIdx + 1];
+                }
+
+                const showMetaOnly = commandArgs.includes('--meta');
+
+                await dnaCommand(projectPath, showOnly, format, section, dnaQuery, compress, limit, offset, pathFilter, showMetaOnly);
+                break;
+            }
+
+            case 'scan':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a scan target.\nUsage: deepsift scan <tokens|i18n|duplicates|conventions|assets>');
+                }
+                await scanCommand(projectPath, commandArgs[0], format);
+                break;
+
+            case 'context':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a target path.\nUsage: deepsift context "src/components/button.tsx"');
+                }
+                await contextCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
             case 'search':
@@ -190,6 +256,13 @@ async function main() {
                     throw new Error('Please provide a token to resolve.\nUsage: deepsift resolve "token"');
                 }
                 resolveCommand(projectPath, commandArgs[0], format);
+                break;
+
+            case 'context':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a target path.\nUsage: deepsift context "src/components/button.tsx"');
+                }
+                contextCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
             default:

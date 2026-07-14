@@ -13,6 +13,10 @@ import { resolve, dirname } from 'path';
 import { saveSearchLog, getSearchHistory, getSearchLog } from './utils/history.js';
 import { getProjectArchitecture } from './utils/architecture.js';
 import { getFeatureOutline } from './utils/outline.js';
+import { generateDNA, loadDNA } from './intelligence/project-dna.js';
+import { getContextText } from './cli/commands/context.js';
+import { processDnaFilters, recursiveQueryDna } from './cli/commands/dna.js';
+import { TokenOptimizerService } from './utils/token-compressor.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -374,6 +378,121 @@ const server = new McpServer({
         saveSearchLog(projectPath, [`[Feature Outline] ${featureDir}`], outlineText);
         broadcastEvent('tool_call', { tool: 'explore_feature', args, response: outlineText });
         return { content: [{ type: "text", text: outlineText }] };
+    }
+);
+
+// Tool 11: generate_project_dna
+(server as any).tool(
+    "generate_project_dna",
+    "Generates or regenerates the Project DNA context intelligence for the specified project.",
+    {
+        projectPath: z.string().describe("Absolute path to the root of the project")
+    },
+    async (args: any) => {
+        const { projectPath } = args;
+        broadcastEvent('tool_call', { tool: 'generate_project_dna', args, response: 'Generating DNA...' });
+        
+        try {
+            const dna = await generateDNA(projectPath);
+            const msg = `Successfully generated Project DNA for ${dna.identity.name}.`;
+            broadcastEvent('tool_call', { tool: 'generate_project_dna', args, response: msg });
+            return { content: [{ type: "text", text: msg }] };
+        } catch (e: any) {
+            return { content: [{ type: "text", text: `Error generating DNA: ${e.message}` }] };
+        }
+    }
+);
+
+// Tool 12: get_project_dna
+(server as any).tool(
+    "get_project_dna",
+    "Retrieves the Project DNA context intelligence. Supports section filtering, query filtering, pagination (limit/offset), and path filtering to minimize tokens.",
+    {
+        projectPath: z.string().describe("Absolute path to the root of the project"),
+        section: z.string().optional().describe("Optional: Filter DNA to a specific section (e.g. tokens, conventions, architecture, rules, assets, identity)"),
+        query: z.string().optional().describe("Optional: Search DNA and return only matching JSON structures"),
+        limit: z.number().optional().describe("Optional: Limit the number of array items returned"),
+        offset: z.number().optional().describe("Optional: Start index for pagination of array items"),
+        pathFilter: z.string().optional().describe("Optional: Filter DNA records by file path prefix"),
+        showMetaOnly: z.boolean().optional().describe("Optional: Only return metadata and record counts (no content) to analyze size first")
+    },
+    async (args: any) => {
+        const { projectPath, section, query, limit, offset, pathFilter, showMetaOnly } = args;
+        broadcastEvent('tool_call', { tool: 'get_project_dna', args, response: 'Retrieving DNA...' });
+        
+        const dna = loadDNA(projectPath);
+        if (!dna) {
+            return { content: [{ type: "text", text: "Project DNA not found. Run `generate_project_dna` first." }] };
+        }
+        
+        let resultObj: any = dna;
+        if (section) {
+            const sectionMap: Record<string, string> = {
+                identity: 'identity',
+                design: 'designSystem',
+                tokens: 'designSystem',
+                architecture: 'architecture',
+                arch: 'architecture',
+                components: 'components',
+                localization: 'localization',
+                i18n: 'localization',
+                conventions: 'conventions',
+                rules: 'rules',
+                assets: 'assets'
+            };
+            const key = sectionMap[section.toLowerCase()];
+            if (key && (dna as any)[key]) {
+                resultObj = (dna as any)[key];
+            } else {
+                return { content: [{ type: "text", text: `Unknown section "${section}". Available: ${Object.keys(sectionMap).join(', ')}` }] };
+            }
+        }
+
+        // Apply filters, path-filtering, limit/offset, and metaOnly
+        if (query) {
+            resultObj = recursiveQueryDna(resultObj, query);
+            if (!resultObj || (typeof resultObj === 'object' && Object.keys(resultObj).length === 0)) {
+                return { content: [{ type: "text", text: `No matches found in DNA for query: "${query}"` }] };
+            }
+        }
+
+        resultObj = processDnaFilters(resultObj, pathFilter, undefined, limit, offset, showMetaOnly);
+
+        if (!resultObj || (typeof resultObj === 'object' && Object.keys(resultObj).length === 0)) {
+            return { content: [{ type: "text", text: `No matches found in DNA after filtering.` }] };
+        }
+
+        let outputText = JSON.stringify(resultObj, null, 2);
+        
+        // Always compress using TokenOptimizerService to save tokens
+        const optimizer = new TokenOptimizerService();
+        outputText = optimizer.optimize(outputText).toUnifiedString();
+
+        broadcastEvent('tool_call', { tool: 'get_project_dna', args, response: 'DNA retrieved successfully.' });
+        return { content: [{ type: "text", text: outputText }] };
+    }
+);
+
+
+// Tool 13: get_creation_context
+(server as any).tool(
+    "get_creation_context",
+    "Get a pre-generation checklist (context rules, similar components, required tokens) before writing a new file/component.",
+    {
+        projectPath: z.string().describe("Absolute path to the root of the project"),
+        targetPath: z.string().describe("The relative path of the file you are about to create (e.g. src/components/button.tsx)")
+    },
+    async (args: any) => {
+        const { projectPath, targetPath } = args;
+        broadcastEvent('tool_call', { tool: 'get_creation_context', args, response: 'Generating creation context...' });
+        
+        try {
+            const contextText = getContextText(projectPath, targetPath, false);
+            broadcastEvent('tool_call', { tool: 'get_creation_context', args, response: contextText });
+            return { content: [{ type: "text", text: contextText }] };
+        } catch (e: any) {
+            return { content: [{ type: "text", text: `Error generating context: ${e.message}` }] };
+        }
     }
 );
 

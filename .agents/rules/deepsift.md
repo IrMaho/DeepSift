@@ -22,15 +22,17 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 | `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) |
 | `deepsift history` | Read past search results (avoid redundant searches) |
 | `deepsift drill "logfile.md" "keyword"` | Deep-search within previous results |
+| `deepsift dna` | Generate or display the Project DNA (Context Intelligence). Options: `--section <name>`, `--query <term>` (extract matches). |
+| `deepsift scan <target>` | Run a specific analyzer (tokens, i18n, conventions, etc.) |
+| `deepsift context "path"` | **MANDATORY**: Run before generating a new file to get rules & templates |
 
 ## 📋 Usage Rules
 
 1. **ALWAYS** run `deepsift history` before performing a new search to check if the answer already exists.
-2. Results are cached in `.deepsift/outputs/` — read cached files before re-searching.
-3. Use multi-query (`deepsift search "q1" "q2"`) when you have multiple questions.
-4. Use `--json` flag for machine-readable output.
-5. Use `--plain` flag for plain text without markdown formatting.
-6. After major refactors, run `deepsift index --force` to rebuild the index.
+2. **ALWAYS** run `deepsift context "target_path"` **BEFORE** creating any new file or component to get the project's design tokens, naming rules, and similar existing components.
+3. Results are cached in `.deepsift/outputs/` — read cached files before re-searching.
+4. Use multi-query (`deepsift search "q1" "q2"`) when you have multiple questions.
+5. After major refactors, run `deepsift index --force` to rebuild the index.
 
 ## 💡 Examples
 
@@ -44,4 +46,8 @@ deepsift arch
 deepsift deps "auth-service.ts"
 
 deepsift feature "src/features/auth"
+
+deepsift context "src/components/button.tsx"
+
+deepsift dna
 ```

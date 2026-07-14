@@ -7,6 +7,7 @@ import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-outpu
 import { saveSearchLog } from '../../utils/history.js';
 import { getDbPath } from '../cli-paths.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
+import { ContextInjector } from '../../core/context-injector.js';
 
 export async function searchCommand(
     projectPath: string, 
@@ -83,7 +84,10 @@ async function executeSingleSearch(searcher: Searcher, projectPath: string, quer
         return `${i + 1}. [${res.chunk.filePath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)}, match: ${res.matchType})\n   Type: ${res.chunk.type}\n   \`\`\`${res.chunk.language}\n${contentToDisplay}\n   \`\`\``;
     }).join('\n\n');
 
-    const rawOutput = `Found ${results.length} relevant code sections:\n\n${formattedResults}`;
+    const injector = new ContextInjector(projectPath);
+    const contextStr = injector.formatForOutput(injector.inject([query]));
+
+    const rawOutput = `${contextStr}Found ${results.length} relevant code sections:\n\n${formattedResults}`;
     let finalOutput = rawOutput;
     
     if (compress && format !== 'json') {
@@ -134,7 +138,10 @@ async function executeMultiSearch(searcher: Searcher, projectPath: string, queri
         allResults.push(`--- Query ${i + 1}: "${queries[i]}" ---\nFound ${results.length} results:\n${formattedResults}`);
     }
 
-    const rawOutput = `Multi-Search Complete. ${queries.length} queries, ${totalHits} total results.\n\n${allResults.join('\n\n')}`;
+    const injector = new ContextInjector(projectPath);
+    const contextStr = injector.formatForOutput(injector.inject(queries));
+
+    const rawOutput = `${contextStr}Multi-Search Complete. ${queries.length} queries, ${totalHits} total results.\n\n${allResults.join('\n\n')}`;
     let finalOutput = rawOutput;
 
     if (compress && format !== 'json') {
