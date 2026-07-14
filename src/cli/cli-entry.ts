@@ -31,9 +31,13 @@ const HELP_TEXT = `
   init                          Initialize DeepSift for the current project
   config                        Interactive menu to configure DeepSift (e.g. excluded folders)
   dna [--show]                  Generate or display Project DNA (context intelligence)
-                                  Options:
+                                   Options:
                                     --section <name>      Filter DNA to a specific section (e.g. tokens, conventions, architecture)
                                     --query, -q <term>    Search DNA and return only matching JSON structures
+                                    --limit <number>      Limit the number of array items returned
+                                    --offset <number>     Start index for pagination of array items
+                                    --path-filter <path>  Filter DNA records by file path prefix
+                                    --meta                Only return metadata and record counts (no content)
   scan <target>                 Run a specific analyzer (tokens|i18n|duplicates|conventions|assets)
   context "path"                Generate a pre-creation checklist for a new component/feature
   search "query" ["query2" ...]  Semantic search (single or multi-query)
@@ -115,7 +119,27 @@ async function main() {
                     dnaQuery = commandArgs[queryIdx + 1];
                 }
 
-                await dnaCommand(projectPath, showOnly, format, section, dnaQuery, compress);
+                let limit: number | undefined;
+                const limitIdx = commandArgs.indexOf('--limit');
+                if (limitIdx !== -1 && commandArgs[limitIdx + 1]) {
+                    limit = parseInt(commandArgs[limitIdx + 1], 10);
+                }
+
+                let offset: number | undefined;
+                const offsetIdx = commandArgs.indexOf('--offset');
+                if (offsetIdx !== -1 && commandArgs[offsetIdx + 1]) {
+                    offset = parseInt(commandArgs[offsetIdx + 1], 10);
+                }
+
+                let pathFilter: string | undefined;
+                const pathFilterIdx = commandArgs.indexOf('--path-filter');
+                if (pathFilterIdx !== -1 && commandArgs[pathFilterIdx + 1]) {
+                    pathFilter = commandArgs[pathFilterIdx + 1];
+                }
+
+                const showMetaOnly = commandArgs.includes('--meta');
+
+                await dnaCommand(projectPath, showOnly, format, section, dnaQuery, compress, limit, offset, pathFilter, showMetaOnly);
                 break;
             }
 

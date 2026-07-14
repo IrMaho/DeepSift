@@ -15,6 +15,7 @@ import { getProjectArchitecture } from './utils/architecture.js';
 import { getFeatureOutline } from './utils/outline.js';
 import { generateDNA, loadDNA } from './intelligence/project-dna.js';
 import { getContextText } from './cli/commands/context.js';
+import { processDnaFilters, recursiveQueryDna } from './cli/commands/dna.js';
 import { TokenOptimizerService } from './utils/token-compressor.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -405,14 +406,18 @@ const server = new McpServer({
 // Tool 12: get_project_dna
 (server as any).tool(
     "get_project_dna",
-    "Retrieves the Project DNA context intelligence. Supports section filtering and keyword query to minimize tokens.",
+    "Retrieves the Project DNA context intelligence. Supports section filtering, query filtering, pagination (limit/offset), and path filtering to minimize tokens.",
     {
         projectPath: z.string().describe("Absolute path to the root of the project"),
         section: z.string().optional().describe("Optional: Filter DNA to a specific section (e.g. tokens, conventions, architecture, rules, assets, identity)"),
-        query: z.string().optional().describe("Optional: Search DNA and return only matching JSON structures")
+        query: z.string().optional().describe("Optional: Search DNA and return only matching JSON structures"),
+        limit: z.number().optional().describe("Optional: Limit the number of array items returned"),
+        offset: z.number().optional().describe("Optional: Start index for pagination of array items"),
+        pathFilter: z.string().optional().describe("Optional: Filter DNA records by file path prefix"),
+        showMetaOnly: z.boolean().optional().describe("Optional: Only return metadata and record counts (no content) to analyze size first")
     },
     async (args: any) => {
-        const { projectPath, section, query } = args;
+        const { projectPath, section, query, limit, offset, pathFilter, showMetaOnly } = args;
         broadcastEvent('tool_call', { tool: 'get_project_dna', args, response: 'Retrieving DNA...' });
         
         const dna = loadDNA(projectPath);
@@ -443,11 +448,18 @@ const server = new McpServer({
             }
         }
 
+        // Apply filters, path-filtering, limit/offset, and metaOnly
         if (query) {
             resultObj = recursiveQueryDna(resultObj, query);
-            if (!resultObj) {
+            if (!resultObj || (typeof resultObj === 'object' && Object.keys(resultObj).length === 0)) {
                 return { content: [{ type: "text", text: `No matches found in DNA for query: "${query}"` }] };
             }
+        }
+
+        resultObj = processDnaFilters(resultObj, pathFilter, undefined, limit, offset, showMetaOnly);
+
+        if (!resultObj || (typeof resultObj === 'object' && Object.keys(resultObj).length === 0)) {
+            return { content: [{ type: "text", text: `No matches found in DNA after filtering.` }] };
         }
 
         let outputText = JSON.stringify(resultObj, null, 2);
@@ -461,37 +473,6 @@ const server = new McpServer({
     }
 );
 
-function recursiveQueryDna(obj: any, term: string): any {
-    const t = term.toLowerCase();
-    if (typeof obj === 'string') {
-        return obj.toLowerCase().includes(t) ? obj : null;
-    }
-    if (typeof obj === 'number' || typeof obj === 'boolean') {
-        return String(obj).toLowerCase().includes(t) ? obj : null;
-    }
-    if (Array.isArray(obj)) {
-        const matched = obj.map(item => recursiveQueryDna(item, term)).filter(item => item !== null);
-        return matched.length > 0 ? matched : null;
-    }
-    if (typeof obj === 'object' && obj !== null) {
-        const res: any = {};
-        let hasMatch = false;
-        for (const key of Object.keys(obj)) {
-            if (key.toLowerCase().includes(t)) {
-                res[key] = obj[key];
-                hasMatch = true;
-            } else {
-                const valMatch = recursiveQueryDna(obj[key], term);
-                if (valMatch !== null) {
-                    res[key] = valMatch;
-                    hasMatch = true;
-                }
-            }
-        }
-        return hasMatch ? res : null;
-    }
-    return null;
-}
 
 // Tool 13: get_creation_context
 (server as any).tool(

@@ -9,15 +9,19 @@ export async function dnaCommand(
     format: OutputFormat,
     section?: string,
     query?: string,
-    compress: boolean = true
+    compress: boolean = true,
+    limit?: number,
+    offset?: number,
+    pathFilter?: string,
+    showMetaOnly: boolean = false
 ): Promise<void> {
-    if (showOnly || section || query) {
+    if (showOnly || section || query || pathFilter || showMetaOnly || limit !== undefined || offset !== undefined) {
         const dna = loadDNA(projectPath);
         if (!dna) {
             printError('No DNA found. Run `deepsift dna` first to generate.');
             return;
         }
-        outputDNAFiltered(dna, format, section, query, compress);
+        outputDNAFiltered(dna, format, section, query, compress, limit, offset, pathFilter, showMetaOnly);
         return;
     }
 
@@ -27,7 +31,7 @@ export async function dnaCommand(
         process.stdout.write(`\x1b[33m  [${phase}]\x1b[0m ${detail}\n`);
     });
 
-    outputDNAFiltered(dna, format, undefined, undefined, compress);
+    outputDNAFiltered(dna, format, undefined, undefined, compress, undefined, undefined, undefined, false);
 
     const summary = formatDNASummary(dna);
     saveSearchLog(projectPath, ['[DNA Generation]'], summary);
@@ -35,10 +39,20 @@ export async function dnaCommand(
     process.stdout.write('\x1b[32m✓ DNA saved and compressed to .deepsift/project-dna.toon\x1b[0m\n');
 }
 
-function outputDNAFiltered(dna: any, format: OutputFormat, section?: string, query?: string, compress: boolean = true): void {
+function outputDNAFiltered(
+    dna: any, 
+    format: OutputFormat, 
+    section?: string, 
+    query?: string, 
+    compress: boolean = true,
+    limit?: number,
+    offset?: number,
+    pathFilter?: string,
+    showMetaOnly: boolean = false
+): void {
     let resultObj = dna;
 
-    // Filter by Section
+    // 1. Filter by Section
     if (section) {
         const sectionMap: Record<string, string> = {
             identity: 'identity',
@@ -62,13 +76,21 @@ function outputDNAFiltered(dna: any, format: OutputFormat, section?: string, que
         }
     }
 
-    // Filter by Query
+    // 2. Filter by Query (Keyword Pruning)
     if (query) {
         resultObj = recursiveQueryDna(resultObj, query);
-        if (!resultObj) {
+        if (!resultObj || (typeof resultObj === 'object' && Object.keys(resultObj).length === 0)) {
             printResult(`No matches found in DNA for query: "${query}"`, format);
             return;
         }
+    }
+
+    // 3. Process Path-Filtering, Pagination, and Metadata
+    resultObj = processDnaFilters(resultObj, pathFilter, undefined, limit, offset, showMetaOnly);
+
+    if (!resultObj || (typeof resultObj === 'object' && Object.keys(resultObj).length === 0)) {
+        printResult(`No matches found in DNA after filtering.`, format);
+        return;
     }
 
     // Output Formatting
@@ -76,10 +98,10 @@ function outputDNAFiltered(dna: any, format: OutputFormat, section?: string, que
     if (format === 'json') {
         outputText = JSON.stringify(resultObj, null, 2);
     } else {
-        if (!section && !query) {
+        if (!section && !query && !pathFilter && !showMetaOnly && limit === undefined && offset === undefined) {
             outputText = formatDNASummary(resultObj);
         } else {
-            outputText = `### DNA Query Results (${section || 'all'}:${query || ''})\n` + JSON.stringify(resultObj, null, 2);
+            outputText = `### DNA Query Results (section: ${section || 'all'}, limit: ${limit ?? 'none'}, offset: ${offset ?? 0}, pathFilter: ${pathFilter || 'none'}, metaOnly: ${showMetaOnly})\n` + JSON.stringify(resultObj, null, 2);
         }
     }
 
@@ -91,7 +113,80 @@ function outputDNAFiltered(dna: any, format: OutputFormat, section?: string, que
     printResult(outputText, format);
 }
 
-function recursiveQueryDna(obj: any, term: string): any {
+export function processDnaFilters(
+    obj: any, 
+    pathFilter?: string, 
+    query?: string, 
+    limit?: number, 
+    offset: number = 0, 
+    showMetaOnly: boolean = false
+): any {
+    if (obj === null || obj === undefined) return obj;
+
+    if (Array.isArray(obj)) {
+        let processed = [...obj];
+
+        // 1. Path Filtering (if items have filePath)
+        if (pathFilter) {
+            const pf = pathFilter.toLowerCase();
+            processed = processed.filter(item => {
+                if (item && typeof item === 'object' && typeof item.filePath === 'string') {
+                    return item.filePath.toLowerCase().includes(pf);
+                }
+                return true;
+            });
+        }
+
+        // 2. Keyword Query Filtering
+        if (query) {
+            const q = query.toLowerCase();
+            processed = processed.filter(item => {
+                return JSON.stringify(item).toLowerCase().includes(q);
+            });
+        }
+
+        const totalCount = processed.length;
+
+        if (showMetaOnly) {
+            return {
+                _type: "array",
+                _totalCount: totalCount
+            };
+        }
+
+        // 3. Pagination
+        if (limit !== undefined) {
+            processed = processed.slice(offset, offset + limit);
+        }
+
+        // Recursively process each item
+        processed = processed.map(item => processDnaFilters(item, pathFilter, query, limit, offset, showMetaOnly));
+
+        // Add pagination metadata
+        if (processed.length < totalCount || limit !== undefined) {
+            return {
+                _totalCount: totalCount,
+                _offset: offset,
+                _limit: limit,
+                items: processed
+            };
+        }
+
+        return processed;
+    }
+
+    if (typeof obj === 'object') {
+        const result: any = {};
+        for (const key of Object.keys(obj)) {
+            result[key] = processDnaFilters(obj[key], pathFilter, query, limit, offset, showMetaOnly);
+        }
+        return result;
+    }
+
+    return obj;
+}
+
+export function recursiveQueryDna(obj: any, term: string): any {
     const t = term.toLowerCase();
     if (typeof obj === 'string') {
         return obj.toLowerCase().includes(t) ? obj : null;
