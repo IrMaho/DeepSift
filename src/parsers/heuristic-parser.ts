@@ -6,7 +6,7 @@ import { ChunkFamily } from '../types/dna-types.js';
 const FUNCTION_PATTERN = /^(?:export\s+|public\s+|private\s+|protected\s+|static\s+|async\s+)*(?:function|func|fn|def|fun|sub)\s+([\w_]+)\s*\(/m;
 const CLASS_PATTERN = /^(?:export\s+|public\s+|abstract\s+)*(?:class|struct|interface|enum|trait)\s+([\w_]+)/m;
 const CONSTANT_PATTERN = /^(?:export\s+|public\s+)*(?:const|final|static\s+const|val)\s+([\w_]+)\s*[=:]/m;
-const IMPORT_BLOCK_START = /^(?:import|export|from|require|include|use)\b/m;
+const IMPORT_BLOCK_START = /^(?:import|export|from|require|include|use|proxy_pass)\b|^<\s*(?:script|link|img|iframe)/i;
 
 export function parseHeuristic(content: string, filePath: string, language: string): CodeChunk[] {
     const lines = content.split('\n');
