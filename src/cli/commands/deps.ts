@@ -4,8 +4,13 @@ import { Searcher } from '../../core/searcher.js';
 import { saveSearchLog } from '../../utils/history.js';
 import { printResult, printInfo, OutputFormat } from '../cli-output.js';
 import { getDbPath } from '../cli-paths.js';
+import { TokenOptimizerService } from '../../utils/token-compressor.js';
 
-export async function depsCommand(projectPath: string, targetName: string, format: OutputFormat) {
+/**
+ * Traces file dependents and outputs them as a tree.
+ * Outputs are token-compressed by default.
+ */
+export async function depsCommand(projectPath: string, targetName: string, format: OutputFormat, compress: boolean = true) {
     const store = new SQLiteStore(getDbPath(projectPath));
     const indexer = new Indexer(store);
     const searcher = new Searcher(store);
@@ -17,14 +22,22 @@ export async function depsCommand(projectPath: string, targetName: string, forma
 
     let output: string;
     if (results.length === 0) {
-        output = `No files found that explicitly import '${targetName}'.`;
+        output = `No files found that explicitly depend on '${targetName}'.`;
     } else {
-        const deps = results.map((r: any) =>
-            `- ${r.chunk.filePath} (Score: ${r.score.toFixed(3)})\n  \`\`\`ts\n${r.chunk.content}\n  \`\`\``
-        ).join('\n\n');
-        output = `The following files depend on '${targetName}':\n\n${deps}`;
+        output = `🔗 Dependency Tree for '${targetName}':\n`;
+        output += `└── 📄 ${targetName}\n`;
+        results.forEach((r: any, idx: number) => {
+            const prefix = idx === results.length - 1 ? '    └── 📄 ' : '    ├── 📄 ';
+            output += `${prefix}${r.chunk.filePath} (Score: ${r.score.toFixed(3)})\n`;
+        });
     }
 
-    saveSearchLog(projectPath, [`[Dependencies] ${targetName}`], output);
-    printResult(output, format);
+    let finalOutput = output;
+    if (compress && format !== 'json') {
+        const optimizer = new TokenOptimizerService();
+        finalOutput = optimizer.optimize(output).toUnifiedString();
+    }
+
+    saveSearchLog(projectPath, [`[Dependencies] ${targetName}`], finalOutput);
+    printResult(finalOutput, format);
 }

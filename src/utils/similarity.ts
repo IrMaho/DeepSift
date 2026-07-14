@@ -1,5 +1,6 @@
 import { cosineSim } from '@ternlight/base';
 import { SearchResult } from '../types/index.js';
+import path from 'path';
 
 /**
  * Calculates cosine similarity between two 384-dim Float32Arrays.
@@ -60,4 +61,95 @@ export function applyRRF(
         });
 
     return combined;
+}
+
+import { execFileSync } from 'child_process';
+import * as fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function getZigBinaryPath(): string | null {
+    const ext = process.platform === 'win32' ? '.exe' : '';
+    const paths = [
+        path.resolve(__dirname, `../bin/deepsift-math${ext}`),
+        path.resolve(__dirname, `../../bin/deepsift-math${ext}`),
+        path.resolve(__dirname, `../../native/core-zig/zig-out/bin/deepsift-math${ext}`),
+        path.resolve(__dirname, `../../../native/core-zig/zig-out/bin/deepsift-math${ext}`),
+    ];
+    for (const p of paths) {
+        if (fs.existsSync(p)) return p;
+    }
+    return null;
+}
+
+/**
+ * Calculates cosine similarity for a batch of candidate vectors using the compiled Zig binary
+ * for native speed. Falls back to TypeScript if the binary is missing or errors out.
+ */
+export function calculateCosineSimilarityBatch(
+    queryVector: Float32Array,
+    candidates: { id: string; embedding: Buffer }[],
+    topK: number
+): { id: string; score: number }[] {
+    const binPath = getZigBinaryPath();
+    if (!binPath) {
+        // Fallback to TS (converting Buffer to Float32Array first)
+        return candidates.map(c => {
+            const floatArray = new Float32Array(c.embedding.buffer, c.embedding.byteOffset, c.embedding.byteLength / Float32Array.BYTES_PER_ELEMENT);
+            return {
+                id: c.id,
+                score: calculateCosineSimilarity(queryVector, floatArray)
+            };
+        });
+    }
+
+    try {
+        const headerSize = 4 + 1536 + 4;
+        const recordSize = 4 + 1536;
+        const totalSize = headerSize + candidates.length * recordSize;
+        const buffer = Buffer.alloc(totalSize);
+
+        let offset = 0;
+        // Write topK
+        buffer.writeUInt32LE(topK, offset); offset += 4;
+        // Write queryVector
+        const queryBuf = Buffer.from(queryVector.buffer, queryVector.byteOffset, queryVector.byteLength);
+        queryBuf.copy(buffer, offset); offset += 1536;
+        // Write numChunks
+        buffer.writeUInt32LE(candidates.length, offset); offset += 4;
+
+        // Write candidates
+        for (let i = 0; i < candidates.length; i++) {
+            buffer.writeUInt32LE(i, offset); offset += 4;
+            candidates[i].embedding.copy(buffer, offset); offset += 1536;
+        }
+
+        // Execute Zig binary synchronously
+        const outputBuffer = execFileSync(binPath, [], { input: buffer, maxBuffer: 10 * 1024 * 1024 });
+
+        let outOffset = 0;
+        const writeCount = outputBuffer.readUInt32LE(outOffset); outOffset += 4;
+
+        const results: { id: string; score: number }[] = [];
+        for (let i = 0; i < writeCount; i++) {
+            const index = outputBuffer.readUInt32LE(outOffset); outOffset += 4;
+            const score = outputBuffer.readFloatLE(outOffset); outOffset += 4;
+            results.push({
+                id: candidates[index].id,
+                score
+            });
+        }
+        return results;
+    } catch (err) {
+        console.error("Zig math binary execution failed, falling back to TS:", err);
+        return candidates.map(c => {
+            const floatArray = new Float32Array(c.embedding.buffer, c.embedding.byteOffset, c.embedding.byteLength / Float32Array.BYTES_PER_ELEMENT);
+            return {
+                id: c.id,
+                score: calculateCosineSimilarity(queryVector, floatArray)
+            };
+        });
+    }
 }

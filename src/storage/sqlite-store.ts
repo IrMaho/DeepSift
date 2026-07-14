@@ -165,6 +165,42 @@ export class SQLiteStore {
         });
     }
 
+    public getChunkEmbeddings(): { id: string; embedding: Buffer }[] {
+        const stmt = this.db.prepare('SELECT id, embedding FROM chunks');
+        const rows = stmt.all() as any[];
+        return rows.map(row => ({
+            id: row.id,
+            embedding: row.embedding
+        }));
+    }
+
+    public getChunksByIds(ids: string[]): EmbeddedChunk[] {
+        if (ids.length === 0) return [];
+        const placeholders = ids.map(() => '?').join(',');
+        const stmt = this.db.prepare(`SELECT * FROM chunks WHERE id IN (${placeholders})`);
+        const rows = stmt.all(...ids) as any[];
+        
+        return rows.map(row => {
+            const floatArray = new Float32Array(row.embedding.buffer, row.embedding.byteOffset, row.embedding.byteLength / Float32Array.BYTES_PER_ELEMENT);
+            return {
+                chunk: {
+                    id: row.id,
+                    filePath: row.file_path,
+                    content: row.content,
+                    startLine: row.start_line,
+                    endLine: row.end_line,
+                    type: row.chunk_type as ChunkType,
+                    language: row.language
+                },
+                embedding: floatArray
+            };
+        });
+    }
+
+    public close() {
+        this.db.close();
+    }
+
     public getStatus() {
         const fileCount = (this.db.prepare('SELECT COUNT(*) as count FROM file_metadata').get() as any).count;
         const chunkCount = (this.db.prepare('SELECT COUNT(*) as count FROM chunks').get() as any).count;

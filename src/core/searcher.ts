@@ -1,6 +1,6 @@
 import { SQLiteStore } from '../storage/sqlite-store.js';
 import { getEmbedding } from './embedder.js';
-import { calculateCosineSimilarity, applyRRF } from '../utils/similarity.js';
+import { calculateCosineSimilarity, calculateCosineSimilarityBatch, applyRRF } from '../utils/similarity.js';
 import { SearchQuery, SearchResult, ChunkType } from '../types/index.js';
 
 export class Searcher {
@@ -18,19 +18,27 @@ export class Searcher {
         const keywordResults = this.filterResults(keywordResultsRaw, filterType, filterPath);
 
         // 2. Semantic search (Vector)
-        const queryVector = getEmbedding(query);
-        const allChunks = this.store.getAllChunks();
+        const queryVector = await getEmbedding(query);
+        const candidates = this.store.getChunkEmbeddings();
         
-        const semanticResultsRaw: SearchResult[] = allChunks.map(item => ({
-            chunk: item.chunk,
-            score: calculateCosineSimilarity(queryVector, item.embedding),
-            matchType: 'semantic'
-        }));
+        const scoredCandidates = calculateCosineSimilarityBatch(queryVector, candidates, topK * 2);
         
-        // Sort and take top
+        // Fetch full chunks only for top K candidates to save memory
+        const topIds = scoredCandidates.map(c => c.id);
+        const topChunks = this.store.getChunksByIds(topIds);
+        
+        const semanticResultsRaw: SearchResult[] = topChunks.map(item => {
+            const scoreObj = scoredCandidates.find(c => c.id === item.chunk.id);
+            return {
+                chunk: item.chunk,
+                score: scoreObj ? scoreObj.score : 0.0,
+                matchType: 'semantic'
+            };
+        });
+        
+        // Sort and filter
         semanticResultsRaw.sort((a, b) => b.score - a.score);
-        const topSemantic = semanticResultsRaw.slice(0, topK * 2);
-        const semanticResults = this.filterResults(topSemantic, filterType, filterPath);
+        const semanticResults = this.filterResults(semanticResultsRaw, filterType, filterPath);
 
         // 3. Reciprocal Rank Fusion (Hybrid)
         const combined = applyRRF(semanticResults, keywordResults);

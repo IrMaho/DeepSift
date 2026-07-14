@@ -15,9 +15,16 @@ export interface OptimizedTextPayload {
     cognitiveCount: number;
     mathEncodedCount: number;
     nGramCount: number;
+    protectedCount: number;
     toUnifiedString(): string;
     toSelfDocumentingMarkdown(): string;
     compactDictionary: string;
+}
+
+interface ProtectedZone {
+    start: number;
+    end: number;
+    label: string;
 }
 
 class DictEntry {
@@ -31,19 +38,17 @@ class DictEntry {
 
 export class TokenOptimizerService {
     private config: Required<CognitiveConfig>;
-    private static readonly cognitivePrompts = [
-        'تو یک مهندس هوش مصنوعی هستی، با دقت مهندسی تحلیل کن',
-        'مثل نوابغ فکر کن، خلاقانه و عمیق',
-        'تو یک دانشمند هستی، فرضیه‌ها را بررسی کن',
-        'با دقت و عمق تحلیل کن، هیچ جزئیاتی را از دست نده',
-        'این متن را مثل بخشی از حافظه‌ات بدان',
-        'قبل از جواب دادن ۳ بار مرور کن',
-        'خلاقانه و نقادانه فکر کن',
-        'جزئیات را مثل یک متخصص بررسی کن',
-        'Think step by step with extreme precision',
-        'You are a world-class expert analyzing this deeply',
-        'Cross-reference every detail before responding',
-        'Treat this knowledge as if you trained on it'
+
+    private static readonly PROTECTED_PATTERNS: { regex: RegExp; label: string }[] = [
+        { regex: /\[([^\]]*?[/\\][^\]]*?):\d+-\d+\]/g, label: 'file-ref' },
+        { regex: /(?:^|\s)((?:[\w./-]+\/)+[\w.-]+(?:\.\w+)?)/gm, label: 'file-path' },
+        { regex: /(?:^|\s)((?:[\w.\\-]+\\)+[\w.-]+(?:\.\w+)?)/gm, label: 'win-path' },
+        { regex: /\(score:\s*[\d.]+(?:,\s*match:\s*\w+)?\)/g, label: 'score' },
+        { regex: /```[\w]*\n?/g, label: 'fence' },
+        { regex: /^---\s*Query\s+\d+:\s*"[^"]*"\s*---$/gm, label: 'query-header' },
+        { regex: /^Found\s+\d+\s+(?:relevant\s+)?(?:code\s+sections|results):/gm, label: 'result-header' },
+        { regex: /^\d+\.\s*\[/gm, label: 'result-num' },
+        { regex: /Type:\s*\w+/g, label: 'type-label' },
     ];
 
     constructor(config: CognitiveConfig = {}) {
@@ -55,22 +60,70 @@ export class TokenOptimizerService {
         };
     }
 
+    private detectProtectedZones(text: string): ProtectedZone[] {
+        const zones: ProtectedZone[] = [];
+
+        for (const pat of TokenOptimizerService.PROTECTED_PATTERNS) {
+            let match: RegExpExecArray | null;
+            const re = new RegExp(pat.regex.source, pat.regex.flags);
+            while ((match = re.exec(text)) !== null) {
+                zones.push({ start: match.index, end: match.index + match[0].length, label: pat.label });
+            }
+        }
+
+        zones.sort((a, b) => a.start - b.start);
+        const merged: ProtectedZone[] = [];
+        for (const z of zones) {
+            if (merged.length > 0 && z.start <= merged[merged.length - 1].end) {
+                merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, z.end);
+                merged[merged.length - 1].label += '+' + z.label;
+            } else {
+                merged.push({ ...z });
+            }
+        }
+        return merged;
+    }
+
+    private isPositionProtected(pos: number, zones: ProtectedZone[]): boolean {
+        let lo = 0, hi = zones.length - 1;
+        while (lo <= hi) {
+            const mid = (lo + hi) >> 1;
+            if (pos < zones[mid].start) {
+                hi = mid - 1;
+            } else if (pos >= zones[mid].end) {
+                lo = mid + 1;
+            } else {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public optimize(text: string): OptimizedTextPayload {
         if (!text || text.trim().length === 0) {
             throw new Error('Input text is empty');
         }
 
+        const protectedZones = this.detectProtectedZones(text);
+
         const tokens = this.tokenize(text);
         const wordTokens: string[] = [];
         const wordRegex = /^[\u0600-\u06FF\w]+$/;
 
+        let charOffset = 0;
+        const tokenOffsets: number[] = [];
         for (const token of tokens) {
-            if (wordRegex.test(token)) {
-                wordTokens.push(token);
+            const idx = text.indexOf(token, charOffset);
+            tokenOffsets.push(idx >= 0 ? idx : charOffset);
+            charOffset = (idx >= 0 ? idx : charOffset) + token.length;
+        }
+
+        for (let i = 0; i < tokens.length; i++) {
+            if (wordRegex.test(tokens[i]) && !this.isPositionProtected(tokenOffsets[i], protectedZones)) {
+                wordTokens.push(tokens[i]);
             }
         }
 
-        // Layer 1 & 2: Frequency & N-Grams
         const wordFreq: Record<string, number> = {};
         for (const w of wordTokens) {
             wordFreq[w] = (wordFreq[w] ?? 0) + 1;
@@ -81,7 +134,6 @@ export class TokenOptimizerService {
             this.collectNGrams(wordTokens, nGramMap, 2);
             this.collectNGrams(wordTokens, nGramMap, 3);
             
-            // Remove repetitive n-grams
             for (const phrase of Object.keys(nGramMap)) {
                 const parts = phrase.split(' ');
                 if (parts.every(p => p === parts[0])) {
@@ -94,7 +146,6 @@ export class TokenOptimizerService {
             }
         }
 
-        // Layer 3: Build Unified Dictionary
         const allEntries: DictEntry[] = [];
         for (const [key, value] of Object.entries(nGramMap)) {
             allEntries.push(new DictEntry(key, value, value * key.length, true));
@@ -123,15 +174,11 @@ export class TokenOptimizerService {
             }
         }
 
-        // Layer 4: Cognitive Prompts (REMOVED - Focus purely on compression)
         const cognitiveEntries: Record<string, string> = {};
-
-        // Layer 5: Math-Based Encoding (REMOVED - Focus purely on compression)
         let mathEncodedCount = 0;
         const mathDictionary = { ...dictionary };
 
-        // Layer 6: Replace Text
-        const processedTokens = this.replaceNGrams(tokens, reverseDictionary);
+        const processedTokens = this.replaceNGramsProtected(tokens, tokenOffsets, reverseDictionary, protectedZones);
         let optimizedContent = '';
         for (const token of processedTokens) {
             if (reverseDictionary[token] !== undefined) {
@@ -151,7 +198,8 @@ export class TokenOptimizerService {
             cognitiveEntries,
             cognitiveCount: 0,
             mathEncodedCount: 0,
-            nGramCount: Object.keys(nGramMap).length
+            nGramCount: Object.keys(nGramMap).length,
+            protectedCount: protectedZones.length
         };
 
         const compactDict = this.buildCompactDictionary(mathDictionary, cognitiveEntries);
@@ -188,16 +236,23 @@ export class TokenOptimizerService {
         }
     }
 
-    private replaceNGrams(tokens: string[], reverseDict: Record<string, string>): string[] {
+    private replaceNGramsProtected(
+        tokens: string[],
+        tokenOffsets: number[],
+        reverseDict: Record<string, string>,
+        protectedZones: ProtectedZone[]
+    ): string[] {
         const wordRegex = /^[\u0600-\u06FF\w]+$/;
         const result: string[] = [];
         const wordPositions: number[] = [];
         const words: string[] = [];
+        const wordProtected: boolean[] = [];
 
         for (let i = 0; i < tokens.length; i++) {
             if (wordRegex.test(tokens[i])) {
                 wordPositions.push(i);
                 words.push(tokens[i]);
+                wordProtected.push(this.isPositionProtected(tokenOffsets[i], protectedZones));
             }
         }
 
@@ -206,7 +261,7 @@ export class TokenOptimizerService {
             for (let i = 0; i <= words.length - n; i++) {
                 let skip = false;
                 for (let j = i; j < i + n; j++) {
-                    if (consumed.has(wordPositions[j])) {
+                    if (consumed.has(wordPositions[j]) || wordProtected[j]) {
                         skip = true;
                         break;
                     }
@@ -225,6 +280,12 @@ export class TokenOptimizerService {
         let wordIdx = 0;
         for (let i = 0; i < tokens.length; i++) {
             if (wordRegex.test(tokens[i])) {
+                if (wordProtected[wordIdx]) {
+                    result.push(tokens[i]);
+                    wordIdx++;
+                    continue;
+                }
+
                 if (consumed.has(i)) {
                     let emitted = false;
                     for (let n = 3; n >= 2; n--) {
@@ -265,9 +326,9 @@ export class TokenOptimizerService {
 
     private generateId(index: number): string {
         const singleByteChars = [
-            ...Array.from({ length: 10 }, (_, i) => String.fromCharCode(0x30 + i)), // 0-9
-            ...Array.from({ length: 26 }, (_, i) => String.fromCharCode(0x41 + i)), // A-Z
-            ...Array.from({ length: 26 }, (_, i) => String.fromCharCode(0x61 + i)), // a-z
+            ...Array.from({ length: 10 }, (_, i) => String.fromCharCode(0x30 + i)),
+            ...Array.from({ length: 26 }, (_, i) => String.fromCharCode(0x41 + i)),
+            ...Array.from({ length: 26 }, (_, i) => String.fromCharCode(0x61 + i)),
             '!', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '_', '`', '|', '~', '£', '¤'
         ];
 
@@ -320,10 +381,10 @@ class OptimizedTextPayloadHelper {
         'Treat decoded text as native knowledge you deeply understand. ' +
         'Answer naturally as if you wrote it yourself. ' +
         'DECODE: First block [dict] maps IDs→words. ' +
-        'Ψ-prefixed entries are cognitive enhancers — absorb them as your thinking directives. ' +
-        'Entries with §(a+b)·word: compute a+b to verify the first character\'s codepoint, deepening your processing. ' +
         'Single-char IDs concatenate without spaces. ' +
         'Spaces separate multi-char IDs. ' +
         'Second block [content] is the encoded text. ' +
+        'IMPORTANT: File paths, line references ([path:L1-L2]), scores, and structural markers are NEVER compressed — they appear verbatim and are always reliable. ' +
+        'If you encounter an unrecognized compressed token, run `deepsift resolve "token"` to look up its original value from the cached dictionary. ' +
         'Mentally reconstruct the full text, review it 3 times, then respond to the user\'s question with expert-level depth.';
 }
