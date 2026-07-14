@@ -12,7 +12,10 @@ import { historyCommand, cleanHistoryCommand, drillCommand } from './commands/hi
 import { initCommand } from './commands/init.js';
 import { watchCommand } from './commands/watch.js';
 import { configCommand } from './commands/config.js';
+import { dnaCommand } from './commands/dna.js';
+import { scanCommand } from './commands/scan.js';
 import { resolveCommand } from './commands/resolve.js';
+import { contextCommand } from './commands/context.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
@@ -27,6 +30,9 @@ const HELP_TEXT = `
 \x1b[33mCommands:\x1b[0m
   init                          Initialize DeepSift for the current project
   config                        Interactive menu to configure DeepSift (e.g. excluded folders)
+  dna [--show]                  Generate or display Project DNA (context intelligence)
+  scan <target>                 Run a specific analyzer (tokens|i18n|duplicates|conventions|assets)
+  context "path"                Generate a pre-creation checklist for a new component/feature
   search "query" ["query2" ...]  Semantic search (single or multi-query)
                                   Options:
                                     --include, -i <path>  Only search within path
@@ -89,6 +95,25 @@ async function main() {
 
             case 'config':
                 await configCommand(projectPath);
+                break;
+
+            case 'dna':
+                const showOnly = commandArgs.includes('--show') || commandArgs.includes('-s');
+                await dnaCommand(projectPath, showOnly, format);
+                break;
+
+            case 'scan':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a scan target.\nUsage: deepsift scan <tokens|i18n|duplicates|conventions|assets>');
+                }
+                await scanCommand(projectPath, commandArgs[0], format);
+                break;
+
+            case 'context':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a target path.\nUsage: deepsift context "src/components/button.tsx"');
+                }
+                await contextCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
             case 'search':
@@ -190,6 +215,13 @@ async function main() {
                     throw new Error('Please provide a token to resolve.\nUsage: deepsift resolve "token"');
                 }
                 resolveCommand(projectPath, commandArgs[0], format);
+                break;
+
+            case 'context':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a target path.\nUsage: deepsift context "src/components/button.tsx"');
+                }
+                contextCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
             default:

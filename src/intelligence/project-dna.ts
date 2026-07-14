@@ -1,0 +1,413 @@
+import { ProjectDNA, createEmptyDNA, DiscoveredToken } from '../types/dna-types.js';
+import { mineTokens } from '../analyzers/property-miner.js';
+import { mineConventions } from '../analyzers/convention-miner.js';
+import { detectLocalization } from '../analyzers/l10n-detector.js';
+import { analyzeArchitecture } from '../analyzers/graph-analyzer.js';
+import { detectSimilarities } from '../analyzers/similarity-engine.js';
+import { SQLiteStore } from '../storage/sqlite-store.js';
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+
+const DNA_FILENAME = 'project-dna.json';
+
+const IGNORED_DIRS = new Set([
+    'node_modules', '.git', 'dist', 'build', '.deepsift', 'coverage',
+    '.dart_tool', '__pycache__', 'target', 'vendor', '.next', '.nuxt',
+    '.cache', '.output', '.svelte-kit', '.idea', '.vscode',
+]);
+
+const EXT_TO_LANG: Record<string, string> = {
+    '.ts': 'TypeScript', '.tsx': 'TypeScript', '.js': 'JavaScript', '.jsx': 'JavaScript',
+    '.dart': 'Dart', '.py': 'Python', '.go': 'Go', '.rs': 'Rust',
+    '.java': 'Java', '.kt': 'Kotlin', '.swift': 'Swift',
+    '.cpp': 'C++', '.c': 'C', '.h': 'C/C++', '.hpp': 'C++',
+    '.cs': 'C#', '.rb': 'Ruby', '.php': 'PHP', '.vue': 'Vue',
+    '.svelte': 'Svelte', '.astro': 'Astro', '.ex': 'Elixir', '.exs': 'Elixir',
+    '.zig': 'Zig', '.nim': 'Nim', '.lua': 'Lua', '.r': 'R', '.R': 'R',
+    '.scala': 'Scala', '.clj': 'Clojure', '.hs': 'Haskell', '.erl': 'Erlang',
+    '.css': 'CSS', '.scss': 'SCSS', '.sass': 'SASS', '.less': 'LESS',
+    '.html': 'HTML', '.xml': 'XML', '.sql': 'SQL',
+};
+
+const PACKAGE_MANAGER_FILES: Record<string, string> = {
+    'package-lock.json': 'npm', 'yarn.lock': 'yarn', 'pnpm-lock.yaml': 'pnpm', 'bun.lockb': 'bun',
+    'package.json': 'npm', 'pubspec.yaml': 'pub', 'Cargo.toml': 'cargo', 'go.mod': 'go',
+    'requirements.txt': 'pip', 'pyproject.toml': 'pip', 'Pipfile': 'pipenv',
+    'Gemfile': 'bundler', 'composer.json': 'composer',
+    'build.gradle': 'gradle', 'build.gradle.kts': 'gradle', 'pom.xml': 'maven',
+    'Package.swift': 'spm', 'CMakeLists.txt': 'cmake', 'Makefile': 'make',
+};
+
+function getDnaPath(projectPath: string): string {
+    return path.join(projectPath, '.deepsift', DNA_FILENAME);
+}
+
+export function loadDNA(projectPath: string): ProjectDNA | null {
+    const dnaPath = getDnaPath(projectPath);
+    if (!fs.existsSync(dnaPath)) return null;
+    try {
+        return JSON.parse(fs.readFileSync(dnaPath, 'utf-8')) as ProjectDNA;
+    } catch {
+        return null;
+    }
+}
+
+export function saveDNA(projectPath: string, dna: ProjectDNA): void {
+    const dnaPath = getDnaPath(projectPath);
+    const dir = path.dirname(dnaPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    dna.fingerprint = crypto.createHash('sha256')
+        .update(JSON.stringify(dna))
+        .digest('hex')
+        .substring(0, 16);
+
+    fs.writeFileSync(dnaPath, JSON.stringify(dna, null, 2), 'utf-8');
+}
+
+export async function generateDNA(
+    projectPath: string,
+    onProgress?: (phase: string, detail: string) => void
+): Promise<ProjectDNA> {
+    const dna = createEmptyDNA(path.basename(projectPath));
+
+    if (onProgress) onProgress('identity', 'Detecting project identity...');
+    detectIdentity(projectPath, dna);
+
+    if (onProgress) onProgress('tokens', 'Mining design tokens...');
+    integratePropertyMiner(projectPath, dna, onProgress);
+
+    if (onProgress) onProgress('conventions', 'Mining naming conventions...');
+    integrateConventionMiner(projectPath, dna);
+
+    if (onProgress) onProgress('i18n', 'Detecting localization...');
+    integrateL10nDetector(projectPath, dna);
+
+    if (onProgress) onProgress('graph', 'Analyzing dependency graph...');
+    integrateGraphAnalyzer(projectPath, dna, onProgress);
+
+    if (onProgress) onProgress('similarity', 'Detecting component similarities...');
+    integrateSimilarityEngine(projectPath, dna, onProgress);
+
+    if (onProgress) onProgress('rules', 'Generating rules from discovered data...');
+    generateRules(dna);
+
+    dna.generatedAt = new Date().toISOString();
+    saveDNA(projectPath, dna);
+    return dna;
+}
+
+function detectIdentity(projectPath: string, dna: ProjectDNA): void {
+    dna.identity.name = detectProjectName(projectPath);
+    dna.identity.languages = scanLanguages(projectPath);
+    dna.identity.packageManager = detectPackageManager(projectPath);
+    dna.identity.framework = detectFramework(projectPath);
+}
+
+function detectProjectName(projectPath: string): string {
+    const configParsers: Array<{ file: string; extract: (content: string) => string | null }> = [
+        {
+            file: 'package.json',
+            extract: (c) => { try { return JSON.parse(c).name || null; } catch { return null; } },
+        },
+        {
+            file: 'pubspec.yaml',
+            extract: (c) => c.match(/^name:\s*(.+)$/m)?.[1]?.trim() || null,
+        },
+        {
+            file: 'Cargo.toml',
+            extract: (c) => c.match(/^name\s*=\s*"(.+)"/m)?.[1]?.trim() || null,
+        },
+        {
+            file: 'go.mod',
+            extract: (c) => {
+                const mod = c.match(/^module\s+(.+)$/m)?.[1]?.trim();
+                return mod ? mod.split('/').pop() || null : null;
+            },
+        },
+        {
+            file: 'pyproject.toml',
+            extract: (c) => c.match(/^name\s*=\s*"(.+)"/m)?.[1]?.trim() || null,
+        },
+    ];
+
+    for (const parser of configParsers) {
+        const filePath = path.join(projectPath, parser.file);
+        if (fs.existsSync(filePath)) {
+            try {
+                const name = parser.extract(fs.readFileSync(filePath, 'utf-8'));
+                if (name) return name;
+            } catch { /* skip */ }
+        }
+    }
+
+    return path.basename(projectPath);
+}
+
+function scanLanguages(rootDir: string): Record<string, number> {
+    const languages: Record<string, number> = {};
+    walkForLanguages(rootDir, languages, 0);
+    return sortByValueDesc(languages);
+}
+
+function walkForLanguages(dir: string, languages: Record<string, number>, depth: number): void {
+    if (depth > 8) return;
+
+    let items: fs.Dirent[];
+    try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+
+    for (const item of items) {
+        if (item.name.startsWith('.') || IGNORED_DIRS.has(item.name)) continue;
+        const full = path.join(dir, item.name);
+
+        if (item.isDirectory()) {
+            walkForLanguages(full, languages, depth + 1);
+        } else {
+            const ext = path.extname(item.name).toLowerCase();
+            const lang = EXT_TO_LANG[ext];
+            if (lang) languages[lang] = (languages[lang] || 0) + 1;
+        }
+    }
+}
+
+function detectPackageManager(projectPath: string): string {
+    for (const [file, manager] of Object.entries(PACKAGE_MANAGER_FILES)) {
+        if (fs.existsSync(path.join(projectPath, file))) return manager;
+    }
+    return 'unknown';
+}
+
+function detectFramework(projectPath: string): string {
+    const detectors: Array<{ file: string; detect: (content: string) => string | null }> = [
+        {
+            file: 'package.json',
+            detect: (c) => {
+                try {
+                    const pkg = JSON.parse(c);
+                    const allDeps = Object.keys({ ...pkg.dependencies, ...pkg.devDependencies });
+                    const meaningful = allDeps.filter(d =>
+                        !d.startsWith('@types/') &&
+                        !d.startsWith('eslint') &&
+                        !d.startsWith('prettier') &&
+                        !d.startsWith('typescript')
+                    );
+                    return meaningful.slice(0, 5).join(', ') || null;
+                } catch { return null; }
+            },
+        },
+        {
+            file: 'pubspec.yaml',
+            detect: (c) => c.includes('flutter:') ? 'Flutter' : 'Dart',
+        },
+        {
+            file: 'Cargo.toml',
+            detect: () => 'Rust',
+        },
+        {
+            file: 'go.mod',
+            detect: () => 'Go',
+        },
+    ];
+
+    for (const detector of detectors) {
+        const filePath = path.join(projectPath, detector.file);
+        if (fs.existsSync(filePath)) {
+            try {
+                const result = detector.detect(fs.readFileSync(filePath, 'utf-8'));
+                if (result) return result;
+            } catch { /* skip */ }
+        }
+    }
+
+    return 'unknown';
+}
+
+function integratePropertyMiner(
+    projectPath: string,
+    dna: ProjectDNA,
+    onProgress?: (phase: string, detail: string) => void
+): void {
+    const { tokens, clusters } = mineTokens(projectPath, (current, total) => {
+        if (onProgress && current % 50 === 0) {
+            onProgress('tokens', `Scanning files... (${current}/${total})`);
+        }
+    });
+
+    const typeMap: Record<string, keyof typeof dna.designSystem.tokens> = {
+        'color': 'colors',
+        'dimension': 'dimensions',
+        'font': 'typography',
+        'shadow': 'shadows',
+        'radius': 'radii',
+        'duration': 'durations',
+        'opacity': 'opacities',
+    };
+
+    for (const token of tokens) {
+        const bucket = typeMap[token.propertyType];
+        if (bucket && dna.designSystem.tokens[bucket]) {
+            dna.designSystem.tokens[bucket].push(token);
+        }
+    }
+
+    const designSystemClusters = clusters.filter(c => c.isDesignSystem);
+    dna.designSystem.tokenSources = [
+        ...new Set(designSystemClusters.flatMap(c => c.sourceFiles))
+    ];
+
+    dna.designSystem.confidence = designSystemClusters.length > 0
+        ? Math.max(...designSystemClusters.map(c => c.confidence))
+        : tokens.length > 0 ? 0.3 : 0;
+}
+
+function integrateConventionMiner(projectPath: string, dna: ProjectDNA): void {
+    const { naming, structureTemplate } = mineConventions(projectPath);
+    dna.conventions.naming = naming;
+    dna.conventions.structureTemplate = structureTemplate;
+}
+
+function integrateL10nDetector(projectPath: string, dna: ProjectDNA): void {
+    dna.localization = detectLocalization(projectPath);
+}
+
+function integrateGraphAnalyzer(projectPath: string, dna: ProjectDNA, onProgress?: (phase: string, detail: string) => void): void {
+    const archResult = analyzeArchitecture(projectPath, (current, total) => {
+        if (onProgress && current % 50 === 0) {
+            onProgress('graph', `Analyzing imports... (${current}/${total})`);
+        }
+    });
+
+    dna.architecture.topology = archResult.topology;
+    dna.architecture.clusters = archResult.clusters;
+    dna.architecture.coreFiles = archResult.coreFiles;
+    dna.architecture.graph = archResult.graph;
+}
+
+function integrateSimilarityEngine(projectPath: string, dna: ProjectDNA, onProgress?: (phase: string, detail: string) => void): void {
+    const groups = detectSimilarities(projectPath, (current, total) => {
+        if (onProgress && current % 50 === 0) {
+            onProgress('similarity', `Comparing embeddings... (${current}/${total})`);
+        }
+    });
+
+    dna.components.similarityGroups = groups;
+    
+    // Attempt to guess total component count based on naming patterns of chunks
+    let totalCount = 0;
+    try {
+        const dbPath = path.join(projectPath, '.deepsift', 'deepsift.db');
+        const store = new SQLiteStore(dbPath);
+        const all = store.getAllChunks();
+        totalCount = all.filter((c: any) => c.chunk.type === 'class' || c.chunk.type === 'function').length;
+    } catch { /* ignore */ }
+    
+    dna.components.totalCount = totalCount;
+}
+
+function generateRules(dna: ProjectDNA): void {
+    dna.rules = [];
+
+    if (dna.designSystem.confidence > 0.5) {
+        dna.rules.push(
+            `Design tokens discovered in: ${dna.designSystem.tokenSources.join(', ')}. Use these tokens instead of hardcoded values.`
+        );
+    }
+
+    if (dna.localization.hasI18n) {
+        dna.rules.push(
+            'Project uses i18n. All user-facing strings must go through the translation system.'
+        );
+    }
+
+    if (dna.components.similarityGroups.length > 0) {
+        dna.rules.push(
+            `${dna.components.similarityGroups.length} groups of similar components detected. Check for existing components before creating new ones.`
+        );
+    }
+
+    if (dna.conventions.structureTemplate) {
+        dna.rules.push(
+            `Feature template pattern detected: ${dna.conventions.structureTemplate.commonSubfolders.join(', ')}. Follow this structure for new features.`
+        );
+    }
+
+    const dominantFileNaming = dna.conventions.naming.files.dominant;
+    if (dominantFileNaming !== 'unknown') {
+        dna.rules.push(`File naming convention: ${dominantFileNaming}`);
+    }
+}
+
+function sortByValueDesc(obj: Record<string, number>): Record<string, number> {
+    return Object.fromEntries(
+        Object.entries(obj).sort(([, a], [, b]) => b - a)
+    );
+}
+
+export function formatDNASummary(dna: ProjectDNA): string {
+    const lines: string[] = [];
+
+    lines.push(`# 🧬 Project DNA: ${dna.identity.name}`);
+    lines.push(`Generated: ${dna.generatedAt} | Fingerprint: ${dna.fingerprint}`);
+    lines.push('');
+
+    lines.push('## 🪪 Identity');
+    const topLangs = Object.entries(dna.identity.languages)
+        .slice(0, 5)
+        .map(([lang, count]) => `${lang} (${count})`)
+        .join(', ');
+    lines.push(`- **Languages:** ${topLangs || 'N/A'}`);
+    lines.push(`- **Framework:** ${dna.identity.framework}`);
+    lines.push(`- **Package Manager:** ${dna.identity.packageManager}`);
+    lines.push('');
+
+    lines.push('## 🎨 Design System');
+    const tokenCounts = Object.entries(dna.designSystem.tokens)
+        .map(([cat, tokens]) => ({ cat, count: (tokens as unknown[]).length }))
+        .filter(t => t.count > 0);
+    if (tokenCounts.length > 0) {
+        lines.push(`- **Tokens:** ${tokenCounts.map(t => `${t.cat}: ${t.count}`).join(' | ')}`);
+        lines.push(`- **Sources:** ${dna.designSystem.tokenSources.join(', ')}`);
+        lines.push(`- **Confidence:** ${(dna.designSystem.confidence * 100).toFixed(0)}%`);
+    } else {
+        lines.push('- No design tokens discovered yet. Run `deepsift scan tokens`.');
+    }
+    lines.push('');
+
+    lines.push('## 📐 Architecture');
+    lines.push(`- **Topology:** ${dna.architecture.topology}`);
+    if (dna.architecture.coreFiles.length > 0) {
+        lines.push(`- **Core Files:** ${dna.architecture.coreFiles.slice(0, 5).join(', ')}`);
+    }
+    if (dna.architecture.templatePatterns.length > 0) {
+        lines.push(`- **Template Patterns:** ${dna.architecture.templatePatterns.length} detected`);
+    }
+    lines.push('');
+
+    lines.push('## 🧩 Components');
+    lines.push(`- **Total:** ${dna.components.totalCount}`);
+    lines.push(`- **Similarity Groups:** ${dna.components.similarityGroups.length}`);
+    lines.push('');
+
+    lines.push('## 🌍 Localization');
+    lines.push(`- **Has i18n:** ${dna.localization.hasI18n ? 'Yes' : 'No'}`);
+    if (dna.localization.hasI18n) {
+        lines.push(`- **Locales:** ${dna.localization.supportedLocales.join(', ') || 'Unknown'}`);
+        lines.push(`- **Hardcoded Strings:** ${dna.localization.hardcodedStrings.length}`);
+    }
+    lines.push('');
+
+    lines.push('## 📛 Conventions');
+    lines.push(`- **File Naming:** ${dna.conventions.naming.files.dominant}`);
+    lines.push(`- **Class Naming:** ${dna.conventions.naming.classes.dominant}`);
+    lines.push(`- **Function Naming:** ${dna.conventions.naming.functions.dominant}`);
+    lines.push('');
+
+    if (dna.rules.length > 0) {
+        lines.push('## 📜 Rules');
+        dna.rules.forEach(rule => lines.push(`- ${rule}`));
+        lines.push('');
+    }
+
+    return lines.join('\n');
+}

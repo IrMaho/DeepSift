@@ -1,3 +1,5 @@
+import { ChunkFamily } from './dna-types.js';
+
 export type ChunkType = 'function' | 'class' | 'import' | 'config' | 'block' | 'comment';
 
 export interface CodeChunk {
@@ -7,7 +9,9 @@ export interface CodeChunk {
     startLine: number;
     endLine: number;
     type: ChunkType;
+    family?: ChunkFamily;
     language: string;
+    metadata?: Record<string, string>;
 }
 
 export interface EmbeddedChunk {
