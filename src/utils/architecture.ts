@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { loadConfig } from './config.js';
 
 const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.mcp_search_outputs', 'coverage', '.idea', '.vscode']);
 
@@ -10,6 +11,10 @@ interface FileMeta {
 }
 
 export function getProjectArchitecture(projectPath: string, maxDepth: number = 5): string {
+    const config = loadConfig(projectPath);
+    const excludeDirs = config.indexer?.excludeDirs || [];
+    const ignored = new Set([...IGNORED_DIRS, ...excludeDirs, '.deepsift']);
+
     let tree = '';
     let fileCount = 0;
     const sourceFiles: FileMeta[] = [];
@@ -24,7 +29,6 @@ export function getProjectArchitecture(projectPath: string, maxDepth: number = 5
             return;
         }
 
-        // Sort directories first, then files alphabetically
         items.sort((a, b) => {
             if (a.isDirectory() && !b.isDirectory()) return -1;
             if (!a.isDirectory() && b.isDirectory()) return 1;
@@ -33,7 +37,7 @@ export function getProjectArchitecture(projectPath: string, maxDepth: number = 5
 
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
-            if (IGNORED_DIRS.has(item.name)) continue;
+            if (ignored.has(item.name)) continue;
             if (item.name.startsWith('.') && item.name !== '.env.example') continue; // skip hidden files
 
             const isLast = i === items.length - 1;

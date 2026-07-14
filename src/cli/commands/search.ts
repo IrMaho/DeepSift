@@ -92,9 +92,12 @@ async function executeSingleSearch(searcher: Searcher, projectPath: string, quer
         finalOutput = payload.toUnifiedString();
     }
 
-    saveSearchLog(projectPath, [query], finalOutput);
+    const logInfo = saveSearchLog(projectPath, [query], finalOutput);
     printResult(finalOutput, format);
-    printSuccess('Results cached in .deepsift/outputs/');
+    if (format !== 'json') {
+        const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
+        printSuccess(`Results cached in: ${link}`);
+    }
 }
 
 async function executeMultiSearch(searcher: Searcher, projectPath: string, queries: string[], format: OutputFormat, filterPath?: string, compress: boolean = true, contextLines?: number) {
@@ -140,7 +143,10 @@ async function executeMultiSearch(searcher: Searcher, projectPath: string, queri
         finalOutput = payload.toUnifiedString();
     }
 
-    saveSearchLog(projectPath, queries, finalOutput);
+    const logInfo = saveSearchLog(projectPath, queries, finalOutput);
     printResult(finalOutput, format);
-    printSuccess('Results cached in .deepsift/outputs/');
+    if (format !== 'json') {
+        const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
+        printSuccess(`Results cached in: ${link}`);
+    }
 }

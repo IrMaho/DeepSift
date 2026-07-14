@@ -1,6 +1,6 @@
 import { getProjectArchitecture } from '../../utils/architecture.js';
 import { saveSearchLog } from '../../utils/history.js';
-import { printResult, OutputFormat } from '../cli-output.js';
+import { printResult, printSuccess, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 
 /**
@@ -16,6 +16,10 @@ export function archCommand(projectPath: string, maxDepth: number, format: Outpu
         finalOutput = optimizer.optimize(architectureText).toUnifiedString();
     }
     
-    saveSearchLog(projectPath, ['[Architecture Scan]'], finalOutput);
+    const logInfo = saveSearchLog(projectPath, ['[Architecture Scan]'], finalOutput);
     printResult(finalOutput, format);
+    if (format !== 'json') {
+        const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
+        printSuccess(`Results cached in: ${link}`);
+    }
 }

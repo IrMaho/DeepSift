@@ -2,7 +2,7 @@ import { SQLiteStore } from '../../storage/sqlite-store.js';
 import { Indexer } from '../../core/indexer.js';
 import { Searcher } from '../../core/searcher.js';
 import { saveSearchLog } from '../../utils/history.js';
-import { printResult, printInfo, OutputFormat } from '../cli-output.js';
+import { printResult, printSuccess, printInfo, OutputFormat } from '../cli-output.js';
 import { getDbPath } from '../cli-paths.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 
@@ -38,6 +38,10 @@ export async function depsCommand(projectPath: string, targetName: string, forma
         finalOutput = optimizer.optimize(output).toUnifiedString();
     }
 
-    saveSearchLog(projectPath, [`[Dependencies] ${targetName}`], finalOutput);
+    const logInfo = saveSearchLog(projectPath, [`[Dependencies] ${targetName}`], finalOutput);
     printResult(finalOutput, format);
+    if (format !== 'json') {
+        const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
+        printSuccess(`Results cached in: ${link}`);
+    }
 }

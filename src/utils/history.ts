@@ -37,6 +37,8 @@ export function saveSearchLog(projectPath: string, queries: string[], resultText
     } else {
         fs.appendFileSync(indexPath, indexEntry, 'utf8');
     }
+
+    return { filename, filePath };
 }
 
 export function getSearchHistory(projectPath: string): string {

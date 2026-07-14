@@ -27,6 +27,11 @@ interface ProtectedZone {
     label: string;
 }
 
+interface ProcessedToken {
+    text: string;
+    isProtected: boolean;
+}
+
 class DictEntry {
     constructor(
         public text: string,
@@ -40,9 +45,12 @@ export class TokenOptimizerService {
     private config: Required<CognitiveConfig>;
 
     private static readonly PROTECTED_PATTERNS: { regex: RegExp; label: string }[] = [
-        { regex: /\[([^\]]*?[/\\][^\]]*?):\d+-\d+\]/g, label: 'file-ref' },
-        { regex: /(?:^|\s)((?:[\w./-]+\/)+[\w.-]+(?:\.\w+)?)/gm, label: 'file-path' },
-        { regex: /(?:^|\s)((?:[\w.\\-]+\\)+[\w.-]+(?:\.\w+)?)/gm, label: 'win-path' },
+        { regex: /\[([^\]]+?):\d+-\d+\]/g, label: 'file-ref' },
+        { regex: /(?:^|\s)(?:[a-zA-Z0-9+-.]+:\/\/)?(?:[a-zA-Z]:[/\\])?(?:[\w./:-]+\/)+[\w.-]+(?:\.\w+)?/gm, label: 'file-path' },
+        { regex: /(?:^|\s)(?:[a-zA-Z]:\\)?(?:[\w.\\-]+\\)+[\w.-]+(?:\.\w+)?/gm, label: 'win-path' },
+        { regex: /(?:^|\s)(?:[a-zA-Z]:[/\\])?(?:[\w.-]+[/\\])+/gm, label: 'folder-path' },
+        { regex: /\b[\w.-]+\.(?:ts|tsx|js|jsx|json|md|py|go|rs|java|dart|cpp|h|hpp|c|cs|yml|yaml|html|css|sh|bat|cmd|gradle|xml|properties|lock|toml)\b/gi, label: 'file-name' },
+        { regex: /[└├─│]+|[📂📄📦]/g, label: 'tree-marker' },
         { regex: /\(score:\s*[\d.]+(?:,\s*match:\s*\w+)?\)/g, label: 'score' },
         { regex: /```[\w]*\n?/g, label: 'fence' },
         { regex: /^---\s*Query\s+\d+:\s*"[^"]*"\s*---$/gm, label: 'query-header' },
@@ -181,10 +189,10 @@ export class TokenOptimizerService {
         const processedTokens = this.replaceNGramsProtected(tokens, tokenOffsets, reverseDictionary, protectedZones);
         let optimizedContent = '';
         for (const token of processedTokens) {
-            if (reverseDictionary[token] !== undefined) {
-                optimizedContent += reverseDictionary[token];
+            if (token.isProtected) {
+                optimizedContent += token.text;
             } else {
-                const trimmed = token.trim();
+                const trimmed = token.text.trim();
                 if (trimmed.length > 0) {
                     optimizedContent += trimmed;
                 }
@@ -241,9 +249,9 @@ export class TokenOptimizerService {
         tokenOffsets: number[],
         reverseDict: Record<string, string>,
         protectedZones: ProtectedZone[]
-    ): string[] {
+    ): ProcessedToken[] {
         const wordRegex = /^[\u0600-\u06FF\w]+$/;
-        const result: string[] = [];
+        const result: ProcessedToken[] = [];
         const wordPositions: number[] = [];
         const words: string[] = [];
         const wordProtected: boolean[] = [];
@@ -279,9 +287,10 @@ export class TokenOptimizerService {
 
         let wordIdx = 0;
         for (let i = 0; i < tokens.length; i++) {
-            if (wordRegex.test(tokens[i])) {
+            const isWord = wordRegex.test(tokens[i]);
+            if (isWord) {
                 if (wordProtected[wordIdx]) {
-                    result.push(tokens[i]);
+                    result.push({ text: tokens[i], isProtected: true });
                     wordIdx++;
                     continue;
                 }
@@ -292,7 +301,7 @@ export class TokenOptimizerService {
                         if (wordIdx + n <= words.length) {
                             const phrase = words.slice(wordIdx, wordIdx + n).join(' ');
                             if (reverseDict[phrase] !== undefined) {
-                                result.push(phrase);
+                                result.push({ text: reverseDict[phrase], isProtected: true });
                                 emitted = true;
                                 let wordsToSkip = n - 1;
                                 wordIdx++;
@@ -310,15 +319,26 @@ export class TokenOptimizerService {
                         }
                     }
                     if (!emitted) {
-                        result.push(tokens[i]);
+                        const w = tokens[i];
+                        if (reverseDict[w] !== undefined) {
+                            result.push({ text: reverseDict[w], isProtected: true });
+                        } else {
+                            result.push({ text: w, isProtected: false });
+                        }
                         wordIdx++;
                     }
                 } else {
-                    result.push(tokens[i]);
+                    const w = tokens[i];
+                    if (reverseDict[w] !== undefined) {
+                        result.push({ text: reverseDict[w], isProtected: true });
+                    } else {
+                        result.push({ text: w, isProtected: false });
+                    }
                     wordIdx++;
                 }
             } else {
-                result.push(tokens[i]);
+                const isProto = this.isPositionProtected(tokenOffsets[i], protectedZones);
+                result.push({ text: tokens[i], isProtected: isProto });
             }
         }
         return result;
