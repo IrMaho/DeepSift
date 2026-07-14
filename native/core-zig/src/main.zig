@@ -1,7 +1,8 @@
 const std = @import("std");
-const io = std.io;
 const mem = std.mem;
 const math = std.math;
+
+const posix = if (@hasDecl(std, "posix")) std.posix else std.os;
 
 const VECTOR_DIM: usize = 384;
 const VECTOR_SIZE_BYTES: usize = VECTOR_DIM * @sizeOf(f32);
@@ -16,7 +17,6 @@ fn calculateCosineSimilarity(v1: []const f32, v2: []const f32) f32 {
     var norm_a: f32 = 0.0;
     var norm_b: f32 = 0.0;
     
-    // Zig compiler can easily vectorize this loop using SIMD
     var i: usize = 0;
     while (i < VECTOR_DIM) : (i += 1) {
         const a = v1[i];
@@ -35,25 +35,103 @@ fn compareChunks(context: void, a: ChunkRecord, b: ChunkRecord) bool {
     return a.score > b.score; // Descending order
 }
 
-pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+const builtin = @import("builtin");
+const is_windows = builtin.os.tag == .windows;
 
-    const stdin = io.getStdIn().reader();
-    const stdout = io.getStdOut().writer();
+// Windows API declarations to bypass standard library version mismatches
+extern "kernel32" fn ReadFile(
+    hFile: *anyopaque,
+    lpBuffer: [*]u8,
+    nNumberOfBytesToRead: u32,
+    lpNumberOfBytesRead: *u32,
+    lpOverlapped: ?*anyopaque,
+) callconv(.c) i32;
+
+extern "kernel32" fn WriteFile(
+    hFile: *anyopaque,
+    lpBuffer: [*]const u8,
+    nNumberOfBytesToWrite: u32,
+    lpNumberOfBytesWritten: *u32,
+    lpOverlapped: ?*anyopaque,
+) callconv(.c) i32;
+
+fn readAll(fd: anytype, buf: []u8) !void {
+    if (is_windows) {
+        var bytes_read: u32 = 0;
+        var offset: usize = 0;
+        while (offset < buf.len) {
+            const chunk_size = @min(buf.len - offset, std.math.maxInt(u32));
+            const success = ReadFile(
+                fd,
+                buf.ptr + offset,
+                @intCast(chunk_size),
+                &bytes_read,
+                null,
+            );
+            if (success == 0) return error.ReadFailed;
+            if (bytes_read == 0) return error.EndOfStream;
+            offset += bytes_read;
+        }
+    } else {
+        var offset: usize = 0;
+        while (offset < buf.len) {
+            const bytes_read = try posix.read(fd, buf[offset..]);
+            if (bytes_read == 0) return error.EndOfStream;
+            offset += bytes_read;
+        }
+    }
+}
+
+fn writeAll(fd: anytype, buf: []const u8) !void {
+    if (is_windows) {
+        var bytes_written: u32 = 0;
+        var offset: usize = 0;
+        while (offset < buf.len) {
+            const chunk_size = @min(buf.len - offset, std.math.maxInt(u32));
+            const success = WriteFile(
+                fd,
+                buf.ptr + offset,
+                @intCast(chunk_size),
+                &bytes_written,
+                null,
+            );
+            if (success == 0) return error.WriteFailed;
+            offset += bytes_written;
+        }
+    } else {
+        var offset: usize = 0;
+        while (offset < buf.len) {
+            const bytes_written = try posix.write(fd, buf[offset..]);
+            if (bytes_written == 0) return error.WriteFailed;
+            offset += bytes_written;
+        }
+    }
+}
+
+pub fn main() !void {
+    const allocator = std.heap.page_allocator;
+    
+    const stdin_fd = if (@hasDecl(std, "Io"))
+        std.Io.File.stdin().handle
+    else
+        std.io.getStdIn().handle;
+
+    const stdout_fd = if (@hasDecl(std, "Io"))
+        std.Io.File.stdout().handle
+    else
+        std.io.getStdOut().handle;
 
     // 1. Read topK (4 bytes)
     var top_k: u32 = 0;
-    _ = try stdin.readAll(mem.asBytes(&top_k));
+    try readAll(stdin_fd, mem.asBytes(&top_k));
 
     // 2. Read query vector (1536 bytes)
     var query_vec: [VECTOR_DIM]f32 = undefined;
-    _ = try stdin.readAll(mem.sliceAsBytes(&query_vec));
+    try readAll(stdin_fd, mem.sliceAsBytes(&query_vec));
 
     // 3. Read number of chunks N (4 bytes)
     var num_chunks: u32 = 0;
-    _ = try stdin.readAll(mem.asBytes(&num_chunks));
+    try readAll(stdin_fd, mem.asBytes(&num_chunks));
 
     if (num_chunks == 0) {
         return;
@@ -70,8 +148,8 @@ pub fn main() !void {
     var i: u32 = 0;
     while (i < num_chunks) : (i += 1) {
         var chunk_id: u32 = 0;
-        _ = try stdin.readAll(mem.asBytes(&chunk_id));
-        _ = try stdin.readAll(mem.sliceAsBytes(&chunk_vec));
+        try readAll(stdin_fd, mem.asBytes(&chunk_id));
+        try readAll(stdin_fd, mem.sliceAsBytes(&chunk_vec));
 
         const score = calculateCosineSimilarity(&query_vec, &chunk_vec);
         chunks[i] = ChunkRecord{
@@ -85,11 +163,11 @@ pub fn main() !void {
 
     // 6. Output sorted results (binary format)
     const write_count = @min(top_k, num_chunks);
-    try stdout.writeAll(mem.asBytes(&write_count));
+    try writeAll(stdout_fd, mem.asBytes(&write_count));
 
     var j: u32 = 0;
     while (j < write_count) : (j += 1) {
-        try stdout.writeAll(mem.asBytes(&chunks[j].id));
-        try stdout.writeAll(mem.asBytes(&chunks[j].score));
+        try writeAll(stdout_fd, mem.asBytes(&chunks[j].id));
+        try writeAll(stdout_fd, mem.asBytes(&chunks[j].score));
     }
 }
