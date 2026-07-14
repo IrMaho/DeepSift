@@ -45,11 +45,12 @@ export class TokenOptimizerService {
     private config: Required<CognitiveConfig>;
 
     private static readonly PROTECTED_PATTERNS: { regex: RegExp; label: string }[] = [
-        { regex: /\[([^\]]*?[/\\][^\]]*?):\d+-\d+\]/g, label: 'file-ref' },
+        { regex: /\[([^\]]+?):\d+-\d+\]/g, label: 'file-ref' },
         { regex: /(?:^|\s)(?:[a-zA-Z0-9+-.]+:\/\/)?(?:[a-zA-Z]:[/\\])?(?:[\w./:-]+\/)+[\w.-]+(?:\.\w+)?/gm, label: 'file-path' },
         { regex: /(?:^|\s)(?:[a-zA-Z]:\\)?(?:[\w.\\-]+\\)+[\w.-]+(?:\.\w+)?/gm, label: 'win-path' },
         { regex: /(?:^|\s)(?:[a-zA-Z]:[/\\])?(?:[\w.-]+[/\\])+/gm, label: 'folder-path' },
         { regex: /\b[\w.-]+\.(?:ts|tsx|js|jsx|json|md|py|go|rs|java|dart|cpp|h|hpp|c|cs|yml|yaml|html|css|sh|bat|cmd|gradle|xml|properties|lock|toml)\b/gi, label: 'file-name' },
+        { regex: /[└├─│]+|[📂📄📦]/g, label: 'tree-marker' },
         { regex: /\(score:\s*[\d.]+(?:,\s*match:\s*\w+)?\)/g, label: 'score' },
         { regex: /```[\w]*\n?/g, label: 'fence' },
         { regex: /^---\s*Query\s+\d+:\s*"[^"]*"\s*---$/gm, label: 'query-header' },
