@@ -33,6 +33,7 @@
     "@inquirer/prompts": "^8.5.2",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@ternlight/base": "^0.1.0",
+    "better-sqlite3": "^12.11.1",
     "ignore": "^7.0.6",
     "tree-sitter": "^0.25.0",
     "tree-sitter-python": "^0.25.0",
