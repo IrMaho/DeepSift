@@ -25,7 +25,7 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 | `deepsift clean` | Clear search history logs and index |
 | `deepsift drill "logfile.md" "keyword"` | Deep-search within previous results |
 | `deepsift resolve "token"` | Decode a compressed token from the most recent cached dictionary |
-| `deepsift dna` | Generate or display the Project DNA (Context Intelligence). Use to understand project philosophy. |
+| `deepsift dna` | Generate or display the Project DNA (Context Intelligence). Options: `--section <name>` (filter by identity|tokens|arch|conventions|rules), `--query <term>` or `-q <term>` (extract matches). |
 | `deepsift scan <target>` | Runs specific DNA analyzers (tokens, i18n, conventions, assets). |
 | `deepsift context "path"` | **MANDATORY**: Run before generating a new file to get rules, design tokens, and similar existing components. |
 
@@ -41,6 +41,7 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 8. **Multi-Query Efficiency:** For multiple distinct questions or features, batch them into a single command (`deepsift search "q1" "q2"`) to optimize execution speed.
 9. **Token Decoding:** If you run into a compressed DEC_v2 token in cached files, use `deepsift resolve "token"` to lookup the raw value immediately.
 10. **Index Maintenance:** Run `deepsift index --force` after performing major refactorings or code changes to ensure search queries reflect the latest code state.
+11. **DNA Query Mandate:** For projects with massive DNA structures (e.g. 5MB+), **NEVER** retrieve the entire DNA. Use `deepsift dna --section <name>` or `deepsift dna --query <term>` to extract only the relevant sub-structures and save context tokens.
 
 ## 💡 Examples
 

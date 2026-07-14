@@ -8,9 +8,10 @@ import { mapResources } from '../analyzers/resource-mapper.js';
 import { SQLiteStore } from '../storage/sqlite-store.js';
 import fs from 'fs';
 import path from 'path';
+import { jsonToToon, toonToJson } from '../utils/toon-serializer.js';
 import crypto from 'crypto';
 
-const DNA_FILENAME = 'project-dna.json';
+const DNA_FILENAME = 'project-dna.toon';
 
 const IGNORED_DIRS = new Set([
     'node_modules', '.git', 'dist', 'build', '.deepsift', 'coverage',
@@ -46,12 +47,27 @@ function getDnaPath(projectPath: string): string {
 
 export function loadDNA(projectPath: string): ProjectDNA | null {
     const dnaPath = getDnaPath(projectPath);
-    if (!fs.existsSync(dnaPath)) return null;
-    try {
-        return JSON.parse(fs.readFileSync(dnaPath, 'utf-8')) as ProjectDNA;
-    } catch {
-        return null;
+    const legacyPath = dnaPath.replace('.toon', '.json');
+    
+    if (fs.existsSync(dnaPath)) {
+        try {
+            const toonText = fs.readFileSync(dnaPath, 'utf-8');
+            return toonToJson(toonText) as ProjectDNA;
+        } catch {
+            return null;
+        }
+    } else if (fs.existsSync(legacyPath)) {
+        try {
+            const jsonText = fs.readFileSync(legacyPath, 'utf-8');
+            const dna = JSON.parse(jsonText) as ProjectDNA;
+            // Migrated to toon
+            saveDNA(projectPath, dna);
+            return dna;
+        } catch {
+            return null;
+        }
     }
+    return null;
 }
 
 export function saveDNA(projectPath: string, dna: ProjectDNA): void {
@@ -64,7 +80,8 @@ export function saveDNA(projectPath: string, dna: ProjectDNA): void {
         .digest('hex')
         .substring(0, 16);
 
-    fs.writeFileSync(dnaPath, JSON.stringify(dna, null, 2), 'utf-8');
+    const toonText = jsonToToon(dna);
+    fs.writeFileSync(dnaPath, toonText, 'utf-8');
 }
 
 export async function generateDNA(

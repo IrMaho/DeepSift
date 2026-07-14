@@ -31,6 +31,9 @@ const HELP_TEXT = `
   init                          Initialize DeepSift for the current project
   config                        Interactive menu to configure DeepSift (e.g. excluded folders)
   dna [--show]                  Generate or display Project DNA (context intelligence)
+                                  Options:
+                                    --section <name>      Filter DNA to a specific section (e.g. tokens, conventions, architecture)
+                                    --query, -q <term>    Search DNA and return only matching JSON structures
   scan <target>                 Run a specific analyzer (tokens|i18n|duplicates|conventions|assets)
   context "path"                Generate a pre-creation checklist for a new component/feature
   search "query" ["query2" ...]  Semantic search (single or multi-query)
@@ -97,10 +100,24 @@ async function main() {
                 await configCommand(projectPath);
                 break;
 
-            case 'dna':
+            case 'dna': {
                 const showOnly = commandArgs.includes('--show') || commandArgs.includes('-s');
-                await dnaCommand(projectPath, showOnly, format);
+                
+                let section: string | undefined;
+                const sectionIdx = commandArgs.indexOf('--section');
+                if (sectionIdx !== -1 && commandArgs[sectionIdx + 1]) {
+                    section = commandArgs[sectionIdx + 1];
+                }
+
+                let dnaQuery: string | undefined;
+                const queryIdx = commandArgs.findIndex(arg => arg === '--query' || arg === '-q');
+                if (queryIdx !== -1 && commandArgs[queryIdx + 1]) {
+                    dnaQuery = commandArgs[queryIdx + 1];
+                }
+
+                await dnaCommand(projectPath, showOnly, format, section, dnaQuery, compress);
                 break;
+            }
 
             case 'scan':
                 if (commandArgs.length === 0) {

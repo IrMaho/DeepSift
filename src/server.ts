@@ -13,8 +13,9 @@ import { resolve, dirname } from 'path';
 import { saveSearchLog, getSearchHistory, getSearchLog } from './utils/history.js';
 import { getProjectArchitecture } from './utils/architecture.js';
 import { getFeatureOutline } from './utils/outline.js';
-import { generateDNA } from './intelligence/project-dna.js';
+import { generateDNA, loadDNA } from './intelligence/project-dna.js';
 import { getContextText } from './cli/commands/context.js';
+import { TokenOptimizerService } from './utils/token-compressor.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -404,24 +405,93 @@ const server = new McpServer({
 // Tool 12: get_project_dna
 (server as any).tool(
     "get_project_dna",
-    "Retrieves the Project DNA context intelligence if it exists. Returns a JSON string.",
+    "Retrieves the Project DNA context intelligence. Supports section filtering and keyword query to minimize tokens.",
     {
-        projectPath: z.string().describe("Absolute path to the root of the project")
+        projectPath: z.string().describe("Absolute path to the root of the project"),
+        section: z.string().optional().describe("Optional: Filter DNA to a specific section (e.g. tokens, conventions, architecture, rules, assets, identity)"),
+        query: z.string().optional().describe("Optional: Search DNA and return only matching JSON structures")
     },
     async (args: any) => {
-        const { projectPath } = args;
+        const { projectPath, section, query } = args;
         broadcastEvent('tool_call', { tool: 'get_project_dna', args, response: 'Retrieving DNA...' });
         
-        const dnaPath = path.join(projectPath, '.deepsift', 'project-dna.json');
-        if (!fs.existsSync(dnaPath)) {
+        const dna = loadDNA(projectPath);
+        if (!dna) {
             return { content: [{ type: "text", text: "Project DNA not found. Run `generate_project_dna` first." }] };
         }
         
-        const dnaJson = fs.readFileSync(dnaPath, 'utf-8');
+        let resultObj: any = dna;
+        if (section) {
+            const sectionMap: Record<string, string> = {
+                identity: 'identity',
+                design: 'designSystem',
+                tokens: 'designSystem',
+                architecture: 'architecture',
+                arch: 'architecture',
+                components: 'components',
+                localization: 'localization',
+                i18n: 'localization',
+                conventions: 'conventions',
+                rules: 'rules',
+                assets: 'assets'
+            };
+            const key = sectionMap[section.toLowerCase()];
+            if (key && (dna as any)[key]) {
+                resultObj = (dna as any)[key];
+            } else {
+                return { content: [{ type: "text", text: `Unknown section "${section}". Available: ${Object.keys(sectionMap).join(', ')}` }] };
+            }
+        }
+
+        if (query) {
+            resultObj = recursiveQueryDna(resultObj, query);
+            if (!resultObj) {
+                return { content: [{ type: "text", text: `No matches found in DNA for query: "${query}"` }] };
+            }
+        }
+
+        let outputText = JSON.stringify(resultObj, null, 2);
+        
+        // Always compress using TokenOptimizerService to save tokens
+        const optimizer = new TokenOptimizerService();
+        outputText = optimizer.optimize(outputText).toUnifiedString();
+
         broadcastEvent('tool_call', { tool: 'get_project_dna', args, response: 'DNA retrieved successfully.' });
-        return { content: [{ type: "text", text: dnaJson }] };
+        return { content: [{ type: "text", text: outputText }] };
     }
 );
+
+function recursiveQueryDna(obj: any, term: string): any {
+    const t = term.toLowerCase();
+    if (typeof obj === 'string') {
+        return obj.toLowerCase().includes(t) ? obj : null;
+    }
+    if (typeof obj === 'number' || typeof obj === 'boolean') {
+        return String(obj).toLowerCase().includes(t) ? obj : null;
+    }
+    if (Array.isArray(obj)) {
+        const matched = obj.map(item => recursiveQueryDna(item, term)).filter(item => item !== null);
+        return matched.length > 0 ? matched : null;
+    }
+    if (typeof obj === 'object' && obj !== null) {
+        const res: any = {};
+        let hasMatch = false;
+        for (const key of Object.keys(obj)) {
+            if (key.toLowerCase().includes(t)) {
+                res[key] = obj[key];
+                hasMatch = true;
+            } else {
+                const valMatch = recursiveQueryDna(obj[key], term);
+                if (valMatch !== null) {
+                    res[key] = valMatch;
+                    hasMatch = true;
+                }
+            }
+        }
+        return hasMatch ? res : null;
+    }
+    return null;
+}
 
 // Tool 13: get_creation_context
 (server as any).tool(

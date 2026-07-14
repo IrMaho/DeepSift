@@ -22,7 +22,7 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 | `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) |
 | `deepsift history` | Read past search results (avoid redundant searches) |
 | `deepsift drill "logfile.md" "keyword"` | Deep-search within previous results |
-| `deepsift dna` | Generate or display the Project DNA (Context Intelligence) |
+| `deepsift dna` | Generate or display the Project DNA (Context Intelligence). Options: `--section <name>`, `--query <term>` (extract matches). |
 | `deepsift scan <target>` | Run a specific analyzer (tokens, i18n, conventions, etc.) |
 | `deepsift context "path"` | **MANDATORY**: Run before generating a new file to get rules & templates |
 

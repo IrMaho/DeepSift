@@ -1,17 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import { ProjectDNA, ContextBlock } from '../types/dna-types.js';
+import { loadDNA } from '../intelligence/project-dna.js';
 
 export class ContextInjector {
     private dna: ProjectDNA | null = null;
 
     constructor(projectPath: string) {
-        const dnaPath = path.join(projectPath, '.deepsift', 'project-dna.json');
-        if (fs.existsSync(dnaPath)) {
-            try {
-                this.dna = JSON.parse(fs.readFileSync(dnaPath, 'utf-8'));
-            } catch { /* skip */ }
-        }
+        this.dna = loadDNA(projectPath);
     }
 
     public inject(queries: string[]): ContextBlock[] {

@@ -3,14 +3,13 @@ import { ProjectDNA, CreationContext } from '../../types/dna-types.js';
 import fs from 'fs';
 import { printResult, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
+import { loadDNA } from '../../intelligence/project-dna.js';
 
 export function getContextText(projectPath: string, targetPath: string, compress: boolean = true): string {
-    const dnaPath = path.join(projectPath, '.deepsift', 'project-dna.json');
-    if (!fs.existsSync(dnaPath)) {
+    const dna = loadDNA(projectPath);
+    if (!dna) {
         throw new Error('Project DNA not found. Run `deepsift dna` first.');
     }
-
-    const dna: ProjectDNA = JSON.parse(fs.readFileSync(dnaPath, 'utf-8'));
     
     // Build context
     const isComponent = targetPath.toLowerCase().includes('component') || targetPath.toLowerCase().includes('widget');
