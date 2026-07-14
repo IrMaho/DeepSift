@@ -93,16 +93,24 @@ async function main() {
                     filterPath = commandArgs[includeIdx + 1];
                 }
 
+                let contextLines: number | undefined;
+                const contextIdx = commandArgs.findIndex(arg => arg === '--context-lines' || arg === '-C');
+                if (contextIdx !== -1 && commandArgs[contextIdx + 1]) {
+                    contextLines = parseInt(commandArgs[contextIdx + 1], 10);
+                    if (isNaN(contextLines)) contextLines = undefined;
+                }
+
                 const searchQueries = commandArgs.filter((arg, idx) => {
                     if (arg.startsWith('-')) return false;
                     if (idx > 0 && (commandArgs[idx - 1] === '--include' || commandArgs[idx - 1] === '-i')) return false;
+                    if (idx > 0 && (commandArgs[idx - 1] === '--context-lines' || commandArgs[idx - 1] === '-C')) return false;
                     return true;
                 });
                 
                 if (searchQueries.length === 0) {
                     throw new Error('Please provide at least one search query.\nUsage: deepsift search "your query"');
                 }
-                await searchCommand(projectPath, searchQueries, format, skipSync, verboseSearch, filterPath, compress);
+                await searchCommand(projectPath, searchQueries, format, skipSync, verboseSearch, filterPath, compress, contextLines);
                 break;
 
             case 'index':

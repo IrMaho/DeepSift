@@ -43,7 +43,7 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 
 | Command | Description |
 |---|---|
-| \`deepsift search "query"\` | Semantic search. Options: \`--include\` or \`-i <path>\` (filter path), \`--no-sync\` or \`-n\` (skip index update), \`--verbose\` or \`-v\` (show file index progress) |
+| \`deepsift search "query"\` | Semantic search. Options: \`--include\` or \`-i <path>\` (filter path), \`--no-sync\` or \`-n\` (skip index update), \`--verbose\` or \`-v\` (show file index progress), \`--context-lines N\` or \`-C N\` (show N lines of context around matches) |
 | \`deepsift search "q1" "q2" "q3"\` | Multi-query batch search (saves time) |
 | \`deepsift index\` | Re-index the project (incremental). Options: \`--verbose\` or \`-v\` (show files being indexed) |
 | \`deepsift index --force\` | Full re-index from scratch |
@@ -63,7 +63,8 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 4. Use \`--json\` flag for machine-readable output.
 5. Use \`--plain\` flag for plain text without markdown formatting.
 6. Search results are compressed by default to save tokens (using DEC_v2 standard). If you need raw, uncompressed text outputs, use the \`--no-compress\` global flag.
-7. After major refactors, run \`deepsift index --force\` to rebuild the index.
+7. Use \`--context-lines N\` or \`-C N\` to retrieve surrounding code for better context (e.g. \`-C 10\`).
+8. After major refactors, run \`deepsift index --force\` to rebuild the index.
 
 ## 💡 Examples
 
@@ -151,12 +152,12 @@ export async function initCommand(projectPath: string) {
     }
 
     const agentsFilePath = path.join(agentsDir, 'deepsift.md');
-    if (!fs.existsSync(agentsFilePath)) {
-        const template = getTemplateContent();
+    const template = getTemplateContent();
+    if (!fs.existsSync(agentsFilePath) || fs.readFileSync(agentsFilePath, 'utf-8') !== template) {
         fs.writeFileSync(agentsFilePath, template, 'utf-8');
-        printSuccess('Injected DeepSift agent instructions → .agents/rules/deepsift.md');
+        printSuccess('Injected updated DeepSift agent instructions → .agents/rules/deepsift.md');
     } else {
-        printInfo('Agent instructions already exist, skipping injection.');
+        printInfo('Agent instructions are up-to-date, skipping injection.');
     }
 
     printInfo('Running initial index...');
