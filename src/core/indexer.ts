@@ -64,7 +64,7 @@ export class Indexer {
                     if (chunks.length > 0) {
                         // We embed all chunks for this file
                         const texts = chunks.map(c => c.content);
-                        const embeddings = getEmbeddings(texts); // Synchronous but fast
+                        const embeddings = await getEmbeddings(texts);
 
                         const embeddedChunks = chunks.map((chunk, i) => ({
                             chunk,

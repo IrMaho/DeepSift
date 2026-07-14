@@ -18,7 +18,7 @@ export class Searcher {
         const keywordResults = this.filterResults(keywordResultsRaw, filterType, filterPath);
 
         // 2. Semantic search (Vector)
-        const queryVector = getEmbedding(query);
+        const queryVector = await getEmbedding(query);
         const allChunks = this.store.getAllChunks();
         
         const semanticResultsRaw: SearchResult[] = allChunks.map(item => ({
