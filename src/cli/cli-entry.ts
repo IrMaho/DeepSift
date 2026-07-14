@@ -11,6 +11,7 @@ import { featureCommand } from './commands/feature.js';
 import { historyCommand, cleanHistoryCommand, drillCommand } from './commands/history.js';
 import { initCommand } from './commands/init.js';
 import { watchCommand } from './commands/watch.js';
+import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
 const VERSION = '1.0.0';
@@ -99,8 +100,7 @@ async function main() {
                 });
                 
                 if (searchQueries.length === 0) {
-                    printError('Please provide at least one search query.\nUsage: deepsift search "your query"');
-                    process.exit(1);
+                    throw new Error('Please provide at least one search query.\nUsage: deepsift search "your query"');
                 }
                 await searchCommand(projectPath, searchQueries, format, skipSync, verboseSearch, filterPath, compress);
                 break;
@@ -136,8 +136,7 @@ async function main() {
             case 'deps':
             case 'd':
                 if (commandArgs.length === 0) {
-                    printError('Please provide a target name.\nUsage: deepsift deps "filename"');
-                    process.exit(1);
+                    throw new Error('Please provide a target name.\nUsage: deepsift deps "filename"');
                 }
                 await depsCommand(projectPath, commandArgs[0], format);
                 break;
@@ -145,8 +144,7 @@ async function main() {
             case 'feature':
             case 'f':
                 if (commandArgs.length === 0) {
-                    printError('Please provide a feature path.\nUsage: deepsift feature "src/path"');
-                    process.exit(1);
+                    throw new Error('Please provide a feature path.\nUsage: deepsift feature "src/path"');
                 }
                 featureCommand(projectPath, commandArgs[0], format);
                 break;
@@ -164,19 +162,19 @@ async function main() {
             case 'drill':
             case 'dr':
                 if (commandArgs.length < 2) {
-                    printError('Please provide a log filename and keyword.\nUsage: deepsift drill "logfile.md" "keyword"');
-                    process.exit(1);
+                    throw new Error('Please provide a log filename and keyword.\nUsage: deepsift drill "logfile.md" "keyword"');
                 }
                 drillCommand(projectPath, commandArgs[0], commandArgs[1], format);
                 break;
 
             default:
-                printError(`Unknown command: "${command}"\nRun 'deepsift --help' for available commands.`);
-                process.exit(1);
+                throw new Error(`Unknown command: "${command}"\nRun 'deepsift --help' for available commands.`);
         }
     } catch (err: any) {
         printError(err.message || String(err));
         process.exit(1);
+    } finally {
+        terminateWorkers();
     }
 }
 

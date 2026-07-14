@@ -197,6 +197,10 @@ export class SQLiteStore {
         });
     }
 
+    public close() {
+        this.db.close();
+    }
+
     public getStatus() {
         const fileCount = (this.db.prepare('SELECT COUNT(*) as count FROM file_metadata').get() as any).count;
         const chunkCount = (this.db.prepare('SELECT COUNT(*) as count FROM chunks').get() as any).count;
