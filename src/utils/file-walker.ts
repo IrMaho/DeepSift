@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import ignore from 'ignore';
+import { loadConfig } from './config.js';
 
 const DEFAULT_IGNORES = [
     'node_modules',
@@ -65,6 +66,16 @@ export async function getFiles(rootDir: string): Promise<string[]> {
         // Ignore if .gitignore doesn't exist
     }
 
+    const config = loadConfig(rootDir);
+    if (config.indexer?.excludeDirs && config.indexer.excludeDirs.length > 0) {
+        ig.add(config.indexer.excludeDirs);
+    }
+    if (config.indexer?.excludeExtensions && config.indexer.excludeExtensions.length > 0) {
+        ig.add(config.indexer.excludeExtensions.map(ext => `**/*${ext}`));
+    }
+
+    const includeExtensions = config.indexer?.includeExtensions || [];
+
     const files: string[] = [];
 
     async function walk(currentDir: string) {
@@ -89,6 +100,12 @@ export async function getFiles(rootDir: string): Promise<string[]> {
             if (isDirectory) {
                 await walk(fullPath);
             } else if (entry.isFile()) {
+                if (includeExtensions.length > 0) {
+                    const ext = path.extname(entry.name);
+                    if (!includeExtensions.includes(ext)) {
+                        continue;
+                    }
+                }
                 files.push(fullPath);
             }
         }

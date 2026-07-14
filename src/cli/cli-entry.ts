@@ -11,6 +11,7 @@ import { featureCommand } from './commands/feature.js';
 import { historyCommand, cleanHistoryCommand, drillCommand } from './commands/history.js';
 import { initCommand } from './commands/init.js';
 import { watchCommand } from './commands/watch.js';
+import { configCommand } from './commands/config.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
@@ -24,6 +25,7 @@ const HELP_TEXT = `
 
 \x1b[33mCommands:\x1b[0m
   init                          Initialize DeepSift for the current project
+  config                        Interactive menu to configure DeepSift (e.g. excluded folders)
   search "query" ["query2" ...]  Semantic search (single or multi-query)
                                   Options:
                                     --include, -i <path>  Only search within path
@@ -50,6 +52,7 @@ const HELP_TEXT = `
 
 \x1b[33mExamples:\x1b[0m
   deepsift init
+  deepsift config
   deepsift search "authentication logic" --include "lib/controllers"
   deepsift search "db setup" --no-sync
   deepsift index --force --verbose
@@ -80,6 +83,10 @@ async function main() {
         switch (command) {
             case 'init':
                 await initCommand(projectPath);
+                break;
+
+            case 'config':
+                await configCommand(projectPath);
                 break;
 
             case 'search':
