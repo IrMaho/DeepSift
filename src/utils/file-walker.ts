@@ -47,7 +47,10 @@ const DEFAULT_IGNORES = [
     '**/*.so',
     '**/*.dylib',
     '**/*.lib',
-    '**/*.exp'
+    '**/*.exp',
+    '**/*.pb.go',
+    '**/*.pb.cc',
+    '**/*.pb.h'
 ];
 
 /**

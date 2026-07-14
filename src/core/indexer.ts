@@ -44,6 +44,12 @@ export class Indexer {
                         continue; // Automatically skip any binary files (images, compiled blobs, etc.)
                     }
 
+                    // Skip large files (> 1MB) which are usually generated or data files and break the parser/embedder
+                    const stat = await fs.stat(file);
+                    if (stat.size > 1024 * 1024) {
+                        continue;
+                    }
+
                     const content = await fs.readFile(file, 'utf-8');
                     const hash = crypto.createHash('md5').update(content).digest('hex');
                     const existingMeta = this.store.getMetadata(file);

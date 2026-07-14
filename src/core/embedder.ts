@@ -80,7 +80,16 @@ export async function getEmbedding(text: string): Promise<Float32Array> {
  * @returns A promise resolving to an array of Float32Array embeddings
  */
 export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
-    return Promise.all(texts.map(text => getEmbedding(text)));
+    const results: Float32Array[] = [];
+    const BATCH_SIZE = 50; // Process 50 chunks at a time to prevent memory/IPC overload
+    
+    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+        const batch = texts.slice(i, i + BATCH_SIZE);
+        const batchResults = await Promise.all(batch.map(text => getEmbedding(text)));
+        results.push(...batchResults);
+    }
+    
+    return results;
 }
 
 /**
