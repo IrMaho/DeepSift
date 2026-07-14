@@ -10,6 +10,7 @@ import { depsCommand } from './commands/deps.js';
 import { featureCommand } from './commands/feature.js';
 import { historyCommand, cleanHistoryCommand, drillCommand } from './commands/history.js';
 import { initCommand } from './commands/init.js';
+import { watchCommand } from './commands/watch.js';
 import fs from 'fs';
 
 const VERSION = '1.0.0';
@@ -31,6 +32,7 @@ const HELP_TEXT = `
                                   Options:
                                     --verbose, -v         Show files being processed
   status                        Show index statistics
+  watch, w                      Start background watcher for real-time indexing
   arch [--depth N]              Project architecture blueprint
   deps "target"                 Trace dependencies for a file/module
   feature "path"                Feature outline (classes, functions)
@@ -108,6 +110,11 @@ async function main() {
                 const force = commandArgs.includes('--force') || commandArgs.includes('-f');
                 const verboseIndex = commandArgs.includes('--verbose') || commandArgs.includes('-v');
                 await indexCommand(projectPath, force, format, verboseIndex);
+                break;
+
+            case 'watch':
+            case 'w':
+                await watchCommand(projectPath);
                 break;
 
             case 'status':

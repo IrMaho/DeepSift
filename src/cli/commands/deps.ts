@@ -17,12 +17,14 @@ export async function depsCommand(projectPath: string, targetName: string, forma
 
     let output: string;
     if (results.length === 0) {
-        output = `No files found that explicitly import '${targetName}'.`;
+        output = `No files found that explicitly depend on '${targetName}'.`;
     } else {
-        const deps = results.map((r: any) =>
-            `- ${r.chunk.filePath} (Score: ${r.score.toFixed(3)})\n  \`\`\`ts\n${r.chunk.content}\n  \`\`\``
-        ).join('\n\n');
-        output = `The following files depend on '${targetName}':\n\n${deps}`;
+        output = `🔗 Dependency Tree for '${targetName}':\n`;
+        output += `└── 📄 ${targetName}\n`;
+        results.forEach((r: any, idx: number) => {
+            const prefix = idx === results.length - 1 ? '    └── 📄 ' : '    ├── 📄 ';
+            output += `${prefix}${r.chunk.filePath} (Score: ${r.score.toFixed(3)})\n`;
+        });
     }
 
     saveSearchLog(projectPath, [`[Dependencies] ${targetName}`], output);
