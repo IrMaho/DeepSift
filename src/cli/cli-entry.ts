@@ -12,6 +12,7 @@ import { historyCommand, cleanHistoryCommand, drillCommand } from './commands/hi
 import { initCommand } from './commands/init.js';
 import { watchCommand } from './commands/watch.js';
 import { configCommand } from './commands/config.js';
+import { resolveCommand } from './commands/resolve.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
@@ -42,6 +43,7 @@ const HELP_TEXT = `
   history                       Show past search results
   clean                         Clear search history logs and index
   drill "logfile" "keyword"     Deep-search within a previous result
+  resolve "token"               Decode a compressed token from the last search result
 
 \x1b[33mGlobal Flags:\x1b[0m
   --json                        Output in JSON format
@@ -180,6 +182,14 @@ async function main() {
                     throw new Error('Please provide a log filename and keyword.\nUsage: deepsift drill "logfile.md" "keyword"');
                 }
                 drillCommand(projectPath, commandArgs[0], commandArgs[1], format);
+                break;
+
+            case 'resolve':
+            case 'r':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a token to resolve.\nUsage: deepsift resolve "token"');
+                }
+                resolveCommand(projectPath, commandArgs[0], format);
                 break;
 
             default:
