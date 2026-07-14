@@ -8,7 +8,7 @@
     "deepsift": "dist/cli/cli-entry.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node scripts/build-zig.js",
     "dev": "tsx src/server.ts",
     "dev:cli": "tsx src/cli/cli-entry.ts",
     "start": "node dist/server.js",

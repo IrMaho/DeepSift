@@ -5,6 +5,7 @@ import { Indexer } from '../../core/indexer.js';
 import { printInfo, printSuccess, printError } from '../cli-output.js';
 import { getDbPath } from '../cli-paths.js';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -85,7 +86,53 @@ deepsift feature "src/features/auth"
 `;
 }
 
+function compileZigOnDemand() {
+    const ext = process.platform === 'win32' ? '.exe' : '';
+    // Resolving bin/ relative to dist/cli/commands/init.js
+    const binPath = path.resolve(__dirname, `../../bin/deepsift-math${ext}`);
+    const binDir = path.dirname(binPath);
+    if (fs.existsSync(binPath)) {
+        return; // Already compiled
+    }
+
+    try {
+        execSync('zig version', { stdio: 'ignore' });
+    } catch (err) {
+        // Zig not on path, fallback to TS
+        return;
+    }
+
+    printInfo('Native math binary missing but Zig compiler detected. Compiling on-demand...');
+    try {
+        const zigProjectDir = path.resolve(__dirname, '../../../../native/core-zig');
+        if (!fs.existsSync(zigProjectDir)) {
+            const workspaceZigDir = path.resolve(__dirname, '../../../native/core-zig');
+            if (fs.existsSync(workspaceZigDir)) {
+                runZigBuild(workspaceZigDir, binDir, binPath, ext);
+            }
+            return;
+        }
+        runZigBuild(zigProjectDir, binDir, binPath, ext);
+    } catch (err: any) {
+        printError(`On-demand compilation failed: ${err.message}. Using JS fallback.`);
+    }
+}
+
+function runZigBuild(zigDir: string, binDir: string, binPath: string, ext: string) {
+    if (!fs.existsSync(binDir)) {
+        fs.mkdirSync(binDir, { recursive: true });
+    }
+    execSync('zig build -Doptimize=ReleaseFast', { cwd: zigDir, stdio: 'ignore' });
+    const srcPath = path.join(zigDir, `zig-out/bin/deepsift-math${ext}`);
+    if (fs.existsSync(srcPath)) {
+        fs.copyFileSync(srcPath, binPath);
+        fs.chmodSync(binPath, 0o755);
+        printSuccess('Successfully compiled native Zig module on-demand!');
+    }
+}
+
 export async function initCommand(projectPath: string) {
+    compileZigOnDemand();
     printInfo(`Initializing DeepSift for: ${projectPath}`);
 
     const deepsiftDir = path.join(projectPath, '.deepsift');
