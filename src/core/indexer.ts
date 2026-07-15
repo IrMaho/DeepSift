@@ -1,4 +1,4 @@
-import { SQLiteStore } from '../storage/sqlite-store.js';
+import { NativeStore, BatchOperation } from '../storage/native-store.js';
 import { getFiles } from '../utils/file-walker.js';
 import { parseAST } from '../parsers/tree-sitter-parser.js';
 import { getEmbeddings } from './embedder.js';
@@ -8,10 +8,10 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 export class Indexer {
-    private store: SQLiteStore;
+    private store: NativeStore;
     private isIndexing: boolean = false;
 
-    constructor(store: SQLiteStore) {
+    constructor(store: NativeStore) {
         this.store = store;
     }
 
@@ -29,71 +29,114 @@ export class Indexer {
         let chunksProcessed = 0;
 
         try {
-            const files = await getFiles(rootDir);
-            const totalFiles = files.length;
-            let currentFileIndex = 0;
+            const allFiles = await getFiles(rootDir);
+            
+            // Phase 1: Fetch all metadata in a SINGLE call!
+            const allMetadata = forceReindex ? new Map() : this.store.getAllMetadata();
 
-            for (const file of files) {
-                currentFileIndex++;
+            const filesToProcess: string[] = [];
+            const fileHashes = new Map<string, string>();
+
+            // Phase 2: Rapid file scanning (No DB spawn!)
+            for (let i = 0; i < allFiles.length; i++) {
+                const file = allFiles[i];
                 if (onProgress) {
-                    onProgress(currentFileIndex, totalFiles, path.relative(rootDir, file));
+                    onProgress(i + 1, allFiles.length, "Scanning: " + path.relative(rootDir, file));
                 }
 
                 try {
-                    if (await isBinaryFile(file)) {
-                        continue; // Automatically skip any binary files (images, compiled blobs, etc.)
-                    }
+                    if (await isBinaryFile(file)) continue;
 
-                    // Skip large files (> 1MB) which are usually generated or data files and break the parser/embedder
                     const stat = await fs.stat(file);
-                    if (stat.size > 1024 * 1024) {
-                        continue;
-                    }
+                    if (stat.size > 1024 * 1024) continue;
 
                     const content = await fs.readFile(file, 'utf-8');
                     const hash = crypto.createHash('md5').update(content).digest('hex');
-                    const existingMeta = this.store.getMetadata(file);
+                    fileHashes.set(file, hash);
 
-                    // Skip if unchanged unless forced
+                    const existingMeta = allMetadata.get(file);
                     if (!forceReindex && existingMeta && existingMeta.fileHash === hash) {
                         continue;
                     }
 
-                    // Delete old chunks if exists
-                    if (existingMeta) {
-                        this.store.deleteFileChunks(file);
-                    }
-
-                    const ext = path.extname(file).replace('.', '');
-                    const chunks = parseAST(content, file, ext);
-
-                    if (chunks.length > 0) {
-                        // We embed all chunks for this file
-                        const texts = chunks.map(c => c.content);
-                        const embeddings = await getEmbeddings(texts);
-
-                        const embeddedChunks = chunks.map((chunk, i) => ({
-                            chunk,
-                            embedding: embeddings[i]
-                        }));
-
-                        this.store.saveChunks(embeddedChunks);
-                    }
-
-                    this.store.saveMetadata({
-                        filePath: file,
-                        fileHash: hash,
-                        lastIndexed: Date.now(),
-                        chunkCount: chunks.length
-                    });
-
-                    filesProcessed++;
-                    chunksProcessed += chunks.length;
-
+                    filesToProcess.push(file);
                 } catch (err) {
-                    console.error(`Error processing file ${file}:`, err);
+                    // ignore unreadable files
                 }
             }
+
+            // Phase 3: Parsing and Embedding in parallel (batched)
+            const BATCH_SIZE = 5;
+            let currentFileIndex = 0;
+            const totalFilesToProcess = filesToProcess.length;
+
+            const batchOperations: BatchOperation[] = [];
+
+            for (let i = 0; i < filesToProcess.length; i += BATCH_SIZE) {
+                const batchFiles = filesToProcess.slice(i, i + BATCH_SIZE);
+                
+                await Promise.all(batchFiles.map(async (file) => {
+                    currentFileIndex++;
+                    if (onProgress) {
+                        onProgress(currentFileIndex, totalFilesToProcess, "Embedding: " + path.relative(rootDir, file));
+                    }
+
+                    try {
+                        const content = await fs.readFile(file, 'utf-8');
+                        const ext = path.extname(file).replace('.', '');
+                        const chunks = parseAST(content, file, ext);
+                        
+                        const existingMeta = allMetadata.get(file);
+                        if (existingMeta) {
+                            batchOperations.push({ action: 'deleteFileChunks', filePath: file });
+                        }
+
+                        if (chunks.length > 0) {
+                            const texts = chunks.map(c => c.content);
+                            const embeddings = await getEmbeddings(texts);
+
+                            const embeddedChunks = chunks.map((chunk, idx) => ({
+                                chunk,
+                                embedding: embeddings[idx]
+                            }));
+
+                            // Format them for the batch API
+                            const formattedChunks = embeddedChunks.map(c => this.store.formatChunkForBatch(c));
+                            batchOperations.push({ action: 'saveChunks', chunks: formattedChunks });
+                        }
+
+                        batchOperations.push({
+                            action: 'saveMetadata',
+                            metadata: {
+                                file_path: file,
+                                file_hash: fileHashes.get(file)!,
+                                last_indexed: Date.now(),
+                                chunk_count: chunks.length
+                            }
+                        });
+
+                        filesProcessed++;
+                        chunksProcessed += chunks.length;
+
+                    } catch (err) {
+                        console.error(`Error processing file ${file}:`, err);
+                    }
+                }));
+            }
+
+            const DB_BATCH_LIMIT = 200;
+            if (batchOperations.length > 0) {
+                const totalBatches = Math.ceil(batchOperations.length / DB_BATCH_LIMIT);
+                for (let b = 0; b < batchOperations.length; b += DB_BATCH_LIMIT) {
+                    const subBatch = batchOperations.slice(b, b + DB_BATCH_LIMIT);
+                    const batchNum = Math.floor(b / DB_BATCH_LIMIT) + 1;
+                    if (onProgress) {
+                        onProgress(totalFilesToProcess, totalFilesToProcess, `Saving to database... (${batchNum}/${totalBatches})`);
+                    }
+                    this.store.executeBatch(subBatch);
+                }
+            }
+
         } finally {
             this.isIndexing = false;
         }

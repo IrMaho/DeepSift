@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { SQLiteStore } from '../../storage/sqlite-store.js';
+import { NativeStore } from '../../storage/native-store.js';
 import { Indexer } from '../../core/indexer.js';
 import { printInfo, printSuccess, printError } from '../cli-output.js';
 import { getDbPath } from '../cli-paths.js';
@@ -10,7 +10,7 @@ import { getDbPath } from '../cli-paths.js';
  * semantic index updated in real-time as the developer saves files.
  */
 export async function watchCommand(projectPath: string) {
-    const store = new SQLiteStore(getDbPath(projectPath));
+    const store = new NativeStore(getDbPath(projectPath));
     const indexer = new Indexer(store);
 
     printInfo(`Starting DeepSift watcher for: ${projectPath}`);

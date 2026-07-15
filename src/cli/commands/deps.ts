@@ -1,4 +1,4 @@
-import { SQLiteStore } from '../../storage/sqlite-store.js';
+import { NativeStore } from '../../storage/native-store.js';
 import { Indexer } from '../../core/indexer.js';
 import { Searcher } from '../../core/searcher.js';
 import { saveSearchLog } from '../../utils/history.js';
@@ -11,7 +11,7 @@ import { TokenOptimizerService } from '../../utils/token-compressor.js';
  * Outputs are token-compressed by default.
  */
 export async function depsCommand(projectPath: string, targetName: string, format: OutputFormat, compress: boolean = true) {
-    const store = new SQLiteStore(getDbPath(projectPath));
+    const store = new NativeStore(getDbPath(projectPath));
     const indexer = new Indexer(store);
     const searcher = new Searcher(store);
 

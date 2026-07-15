@@ -1,10 +1,10 @@
-import { SQLiteStore } from '../../storage/sqlite-store.js';
+import { NativeStore } from '../../storage/native-store.js';
 import { Indexer } from '../../core/indexer.js';
 import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-output.js';
 import { getDbPath } from '../cli-paths.js';
 
 export async function indexCommand(projectPath: string, force: boolean, format: OutputFormat, verbose: boolean = false) {
-    const store = new SQLiteStore(getDbPath(projectPath));
+    const store = new NativeStore(getDbPath(projectPath));
     const indexer = new Indexer(store);
 
     printInfo(force ? 'Force re-indexing entire project...' : 'Indexing project (incremental)...');

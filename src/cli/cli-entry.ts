@@ -16,13 +16,15 @@ import { dnaCommand } from './commands/dna.js';
 import { scanCommand } from './commands/scan.js';
 import { resolveCommand } from './commands/resolve.js';
 import { contextCommand } from './commands/context.js';
+import { readCommand } from './commands/read.js';
+import { editCommand } from './commands/edit.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
 const VERSION = '1.0.0';
 
 const HELP_TEXT = `
-\x1b[36m🔍 DeepSift v${VERSION}\x1b[0m — Semantic Codebase Search (CLI)
+\x1b[36m🔍 DeepSift v${VERSION}\x1b[0m — Semantic Codebase Search (CLI Engine)
 
 \x1b[33mUsage:\x1b[0m
   deepsift <command> [options]
@@ -57,6 +59,8 @@ const HELP_TEXT = `
   clean                         Clear search history logs and index
   drill "logfile" "keyword"     Deep-search within a previous result
   resolve "token"               Decode a compressed token from the last search result
+  read "file1" ["file2"...]     Read file contents and output compressed tokens (Supports line ranges: file:10-50)
+  edit "patch.json"             Apply a batch of string replacements across multiple files
 
 \x1b[33mGlobal Flags:\x1b[0m
   --json                        Output in JSON format
@@ -186,6 +190,22 @@ async function main() {
                     throw new Error('Please provide at least one search query.\nUsage: deepsift search "your query"');
                 }
                 await searchCommand(projectPath, searchQueries, format, skipSync, verboseSearch, filterPath, compress, contextLines);
+                break;
+
+            case 'read':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide at least one target file.\nUsage: deepsift read "src/file.ts" or "src/file.ts:10-50"');
+                }
+                const targets = commandArgs.filter((arg) => !arg.startsWith('-'));
+                await readCommand(projectPath, targets, format, compress);
+                break;
+
+            case 'edit':
+            case 'e':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a patch JSON file.\nUsage: deepsift edit "patch.json"');
+                }
+                await editCommand(projectPath, commandArgs[0], format);
                 break;
 
             case 'index':

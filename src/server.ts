@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { SQLiteStore } from './storage/sqlite-store.js';
+import { NativeStore } from './storage/native-store.js';
 import { Indexer } from './core/indexer.js';
 import { Searcher } from './core/searcher.js';
 import path from 'path';
@@ -82,7 +82,7 @@ uiServer.listen(UI_PORT, () => {
 
 // --- MCP Core ---
 const dbPath = path.join(os.homedir(), '.ternlight_mcp_search.db');
-const store = new SQLiteStore(dbPath);
+const store = new NativeStore(dbPath);
 const indexer = new Indexer(store);
 const searcher = new Searcher(store);
 

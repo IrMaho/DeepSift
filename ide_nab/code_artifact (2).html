@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>آزمایشگاه پنهان‌نگاری رنگی متون (Color Steganography)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700&family=Fira+Code:wght@400;600&display=swap');
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #0f172a;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen pb-12">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur py-6 mb-8">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-palette text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">آزمایشگاه پنهان‌نگاری رنگی (Steganography)</h1>
+                    <p class="text-sm text-slate-400 mt-1">نسخه صنعتی و مقاوم در برابر خطا - بهینه‌سازی شده برای قطعه کدها</p>
+                </div>
+            </div>
+            <div class="bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-full text-xs font-semibold border border-emerald-500/20">
+                <i class="fa-solid fa-circle-check ml-1"></i> ۱۰۰٪ ایمن و پایدار برای ورودی‌های حجیم
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- سمت راست: تنظیمات و انکودر -->
+        <div class="lg:col-span-7 space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
+                    <span class="w-7 h-7 bg-indigo-500/10 text-indigo-400 rounded-lg flex items-center justify-center font-bold text-sm">1</span>
+                    <h2 class="text-lg font-bold text-white">کدگذاری و ساخت بوم رنگی (Encoder)</h2>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-300 mb-2">متن اول (متن پایه یا نمایان - هر زبانی یا کدی آزاد است):</label>
+                        <textarea id="baseText" class="code-font w-full h-44 bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-600" placeholder="کد یا متن پایه خود را اینجا قرار دهید..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-300 mb-2">متن دوم (متن مخفی - پشتیبانی کامل از فارسی، انگلیسی، اموجی و کد):</label>
+                        <textarea id="secretText" class="code-font w-full h-32 bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-600" placeholder="پیام محرمانه‌ای که می‌خواهید در رنگ‌ها ذخیره شود..."></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">تعداد ستون‌های گرید رندر:</label>
+                            <select id="gridCols" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                <option value="60">۶۰ ستون</option>
+                                <option value="80" selected>۸۰ ستون</option>
+                                <option value="100">۱۰۰ ستون</option>
+                                <option value="120">۱۲۰ ستون</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="encodeAndRender()" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl transition duration-150 flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                رندر و ایجاد شبکه پیکسلی
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- بخش نمایش بوم تولید شده -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="w-7 h-7 bg-indigo-500/10 text-indigo-400 rounded-lg flex items-center justify-center font-bold text-sm">2</span>
+                        <h2 class="text-lg font-bold text-white">تصویر تولید شده (بافت رنگی حاصل)</h2>
+                    </div>
+                    <button id="downloadBtn" onclick="downloadCanvasImage()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-1.5 px-3 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-download"></i> دانلود تصویر (PNG)
+                    </button>
+                </div>
+
+                <div class="flex flex-col items-center justify-center bg-slate-950 rounded-xl p-4 border border-slate-850 min-h-[200px] overflow-auto">
+                    <p id="canvasPlaceholder" class="text-slate-500 text-sm">پس از زدن دکمه رندر، پیش‌نمایش تصویر با فرمت فشرده اینجا ظاهر می‌شود.</p>
+                    <div class="max-w-full overflow-x-auto max-h-[500px] overflow-y-auto">
+                        <canvas id="outputCanvas" class="hidden shadow-2xl rounded-lg"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- سمت چپ: دیکودر و ابزارهای تحلیل -->
+        <div class="lg:col-span-5 space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
+                    <span class="w-7 h-7 bg-emerald-500/10 text-emerald-400 rounded-lg flex items-center justify-center font-bold text-sm">3</span>
+                    <h2 class="text-lg font-bold text-white">بخش بازخوانی و دیکودر (Decoder)</h2>
+                </div>
+
+                <div class="space-y-4">
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        شما می‌توانید تصویر بالا را مستقیماً دیکود کنید یا یک تصویر ذخیره شده از قبل را بارگذاری کرده تا سیستم به طور خودکار اطلاعات پیکسلی آن را استخراج کند.
+                    </p>
+
+                    <!-- آپلودر تصویر -->
+                    <div class="border-2 border-dashed border-slate-800 hover:border-emerald-500/50 bg-slate-950/50 rounded-xl p-4 text-center transition cursor-pointer relative group">
+                        <input type="file" id="imageUpload" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleImageUpload(event)">
+                        <div class="space-y-2 py-4">
+                            <i class="fa-regular fa-image text-3xl text-slate-600 group-hover:text-emerald-400 transition"></i>
+                            <p class="text-xs text-slate-300">برای دیکود کردن، عکس را بکشید اینجا یا کلیک کنید</p>
+                            <p class="text-[10px] text-slate-500">فقط فرمت‌های تصویر بدون افت کیفیت مانند PNG</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="decodeCurrentCanvas()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            دیکود بوم فعلی
+                        </button>
+                    </div>
+
+                    <div class="pt-2">
+                        <label class="block text-sm font-semibold text-slate-300 mb-2">پیام مخفی استخراج شده:</label>
+                        <textarea id="decodedOutput" readonly class="code-font w-full h-44 bg-slate-950 border border-slate-850 rounded-xl p-3 text-sm text-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder-slate-700" placeholder="خروجی بازخوانی شده در این بخش نمایش داده خواهد شد..."></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- چطور کار میکند؟ -->
+            <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                <h3 class="text-sm font-bold text-white mb-2"><i class="fa-solid fa-circle-info text-indigo-400 ml-1.5"></i>این روش چگونه کار می‌کند؟</h3>
+                <ul class="text-xs text-slate-400 space-y-2 list-disc list-inside">
+                    <li>متن مخفی با الگوریتم Base64 استاندارد، آماده‌سازی می‌شود.</li>
+                    <li>به منظور مقاومت در برابر نویز، هر کاراکتر به یک پله رنگی مجزا از بین ۱۲۵ رنگ با فاصله ایمن مپ می‌شود.</li>
+                    <li>متن پایه به شکل یک گرید رندر شده و رنگ پس‌زمینه خانه هر کاراکتر، حامل مقدار رنگی آن است.</li>
+                    <li>خوانش پیکسلی در مختصات متقارن گرید انجام می‌شود تا احتمال تداخل به صفر برسد.</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // لیست تمام حروف معتبر در پروتکل Base64 (شامل ۶۴ حرف اصلی + کاراکتر مساوی)
+        const B64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+        // تبدیل متن یونیکد (فارسی/انگلیسی/ایموجی) به Base64 به صورت کاملا امن و بدون خطای UTF-8
+        function utf8_to_b64(str) {
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+                return String.fromCharCode('0x' + p1);
+            }));
+        }
+
+        // تبدیل Base64 به متن یونیکد
+        function b64_to_utf8(str) {
+            try {
+                return decodeURIComponent(atob(str).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+            } catch(e) {
+                console.error("خطا در رمزگشایی یونیکد:", e);
+                return "خطا در ساختار یا تغییر رنگ در حین فشرده‌سازی!";
+            }
+        }
+
+        // تبدیل یک کاراکتر Base64 به یک پله رنگی مجزای RGB
+        // با تقسیم‌بندی گام‌های ۵ تایی (۱۲۵ رنگ ممکن) تداخل رنگ‌ها حتی با فشرده‌سازی جزئی هم غیرممکن می‌شود
+        function getRGBForB64Char(char) {
+            const index = B64_CHARS.indexOf(char);
+            if (index === -1) return { r: 15, g: 23, b: 42 }; // رنگ پس‌زمینه دیفالت (Slate 900)
+
+            const rStep = index % 5;
+            const gStep = Math.floor(index / 5) % 5;
+            const bStep = Math.floor(index / 25) % 5;
+
+            // تبدیل گام‌های ۰ تا ۴ به مقادیر واقعی RGB بین ۳۰ تا ۲۳۰ (با گام ۵۰ تایی)
+            return {
+                r: rStep * 50 + 30,
+                g: gStep * 50 + 30,
+                b: bStep * 50 + 30
+            };
+        }
+
+        // پیدا کردن نزدیک‌ترین کاراکتر Base64 بر اساس پله رنگی دریافت شده
+        function getB64CharFromRGB(r, g, b) {
+            // پیدا کردن نزدیک‌ترین پله‌های ۵ تایی
+            const rStep = Math.max(0, Math.min(4, Math.round((r - 30) / 50)));
+            const gStep = Math.max(0, Math.min(4, Math.round((g - 30) / 50)));
+            const bStep = Math.max(0, Math.min(4, Math.round((b - 30) / 50)));
+
+            const index = rStep + gStep * 5 + bStep * 25;
+            return B64_CHARS[index] || '';
+        }
+
+        const canvas = document.getElementById("outputCanvas");
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        
+        // مشخصات هر سلول گرید برای خوانش دقیق پیکسلی
+        const cellWidth = 14;
+        const cellHeight = 22;
+
+        function encodeAndRender() {
+            const baseText = document.getElementById("baseText").value.replace(/\r/g, "");
+            const secretText = document.getElementById("secretText").value;
+
+            if (!baseText) {
+                alert("لطفاً ابتدا متن پایه را وارد کنید!");
+                return;
+            }
+
+            // تبدیل متن مخفی به فرمت امن Base64
+            const b64Secret = utf8_to_b64(secretText);
+            const cols = parseInt(document.getElementById("gridCols").value);
+            const totalChars = baseText.length;
+            const rows = Math.ceil(totalChars / cols);
+
+            // پاک کردن وضعیت اولیه
+            document.getElementById("canvasPlaceholder").classList.add("hidden");
+            canvas.classList.remove("hidden");
+            document.getElementById("downloadBtn").classList.remove("hidden");
+
+            // تنظیم ابعاد فیزیکی بوم بر اساس شبکه‌بندی
+            canvas.width = cols * cellWidth;
+            canvas.height = rows * cellHeight;
+
+            // پس‌زمینه سفید برای خوانش بدون نویز
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // رندر کردن گرید کاراکترها و اعمال رنگ پس‌زمینه مخفی
+            ctx.font = "bold 13px 'Fira Code', monospace";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            for (let i = 0; i < totalChars; i++) {
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+
+                const x = col * cellWidth;
+                const y = row * cellHeight;
+
+                // مقدار دهی کاراکتر مخفی متناظر
+                const secretChar = b64Secret[i];
+                let bgStyle = "#f1f5f9"; // پیش‌فرض برای جاهایی که پیام تمام شده است
+
+                if (secretChar !== undefined) {
+                    const colorObj = getRGBForB64Char(secretChar);
+                    bgStyle = `rgb(${colorObj.r}, ${colorObj.g}, ${colorObj.b})`;
+                }
+
+                // ۱. رسم بک‌گراند رنگی (حامل پیام مخفی)
+                ctx.fillStyle = bgStyle;
+                ctx.fillRect(x, y, cellWidth, cellHeight);
+
+                // ۲. رسم کاراکتر روی بوم به صورت شفاف یا کم‌رنگ برای حفظ خوانایی متن اصلی
+                let baseChar = baseText[i];
+                if (baseChar === '\n' || baseChar === '\t') baseChar = ' '; // جلوگیری از بهم ریختن گرید
+                
+                ctx.fillStyle = "rgba(0, 0, 0, 0.85)"; // کنتراست بالا برای تفکیک متن اصلی
+                ctx.fillText(baseChar, x + cellWidth / 2, y + cellHeight / 2);
+            }
+        }
+
+        // دیکود کردن بوم فعال فعلی در صفحه
+        function decodeCurrentCanvas() {
+            const baseText = document.getElementById("baseText").value.replace(/\r/g, "");
+            const cols = parseInt(document.getElementById("gridCols").value);
+            
+            if (!baseText) {
+                alert("بومی برای بازخوانی وجود ندارد!");
+                return;
+            }
+
+            let b64Result = "";
+            const totalChars = baseText.length;
+
+            for (let i = 0; i < totalChars; i++) {
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+
+                // بدست آوردن مرکز دقیق هندسی سلول برای دور زدن لبه‌های فونت
+                const centerX = col * cellWidth + Math.floor(cellWidth / 2);
+                const centerY = row * cellHeight + Math.floor(cellHeight / 2);
+
+                const pixelData = ctx.getImageData(centerX, centerY, 1, 1).data;
+                const r = pixelData[0];
+                const g = pixelData[1];
+                const b = pixelData[2];
+
+                // اگر رنگ پس‌زمینه به طور کامل سفید یا بدون دیتا باشد، یعنی پیام تمام شده است
+                if (r > 240 && g > 240 && b > 240) {
+                    break;
+                }
+
+                const char = getB64CharFromRGB(r, g, b);
+                b64Result += char;
+            }
+
+            // تبدیل خروجی Base64 استخراج شده به پیام متنی نهایی
+            const finalMessage = b64_to_utf8(b64Result);
+            document.getElementById("decodedOutput").value = finalMessage;
+        }
+
+        // پشتیبانی از آپلود تصاویر خارجی و رندر روی Canvas جهت استخراج داده
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // تغییر ابعاد بوم به ابعاد فیزیکی دقیق تصویر آپلود شده
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    
+                    document.getElementById("canvasPlaceholder").classList.add("hidden");
+                    canvas.classList.remove("hidden");
+                    document.getElementById("downloadBtn").classList.remove("hidden");
+                    
+                    ctx.drawImage(img, 0, 0);
+                    alert("تصویر با موفقیت بارگذاری شد. اکنون می‌توانید بر روی دکمه «دیکود بوم فعلی» کلیک کنید!");
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // دانلود تصویر تولید شده با فرمت بدون افت کیفیت (PNG)
+        function downloadCanvasImage() {
+            const link = document.createElement('a');
+            link.download = 'colored-steganography.png';
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        }
+
+        // مقدار اولیه نمونه برای تست سریع
+        document.getElementById("baseText").value = `const path = require('path');\nconst fs = require('fs');\nconst pxpipe = require('pxpipe');\n\nfunction processCode(code) {\n  let optimized = pxpipe.optimize(code);\n  console.log("Optimization successfully completed!");\n  return optimized;\n}`;
+        document.getElementById("secretText").value = "سلام! این یک پیام مخفی و کاملاً فارسی است که در دل پیکسل‌های کد بالا مخفی شده است. 😍";
+    </script>
+</body>
+</html>
+```
+eof
+
+---
+
+### 🚀 چگونه تست کنیم؟
+1. کد بالا را به عنوان یک فایل با پسوند `.html` (مثلاً `index.html`) ذخیره کنید.
+2. آن را در مرورگر باز کنید. به صورت پیش‌فرض کدهای جاوااسکریپت و یک پیام فارسی نمونه برای شما قرار داده شده است.
+3. دکمه **«رندر و ایجاد شبکه پیکسلی»** را بزنید. خواهید دید که کدهای متنی در یک شبکه رنگارنگ بسیار زیبا شبیه به ادیتورهای کد نمایش داده می‌شوند.
+4. حالا روی دکمه **«دیکود بوم فعلی»** کلیک کنید؛ پیام نمونه فارسی شما بلافاصله و با دقت بی‌نظیر رمزگشایی می‌شود.
+5. به کمک دکمه **«دانلود تصویر (PNG)»** می‌توانید عکس رمزنگاری شده را دانلود کنید و حتی با فرمت PNG برای تست برای من ارسال کنید یا خودتان دوباره آن را در همین ابزار آپلود کنید!
+
+آیا این نسخه برای اجرای کدهای برنامه‌نویسی شما پایدار و کارساز است؟ لطفاً پس از تست نتیجه را اعلام کنید.

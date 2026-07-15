@@ -1,5 +1,5 @@
 import { SimilarityGroup, SimilarityMember } from '../types/dna-types.js';
-import { SQLiteStore } from '../storage/sqlite-store.js';
+import { NativeStore } from '../storage/native-store.js';
 import { EmbeddedChunk } from '../types/index.js';
 import path from 'path';
 
@@ -23,7 +23,7 @@ export function detectSimilarities(
     const dbPath = path.join(projectPath, '.deepsift', 'deepsift.db');
     let allChunks: EmbeddedChunk[] = [];
     try {
-        const store = new SQLiteStore(dbPath);
+        const store = new NativeStore(dbPath);
         allChunks = store.getAllChunks();
     } catch {
         return [];

@@ -6,3 +6,4 @@ dist/
 temp
 # DeepSift local cache
 .deepsift/
+ai

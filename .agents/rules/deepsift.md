@@ -2,10 +2,6 @@
 trigger: always_on
 ---
 
----
-trigger: always_on
----
-
 # 🔍 DeepSift — Semantic Codebase Search (CLI Mode)
 
 You have access to **DeepSift**, a powerful local semantic search engine.
@@ -17,6 +13,8 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 | Command | Description |
 |---|---|
 | `deepsift search "query"` | Semantic search. Options: `--include` or `-i <path>` (filter path), `--no-sync` or `-n` (skip index update), `--verbose` or `-v` (show file index progress), `--context-lines N` or `-C N` (show N lines of context around matches) |
+| `deepsift read "file"` | Read file contents and output highly compressed DEC_v2 tokens to save token context. Supports specific lines (e.g., `deepsift read "src/file.ts:10-50"`). Use `--no-compress` to get raw plain text. You can pass multiple files at once. |
+| `deepsift edit "patch.json"` | Apply a batch of string replacements across multiple files instantly. Create a JSON file with `[{ "file": "path", "edits": [{ "search": "old", "replace": "new" }] }]` and pass it to this command. |
 | `deepsift search "q1" "q2" "q3"` | Multi-query batch search (saves time) |
 | `deepsift index` | Re-index the project (incremental). Options: `--verbose` or `-v` (show files being indexed) |
 | `deepsift index --force` | Full re-index from scratch |
@@ -36,16 +34,18 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 ## 📋 Mandatory Usage Rules
 
 1. **DeepSift-First Mandate:** You **MUST NOT** use any general grep search, manual directory listing, or file viewing tools to find files or logic *unless* you have first executed a relevant `deepsift search`, `deepsift deps`, or `deepsift arch` command.
+2. **Compressed Reading:** When you need to read an entire file or large chunks of a file, you **MUST** use `deepsift read "path"` instead of IDE file viewing tools. This outputs compressed image tokens, drastically saving context usage. Use `--no-compress` only if you specifically need raw, copyable text.
 2. **Pre-Generation Context (MANDATORY):** You **MUST** run `deepsift context "target_path"` **BEFORE** creating any new file or component. This gives you project conventions, required design tokens, i18n rules, and similar existing components to prevent code duplication and style drift.
 3. **Search History Check:** You **MUST** run `deepsift history` at the start of any codebase investigation to see if the required search results have already been cached.
 4. **Visual Cache First:** Read the `INDEX.md` file under `.deepsift/outputs/` before running a new search query. The exact absolute path of the `INDEX.md` file is printed in the terminal as a clickable file link (e.g. `file:///...`) at the end of each search. You MUST open `INDEX.md` and visually parse the embedded PNG images, which contain highly compressed `pxpipe` tokens holding the context.
 5. **No Manual Codebase Exploration:** Do not traverse directories or search files using generic commands. Use `deepsift arch` to understand the codebase skeleton, `deepsift feature` to analyze a specific feature folder, and `deepsift deps` to find file dependencies.
 6. **DEC_v2 Compression Priority:** By default, allow search results to be compressed to save tokens. File paths, folder paths, and file names are NEVER compressed; they are kept verbatim to prevent hallucinations. Only use the `--no-compress` flag as a fallback if you struggle to decode/reconstruct other compressed words after multiple attempts, or when you need to inspect the exact literal syntax of a code snippet for precise copying.
 7. **Retrieving Surrounding Context:** Always append `--context-lines N` (or `-C N`, where N is typically 10 to 30) when searching to retrieve the surrounding code lines around matches.
-8. **Multi-Query Efficiency:** For multiple distinct questions or features, batch them into a single command (`deepsift search "q1" "q2"`) to optimize execution speed.
-9. **Token Decoding:** If you run into a compressed DEC_v2 token in cached files, use `deepsift resolve "token"` to lookup the raw value immediately.
-10. **Index Maintenance:** Run `deepsift index --force` after performing major refactorings or code changes to ensure search queries reflect the latest code state.
-11. **Strict DNA Filtering & Meta-Only Check:** The Project DNA is saved in `.toon` format (Token-Oriented Object Notation) which is 100% human-readable and LLM-readable text, saving ~60% size losslessly.
+8. **Bulk Editing (Batch Edit):** When making identical or massive string replacements across multiple files (or many non-contiguous edits in a large file), write a JSON patch file to disk and use `deepsift edit "patch.json"` to apply them instantly, saving enormous output token usage and avoiding IDE tool overhead.
+9. **Multi-Query Efficiency:** For multiple distinct questions or features, batch them into a single command (`deepsift search "q1" "q2"`) to optimize execution speed.
+10. **Token Decoding:** If you run into a compressed DEC_v2 token in cached files, use `deepsift resolve "token"` to lookup the raw value immediately.
+11. **Index Maintenance:** Run `deepsift index --force` after performing major refactorings or code changes to ensure search queries reflect the latest code state.
+12. **Strict DNA Filtering & Meta-Only Check:** The Project DNA is saved in `.toon` format (Token-Oriented Object Notation) which is 100% human-readable and LLM-readable text, saving ~60% size losslessly.
     - **NEVER** retrieve the entire DNA file blindly. It will overflow your context window!
     - **ALWAYS** check the DNA metadata first by running `deepsift dna --show --meta` to understand which sections exist and their respective record counts.
     - **PAGINATE AND FILTER:** Use `--limit <number>` and `--offset <number>` to load list arrays (such as tokens or assets) in pages.
@@ -72,6 +72,9 @@ deepsift feature "src/features/auth"
 
 # Decode a compressed token you cannot understand
 deepsift resolve "0A"
+
+# Read file contents optimally without consuming massive text tokens
+deepsift read "src/core/indexer.ts" "src/utils/config.ts:10-40"
 
 # MANDATORY: Before creating a new file
 deepsift context "src/components/MyNewButton.tsx"

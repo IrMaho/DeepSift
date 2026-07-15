@@ -5,7 +5,7 @@ import { detectLocalization } from '../analyzers/l10n-detector.js';
 import { analyzeArchitecture } from '../analyzers/graph-analyzer.js';
 import { detectSimilarities } from '../analyzers/similarity-engine.js';
 import { mapResources } from '../analyzers/resource-mapper.js';
-import { SQLiteStore } from '../storage/sqlite-store.js';
+import { NativeStore } from '../storage/native-store.js';
 import fs from 'fs';
 import path from 'path';
 import { jsonToToon, toonToJson } from '../utils/toon-serializer.js';
@@ -318,7 +318,7 @@ function integrateSimilarityEngine(projectPath: string, dna: ProjectDNA, onProgr
     let totalCount = 0;
     try {
         const dbPath = path.join(projectPath, '.deepsift', 'deepsift.db');
-        const store = new SQLiteStore(dbPath);
+        const store = new NativeStore(dbPath);
         const all = store.getAllChunks();
         totalCount = all.filter((c: any) => c.chunk.type === 'class' || c.chunk.type === 'function').length;
     } catch { /* ignore */ }
