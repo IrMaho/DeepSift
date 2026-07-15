@@ -17,21 +17,27 @@ export function calculateCosineSimilarity(a: Float32Array, b: Float32Array): num
 export function applyRRF(
     semanticResults: SearchResult[],
     keywordResults: SearchResult[],
-    k: number = 60
+    k: number = 60,
+    structuralWeights?: Map<string, number>
 ): SearchResult[] {
     const scoreMap = new Map<string, { result: SearchResult; rrfScore: number }>();
+
+    const getWeight = (filePath: string) => {
+        if (!structuralWeights) return 1.0;
+        return structuralWeights.get(filePath) || 1.0;
+    };
 
     // Process semantic results
     semanticResults.forEach((res, index) => {
         const rank = index + 1;
-        const rrfScore = 1 / (k + rank);
+        const rrfScore = (1 / (k + rank)) * getWeight(res.chunk.filePath);
         scoreMap.set(res.chunk.id, { result: res, rrfScore });
     });
 
     // Process keyword results
     keywordResults.forEach((res, index) => {
         const rank = index + 1;
-        const rrfScore = 1 / (k + rank);
+        const rrfScore = (1 / (k + rank)) * getWeight(res.chunk.filePath);
         if (scoreMap.has(res.chunk.id)) {
             const existing = scoreMap.get(res.chunk.id)!;
             existing.rrfScore += rrfScore;
@@ -85,29 +91,52 @@ function getZigBinaryPath(): string | null {
 }
 
 /**
- * Calculates cosine similarity for a batch of candidate vectors using the compiled Zig binary
+ * Quantizes a 384-dimensional Float32Array into a 48-byte Buffer (Binary Quantization).
+ * Maps values > 0.0 to 1 and <= 0.0 to 0.
+ */
+export function quantizeF32ToBQ(vector: Float32Array): Buffer {
+    const buffer = Buffer.alloc(48); // 12 * 4 bytes = 48 bytes
+    for (let i = 0; i < 384; i++) {
+        if (vector[i] > 0) {
+            const byteIdx = Math.floor(i / 8);
+            const bitIdx = i % 8;
+            buffer[byteIdx] |= (1 << bitIdx);
+        }
+    }
+    return buffer;
+}
+
+/**
+ * Calculates Hamming similarity for a batch of BQ candidate vectors using the compiled Zig binary
  * for native speed. Falls back to TypeScript if the binary is missing or errors out.
  */
-export function calculateCosineSimilarityBatch(
-    queryVector: Float32Array,
+export function calculateHammingSimilarityBatch(
+    queryVector: Buffer,
     candidates: { id: string; embedding: Buffer }[],
     topK: number
 ): { id: string; score: number }[] {
     const binPath = getZigBinaryPath();
     if (!binPath) {
-        // Fallback to TS (converting Buffer to Float32Array first)
+        // Fallback to TS
         return candidates.map(c => {
-            const floatArray = new Float32Array(c.embedding.buffer, c.embedding.byteOffset, c.embedding.byteLength / Float32Array.BYTES_PER_ELEMENT);
+            let distance = 0;
+            for (let i = 0; i < 48; i++) {
+                let xor = queryVector[i] ^ c.embedding[i];
+                while (xor > 0) {
+                    distance += xor & 1;
+                    xor >>= 1;
+                }
+            }
             return {
                 id: c.id,
-                score: calculateCosineSimilarity(queryVector, floatArray)
+                score: 1.0 - (distance / 384.0)
             };
         });
     }
 
     try {
-        const headerSize = 4 + 1536 + 4;
-        const recordSize = 4 + 1536;
+        const headerSize = 4 + 48 + 4;
+        const recordSize = 4 + 48;
         const totalSize = headerSize + candidates.length * recordSize;
         const buffer = Buffer.alloc(totalSize);
 
@@ -115,18 +144,18 @@ export function calculateCosineSimilarityBatch(
         // Write topK
         buffer.writeUInt32LE(topK, offset); offset += 4;
         // Write queryVector
-        const queryBuf = Buffer.from(queryVector.buffer, queryVector.byteOffset, queryVector.byteLength);
-        queryBuf.copy(buffer, offset); offset += 1536;
+        queryVector.copy(buffer, offset); offset += 48;
         // Write numChunks
         buffer.writeUInt32LE(candidates.length, offset); offset += 4;
 
         // Write candidates
         for (let i = 0; i < candidates.length; i++) {
             buffer.writeUInt32LE(i, offset); offset += 4;
-            candidates[i].embedding.copy(buffer, offset); offset += 1536;
+            candidates[i].embedding.copy(buffer, offset); offset += 48;
         }
 
         // Execute Zig binary synchronously
+        console.log(`Sending buffer of size ${buffer.length} to Zig for ${candidates.length} candidates.`);
         const outputBuffer = execFileSync(binPath, [], { input: buffer, maxBuffer: 10 * 1024 * 1024 });
 
         let outOffset = 0;
@@ -145,10 +174,17 @@ export function calculateCosineSimilarityBatch(
     } catch (err) {
         console.error("Zig math binary execution failed, falling back to TS:", err);
         return candidates.map(c => {
-            const floatArray = new Float32Array(c.embedding.buffer, c.embedding.byteOffset, c.embedding.byteLength / Float32Array.BYTES_PER_ELEMENT);
+            let distance = 0;
+            for (let i = 0; i < 48; i++) {
+                let xor = queryVector[i] ^ c.embedding[i];
+                while (xor > 0) {
+                    distance += xor & 1;
+                    xor >>= 1;
+                }
+            }
             return {
                 id: c.id,
-                score: calculateCosineSimilarity(queryVector, floatArray)
+                score: 1.0 - (distance / 384.0)
             };
         });
     }

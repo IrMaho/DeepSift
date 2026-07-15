@@ -38,7 +38,7 @@ export async function depsCommand(projectPath: string, targetName: string, forma
         finalOutput = optimizer.optimize(output).toUnifiedString();
     }
 
-    const logInfo = saveSearchLog(projectPath, [`[Dependencies] ${targetName}`], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [`[Dependencies] ${targetName}`], finalOutput);
     printResult(finalOutput, format);
     if (format !== 'json') {
         const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;

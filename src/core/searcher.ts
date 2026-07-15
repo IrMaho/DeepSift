@@ -1,7 +1,8 @@
 import { SQLiteStore } from '../storage/sqlite-store.js';
 import { getEmbedding } from './embedder.js';
-import { calculateCosineSimilarity, calculateCosineSimilarityBatch, applyRRF } from '../utils/similarity.js';
+import { calculateHammingSimilarityBatch, quantizeF32ToBQ, applyRRF } from '../utils/similarity.js';
 import { SearchQuery, SearchResult, ChunkType } from '../types/index.js';
+import { loadDNA } from '../intelligence/project-dna.js';
 
 export class Searcher {
     private store: SQLiteStore;
@@ -18,10 +19,11 @@ export class Searcher {
         const keywordResults = this.filterResults(keywordResultsRaw, filterType, filterPath);
 
         // 2. Semantic search (Vector)
-        const queryVector = await getEmbedding(query);
+        const queryVectorF32 = await getEmbedding(query);
+        const queryVector = quantizeF32ToBQ(queryVectorF32);
         const candidates = this.store.getChunkEmbeddings();
         
-        const scoredCandidates = calculateCosineSimilarityBatch(queryVector, candidates, topK * 2);
+        const scoredCandidates = calculateHammingSimilarityBatch(queryVector, candidates, topK * 2);
         
         // Fetch full chunks only for top K candidates to save memory
         const topIds = scoredCandidates.map(c => c.id);
@@ -40,8 +42,20 @@ export class Searcher {
         semanticResultsRaw.sort((a, b) => b.score - a.score);
         const semanticResults = this.filterResults(semanticResultsRaw, filterType, filterPath);
 
-        // 3. Reciprocal Rank Fusion (Hybrid)
-        const combined = applyRRF(semanticResults, keywordResults);
+        // Calculate Structural Weights from DNA
+        let structuralWeights: Map<string, number> | undefined;
+        try {
+            const dna = loadDNA(process.cwd());
+            if (dna && dna.architecture && dna.architecture.coreFiles) {
+                structuralWeights = new Map<string, number>();
+                dna.architecture.coreFiles.forEach((f: string) => structuralWeights!.set(f, 1.5));
+            }
+        } catch (e) {
+            // Ignore if DNA is not available
+        }
+
+        // 3. Reciprocal Rank Fusion (Hybrid) with structural weights
+        const combined = applyRRF(semanticResults, keywordResults, 60, structuralWeights);
         
         // Return topK
         return combined.slice(0, topK);

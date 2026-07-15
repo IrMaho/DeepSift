@@ -8,7 +8,7 @@ import { TokenOptimizerService } from '../../utils/token-compressor.js';
  * Generates outline stats and imports for a specific folder feature.
  * Outputs are token-compressed by default.
  */
-export function featureCommand(projectPath: string, featureDir: string, format: OutputFormat, compress: boolean = true) {
+export async function featureCommand(projectPath: string, featureDir: string, format: OutputFormat, compress: boolean = true) {
     let targetPath = featureDir;
     if (!path.isAbsolute(featureDir)) {
         targetPath = path.join(projectPath, featureDir);
@@ -22,7 +22,7 @@ export function featureCommand(projectPath: string, featureDir: string, format: 
         finalOutput = optimizer.optimize(outlineText).toUnifiedString();
     }
     
-    const logInfo = saveSearchLog(projectPath, [`[Feature Outline] ${featureDir}`], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [`[Feature Outline] ${featureDir}`], finalOutput);
     printResult(finalOutput, format);
     if (format !== 'json') {
         const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;

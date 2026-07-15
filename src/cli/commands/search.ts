@@ -96,7 +96,7 @@ async function executeSingleSearch(searcher: Searcher, projectPath: string, quer
         finalOutput = payload.toUnifiedString();
     }
 
-    const logInfo = saveSearchLog(projectPath, [query], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [query], finalOutput);
     printResult(finalOutput, format);
     if (format !== 'json') {
         const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
@@ -150,7 +150,7 @@ async function executeMultiSearch(searcher: Searcher, projectPath: string, queri
         finalOutput = payload.toUnifiedString();
     }
 
-    const logInfo = saveSearchLog(projectPath, queries, finalOutput);
+    const logInfo = await saveSearchLog(projectPath, queries, finalOutput);
     printResult(finalOutput, format);
     if (format !== 'json') {
         const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
