@@ -39,5 +39,15 @@
     "tree-sitter-python": "^0.25.0",
     "tree-sitter-typescript": "^0.23.2",
     "zod": "^4.4.3"
-  }
+  },
+  "files": [
+    "dist",
+    "templates",
+    "native/core-zig/build.zig",
+    "native/core-zig/src",
+    "bin",
+    "pxpipe-main/dist",
+    "pxpipe-main/bin",
+    "pxpipe-main/package.json"
+  ]
 }
