@@ -125,7 +125,7 @@ const server = new McpServer({
         
         // Save to history
         if (results.length > 0) {
-            saveSearchLog(projectPath, [query], responseContent.content[0].text);
+            await saveSearchLog(projectPath, [query], responseContent.content[0].text);
         }
 
         return responseContent;
@@ -202,7 +202,7 @@ const server = new McpServer({
         
         // Save to history
         if (totalHits > 0) {
-            saveSearchLog(projectPath, queries.map((q: any) => q.query), responseContent.content[0].text);
+            await saveSearchLog(projectPath, queries.map((q: any) => q.query), responseContent.content[0].text);
         }
 
         return responseContent;
@@ -279,7 +279,7 @@ const server = new McpServer({
         
         const architectureText = getProjectArchitecture(projectPath, maxDepth);
         
-        saveSearchLog(projectPath, ['[Architecture Scan]'], architectureText);
+        await saveSearchLog(projectPath, ['[Architecture Scan]'], architectureText);
         broadcastEvent('tool_call', { tool: 'project_architecture', args, response: architectureText });
         return { content: [{ type: "text", text: architectureText }] };
     }
@@ -309,7 +309,7 @@ const server = new McpServer({
             responseContent = `The following files depend on '${targetName}':\n\n${deps}`;
         }
 
-        saveSearchLog(projectPath, [`[Dependencies] ${targetName}`], responseContent);
+        await saveSearchLog(projectPath, [`[Dependencies] ${targetName}`], responseContent);
         broadcastEvent('tool_call', { tool: 'analyze_dependencies', args, response: responseContent });
         return { content: [{ type: "text", text: responseContent }] };
     }
@@ -350,7 +350,7 @@ const server = new McpServer({
             ? `Keyword '${keyword}' not found in ${logFilename}.`
             : `Found ${matchedChunks.length} occurrences in isolated context:\n\n${matchedChunks.join('\n\n')}`;
             
-        saveSearchLog(projectPath, [`[Deep Search] ${keyword} in ${logFilename}`], responseContent);
+        await saveSearchLog(projectPath, [`[Deep Search] ${keyword} in ${logFilename}`], responseContent);
         broadcastEvent('tool_call', { tool: 'deep_isolated_search', args, response: responseContent });
         return { content: [{ type: "text", text: responseContent }] };
     }
@@ -375,7 +375,7 @@ const server = new McpServer({
         
         const outlineText = getFeatureOutline(targetPath);
         
-        saveSearchLog(projectPath, [`[Feature Outline] ${featureDir}`], outlineText);
+        await saveSearchLog(projectPath, [`[Feature Outline] ${featureDir}`], outlineText);
         broadcastEvent('tool_call', { tool: 'explore_feature', args, response: outlineText });
         return { content: [{ type: "text", text: outlineText }] };
     }

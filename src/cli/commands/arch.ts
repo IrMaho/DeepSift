@@ -7,7 +7,7 @@ import { TokenOptimizerService } from '../../utils/token-compressor.js';
  * Executes the project architecture mapping command.
  * Outputs are token-compressed by default.
  */
-export function archCommand(projectPath: string, maxDepth: number, format: OutputFormat, compress: boolean = true) {
+export async function archCommand(projectPath: string, maxDepth: number, format: OutputFormat, compress: boolean = true) {
     const architectureText = getProjectArchitecture(projectPath, maxDepth);
     let finalOutput = architectureText;
     
@@ -16,7 +16,7 @@ export function archCommand(projectPath: string, maxDepth: number, format: Outpu
         finalOutput = optimizer.optimize(architectureText).toUnifiedString();
     }
     
-    const logInfo = saveSearchLog(projectPath, ['[Architecture Scan]'], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, ['[Architecture Scan]'], finalOutput);
     printResult(finalOutput, format);
     if (format !== 'json') {
         const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;

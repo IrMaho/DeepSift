@@ -17,7 +17,7 @@ function resolveOutputsDir(projectPath: string): string {
     return defaultDir;
 }
 
-export function saveSearchLog(projectPath: string, queries: string[], resultText: string) {
+export async function saveSearchLog(projectPath: string, queries: string[], resultText: string) {
     const outputsDir = resolveOutputsDir(projectPath);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -27,7 +27,39 @@ export function saveSearchLog(projectPath: string, queries: string[], resultText
     const filePath = path.join(outputsDir, filename);
 
     const fileContent = `# Search Queries\n${queriesTitle}\n\n## Results\n${resultText}`;
-    fs.writeFileSync(filePath, fileContent, 'utf8');
+    
+    let finalMarkdownContent = fileContent;
+
+    try {
+        // @ts-ignore
+        const pxpipe = await import('pxpipe-proxy');
+        if (pxpipe && pxpipe.renderTextToImages) {
+            // Force maximum dense layout (312 cols = 1568px width) to pack maximum 
+            // text per image and drastically reduce page count and token usage.
+            const { pages } = await pxpipe.renderTextToImages(fileContent, {
+                reflow: true,
+                cols: 312,
+                shrink: true,
+                multiCol: 1, // Disable auto multi-column to prevent large right-side empty space
+                style: { cellWBonus: 0, cellHBonus: 0, aa: false } // Raw pixel look
+            });
+            let visualMarkdown = `# Search Queries\n${queriesTitle}\n\n## Visual Results\n`;
+            visualMarkdown += `> [!NOTE]\n> This content is compressed using pxpipe vision tokens.\n\n`;
+            
+            pages.forEach((page: any, idx: number) => {
+                const imgName = `search_${timestamp}_${hash}_page_${idx}.png`;
+                const imgPath = path.join(outputsDir, imgName);
+                fs.writeFileSync(imgPath, page.png);
+                visualMarkdown += `![page_${idx}](file:///${imgPath.replace(/\\/g, '/')})\n\n`;
+            });
+            
+            finalMarkdownContent = visualMarkdown;
+        }
+    } catch (e: any) {
+        console.error('Pxpipe rendering failed, falling back to text:', e.message);
+    }
+
+    fs.writeFileSync(filePath, finalMarkdownContent, 'utf8');
 
     const indexPath = path.join(outputsDir, 'INDEX.md');
     const indexEntry = `- [${new Date().toLocaleString()}] Queries: **${queriesTitle}** -> [${filename}](./${filename})\n`;

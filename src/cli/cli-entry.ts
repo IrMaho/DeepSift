@@ -139,7 +139,7 @@ async function main() {
 
                 const showMetaOnly = commandArgs.includes('--meta');
 
-                await dnaCommand(projectPath, showOnly, format, section, dnaQuery, compress, limit, offset, pathFilter, showMetaOnly);
+                await await dnaCommand(projectPath, showOnly, format, section, dnaQuery, compress, limit, offset, pathFilter, showMetaOnly);
                 break;
             }
 
@@ -147,7 +147,7 @@ async function main() {
                 if (commandArgs.length === 0) {
                     throw new Error('Please provide a scan target.\nUsage: deepsift scan <tokens|i18n|duplicates|conventions|assets>');
                 }
-                await scanCommand(projectPath, commandArgs[0], format);
+                await await scanCommand(projectPath, commandArgs[0], format);
                 break;
 
             case 'context':
@@ -212,7 +212,7 @@ async function main() {
                 if (depthIdx !== -1 && commandArgs[depthIdx + 1]) {
                     maxDepth = parseInt(commandArgs[depthIdx + 1], 10) || 5;
                 }
-                archCommand(projectPath, maxDepth, format, compress);
+                await archCommand(projectPath, maxDepth, format, compress);
                 break;
             }
 
@@ -229,7 +229,7 @@ async function main() {
                 if (commandArgs.length === 0) {
                     throw new Error('Please provide a feature path.\nUsage: deepsift feature "src/path"');
                 }
-                featureCommand(projectPath, commandArgs[0], format, compress);
+                await featureCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
             case 'history':
