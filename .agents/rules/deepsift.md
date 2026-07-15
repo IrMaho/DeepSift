@@ -13,6 +13,7 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 | Command | Description |
 |---|---|
 | `deepsift search "query"` | Semantic search. Options: `--include` or `-i <path>` (filter path), `--no-sync` or `-n` (skip index update), `--verbose` or `-v` (show file index progress), `--context-lines N` or `-C N` (show N lines of context around matches) |
+| `deepsift read "file"` | Read file contents and output highly compressed DEC_v2 tokens to save token context. Supports specific lines (e.g., `deepsift read "src/file.ts:10-50"`). Use `--no-compress` to get raw plain text. You can pass multiple files at once. |
 | `deepsift search "q1" "q2" "q3"` | Multi-query batch search (saves time) |
 | `deepsift index` | Re-index the project (incremental). Options: `--verbose` or `-v` (show files being indexed) |
 | `deepsift index --force` | Full re-index from scratch |
@@ -32,6 +33,7 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 ## 📋 Mandatory Usage Rules
 
 1. **DeepSift-First Mandate:** You **MUST NOT** use any general grep search, manual directory listing, or file viewing tools to find files or logic *unless* you have first executed a relevant `deepsift search`, `deepsift deps`, or `deepsift arch` command.
+2. **Compressed Reading:** When you need to read an entire file or large chunks of a file, you **MUST** use `deepsift read "path"` instead of IDE file viewing tools. This outputs compressed image tokens, drastically saving context usage. Use `--no-compress` only if you specifically need raw, copyable text.
 2. **Pre-Generation Context (MANDATORY):** You **MUST** run `deepsift context "target_path"` **BEFORE** creating any new file or component. This gives you project conventions, required design tokens, i18n rules, and similar existing components to prevent code duplication and style drift.
 3. **Search History Check:** You **MUST** run `deepsift history` at the start of any codebase investigation to see if the required search results have already been cached.
 4. **Visual Cache First:** Read the `INDEX.md` file under `.deepsift/outputs/` before running a new search query. The exact absolute path of the `INDEX.md` file is printed in the terminal as a clickable file link (e.g. `file:///...`) at the end of each search. You MUST open `INDEX.md` and visually parse the embedded PNG images, which contain highly compressed `pxpipe` tokens holding the context.
@@ -68,6 +70,9 @@ deepsift feature "src/features/auth"
 
 # Decode a compressed token you cannot understand
 deepsift resolve "0A"
+
+# Read file contents optimally without consuming massive text tokens
+deepsift read "src/core/indexer.ts" "src/utils/config.ts:10-40"
 
 # MANDATORY: Before creating a new file
 deepsift context "src/components/MyNewButton.tsx"
