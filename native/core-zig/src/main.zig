@@ -10,7 +10,7 @@ const Request = struct {
     ids: ?[][]const u8 = null,
     query: ?[]const u8 = null,
     topK: ?usize = null,
-    queryEmbedding: ?[db.VECTOR_F32_COUNT]f32 = null,
+    queryEmbedding: ?[db.VECTOR_BQ_U32_COUNT]u32 = null,
 };
 
 const ResponseOk = struct {
@@ -32,7 +32,7 @@ const ChunksResponse = struct {
     data: []const db.Chunk,
 };
 
-pub const ChunkEmbedding = struct { id: []const u8, embedding: [db.VECTOR_F32_COUNT]f32 };
+pub const ChunkEmbedding = struct { id: []const u8, embedding: [db.VECTOR_BQ_U32_COUNT]u32 };
 const ChunkEmbeddingsResponse = struct {
     success: bool = true,
     data: []const ChunkEmbedding,
@@ -99,6 +99,14 @@ const RankedChunk = struct {
 
 fn compareRankedChunks(_: void, a: RankedChunk, b: RankedChunk) bool {
     return a.keyword_score > b.keyword_score;
+}
+
+fn hammingSimilarity(a: [db.VECTOR_BQ_U32_COUNT]u32, b: [db.VECTOR_BQ_U32_COUNT]u32) f32 {
+    var distance: u32 = 0;
+    for (0..db.VECTOR_BQ_U32_COUNT) |i| {
+        distance += @popCount(a[i] ^ b[i]);
+    }
+    return 1.0 - @as(f32, @floatFromInt(distance)) / @as(f32, @floatFromInt(db.VECTOR_DIM));
 }
 
 fn writeResponse(allocator: std.mem.Allocator, writer: *std.Io.Writer, value: anytype) !void {
@@ -265,6 +273,40 @@ pub fn main() !void {
             };
         }
         try writeResponse(allocator, &writer.interface, SearchResponse{ .data = final_matches });
+    } else if (std.mem.eql(u8, req.action, "searchSemantic")) {
+        const top_k = req.topK orelse 20;
+        if (req.queryEmbedding) |qe| {
+            var results = std.ArrayList(RankedChunk).empty;
+            defer results.deinit(allocator);
+
+            for (database.chunks.items, 0..) |chunk, ci| {
+                const score = hammingSimilarity(qe, chunk.embedding);
+                try results.append(allocator, .{ .chunk_index = ci, .keyword_score = score });
+            }
+
+            std.sort.pdq(RankedChunk, results.items, {}, compareRankedChunks);
+
+            const count = @min(top_k, results.items.len);
+            var final_matches = try allocator.alloc(SearchMatch, count);
+            defer allocator.free(final_matches);
+
+            for (0..count) |si| {
+                const rc = results.items[si];
+                const c = database.chunks.items[rc.chunk_index];
+                final_matches[si] = .{
+                    .id = c.id,
+                    .filePath = c.file_path,
+                    .content = c.content,
+                    .startLine = c.start_line,
+                    .endLine = c.end_line,
+                    .type = c.chunk_type,
+                    .language = c.language,
+                    .score = rc.keyword_score,
+                    .matchType = "semantic",
+                };
+            }
+            try writeResponse(allocator, &writer.interface, SearchResponse{ .data = final_matches });
+        }
     } else {
         try writeResponse(allocator, &writer.interface, ResponseError{ .message = "Unknown action" });
     }

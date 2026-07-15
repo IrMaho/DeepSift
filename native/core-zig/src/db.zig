@@ -1,7 +1,8 @@
 const std = @import("std");
 const mem = std.mem;
 
-pub const VECTOR_F32_COUNT: usize = 384;
+pub const VECTOR_DIM: usize = 384;
+pub const VECTOR_BQ_U32_COUNT: usize = VECTOR_DIM / 32;
 
 pub const Chunk = struct {
     id: []const u8,
@@ -11,7 +12,7 @@ pub const Chunk = struct {
     end_line: u32,
     chunk_type: []const u8,
     language: []const u8,
-    embedding: [VECTOR_F32_COUNT]f32,
+    embedding: [VECTOR_BQ_U32_COUNT]u32,
 };
 
 pub const FileMetadata = struct {
@@ -97,7 +98,7 @@ pub const Database = struct {
             try writeString(writer, chunk.chunk_type);
             try writeString(writer, chunk.language);
             for (chunk.embedding) |val| {
-                try writer.writeInt(u32, @bitCast(val), .little);
+                try writer.writeInt(u32, val, .little);
             }
         }
 
@@ -180,10 +181,9 @@ pub const Database = struct {
             const chunk_type = try readString(&data_reader, arena_alloc);
             const language = try readString(&data_reader, arena_alloc);
             
-            var embedding: [VECTOR_F32_COUNT]f32 = undefined;
+            var embedding: [VECTOR_BQ_U32_COUNT]u32 = undefined;
             for (&embedding) |*val| {
-                const int_val = try data_reader.takeInt(u32, .little);
-                val.* = @bitCast(int_val);
+                val.* = try data_reader.takeInt(u32, .little);
             }
 
             self.chunks.appendAssumeCapacity(.{

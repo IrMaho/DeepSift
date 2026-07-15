@@ -90,18 +90,29 @@ export class NativeStore {
         this.executeAction('deleteFileChunks', { filePath });
     }
 
+    private quantizeF32ToBQ(vector: Float32Array): number[] {
+        const result = new Array(12).fill(0);
+        for (let i = 0; i < 384; i++) {
+            if (vector[i] > 0) {
+                const u32Idx = Math.floor(i / 32);
+                const bitIdx = i % 32;
+                result[u32Idx] = (result[u32Idx] | (1 << bitIdx)) >>> 0;
+            }
+        }
+        return result;
+    }
+
     public saveChunks(chunks: EmbeddedChunk[]) {
         if (chunks.length === 0) return;
         
-        // For native-store, we can just pass the array as is.
-        // It handles the Base64/Buffer embedding quantization internally if necessary,
-        // or we pass it as a regular number array.
         const serializedChunks = chunks.map(c => {
-            let embeddingArray: number[];
-            if (c.embedding instanceof Float32Array || c.embedding instanceof Uint8Array || c.embedding instanceof Buffer) {
-                embeddingArray = Array.from(c.embedding as any);
+            let bqEmbedding: number[];
+            if (c.embedding instanceof Float32Array) {
+                bqEmbedding = this.quantizeF32ToBQ(c.embedding);
+            } else if (Array.isArray(c.embedding) && c.embedding.length === 12) {
+                bqEmbedding = c.embedding;
             } else {
-                embeddingArray = c.embedding as unknown as number[];
+                bqEmbedding = this.quantizeF32ToBQ(new Float32Array(c.embedding));
             }
             
             return {
@@ -112,12 +123,33 @@ export class NativeStore {
                 end_line: c.chunk.endLine,
                 chunk_type: c.chunk.type,
                 language: c.chunk.language || '',
-                embedding: embeddingArray
+                embedding: bqEmbedding
             };
         });
 
         this.executeAction('saveChunks', { chunks: serializedChunks });
     }
+
+    public searchSemantic(queryEmbeddingF32: Float32Array, topK: number = 20): SearchResult[] {
+        const bqQuery = this.quantizeF32ToBQ(queryEmbeddingF32);
+        const data = this.executeAction('searchSemantic', { queryEmbedding: bqQuery, topK });
+        if (!data) return [];
+        
+        return data.map((row: any) => ({
+            chunk: {
+                id: row.id,
+                filePath: row.filePath,
+                content: row.content,
+                startLine: row.startLine,
+                endLine: row.endLine,
+                type: row.type,
+                language: row.language
+            },
+            score: row.score,
+            matchType: row.matchType || 'semantic'
+        }));
+    }
+
 
     public searchKeyword(query: string, topK: number = 20): SearchResult[] {
         const data = this.executeAction('searchKeyword', { query, topK });
