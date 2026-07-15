@@ -91,10 +91,10 @@ async function main() {
         process.exit(0);
     }
 
-    const { format, compress, cleanArgs } = parseGlobalFlags(rawArgs);
+    const { format, compress, cleanArgs, projectPathOverride } = parseGlobalFlags(rawArgs);
     const command = cleanArgs[0];
     const commandArgs = cleanArgs.slice(1);
-    const projectPath = resolveProjectPath();
+    const projectPath = resolveProjectPath(projectPathOverride, commandArgs);
 
     ensureDeepsiftDir(projectPath);
 
@@ -296,8 +296,37 @@ async function main() {
     }
 }
 
-function resolveProjectPath(): string {
-    return process.cwd();
+function resolveProjectPath(override?: string, args: string[] = []): string {
+    let currentDir = process.cwd();
+
+    if (override) {
+        currentDir = path.resolve(process.cwd(), override);
+    } else {
+        // Try to infer project root if an absolute path is provided in args
+        for (const arg of args) {
+            if (path.isAbsolute(arg) && fs.existsSync(arg)) {
+                currentDir = fs.statSync(arg).isDirectory() ? arg : path.dirname(arg);
+                break;
+            }
+        }
+    }
+
+    const root = path.parse(currentDir).root;
+
+    while (currentDir !== root) {
+        if (
+            fs.existsSync(path.join(currentDir, '.deepsift')) ||
+            fs.existsSync(path.join(currentDir, '.git')) ||
+            fs.existsSync(path.join(currentDir, 'package.json')) ||
+            fs.existsSync(path.join(currentDir, 'pubspec.yaml'))
+        ) {
+            return currentDir;
+        }
+        currentDir = path.dirname(currentDir);
+    }
+    
+    // Fallback to the initially determined directory if no project markers are found
+    return override ? path.resolve(process.cwd(), override) : process.cwd();
 }
 
 function ensureDeepsiftDir(projectPath: string) {
