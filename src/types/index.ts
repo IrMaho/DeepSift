@@ -16,7 +16,7 @@ export interface CodeChunk {
 
 export interface EmbeddedChunk {
     chunk: CodeChunk;
-    embedding: Float32Array;
+    embedding: any; // Float32Array for cosine, Buffer for BQ
 }
 
 export interface SearchResult {

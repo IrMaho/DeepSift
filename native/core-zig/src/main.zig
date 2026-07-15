@@ -1,33 +1,30 @@
 const std = @import("std");
 const mem = std.mem;
-const math = std.math;
 
 const posix = if (@hasDecl(std, "posix")) std.posix else std.os;
 
-const VECTOR_DIM: usize = 384;
-const VECTOR_SIZE_BYTES: usize = VECTOR_DIM * @sizeOf(f32);
+const VECTOR_DIM_BITS: usize = 384;
+const VECTOR_U32_COUNT: usize = 12; // 12 * 32 = 384 bits
+const VECTOR_SIZE_BYTES: usize = VECTOR_U32_COUNT * @sizeOf(u32); // 48 bytes
 
 const ChunkRecord = struct {
     id: u32,
     score: f32,
 };
 
-fn calculateCosineSimilarity(v1: []const f32, v2: []const f32) f32 {
-    var dot_product: f32 = 0.0;
-    var norm_a: f32 = 0.0;
-    var norm_b: f32 = 0.0;
-    
-    var i: usize = 0;
-    while (i < VECTOR_DIM) : (i += 1) {
-        const a = v1[i];
-        const b = v2[i];
-        dot_product += a * b;
-        norm_a += a * a;
-        norm_b += b * b;
+fn calculateHammingDistance(v1: *const [VECTOR_U32_COUNT]u32, v2: *const [VECTOR_U32_COUNT]u32) u32 {
+    var dist: u32 = 0;
+    // Unroll loop for maximum speed using popCount
+    inline for (0..VECTOR_U32_COUNT) |i| {
+        dist += @popCount(v1[i] ^ v2[i]);
     }
-    
-    if (norm_a == 0.0 or norm_b == 0.0) return 0.0;
-    return dot_product / (math.sqrt(norm_a) * math.sqrt(norm_b));
+    return dist;
+}
+
+fn hammingToSimilarity(distance: u32) f32 {
+    const float_dist: f32 = @floatFromInt(distance);
+    const float_dim: f32 = @floatFromInt(VECTOR_DIM_BITS);
+    return 1.0 - (float_dist / float_dim);
 }
 
 fn compareChunks(context: void, a: ChunkRecord, b: ChunkRecord) bool {
@@ -125,8 +122,8 @@ pub fn main() !void {
     var top_k: u32 = 0;
     try readAll(stdin_fd, mem.asBytes(&top_k));
 
-    // 2. Read query vector (1536 bytes)
-    var query_vec: [VECTOR_DIM]f32 = undefined;
+    // 2. Read query vector (48 bytes for 384 bits BQ)
+    var query_vec: [VECTOR_U32_COUNT]u32 = undefined;
     try readAll(stdin_fd, mem.sliceAsBytes(&query_vec));
 
     // 3. Read number of chunks N (4 bytes)
@@ -142,7 +139,7 @@ pub fn main() !void {
     defer allocator.free(chunks);
 
     // Temp buffer for chunk vector
-    var chunk_vec: [VECTOR_DIM]f32 = undefined;
+    var chunk_vec: [VECTOR_U32_COUNT]u32 = undefined;
 
     // 4. Stream and process each chunk
     var i: u32 = 0;
@@ -151,7 +148,8 @@ pub fn main() !void {
         try readAll(stdin_fd, mem.asBytes(&chunk_id));
         try readAll(stdin_fd, mem.sliceAsBytes(&chunk_vec));
 
-        const score = calculateCosineSimilarity(&query_vec, &chunk_vec);
+        const distance = calculateHammingDistance(&query_vec, &chunk_vec);
+        const score = hammingToSimilarity(distance);
         chunks[i] = ChunkRecord{
             .id = chunk_id,
             .score = score,
@@ -163,6 +161,8 @@ pub fn main() !void {
 
     // 6. Output sorted results (binary format)
     const write_count = @min(top_k, num_chunks);
+    std.debug.print("Writing {d} chunks\n", .{write_count});
+
     try writeAll(stdout_fd, mem.asBytes(&write_count));
 
     var j: u32 = 0;
@@ -170,4 +170,5 @@ pub fn main() !void {
         try writeAll(stdout_fd, mem.asBytes(&chunks[j].id));
         try writeAll(stdout_fd, mem.asBytes(&chunks[j].score));
     }
+    std.debug.print("Done writing\n", .{});
 }

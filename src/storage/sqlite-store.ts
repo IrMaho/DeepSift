@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import { EmbeddedChunk, IndexMetadata, SearchResult, ChunkType } from '../types/index.js';
 import path from 'path';
+import { quantizeF32ToBQ } from '../utils/similarity.js';
 
 export class SQLiteStore {
     private db: Database.Database;
@@ -98,7 +99,16 @@ export class SQLiteStore {
 
             for (const item of chunks) {
                 const { chunk, embedding } = item;
-                const buffer = Buffer.from(embedding.buffer);
+                
+                let buffer: Buffer;
+                if (embedding instanceof Float32Array) {
+                    buffer = quantizeF32ToBQ(embedding);
+                } else if (embedding.byteLength === 1536) {
+                    const f32 = new Float32Array(embedding.buffer || embedding, embedding.byteOffset || 0, 384);
+                    buffer = quantizeF32ToBQ(f32);
+                } else {
+                    buffer = Buffer.isBuffer(embedding) ? embedding : Buffer.from(embedding.buffer || embedding);
+                }
                 
                 const info = insertChunk.run(
                     chunk.id, chunk.filePath, chunk.content, chunk.startLine, chunk.endLine, 
@@ -150,7 +160,6 @@ export class SQLiteStore {
         const rows = stmt.all() as any[];
         
         return rows.map(row => {
-            const floatArray = new Float32Array(row.embedding.buffer, row.embedding.byteOffset, row.embedding.byteLength / Float32Array.BYTES_PER_ELEMENT);
             return {
                 chunk: {
                     id: row.id,
@@ -161,7 +170,7 @@ export class SQLiteStore {
                     type: row.chunk_type as ChunkType,
                     language: row.language
                 },
-                embedding: floatArray
+                embedding: row.embedding
             };
         });
     }
@@ -182,7 +191,6 @@ export class SQLiteStore {
         const rows = stmt.all(...ids) as any[];
         
         return rows.map(row => {
-            const floatArray = new Float32Array(row.embedding.buffer, row.embedding.byteOffset, row.embedding.byteLength / Float32Array.BYTES_PER_ELEMENT);
             return {
                 chunk: {
                     id: row.id,
@@ -193,7 +201,7 @@ export class SQLiteStore {
                     type: row.chunk_type as ChunkType,
                     language: row.language
                 },
-                embedding: floatArray
+                embedding: row.embedding
             };
         });
     }
