@@ -4,6 +4,13 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { EmbeddedChunk, IndexMetadata, SearchResult, ChunkType } from '../types/index.js';
 
+export interface BatchOperation {
+    action: 'saveMetadata' | 'deleteFileChunks' | 'saveChunks';
+    metadata?: any;
+    filePath?: string;
+    chunks?: any[];
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -86,6 +93,22 @@ export class NativeStore {
         };
     }
 
+    public getAllMetadata(): Map<string, IndexMetadata> {
+        const data = this.executeAction('getAllMetadata');
+        const map = new Map<string, IndexMetadata>();
+        if (!data) return map;
+        
+        for (const row of data) {
+            map.set(row.file_path, {
+                filePath: row.file_path,
+                fileHash: row.file_hash,
+                lastIndexed: row.last_indexed,
+                chunkCount: row.chunk_count
+            });
+        }
+        return map;
+    }
+
     public deleteFileChunks(filePath: string) {
         this.executeAction('deleteFileChunks', { filePath });
     }
@@ -128,6 +151,33 @@ export class NativeStore {
         });
 
         this.executeAction('saveChunks', { chunks: serializedChunks });
+    }
+
+    public executeBatch(ops: BatchOperation[]) {
+        if (ops.length === 0) return;
+        this.executeAction('batchExecute', { batch: ops });
+    }
+
+    public formatChunkForBatch(c: EmbeddedChunk): any {
+        let bqEmbedding: number[];
+        if (c.embedding instanceof Float32Array) {
+            bqEmbedding = this.quantizeF32ToBQ(c.embedding);
+        } else if (Array.isArray(c.embedding) && c.embedding.length === 12) {
+            bqEmbedding = c.embedding;
+        } else {
+            bqEmbedding = this.quantizeF32ToBQ(new Float32Array(c.embedding));
+        }
+        
+        return {
+            id: c.chunk.id,
+            file_path: c.chunk.filePath,
+            content: c.chunk.content,
+            start_line: c.chunk.startLine,
+            end_line: c.chunk.endLine,
+            chunk_type: c.chunk.type,
+            language: c.chunk.language || '',
+            embedding: bqEmbedding
+        };
     }
 
     public searchSemantic(queryEmbeddingF32: Float32Array, topK: number = 20): SearchResult[] {

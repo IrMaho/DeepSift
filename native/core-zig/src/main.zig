@@ -1,6 +1,13 @@
 const std = @import("std");
 const db = @import("db.zig");
 
+const BatchOperation = struct {
+    action: []const u8,
+    metadata: ?db.FileMetadata = null,
+    filePath: ?[]const u8 = null,
+    chunks: ?[]db.Chunk = null,
+};
+
 const Request = struct {
     action: []const u8,
     dbPath: []const u8,
@@ -11,6 +18,7 @@ const Request = struct {
     query: ?[]const u8 = null,
     topK: ?usize = null,
     queryEmbedding: ?[db.VECTOR_BQ_U32_COUNT]u32 = null,
+    batch: ?[]BatchOperation = null,
 };
 
 const ResponseOk = struct {
@@ -25,6 +33,11 @@ const ResponseError = struct {
 const MetadataResponse = struct {
     success: bool = true,
     data: ?db.FileMetadata,
+};
+
+const AllMetadataResponse = struct {
+    success: bool = true,
+    data: []const db.FileMetadata,
 };
 
 const ChunksResponse = struct {
@@ -191,6 +204,16 @@ pub fn main() !void {
         }
         try writeResponse(allocator, &writer.interface, MetadataResponse{ .data = found });
 
+    } else if (std.mem.eql(u8, req.action, "getAllMetadata")) {
+        std.debug.print("Processing getAllMetadata...\n", .{});
+        var results = std.ArrayList(db.FileMetadata).empty;
+        defer results.deinit(allocator);
+        var it = database.metadata.iterator();
+        while (it.next()) |entry| {
+            try results.append(allocator, entry.value_ptr.*);
+        }
+        try writeResponse(allocator, &writer.interface, AllMetadataResponse{ .data = results.items });
+
     } else if (std.mem.eql(u8, req.action, "deleteFileChunks")) {
         if (req.filePath) |fp| {
             database.deleteFileChunks(fp);
@@ -204,6 +227,33 @@ pub fn main() !void {
             }
             modified = true;
             try writeResponse(allocator, &writer.interface, ResponseOk{});
+        }
+    } else if (std.mem.eql(u8, req.action, "batchExecute")) {
+        std.debug.print("Processing batchExecute...\n", .{});
+        if (req.batch) |batch| {
+            for (batch) |op| {
+                if (std.mem.eql(u8, op.action, "saveMetadata")) {
+                    if (op.metadata) |m| {
+                        try database.addMetadata(m);
+                        modified = true;
+                    }
+                } else if (std.mem.eql(u8, op.action, "deleteFileChunks")) {
+                    if (op.filePath) |fp| {
+                        database.deleteFileChunks(fp);
+                        modified = true;
+                    }
+                } else if (std.mem.eql(u8, op.action, "saveChunks")) {
+                    if (op.chunks) |chunks| {
+                        for (chunks) |c| {
+                            try database.addChunk(c);
+                        }
+                        modified = true;
+                    }
+                }
+            }
+            try writeResponse(allocator, &writer.interface, ResponseOk{});
+        } else {
+            try writeResponse(allocator, &writer.interface, ResponseError{ .message = "Missing batch operations array" });
         }
     } else if (std.mem.eql(u8, req.action, "getAllChunks")) {
         try writeResponse(allocator, &writer.interface, ChunksResponse{ .data = database.chunks.items });

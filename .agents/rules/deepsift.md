@@ -2,10 +2,6 @@
 trigger: always_on
 ---
 
----
-trigger: always_on
----
-
 # 🔍 DeepSift — Semantic Codebase Search (CLI Mode)
 
 You have access to **DeepSift**, a powerful local semantic search engine.

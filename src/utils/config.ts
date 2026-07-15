@@ -26,10 +26,23 @@ export const DEFAULT_CONFIG: DeepSiftConfig = {
         includeDirs: [],
         excludeDirs: [
             "node_modules", ".git", "dist", "build", "coverage", ".next",
-            ".cache", ".dart_tool", ".gradle", ".idea", ".vscode", "windows", "android", "ios", "linux", "macos", "web", "public"
+            ".cache", ".dart_tool", ".gradle", ".idea", ".vscode",
+            ".deepsift", ".mcp_search_outputs",
+            ".zig-cache", "zig-out",
+            "windows", "android", "ios", "linux", "macos", "web", "public"
         ],
         includeExtensions: [],
-        excludeExtensions: [".min.js", ".map", ".lock", ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".woff", ".woff2", ".ttf", ".eot", ".pdf", ".zip", ".tar", ".gz", ".rar", ".7z", ".sqlite", ".db", ".log", ".mp4", ".avi", ".mov", ".dll", ".pdb", ".exe", ".so", ".dylib", ".lib", ".exp"]
+        excludeExtensions: [
+            ".min.js", ".map", ".lock",
+            ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp", ".bmp",
+            ".woff", ".woff2", ".ttf", ".eot", ".otf", ".otb",
+            ".pdf", ".zip", ".tar", ".gz", ".rar", ".7z",
+            ".sqlite", ".db", ".log",
+            ".mp4", ".avi", ".mov", ".mkv", ".mp3", ".wav",
+            ".dll", ".pdb", ".exe", ".so", ".dylib", ".lib", ".exp",
+            ".obj", ".o", ".a", ".wasm", ".bak",
+            ".pyc", ".class", ".jar"
+        ]
     },
     format: {
         outputTheme: "default"
