@@ -1,0 +1,43 @@
+{
+  "name": "deepsift",
+  "version": "1.0.0",
+  "description": "Semantic Codebase Search — MCP Server + CLI Bridge for any IDE",
+  "type": "module",
+  "main": "dist/server.js",
+  "bin": {
+    "deepsift": "dist/cli/cli-entry.js"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/build-zig.js",
+    "build:release": "node scripts/build-release.js",
+    "dev": "tsx src/server.ts",
+    "dev:cli": "tsx src/cli/cli-entry.ts",
+    "start": "node dist/server.js",
+    "start:cli": "node dist/cli/cli-entry.js",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "mcp",
+    "semantic-search",
+    "ternlight"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.5.2",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@ternlight/base": "^0.1.0",
+    "ignore": "^7.0.6",
+    "pxpipe-proxy": "file:pxpipe-main",
+    "tree-sitter": "^0.25.0",
+    "tree-sitter-python": "^0.25.0",
+    "tree-sitter-typescript": "^0.23.2",
+    "zod": "^4.4.3"
+  }
+}
