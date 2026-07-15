@@ -156,7 +156,15 @@ export class NativeStore {
         if (!data) return [];
         
         return data.map((row: any) => ({
-            chunk: row.chunk,
+            chunk: {
+                id: row.id,
+                filePath: row.filePath,
+                content: row.content,
+                startLine: row.startLine,
+                endLine: row.endLine,
+                type: row.type,
+                language: row.language
+            },
             score: row.score,
             matchType: row.matchType || 'keyword'
         }));
