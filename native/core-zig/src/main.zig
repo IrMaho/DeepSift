@@ -138,11 +138,11 @@ pub fn main() !void {
     defer threaded_io.deinit();
     const io = threaded_io.io();
 
-    var in_buf: [4096]u8 = undefined;
+    var in_buf: [65536]u8 = undefined;
     const stdin = std.Io.File.stdin();
     var reader = stdin.reader(io, &in_buf);
     
-    var out_buf: [4096]u8 = undefined;
+    var out_buf: [65536]u8 = undefined;
     const stdout = std.Io.File.stdout();
     var writer = stdout.writer(io, &out_buf);
 
@@ -153,12 +153,12 @@ pub fn main() !void {
     var input_array = std.ArrayList(u8).empty;
     defer input_array.deinit(allocator);
 
-    var read_buf: [4096]u8 = undefined;
+    var read_buf: [65536]u8 = undefined;
     while (true) {
         const n = try reader.interface.readSliceShort(&read_buf);
         if (n == 0) break;
         try input_array.appendSlice(allocator, read_buf[0..n]);
-        if (input_array.items.len > 1024 * 1024 * 100) return error.FileTooBig;
+        if (input_array.items.len > 1024 * 1024 * 200) return error.FileTooBig;
     }
     const input_data = input_array.items;
 

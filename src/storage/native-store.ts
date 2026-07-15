@@ -39,18 +39,22 @@ export class NativeStore {
             ...payload
         };
 
+        const inputJson = JSON.stringify(req);
+        const inputSizeMB = (Buffer.byteLength(inputJson, 'utf-8') / (1024 * 1024)).toFixed(2);
+
         const result = spawnSync(EXE_PATH, [], {
-            input: JSON.stringify(req),
+            input: inputJson,
             encoding: 'utf-8',
-            maxBuffer: 1024 * 1024 * 100 // 100MB output buffer
+            maxBuffer: 1024 * 1024 * 200,
+            stdio: ['pipe', 'pipe', 'pipe']
         });
 
         if (result.error) {
-            throw new Error(`Failed to execute Zig database process: ${result.error.message}`);
+            throw new Error(`Failed to execute Zig database process (payload: ${inputSizeMB}MB): ${result.error.message}`);
         }
 
         if (result.status !== 0) {
-            throw new Error(`Zig database process exited with code ${result.status}: ${result.stderr}`);
+            throw new Error(`Zig database process exited with code ${result.status} (payload: ${inputSizeMB}MB): ${result.stderr}`);
         }
 
         if (!result.stdout || result.stdout.trim().length === 0) {
@@ -65,7 +69,7 @@ export class NativeStore {
             return res.data;
         } catch (err: any) {
             if (err.name === 'SyntaxError') {
-                throw new Error(`Invalid JSON response from Zig database: ${result.stdout}`);
+                throw new Error(`Invalid JSON response from Zig database: ${result.stdout.substring(0, 200)}`);
             }
             throw err;
         }

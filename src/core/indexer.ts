@@ -124,10 +124,17 @@ export class Indexer {
                 }));
             }
 
-            // Phase 4: SINGLE database call to write everything!
+            const DB_BATCH_LIMIT = 200;
             if (batchOperations.length > 0) {
-                if (onProgress) onProgress(totalFilesToProcess, totalFilesToProcess, "Saving to database...");
-                this.store.executeBatch(batchOperations);
+                const totalBatches = Math.ceil(batchOperations.length / DB_BATCH_LIMIT);
+                for (let b = 0; b < batchOperations.length; b += DB_BATCH_LIMIT) {
+                    const subBatch = batchOperations.slice(b, b + DB_BATCH_LIMIT);
+                    const batchNum = Math.floor(b / DB_BATCH_LIMIT) + 1;
+                    if (onProgress) {
+                        onProgress(totalFilesToProcess, totalFilesToProcess, `Saving to database... (${batchNum}/${totalBatches})`);
+                    }
+                    this.store.executeBatch(subBatch);
+                }
             }
 
         } finally {
