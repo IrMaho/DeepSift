@@ -1,4 +1,4 @@
-import { SQLiteStore } from '../storage/sqlite-store.js';
+import { NativeStore } from '../storage/native-store.js';
 import { getFiles } from '../utils/file-walker.js';
 import { parseAST } from '../parsers/tree-sitter-parser.js';
 import { getEmbeddings } from './embedder.js';
@@ -8,10 +8,10 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 export class Indexer {
-    private store: SQLiteStore;
+    private store: NativeStore;
     private isIndexing: boolean = false;
 
-    constructor(store: SQLiteStore) {
+    constructor(store: NativeStore) {
         this.store = store;
     }
 

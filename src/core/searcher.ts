@@ -1,13 +1,13 @@
-import { SQLiteStore } from '../storage/sqlite-store.js';
+import { NativeStore } from '../storage/native-store.js';
 import { getEmbedding } from './embedder.js';
 import { calculateHammingSimilarityBatch, quantizeF32ToBQ, applyRRF } from '../utils/similarity.js';
 import { SearchQuery, SearchResult, ChunkType } from '../types/index.js';
 import { loadDNA } from '../intelligence/project-dna.js';
 
 export class Searcher {
-    private store: SQLiteStore;
+    private store: NativeStore;
 
-    constructor(store: SQLiteStore) {
+    constructor(store: NativeStore) {
         this.store = store;
     }
 

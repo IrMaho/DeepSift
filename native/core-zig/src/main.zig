@@ -1,174 +1,279 @@
 const std = @import("std");
-const mem = std.mem;
+const db = @import("db.zig");
 
-const posix = if (@hasDecl(std, "posix")) std.posix else std.os;
-
-const VECTOR_DIM_BITS: usize = 384;
-const VECTOR_U32_COUNT: usize = 12; // 12 * 32 = 384 bits
-const VECTOR_SIZE_BYTES: usize = VECTOR_U32_COUNT * @sizeOf(u32); // 48 bytes
-
-const ChunkRecord = struct {
-    id: u32,
-    score: f32,
+const Request = struct {
+    action: []const u8,
+    dbPath: []const u8,
+    metadata: ?db.FileMetadata = null,
+    filePath: ?[]const u8 = null,
+    chunks: ?[]db.Chunk = null,
+    ids: ?[][]const u8 = null,
+    query: ?[]const u8 = null,
+    topK: ?usize = null,
+    queryEmbedding: ?[db.VECTOR_F32_COUNT]f32 = null,
 };
 
-fn calculateHammingDistance(v1: *const [VECTOR_U32_COUNT]u32, v2: *const [VECTOR_U32_COUNT]u32) u32 {
-    var dist: u32 = 0;
-    // Unroll loop for maximum speed using popCount
-    inline for (0..VECTOR_U32_COUNT) |i| {
-        dist += @popCount(v1[i] ^ v2[i]);
-    }
-    return dist;
-}
+const ResponseOk = struct {
+    success: bool = true,
+};
 
-fn hammingToSimilarity(distance: u32) f32 {
-    const float_dist: f32 = @floatFromInt(distance);
-    const float_dim: f32 = @floatFromInt(VECTOR_DIM_BITS);
-    return 1.0 - (float_dist / float_dim);
-}
+const ResponseError = struct {
+    success: bool = false,
+    message: []const u8,
+};
 
-fn compareChunks(context: void, a: ChunkRecord, b: ChunkRecord) bool {
-    _ = context;
-    return a.score > b.score; // Descending order
-}
+const MetadataResponse = struct {
+    success: bool = true,
+    data: ?db.FileMetadata,
+};
 
-const builtin = @import("builtin");
-const is_windows = builtin.os.tag == .windows;
+const ChunksResponse = struct {
+    success: bool = true,
+    data: []const db.Chunk,
+};
 
-// Windows API declarations to bypass standard library version mismatches
-extern "kernel32" fn ReadFile(
-    hFile: *anyopaque,
-    lpBuffer: [*]u8,
-    nNumberOfBytesToRead: u32,
-    lpNumberOfBytesRead: *u32,
-    lpOverlapped: ?*anyopaque,
-) callconv(.c) i32;
+pub const ChunkEmbedding = struct { id: []const u8, embedding: [db.VECTOR_F32_COUNT]f32 };
+const ChunkEmbeddingsResponse = struct {
+    success: bool = true,
+    data: []const ChunkEmbedding,
+};
 
-extern "kernel32" fn WriteFile(
-    hFile: *anyopaque,
-    lpBuffer: [*]const u8,
-    nNumberOfBytesToWrite: u32,
-    lpNumberOfBytesWritten: *u32,
-    lpOverlapped: ?*anyopaque,
-) callconv(.c) i32;
+const StatusResponse = struct {
+    success: bool = true,
+    data: struct {
+        totalFiles: u32,
+        totalChunks: u32,
+        lastUpdated: i64,
+        isIndexing: bool,
+    },
+};
 
-fn readAll(fd: anytype, buf: []u8) !void {
-    if (is_windows) {
-        var bytes_read: u32 = 0;
-        var offset: usize = 0;
-        while (offset < buf.len) {
-            const chunk_size = @min(buf.len - offset, std.math.maxInt(u32));
-            const success = ReadFile(
-                fd,
-                buf.ptr + offset,
-                @intCast(chunk_size),
-                &bytes_read,
-                null,
-            );
-            if (success == 0) return error.ReadFailed;
-            if (bytes_read == 0) return error.EndOfStream;
-            offset += bytes_read;
+const SearchMatch = struct {
+    id: []const u8,
+    filePath: []const u8,
+    content: []const u8,
+    startLine: u32,
+    endLine: u32,
+    type: []const u8,
+    language: []const u8,
+    score: f32,
+    matchType: []const u8,
+};
+
+const SearchResponse = struct {
+    success: bool = true,
+    data: []const SearchMatch,
+};
+
+fn countKeywordMatches(content: []const u8, query: []const u8) f32 {
+    if (query.len == 0 or content.len == 0) return 0.0;
+
+    var matches: u32 = 0;
+    var i: usize = 0;
+    while (i + query.len <= content.len) {
+        var match = true;
+        for (0..query.len) |j| {
+            if (std.ascii.toLower(content[i + j]) != std.ascii.toLower(query[j])) {
+                match = false;
+                break;
+            }
         }
-    } else {
-        var offset: usize = 0;
-        while (offset < buf.len) {
-            const bytes_read = try posix.read(fd, buf[offset..]);
-            if (bytes_read == 0) return error.EndOfStream;
-            offset += bytes_read;
-        }
-    }
-}
-
-fn writeAll(fd: anytype, buf: []const u8) !void {
-    if (is_windows) {
-        var bytes_written: u32 = 0;
-        var offset: usize = 0;
-        while (offset < buf.len) {
-            const chunk_size = @min(buf.len - offset, std.math.maxInt(u32));
-            const success = WriteFile(
-                fd,
-                buf.ptr + offset,
-                @intCast(chunk_size),
-                &bytes_written,
-                null,
-            );
-            if (success == 0) return error.WriteFailed;
-            offset += bytes_written;
-        }
-    } else {
-        var offset: usize = 0;
-        while (offset < buf.len) {
-            const bytes_written = try posix.write(fd, buf[offset..]);
-            if (bytes_written == 0) return error.WriteFailed;
-            offset += bytes_written;
+        if (match) {
+            matches += 1;
+            i += query.len;
+        } else {
+            i += 1;
         }
     }
+
+    if (matches > 0) {
+        return @as(f32, @floatFromInt(matches)) * 0.1;
+    }
+    return 0.0;
+}
+
+const RankedChunk = struct {
+    chunk_index: usize,
+    keyword_score: f32,
+};
+
+fn compareRankedChunks(_: void, a: RankedChunk, b: RankedChunk) bool {
+    return a.keyword_score > b.keyword_score;
+}
+
+fn writeResponse(allocator: std.mem.Allocator, writer: *std.Io.Writer, value: anytype) !void {
+    const str = try std.json.Stringify.valueAlloc(allocator, value, .{});
+    defer allocator.free(str);
+    try writer.writeAll(str);
+    try writer.writeAll("\n"); // Add newline to ensure flushed stream
 }
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
+
+    var threaded_io = std.Io.Threaded.init(allocator, .{});
+    defer threaded_io.deinit();
+    const io = threaded_io.io();
+
+    var in_buf: [4096]u8 = undefined;
+    const stdin = std.Io.File.stdin();
+    var reader = stdin.reader(io, &in_buf);
     
-    const stdin_fd = if (@hasDecl(std, "Io"))
-        std.Io.File.stdin().handle
-    else
-        std.io.getStdIn().handle;
+    var out_buf: [4096]u8 = undefined;
+    const stdout = std.Io.File.stdout();
+    var writer = stdout.writer(io, &out_buf);
 
-    const stdout_fd = if (@hasDecl(std, "Io"))
-        std.Io.File.stdout().handle
-    else
-        std.io.getStdOut().handle;
+    var database = db.Database.init(allocator);
+    defer database.deinit();
 
-    // 1. Read topK (4 bytes)
-    var top_k: u32 = 0;
-    try readAll(stdin_fd, mem.asBytes(&top_k));
+    // Read all from stdin
+    var input_array = std.ArrayList(u8).empty;
+    defer input_array.deinit(allocator);
 
-    // 2. Read query vector (48 bytes for 384 bits BQ)
-    var query_vec: [VECTOR_U32_COUNT]u32 = undefined;
-    try readAll(stdin_fd, mem.sliceAsBytes(&query_vec));
+    var read_buf: [4096]u8 = undefined;
+    while (true) {
+        const n = try reader.interface.readSliceShort(&read_buf);
+        if (n == 0) break;
+        try input_array.appendSlice(allocator, read_buf[0..n]);
+        if (input_array.items.len > 1024 * 1024 * 100) return error.FileTooBig;
+    }
+    const input_data = input_array.items;
 
-    // 3. Read number of chunks N (4 bytes)
-    var num_chunks: u32 = 0;
-    try readAll(stdin_fd, mem.asBytes(&num_chunks));
+    std.debug.print("Read {d} bytes from stdin\n", .{input_data.len});
 
-    if (num_chunks == 0) {
+    if (input_data.len == 0) return;
+
+    var parsed = std.json.parseFromSlice(Request, allocator, input_data, .{
+        .ignore_unknown_fields = true,
+    }) catch |err| {
+        std.debug.print("Failed to parse JSON: {any}\n", .{err});
+        try writeResponse(allocator, &writer.interface, ResponseError{ .message = "Invalid JSON" });
         return;
+    };
+    defer parsed.deinit();
+
+    const req = parsed.value;
+
+    // Load Database
+    database.loadFromFile(io, req.dbPath) catch {};
+
+    var modified = false;
+
+    if (std.mem.eql(u8, req.action, "saveMetadata")) {
+        if (req.metadata) |m| {
+            try database.addMetadata(m);
+            modified = true;
+            try writeResponse(allocator, &writer.interface, ResponseOk{});
+        }
+    } else if (std.mem.eql(u8, req.action, "getMetadata")) {
+        var found: ?db.FileMetadata = null;
+        if (req.filePath) |fp| {
+            if (database.metadata.get(fp)) |m| found = m;
+        }
+        try writeResponse(allocator, &writer.interface, MetadataResponse{ .data = found });
+    } else if (std.mem.eql(u8, req.action, "deleteFileChunks")) {
+        if (req.filePath) |fp| {
+            database.deleteFileChunks(fp);
+            modified = true;
+            try writeResponse(allocator, &writer.interface, ResponseOk{});
+        }
+    } else if (std.mem.eql(u8, req.action, "saveChunks")) {
+        if (req.chunks) |chunks| {
+            for (chunks) |c| {
+                try database.addChunk(c);
+            }
+            modified = true;
+            try writeResponse(allocator, &writer.interface, ResponseOk{});
+        }
+    } else if (std.mem.eql(u8, req.action, "getAllChunks")) {
+        try writeResponse(allocator, &writer.interface, ChunksResponse{ .data = database.chunks.items });
+    } else if (std.mem.eql(u8, req.action, "getChunkEmbeddings")) {
+        var results = std.ArrayList(ChunkEmbedding).empty;
+        defer results.deinit(allocator);
+        for (database.chunks.items) |c| {
+            try results.append(allocator, .{ .id = c.id, .embedding = c.embedding });
+        }
+        try writeResponse(allocator, &writer.interface, ChunkEmbeddingsResponse{ .data = results.items });
+    } else if (std.mem.eql(u8, req.action, "getChunksByIds")) {
+        var results = std.ArrayList(db.Chunk).empty;
+        defer results.deinit(allocator);
+        if (req.ids) |ids| {
+            for (database.chunks.items) |c| {
+                for (ids) |id| {
+                    if (std.mem.eql(u8, c.id, id)) {
+                        try results.append(allocator, c);
+                        break;
+                    }
+                }
+            }
+        }
+        try writeResponse(allocator, &writer.interface, ChunksResponse{ .data = results.items });
+    } else if (std.mem.eql(u8, req.action, "getStatus")) {
+        var last_updated: i64 = 0;
+        var it = database.metadata.iterator();
+        while (it.next()) |entry| {
+            if (entry.value_ptr.last_indexed > last_updated) {
+                last_updated = entry.value_ptr.last_indexed;
+            }
+        }
+        try writeResponse(allocator, &writer.interface, StatusResponse{
+            .data = .{
+                .totalFiles = @intCast(database.metadata.count()),
+                .totalChunks = @intCast(database.chunks.items.len),
+                .lastUpdated = last_updated,
+                .isIndexing = false,
+            }
+        });
+    } else if (std.mem.eql(u8, req.action, "searchKeyword")) {
+        const top_k = req.topK orelse 20;
+        var results = std.ArrayList(RankedChunk).empty;
+        defer results.deinit(allocator);
+
+        for (database.chunks.items, 0..) |chunk, i| {
+            var k_score: f32 = 0.0;
+            if (req.query) |q| {
+                k_score = countKeywordMatches(chunk.content, q);
+            }
+
+            if (k_score > 0.0) {
+                try results.append(allocator, .{
+                    .chunk_index = i,
+                    .keyword_score = k_score,
+                });
+            }
+        }
+
+        std.sort.pdq(RankedChunk, results.items, {}, compareRankedChunks);
+
+        const count = @min(top_k, results.items.len);
+        var final_matches = try allocator.alloc(SearchMatch, count);
+        defer allocator.free(final_matches);
+
+        for (0..count) |i| {
+            const rc = results.items[i];
+            const c = database.chunks.items[rc.chunk_index];
+            final_matches[i] = .{
+                .id = c.id,
+                .filePath = c.file_path,
+                .content = c.content,
+                .startLine = c.start_line,
+                .endLine = c.end_line,
+                .type = c.chunk_type,
+                .language = c.language,
+                .score = rc.keyword_score,
+                .matchType = "keyword",
+            };
+        }
+        try writeResponse(allocator, &writer.interface, SearchResponse{ .data = final_matches });
+    } else {
+        try writeResponse(allocator, &writer.interface, ResponseError{ .message = "Unknown action" });
     }
 
-    // Allocate array to store results
-    const chunks = try allocator.alloc(ChunkRecord, num_chunks);
-    defer allocator.free(chunks);
+    try writer.flush();
 
-    // Temp buffer for chunk vector
-    var chunk_vec: [VECTOR_U32_COUNT]u32 = undefined;
-
-    // 4. Stream and process each chunk
-    var i: u32 = 0;
-    while (i < num_chunks) : (i += 1) {
-        var chunk_id: u32 = 0;
-        try readAll(stdin_fd, mem.asBytes(&chunk_id));
-        try readAll(stdin_fd, mem.sliceAsBytes(&chunk_vec));
-
-        const distance = calculateHammingDistance(&query_vec, &chunk_vec);
-        const score = hammingToSimilarity(distance);
-        chunks[i] = ChunkRecord{
-            .id = chunk_id,
-            .score = score,
+    if (modified) {
+        database.saveToFile(io, req.dbPath) catch |err| {
+            std.debug.print("Failed to save database: {any}\n", .{err});
         };
     }
-
-    // 5. Sort results
-    std.sort.pdq(ChunkRecord, chunks, {}, compareChunks);
-
-    // 6. Output sorted results (binary format)
-    const write_count = @min(top_k, num_chunks);
-    std.debug.print("Writing {d} chunks\n", .{write_count});
-
-    try writeAll(stdout_fd, mem.asBytes(&write_count));
-
-    var j: u32 = 0;
-    while (j < write_count) : (j += 1) {
-        try writeAll(stdout_fd, mem.asBytes(&chunks[j].id));
-        try writeAll(stdout_fd, mem.asBytes(&chunks[j].score));
-    }
-    std.debug.print("Done writing\n", .{});
 }

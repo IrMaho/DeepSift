@@ -1,5 +1,5 @@
 import { printError, printInfo, printSuccess } from '../cli-output.js';
-import { SQLiteStore } from '../../storage/sqlite-store.js';
+import { NativeStore } from '../../storage/native-store.js';
 import { getDbPath } from '../cli-paths.js';
 import { calculateCosineSimilarity } from '../../utils/similarity.js';
 
@@ -29,7 +29,7 @@ export async function scanCommand(
 
     if (target === 'duplicates') {
         printInfo('🔍 Scanning for duplicate code blocks...');
-        const store = new SQLiteStore(getDbPath(projectPath));
+        const store = new NativeStore(getDbPath(projectPath));
         const chunks = store.getAllChunks();
         let dupCount = 0;
         
@@ -57,7 +57,7 @@ export async function scanCommand(
         
     } else if (target === 'conventions') {
         printInfo('📛 Scanning for naming convention violations...');
-        const store = new SQLiteStore(getDbPath(projectPath));
+        const store = new NativeStore(getDbPath(projectPath));
         const chunks = store.getAllChunks();
         let violationCount = 0;
         

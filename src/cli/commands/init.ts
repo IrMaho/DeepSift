@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { SQLiteStore } from '../../storage/sqlite-store.js';
+import { NativeStore } from '../../storage/native-store.js';
 import { Indexer } from '../../core/indexer.js';
 import { printInfo, printSuccess, printError } from '../cli-output.js';
 import { getDbPath } from '../cli-paths.js';
@@ -171,7 +171,7 @@ export async function initCommand(projectPath: string) {
 
     printInfo('Running initial index...');
     try {
-        const store = new SQLiteStore(getDbPath(projectPath));
+        const store = new NativeStore(getDbPath(projectPath));
         const indexer = new Indexer(store);
         const stats = await indexer.indexProject(projectPath, false, (current, total, file) => {
             process.stdout.write(`\rIndexing: ${current}/${total} files (Processing: ${file})`);

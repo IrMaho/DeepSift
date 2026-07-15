@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { SQLiteStore } from '../../storage/sqlite-store.js';
+import { NativeStore } from '../../storage/native-store.js';
 import { Indexer } from '../../core/indexer.js';
 import { Searcher } from '../../core/searcher.js';
 import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-output.js';
@@ -19,7 +19,7 @@ export async function searchCommand(
     compress: boolean = true,
     contextLines?: number
 ) {
-    const store = new SQLiteStore(getDbPath(projectPath));
+    const store = new NativeStore(getDbPath(projectPath));
     const indexer = new Indexer(store);
     const searcher = new Searcher(store);
 
