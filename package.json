@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc && node scripts/build-zig.js",
+    "build:release": "node scripts/build-release.js",
     "dev": "tsx src/server.ts",
     "dev:cli": "tsx src/cli/cli-entry.ts",
     "start": "node dist/server.js",
@@ -38,5 +39,15 @@
     "tree-sitter-python": "^0.25.0",
     "tree-sitter-typescript": "^0.23.2",
     "zod": "^4.4.3"
-  }
+  },
+  "files": [
+    "dist",
+    "templates",
+    "native/core-zig/build.zig",
+    "native/core-zig/src",
+    "bin",
+    "pxpipe-main/dist",
+    "pxpipe-main/bin",
+    "pxpipe-main/package.json"
+  ]
 }
