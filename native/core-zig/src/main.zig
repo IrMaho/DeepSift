@@ -119,6 +119,8 @@ fn writeResponse(allocator: std.mem.Allocator, writer: *std.Io.Writer, value: an
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
 
+
+
     var threaded_io = std.Io.Threaded.init(allocator, .{});
     defer threaded_io.deinit();
     const io = threaded_io.io();
@@ -163,22 +165,32 @@ pub fn main() !void {
     const req = parsed.value;
 
     // Load Database
-    database.loadFromFile(io, req.dbPath) catch {};
+    std.debug.print("Loading database...\n", .{});
+    database.loadFromFile(io, req.dbPath) catch |err| {
+        std.debug.print("Failed to load database: {any}\n", .{err});
+    };
+    std.debug.print("Database loaded.\n", .{});
+
 
     var modified = false;
 
     if (std.mem.eql(u8, req.action, "saveMetadata")) {
+        std.debug.print("Processing saveMetadata...\n", .{});
         if (req.metadata) |m| {
             try database.addMetadata(m);
             modified = true;
             try writeResponse(allocator, &writer.interface, ResponseOk{});
         }
+
     } else if (std.mem.eql(u8, req.action, "getMetadata")) {
+        std.debug.print("Processing getMetadata...\n", .{});
         var found: ?db.FileMetadata = null;
         if (req.filePath) |fp| {
+            std.debug.print("Looking up: {s}\n", .{fp});
             if (database.metadata.get(fp)) |m| found = m;
         }
         try writeResponse(allocator, &writer.interface, MetadataResponse{ .data = found });
+
     } else if (std.mem.eql(u8, req.action, "deleteFileChunks")) {
         if (req.filePath) |fp| {
             database.deleteFileChunks(fp);
@@ -217,6 +229,7 @@ pub fn main() !void {
         }
         try writeResponse(allocator, &writer.interface, ChunksResponse{ .data = results.items });
     } else if (std.mem.eql(u8, req.action, "getStatus")) {
+        std.debug.print("Processing getStatus...\n", .{});
         var last_updated: i64 = 0;
         var it = database.metadata.iterator();
         while (it.next()) |entry| {
@@ -232,6 +245,7 @@ pub fn main() !void {
                 .isIndexing = false,
             }
         });
+
     } else if (std.mem.eql(u8, req.action, "searchKeyword")) {
         const top_k = req.topK orelse 20;
         var results = std.ArrayList(RankedChunk).empty;

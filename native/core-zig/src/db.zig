@@ -108,12 +108,8 @@ pub const Database = struct {
         
         var out_buf: [4096]u8 = undefined;
         var file_writer = file.writer(io, &out_buf);
-
-        var compress_buf: [std.compress.flate.max_window_len]u8 = undefined;
-        var compressor = try std.compress.flate.Compress.init(&file_writer.interface, &compress_buf, .raw, std.compress.flate.Compress.Options.default);
-
-        try compressor.writer.writeAll(uncompressed_data.written());
-        try compressor.finish();
+        
+        try file_writer.interface.writeAll(uncompressed_data.written());
         try file_writer.flush();
     }
 
@@ -124,21 +120,21 @@ pub const Database = struct {
         };
         defer file.close(io);
 
+        std.debug.print("db: Opened file.\n", .{});
         const stat = try file.stat(io);
-        if (stat.size < 4) { // "ZDB1" magic size
-            return error.InvalidFormat;
-        }
+        if (stat.size == 0) return;
+        std.debug.print("db: File size {d}\n", .{stat.size});
 
         var in_buf: [4096]u8 = undefined;
         var file_reader = file.reader(io, &in_buf);
 
-        var decompress_buf: [std.compress.flate.max_window_len]u8 = undefined;
-        var decompressor = std.compress.flate.Decompress.init(&file_reader.interface, .raw, &decompress_buf);
-
         var uncompressed = std.Io.Writer.Allocating.init(self.allocator);
         defer uncompressed.deinit();
 
-        _ = try decompressor.reader.streamRemaining(&uncompressed.writer);
+        _ = file_reader.interface.streamRemaining(&uncompressed.writer) catch |err| {
+            std.debug.print("db: Read error: {any}\n", .{err});
+        };
+
 
         var data_reader: std.Io.Reader = .fixed(uncompressed.written());
 
