@@ -55,8 +55,8 @@ DeepSift coordinates AST-aware parsing, local vector generation, and hybrid inde
 
 *   **100% Offline & Local:** Code privacy is fully respected. Embeddings are generated locally using the `@ternlight/base` library. No data ever leaves your machine.
 *   **AST-Aware Code Chunking:** Uses `tree-sitter` parsers to break code down into logical constructs (such as classes, functions, and imports) while maintaining correct scope. Falls back to intelligent line-based chunking for unsupported formats.
-*   **Hybrid Search Engine (Vector + BM25 + RRF):** Combines dense vector search (Cosine Similarity) with sparse lexical search (SQLite FTS5 BM25 scoring) using **Reciprocal Rank Fusion (RRF)** to deliver highly relevant results.
-*   **Antigravity Brain Protocol (Drill-Down & Dependencies):** Equips AI agents to analyze very large repositories (100MB+) in steps. Agents can scan the project architecture, map dependencies, search globally, and then "drill down" strictly within cached logs—reducing context window consumption from megabytes to kilobytes.
+*   **Hybrid Search Engine (Vector + BM25 + RRF):** Combines dense vector search (Cosine Similarity) with sparse lexical search (SQLite FTS5 BM25 scoring) using **Reciprocal Rank Fusion (RRF)** to deliver highly relevant results. The custom FTS5 tokenizer supports indexing special characters (such as `[ ]`, `{ }`, `( )`, `-`, `_`, `#`) ensuring project management tasks (e.g. `[ ]` empty checkboxes) and config annotations are fully searchable.
+*   **Antigravity Brain Protocol (Drill-Down & Dependencies):** Equips AI agents to analyze very large repositories (100MB+) in steps. Agents can scan the project architecture, map dependencies, search globally, and then "drill down" strictly within cached logs—reducing context window consumption from megabytes to kilobytes. The dependency tracking engine (`deepsift deps`) natively traces both TS/JS ES Modules and secondary source linkings like HTML scripts/links or Nginx proxy routes.
 *   **Advanced Config System (`deepsift.config.json`):** Allows fine-grained control over directories to index or ignore (interactive configuration via `deepsift config`), file extensions to include/exclude, and default search options.
 *   **DeepSift V2 Context Intelligence Engine:** Understands project philosophy and conventions. It analyzes code to extract naming conventions, design tokens, similarities, and modularity into a `Project DNA`.
 *   **Pre-Generation Checklists:** Features a `deepsift context` command to instruct LLMs on project conventions *before* writing new code.
@@ -157,7 +157,7 @@ Once running, the server also starts the **Web Dashboard** at **[http://localhos
 | **`config`** | None | Launches an interactive console checklist to configure directories to index, generating a customizable `deepsift.config.json`. |
 | **`dna`** | `[--show]` | Generate or display the Project DNA (Context Intelligence). |
 | **`context`** | `"path"` | Returns a checklist of rules and design tokens before file generation. |
-| **`scan`** | `<target>` | Runs specific DNA analyzers (tokens, i18n, conventions, assets). |
+| **`scan`** | `<target>` | Runs specific DNA analyzers (tokens, i18n, duplicates, conventions, assets). <br>Note: **duplicates** (similarity-based) and **conventions** (naming rules enforcement) are fully operational. |
 | **`search`** | `"query1"` `["query2"...]` | Executes one or more hybrid semantic search queries. <br>Flags: `--include <path>`, `--no-sync` (skips file hashing updates), `--verbose` |
 | **`index`** | None | Re-indexes the project (incremental). Add `--force` to rebuild from scratch. |
 | **`status`** | None | Prints database size, total files indexed, and total chunk counts. |
