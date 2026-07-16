@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs';
 import { getFeatureOutline } from '../../utils/outline.js';
 import { saveSearchLog } from '../../utils/history.js';
 import { printResult, printSuccess, OutputFormat } from '../cli-output.js';
@@ -11,7 +12,12 @@ import { TokenOptimizerService } from '../../utils/token-compressor.js';
 export async function featureCommand(projectPath: string, featureDir: string, format: OutputFormat, compress: boolean = true) {
     let targetPath = featureDir;
     if (!path.isAbsolute(featureDir)) {
-        targetPath = path.join(projectPath, featureDir);
+        let tempPath = path.resolve(process.cwd(), featureDir);
+        if (fs.existsSync(tempPath)) {
+            targetPath = tempPath;
+        } else {
+            targetPath = path.resolve(projectPath, featureDir);
+        }
     }
 
     const outlineText = getFeatureOutline(targetPath);

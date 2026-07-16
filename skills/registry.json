@@ -1,0 +1,1798 @@
+{
+  "marketingskills": [
+    {
+      "name": "ab-testing",
+      "description": "When the user wants to plan, design, or implement an A/B test or experiment, or build a growth experimentation program. Also use when the user mentions \"A/B test,\" \"split test,\" \"experiment,\" \"test this change,\" \"variant copy,\" \"multivariate test,\" \"hypothesis,\" \"should I test this,\" \"which version is better,\" \"test two versions,\" \"statistical significance,\" \"how long should I run this test,\" \"growth experiments,\" \"experiment velocity,\" \"experiment backlog,\" \"ICE score,\" \"experimentation program,\" or \"experiment playbook.\" Use this whenever someone is comparing two approaches and wants to measure which performs better, or when they want to build a systematic experimentation practice. For tracking implementation, see analytics. For page-level conversion optimization, see cro.",
+      "relative_path": "marketingskills\\skills\\ab-testing\\SKILL.md",
+      "frontmatter": {
+        "name": "ab-testing",
+        "description": "When the user wants to plan, design, or implement an A/B test or experiment, or build a growth experimentation program. Also use when the user mentions \"A/B test,\" \"split test,\" \"experiment,\" \"test this change,\" \"variant copy,\" \"multivariate test,\" \"hypothesis,\" \"should I test this,\" \"which version is better,\" \"test two versions,\" \"statistical significance,\" \"how long should I run this test,\" \"growth experiments,\" \"experiment velocity,\" \"experiment backlog,\" \"ICE score,\" \"experimentation program,\" or \"experiment playbook.\" Use this whenever someone is comparing two approaches and wants to measure which performs better, or when they want to build a systematic experimentation practice. For tracking implementation, see analytics. For page-level conversion optimization, see cro.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "ad-creative",
+      "description": "When the user wants to generate, iterate, or scale ad creative — headlines, descriptions, primary text, or full ad variations — for any paid advertising platform. Also use when the user mentions 'ad copy variations,' 'ad creative,' 'generate headlines,' 'RSA headlines,' 'bulk ad copy,' 'ad iterations,' 'creative testing,' 'ad performance optimization,' 'write me some ads,' 'Facebook ad copy,' 'Google ad headlines,' 'LinkedIn ad text,' 'static ads,' 'static ad concepts,' 'ad templates,' 'iMessage ad,' 'chat reveal ad,' 'fake DM ad,' 'ChatGPT ad,' 'Apple Notes ad,' 'AirDrop ad,' 'creative strategy,' 'creative roadmap,' 'creative retro,' 'hook writing,' 'creative review page,' 'present ad creative for approval,' 'motion video ad,' 'faceless video ad,' 'animated explainer ad,' 'motion collage ad,' or 'I need more ad variations.' Use this whenever someone needs to produce ad copy at scale or iterate on existing ads. For campaign strategy and targeting, see ads. For landing page copy, see copywriting.",
+      "relative_path": "marketingskills\\skills\\ad-creative\\SKILL.md",
+      "frontmatter": {
+        "name": "ad-creative",
+        "description": "When the user wants to generate, iterate, or scale ad creative — headlines, descriptions, primary text, or full ad variations — for any paid advertising platform. Also use when the user mentions 'ad copy variations,' 'ad creative,' 'generate headlines,' 'RSA headlines,' 'bulk ad copy,' 'ad iterations,' 'creative testing,' 'ad performance optimization,' 'write me some ads,' 'Facebook ad copy,' 'Google ad headlines,' 'LinkedIn ad text,' 'static ads,' 'static ad concepts,' 'ad templates,' 'iMessage ad,' 'chat reveal ad,' 'fake DM ad,' 'ChatGPT ad,' 'Apple Notes ad,' 'AirDrop ad,' 'creative strategy,' 'creative roadmap,' 'creative retro,' 'hook writing,' 'creative review page,' 'present ad creative for approval,' 'motion video ad,' 'faceless video ad,' 'animated explainer ad,' 'motion collage ad,' or 'I need more ad variations.' Use this whenever someone needs to produce ad copy at scale or iterate on existing ads. For campaign strategy and targeting, see ads. For landing page copy, see copywriting.",
+        "metadata": "",
+        "version": "2.8.0"
+      }
+    },
+    {
+      "name": "ads",
+      "description": "When the user wants help with paid advertising campaigns on Google Ads, Meta (Facebook/Instagram), LinkedIn, Twitter/X, or other ad platforms. Also use when the user mentions 'PPC,' 'paid media,' 'ROAS,' 'CPA,' 'ad campaign,' 'retargeting,' 'audience targeting,' 'Google Ads,' 'Facebook ads,' 'LinkedIn ads,' 'ad budget,' 'cost per click,' 'ad spend,' 'should I run ads,' 'ABM,' 'account-based marketing,' 'B2B ads,' 'lead quality,' 'negative keywords,' 'Performance Max,' 'thought leader ads,' or 'when should I kill an ad.' Use this for campaign strategy, audience targeting, bidding, and optimization. For bulk ad creative generation and iteration, see ad-creative. For landing page optimization, see cro.",
+      "relative_path": "marketingskills\\skills\\ads\\SKILL.md",
+      "frontmatter": {
+        "name": "ads",
+        "description": "When the user wants help with paid advertising campaigns on Google Ads, Meta (Facebook/Instagram), LinkedIn, Twitter/X, or other ad platforms. Also use when the user mentions 'PPC,' 'paid media,' 'ROAS,' 'CPA,' 'ad campaign,' 'retargeting,' 'audience targeting,' 'Google Ads,' 'Facebook ads,' 'LinkedIn ads,' 'ad budget,' 'cost per click,' 'ad spend,' 'should I run ads,' 'ABM,' 'account-based marketing,' 'B2B ads,' 'lead quality,' 'negative keywords,' 'Performance Max,' 'thought leader ads,' or 'when should I kill an ad.' Use this for campaign strategy, audience targeting, bidding, and optimization. For bulk ad creative generation and iteration, see ad-creative. For landing page optimization, see cro.",
+        "metadata": "",
+        "version": "2.2.0"
+      }
+    },
+    {
+      "name": "ai-seo",
+      "description": "When the user wants to optimize content for AI search engines, get cited by LLMs, or appear in AI-generated answers. Also use when the user mentions 'AI SEO,' 'AEO,' 'GEO,' 'LLMO,' 'answer engine optimization,' 'generative engine optimization,' 'LLM optimization,' 'AI Overviews,' 'optimize for ChatGPT,' 'optimize for Perplexity,' 'AI citations,' 'AI visibility,' 'zero-click search,' 'how do I show up in AI answers,' 'LLM mentions,' 'optimize for Claude/Gemini,' 'llms.txt,' 'OKF,' 'Open Knowledge Format,' 'knowledge bundle,' or 'agent-readable site.' Use this whenever someone wants their content to be cited or surfaced by AI assistants and AI search engines. For traditional technical and on-page SEO audits, see seo-audit. For structured data implementation, see schema.",
+      "relative_path": "marketingskills\\skills\\ai-seo\\SKILL.md",
+      "frontmatter": {
+        "name": "ai-seo",
+        "description": "When the user wants to optimize content for AI search engines, get cited by LLMs, or appear in AI-generated answers. Also use when the user mentions 'AI SEO,' 'AEO,' 'GEO,' 'LLMO,' 'answer engine optimization,' 'generative engine optimization,' 'LLM optimization,' 'AI Overviews,' 'optimize for ChatGPT,' 'optimize for Perplexity,' 'AI citations,' 'AI visibility,' 'zero-click search,' 'how do I show up in AI answers,' 'LLM mentions,' 'optimize for Claude/Gemini,' 'llms.txt,' 'OKF,' 'Open Knowledge Format,' 'knowledge bundle,' or 'agent-readable site.' Use this whenever someone wants their content to be cited or surfaced by AI assistants and AI search engines. For traditional technical and on-page SEO audits, see seo-audit. For structured data implementation, see schema.",
+        "metadata": "",
+        "version": "2.2.0"
+      }
+    },
+    {
+      "name": "analytics",
+      "description": "When the user wants to set up, improve, or audit analytics tracking and measurement. Also use when the user mentions \"set up tracking,\" \"GA4,\" \"Google Analytics,\" \"conversion tracking,\" \"event tracking,\" \"UTM parameters,\" \"tag manager,\" \"GTM,\" \"analytics implementation,\" \"tracking plan,\" \"how do I measure this,\" \"track conversions,\" \"attribution,\" \"Mixpanel,\" \"Segment,\" \"are my events firing,\" or \"analytics isn't working.\" Use this whenever someone asks how to know if something is working or wants to measure marketing results. For A/B test measurement, see ab-testing.",
+      "relative_path": "marketingskills\\skills\\analytics\\SKILL.md",
+      "frontmatter": {
+        "name": "analytics",
+        "description": "When the user wants to set up, improve, or audit analytics tracking and measurement. Also use when the user mentions \"set up tracking,\" \"GA4,\" \"Google Analytics,\" \"conversion tracking,\" \"event tracking,\" \"UTM parameters,\" \"tag manager,\" \"GTM,\" \"analytics implementation,\" \"tracking plan,\" \"how do I measure this,\" \"track conversions,\" \"attribution,\" \"Mixpanel,\" \"Segment,\" \"are my events firing,\" or \"analytics isn't working.\" Use this whenever someone asks how to know if something is working or wants to measure marketing results. For A/B test measurement, see ab-testing.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "aso",
+      "description": "When the user wants to audit or optimize an App Store or Google Play listing. Also use when the user mentions 'ASO audit,' 'app store optimization,' 'optimize my app listing,' 'improve app visibility,' 'app store ranking,' 'audit my listing,' 'why aren't people downloading my app,' 'improve my app conversion,' 'keyword optimization for app,' or 'compare my app to competitors.' Use when the user shares an App Store or Google Play URL and wants to improve it.",
+      "relative_path": "marketingskills\\skills\\aso\\SKILL.md",
+      "frontmatter": {
+        "name": "aso",
+        "description": "When the user wants to audit or optimize an App Store or Google Play listing. Also use when the user mentions 'ASO audit,' 'app store optimization,' 'optimize my app listing,' 'improve app visibility,' 'app store ranking,' 'audit my listing,' 'why aren't people downloading my app,' 'improve my app conversion,' 'keyword optimization for app,' or 'compare my app to competitors.' Use when the user shares an App Store or Google Play URL and wants to improve it.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "churn-prevention",
+      "description": "When the user wants to reduce churn, build cancellation flows, set up save offers, recover failed payments, or implement retention strategies. Also use when the user mentions 'churn,' 'cancel flow,' 'offboarding,' 'save offer,' 'dunning,' 'failed payment recovery,' 'win-back,' 'retention,' 'exit survey,' 'pause subscription,' 'involuntary churn,' 'people keep canceling,' 'churn rate is too high,' 'how do I keep users,' or 'customers are leaving.' Use this whenever someone is losing subscribers or wants to build systems to prevent it. For post-cancel win-back email sequences, see emails. For in-app upgrade paywalls, see paywalls.",
+      "relative_path": "marketingskills\\skills\\churn-prevention\\SKILL.md",
+      "frontmatter": {
+        "name": "churn-prevention",
+        "description": "When the user wants to reduce churn, build cancellation flows, set up save offers, recover failed payments, or implement retention strategies. Also use when the user mentions 'churn,' 'cancel flow,' 'offboarding,' 'save offer,' 'dunning,' 'failed payment recovery,' 'win-back,' 'retention,' 'exit survey,' 'pause subscription,' 'involuntary churn,' 'people keep canceling,' 'churn rate is too high,' 'how do I keep users,' or 'customers are leaving.' Use this whenever someone is losing subscribers or wants to build systems to prevent it. For post-cancel win-back email sequences, see emails. For in-app upgrade paywalls, see paywalls.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "co-marketing",
+      "description": "When the user wants to find co-marketing partners, plan joint campaigns, or brainstorm partnership opportunities. Use when the user says 'co-marketing,' 'partner marketing,' 'joint campaign,' 'who should we partner with,' 'integration marketing,' 'cross-promotion,' 'collaborate with another company,' 'partnership ideas,' or 'co-brand.' For customer referral programs, see referrals. For launch-specific partnerships, see launch.",
+      "relative_path": "marketingskills\\skills\\co-marketing\\SKILL.md",
+      "frontmatter": {
+        "name": "co-marketing",
+        "description": "When the user wants to find co-marketing partners, plan joint campaigns, or brainstorm partnership opportunities. Use when the user says 'co-marketing,' 'partner marketing,' 'joint campaign,' 'who should we partner with,' 'integration marketing,' 'cross-promotion,' 'collaborate with another company,' 'partnership ideas,' or 'co-brand.' For customer referral programs, see referrals. For launch-specific partnerships, see launch.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "cold-email",
+      "description": "Write B2B cold emails and follow-up sequences that get replies. Use when the user wants to write cold outreach emails, prospecting emails, cold email campaigns, sales development emails, or SDR emails. Also use when the user mentions \"cold outreach,\" \"prospecting email,\" \"outbound email,\" \"email to leads,\" \"reach out to prospects,\" \"sales email,\" \"follow-up email sequence,\" \"nobody's replying to my emails,\" or \"how do I write a cold email.\" Covers subject lines, opening lines, body copy, CTAs, personalization, and multi-touch follow-up sequences. For warm/lifecycle email sequences, see emails. For sales collateral beyond emails, see sales-enablement.",
+      "relative_path": "marketingskills\\skills\\cold-email\\SKILL.md",
+      "frontmatter": {
+        "name": "cold-email",
+        "description": "Write B2B cold emails and follow-up sequences that get replies. Use when the user wants to write cold outreach emails, prospecting emails, cold email campaigns, sales development emails, or SDR emails. Also use when the user mentions \"cold outreach,\" \"prospecting email,\" \"outbound email,\" \"email to leads,\" \"reach out to prospects,\" \"sales email,\" \"follow-up email sequence,\" \"nobody's replying to my emails,\" or \"how do I write a cold email.\" Covers subject lines, opening lines, body copy, CTAs, personalization, and multi-touch follow-up sequences. For warm/lifecycle email sequences, see emails. For sales collateral beyond emails, see sales-enablement.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "community-marketing",
+      "description": "Build and leverage online communities to drive product growth and brand loyalty. Use when the user wants to create a community strategy, grow a Discord or Slack community, manage a forum or subreddit, build brand advocates, increase word-of-mouth, drive community-led growth, engage users post-signup, or turn customers into evangelists. Trigger phrases: \\\"build a community,\\\" \\\"community strategy,\\\" \\\"Discord community,\\\" \\\"Slack community,\\\" \\\"community-led growth,\\\" \\\"brand advocates,\\\" \\\"user community,\\\" \\\"forum strategy,\\\" \\\"community engagement,\\\" \\\"grow our community,\\\" \\\"ambassador program,\\\" \\\"community flywheel.\\",
+      "relative_path": "marketingskills\\skills\\community-marketing\\SKILL.md",
+      "frontmatter": {
+        "name": "community-marketing",
+        "description": "Build and leverage online communities to drive product growth and brand loyalty. Use when the user wants to create a community strategy, grow a Discord or Slack community, manage a forum or subreddit, build brand advocates, increase word-of-mouth, drive community-led growth, engage users post-signup, or turn customers into evangelists. Trigger phrases: \\\"build a community,\\\" \\\"community strategy,\\\" \\\"Discord community,\\\" \\\"Slack community,\\\" \\\"community-led growth,\\\" \\\"brand advocates,\\\" \\\"user community,\\\" \\\"forum strategy,\\\" \\\"community engagement,\\\" \\\"grow our community,\\\" \\\"ambassador program,\\\" \\\"community flywheel.\\",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "competitor-profiling",
+      "description": "When the user wants to research, profile, or analyze competitors from their URLs. Also use when the user mentions 'competitor profile,' 'competitor research,' 'competitor analysis,' 'profile this competitor,' 'analyze competitor,' 'competitive intelligence,' 'competitor deep dive,' 'who are my competitors,' 'competitor landscape,' 'competitor dossier,' 'competitive audit,' or 'research these competitors.' Input is a list of competitor URLs. Output is structured competitor profile markdown files. For creating comparison/alternative pages from profiles, see competitors. For sales-specific battle cards, see sales-enablement.",
+      "relative_path": "marketingskills\\skills\\competitor-profiling\\SKILL.md",
+      "frontmatter": {
+        "name": "competitor-profiling",
+        "description": "When the user wants to research, profile, or analyze competitors from their URLs. Also use when the user mentions 'competitor profile,' 'competitor research,' 'competitor analysis,' 'profile this competitor,' 'analyze competitor,' 'competitive intelligence,' 'competitor deep dive,' 'who are my competitors,' 'competitor landscape,' 'competitor dossier,' 'competitive audit,' or 'research these competitors.' Input is a list of competitor URLs. Output is structured competitor profile markdown files. For creating comparison/alternative pages from profiles, see competitors. For sales-specific battle cards, see sales-enablement.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "competitors",
+      "description": "When the user wants to create competitor comparison or alternative pages for SEO and sales enablement. Also use when the user mentions 'alternative page,' 'vs page,' 'competitor comparison,' 'comparison page,' '[Product] vs [Product],' '[Product] alternative,' 'competitive landing pages,' 'how do we compare to X,' 'battle card,' or 'competitor teardown.' Use this for any content that positions your product against competitors. Covers four formats: singular alternative, plural alternatives, you vs competitor, and competitor vs competitor. For sales-specific competitor docs, see sales-enablement.",
+      "relative_path": "marketingskills\\skills\\competitors\\SKILL.md",
+      "frontmatter": {
+        "name": "competitors",
+        "description": "When the user wants to create competitor comparison or alternative pages for SEO and sales enablement. Also use when the user mentions 'alternative page,' 'vs page,' 'competitor comparison,' 'comparison page,' '[Product] vs [Product],' '[Product] alternative,' 'competitive landing pages,' 'how do we compare to X,' 'battle card,' or 'competitor teardown.' Use this for any content that positions your product against competitors. Covers four formats: singular alternative, plural alternatives, you vs competitor, and competitor vs competitor. For sales-specific competitor docs, see sales-enablement.",
+        "metadata": "",
+        "version": "2.0.1"
+      }
+    },
+    {
+      "name": "content-strategy",
+      "description": "When the user wants to plan a content strategy, decide what content to create, or figure out what topics to cover. Also use when the user mentions \"content strategy,\" \"what should I write about,\" \"content ideas,\" \"blog strategy,\" \"topic clusters,\" \"content planning,\" \"editorial calendar,\" \"content marketing,\" \"content roadmap,\" \"what content should I create,\" \"blog topics,\" \"content pillars,\" or \"I don't know what to write.\" Use this whenever someone needs help deciding what content to produce, not just writing it. For writing individual pieces, see copywriting. For SEO-specific audits, see seo-audit. For social media content specifically, see social.",
+      "relative_path": "marketingskills\\skills\\content-strategy\\SKILL.md",
+      "frontmatter": {
+        "name": "content-strategy",
+        "description": "When the user wants to plan a content strategy, decide what content to create, or figure out what topics to cover. Also use when the user mentions \"content strategy,\" \"what should I write about,\" \"content ideas,\" \"blog strategy,\" \"topic clusters,\" \"content planning,\" \"editorial calendar,\" \"content marketing,\" \"content roadmap,\" \"what content should I create,\" \"blog topics,\" \"content pillars,\" or \"I don't know what to write.\" Use this whenever someone needs help deciding what content to produce, not just writing it. For writing individual pieces, see copywriting. For SEO-specific audits, see seo-audit. For social media content specifically, see social.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "copy-editing",
+      "description": "When the user wants to edit, review, or improve existing marketing copy, or refresh outdated content. Also use when the user mentions 'edit this copy,' 'review my copy,' 'copy feedback,' 'proofread,' 'polish this,' 'make this better,' 'copy sweep,' 'tighten this up,' 'this reads awkwardly,' 'clean up this text,' 'too wordy,' 'sharpen the messaging,' 'refresh this content,' 'update this page,' 'this content is outdated,' or 'content audit.' Use this when the user already has copy and wants it improved or refreshed rather than rewritten from scratch. For writing new copy, see copywriting.",
+      "relative_path": "marketingskills\\skills\\copy-editing\\SKILL.md",
+      "frontmatter": {
+        "name": "copy-editing",
+        "description": "When the user wants to edit, review, or improve existing marketing copy, or refresh outdated content. Also use when the user mentions 'edit this copy,' 'review my copy,' 'copy feedback,' 'proofread,' 'polish this,' 'make this better,' 'copy sweep,' 'tighten this up,' 'this reads awkwardly,' 'clean up this text,' 'too wordy,' 'sharpen the messaging,' 'refresh this content,' 'update this page,' 'this content is outdated,' or 'content audit.' Use this when the user already has copy and wants it improved or refreshed rather than rewritten from scratch. For writing new copy, see copywriting.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "copywriting",
+      "description": "When the user wants to write, rewrite, or improve marketing copy for any page — including homepage, landing pages, pricing pages, feature pages, about pages, or product pages. Also use when the user says \"write copy for,\" \"improve this copy,\" \"rewrite this page,\" \"marketing copy,\" \"headline help,\" \"CTA copy,\" \"value proposition,\" \"tagline,\" \"subheadline,\" \"hero section copy,\" \"above the fold,\" \"this copy is weak,\" \"make this more compelling,\" or \"help me describe my product.\" Use this whenever someone is working on website text that needs to persuade or convert. For email copy, see emails. For popup copy, see popups. For editing existing copy, see copy-editing. For the offer underneath the copy (bonuses, guarantees, value framing), see offers.",
+      "relative_path": "marketingskills\\skills\\copywriting\\SKILL.md",
+      "frontmatter": {
+        "name": "copywriting",
+        "description": "When the user wants to write, rewrite, or improve marketing copy for any page — including homepage, landing pages, pricing pages, feature pages, about pages, or product pages. Also use when the user says \"write copy for,\" \"improve this copy,\" \"rewrite this page,\" \"marketing copy,\" \"headline help,\" \"CTA copy,\" \"value proposition,\" \"tagline,\" \"subheadline,\" \"hero section copy,\" \"above the fold,\" \"this copy is weak,\" \"make this more compelling,\" or \"help me describe my product.\" Use this whenever someone is working on website text that needs to persuade or convert. For email copy, see emails. For popup copy, see popups. For editing existing copy, see copy-editing. For the offer underneath the copy (bonuses, guarantees, value framing), see offers.",
+        "metadata": "",
+        "version": "2.0.1"
+      }
+    },
+    {
+      "name": "cro",
+      "description": "When the user wants to optimize, improve, or increase conversions on any marketing page or form — including homepage, landing pages, pricing pages, feature pages, lead capture forms, or contact forms. Also use when the user says 'CRO,' 'conversion rate optimization,' 'this page isn't converting,' 'improve conversions,' 'why isn't this page working,' 'my landing page sucks,' 'form abandonment,' 'nobody's converting,' 'low conversion rate,' or 'this page needs work.' Use this even if the user just shares a URL and asks for feedback. For signup/registration flows, see signup. For post-signup activation, see onboarding. For popups/modals, see popups.",
+      "relative_path": "marketingskills\\skills\\cro\\SKILL.md",
+      "frontmatter": {
+        "name": "cro",
+        "description": "When the user wants to optimize, improve, or increase conversions on any marketing page or form — including homepage, landing pages, pricing pages, feature pages, lead capture forms, or contact forms. Also use when the user says 'CRO,' 'conversion rate optimization,' 'this page isn't converting,' 'improve conversions,' 'why isn't this page working,' 'my landing page sucks,' 'form abandonment,' 'nobody's converting,' 'low conversion rate,' or 'this page needs work.' Use this even if the user just shares a URL and asks for feedback. For signup/registration flows, see signup. For post-signup activation, see onboarding. For popups/modals, see popups.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "customer-research",
+      "description": "When the user wants to conduct, analyze, or synthesize customer research. Use when the user mentions \"customer research,\" \"ICP research,\" \"talk to customers,\" \"analyze transcripts,\" \"customer interviews,\" \"survey analysis,\" \"support ticket analysis,\" \"voice of customer,\" \"VOC,\" \"build personas,\" \"customer personas,\" \"jobs to be done,\" \"JTBD,\" \"what do customers say,\" \"what are customers struggling with,\" \"Reddit mining,\" \"G2 reviews,\" \"review mining,\" \"digital watering holes,\" \"community research,\" \"forum research,\" \"competitor reviews,\" \"customer sentiment,\" or \"find out why customers churn/convert/buy.\" Use for both analyzing existing research assets AND gathering new research from online sources. For writing copy informed by research, see copywriting. For acting on research to improve pages, see cro.",
+      "relative_path": "marketingskills\\skills\\customer-research\\SKILL.md",
+      "frontmatter": {
+        "name": "customer-research",
+        "description": "When the user wants to conduct, analyze, or synthesize customer research. Use when the user mentions \"customer research,\" \"ICP research,\" \"talk to customers,\" \"analyze transcripts,\" \"customer interviews,\" \"survey analysis,\" \"support ticket analysis,\" \"voice of customer,\" \"VOC,\" \"build personas,\" \"customer personas,\" \"jobs to be done,\" \"JTBD,\" \"what do customers say,\" \"what are customers struggling with,\" \"Reddit mining,\" \"G2 reviews,\" \"review mining,\" \"digital watering holes,\" \"community research,\" \"forum research,\" \"competitor reviews,\" \"customer sentiment,\" or \"find out why customers churn/convert/buy.\" Use for both analyzing existing research assets AND gathering new research from online sources. For writing copy informed by research, see copywriting. For acting on research to improve pages, see cro.",
+        "metadata": "",
+        "version": "2.0.1"
+      }
+    },
+    {
+      "name": "directory-submissions",
+      "description": "When the user wants to submit their product to startup, SaaS, AI, agent, MCP, no-code, or review directories for backlinks, domain rating, and discovery. Also use when the user mentions \"directory submissions,\" \"submit to directories,\" \"backlinks from directories,\" \"list my product,\" \"submit to Product Hunt,\" \"BetaList,\" \"TAAFT,\" \"Futurepedia,\" \"G2 listing,\" \"Capterra listing,\" \"AlternativeTo,\" \"SaaSHub,\" \"AI directories,\" \"MCP registry,\" \"agent directory,\" \"dofollow backlinks,\" \"launch directories,\" or \"directory tracker.\" Use this whenever someone is planning the directory layer of a product launch or an ongoing backlink campaign. For the broader launch moment, see launch. For programmatic SEO pages that should live behind these backlinks, see programmatic-seo. For AI citation optimization, see ai-seo.",
+      "relative_path": "marketingskills\\skills\\directory-submissions\\SKILL.md",
+      "frontmatter": {
+        "name": "directory-submissions",
+        "description": "When the user wants to submit their product to startup, SaaS, AI, agent, MCP, no-code, or review directories for backlinks, domain rating, and discovery. Also use when the user mentions \"directory submissions,\" \"submit to directories,\" \"backlinks from directories,\" \"list my product,\" \"submit to Product Hunt,\" \"BetaList,\" \"TAAFT,\" \"Futurepedia,\" \"G2 listing,\" \"Capterra listing,\" \"AlternativeTo,\" \"SaaSHub,\" \"AI directories,\" \"MCP registry,\" \"agent directory,\" \"dofollow backlinks,\" \"launch directories,\" or \"directory tracker.\" Use this whenever someone is planning the directory layer of a product launch or an ongoing backlink campaign. For the broader launch moment, see launch. For programmatic SEO pages that should live behind these backlinks, see programmatic-seo. For AI citation optimization, see ai-seo.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "emails",
+      "description": "When the user wants to create or optimize an email sequence, drip campaign, automated email flow, or lifecycle email program. Also use when the user mentions \"email sequence,\" \"drip campaign,\" \"nurture sequence,\" \"onboarding emails,\" \"welcome sequence,\" \"re-engagement emails,\" \"email automation,\" \"lifecycle emails,\" \"trigger-based emails,\" \"email funnel,\" \"email workflow,\" \"what emails should I send,\" \"welcome series,\" or \"email cadence.\" Use this for any multi-email automated flow. For cold outreach emails, see cold-email. For in-app onboarding, see onboarding.",
+      "relative_path": "marketingskills\\skills\\emails\\SKILL.md",
+      "frontmatter": {
+        "name": "emails",
+        "description": "When the user wants to create or optimize an email sequence, drip campaign, automated email flow, or lifecycle email program. Also use when the user mentions \"email sequence,\" \"drip campaign,\" \"nurture sequence,\" \"onboarding emails,\" \"welcome sequence,\" \"re-engagement emails,\" \"email automation,\" \"lifecycle emails,\" \"trigger-based emails,\" \"email funnel,\" \"email workflow,\" \"what emails should I send,\" \"welcome series,\" or \"email cadence.\" Use this for any multi-email automated flow. For cold outreach emails, see cold-email. For in-app onboarding, see onboarding.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "free-tools",
+      "description": "When the user wants to plan, evaluate, or build a free tool for marketing purposes — lead generation, SEO value, or brand awareness. Also use when the user mentions \"engineering as marketing,\" \"free tool,\" \"marketing tool,\" \"calculator,\" \"generator,\" \"interactive tool,\" \"lead gen tool,\" \"build a tool for leads,\" \"free resource,\" \"ROI calculator,\" \"grader tool,\" \"audit tool,\" \"should I build a free tool,\" or \"tools for lead gen.\" Use this whenever someone wants to build something useful and give it away to attract leads or earn links. For downloadable content lead magnets (ebooks, checklists, templates), see lead-magnets.",
+      "relative_path": "marketingskills\\skills\\free-tools\\SKILL.md",
+      "frontmatter": {
+        "name": "free-tools",
+        "description": "When the user wants to plan, evaluate, or build a free tool for marketing purposes — lead generation, SEO value, or brand awareness. Also use when the user mentions \"engineering as marketing,\" \"free tool,\" \"marketing tool,\" \"calculator,\" \"generator,\" \"interactive tool,\" \"lead gen tool,\" \"build a tool for leads,\" \"free resource,\" \"ROI calculator,\" \"grader tool,\" \"audit tool,\" \"should I build a free tool,\" or \"tools for lead gen.\" Use this whenever someone wants to build something useful and give it away to attract leads or earn links. For downloadable content lead magnets (ebooks, checklists, templates), see lead-magnets.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "image",
+      "description": "When the user wants to create, generate, edit, or optimize images for marketing — blog heroes, social graphics, product mockups, profile banners, listing visuals, or brand assets. Also use when the user mentions 'AI image generation,' 'generate an image,' 'create a graphic,' 'product mockup,' 'hero image,' 'social media graphic,' 'banner image,' 'cover photo,' 'profile banner,' 'listing screenshot,' 'Flux,' 'Flux Kontext,' 'Midjourney,' 'DALL-E,' 'GPT Image,' 'ChatGPT Images,' 'Ideogram,' 'Gemini image,' 'Nano Banana,' 'Recraft,' 'Stable Diffusion,' 'Canva,' 'Figma,' 'image optimization,' 'compress images,' 'WebP,' or 'OG image.' Use this for general-purpose marketing image creation and optimization. For paid ad image creative and platform-specific ad specs, see ad-creative. For video production, see video.",
+      "relative_path": "marketingskills\\skills\\image\\SKILL.md",
+      "frontmatter": {
+        "name": "image",
+        "description": "When the user wants to create, generate, edit, or optimize images for marketing — blog heroes, social graphics, product mockups, profile banners, listing visuals, or brand assets. Also use when the user mentions 'AI image generation,' 'generate an image,' 'create a graphic,' 'product mockup,' 'hero image,' 'social media graphic,' 'banner image,' 'cover photo,' 'profile banner,' 'listing screenshot,' 'Flux,' 'Flux Kontext,' 'Midjourney,' 'DALL-E,' 'GPT Image,' 'ChatGPT Images,' 'Ideogram,' 'Gemini image,' 'Nano Banana,' 'Recraft,' 'Stable Diffusion,' 'Canva,' 'Figma,' 'image optimization,' 'compress images,' 'WebP,' or 'OG image.' Use this for general-purpose marketing image creation and optimization. For paid ad image creative and platform-specific ad specs, see ad-creative. For video production, see video.",
+        "metadata": "",
+        "version": "2.0.1"
+      }
+    },
+    {
+      "name": "launch",
+      "description": "When the user wants to plan a product launch, feature announcement, or release strategy. Also use when the user mentions 'launch,' 'Product Hunt,' 'feature release,' 'announcement,' 'go-to-market,' 'beta launch,' 'early access,' 'waitlist,' 'product update,' 'how do I launch this,' 'launch checklist,' 'GTM plan,' or 'we're about to ship.' Use this whenever someone is preparing to release something publicly. For ongoing marketing after launch, see marketing-ideas. For the offer being launched (bonuses, guarantees, scarcity, naming), see offers.",
+      "relative_path": "marketingskills\\skills\\launch\\SKILL.md",
+      "frontmatter": {
+        "name": "launch",
+        "description": "When the user wants to plan a product launch, feature announcement, or release strategy. Also use when the user mentions 'launch,' 'Product Hunt,' 'feature release,' 'announcement,' 'go-to-market,' 'beta launch,' 'early access,' 'waitlist,' 'product update,' 'how do I launch this,' 'launch checklist,' 'GTM plan,' or 'we're about to ship.' Use this whenever someone is preparing to release something publicly. For ongoing marketing after launch, see marketing-ideas. For the offer being launched (bonuses, guarantees, scarcity, naming), see offers.",
+        "metadata": "",
+        "version": "2.0.1"
+      }
+    },
+    {
+      "name": "lead-magnets",
+      "description": "When the user wants to create, plan, or optimize a lead magnet for email capture or lead generation. Also use when the user mentions \"lead magnet,\" \"gated content,\" \"content upgrade,\" \"downloadable,\" \"ebook,\" \"cheat sheet,\" \"checklist,\" \"template download,\" \"opt-in,\" \"freebie,\" \"PDF download,\" \"resource library,\" \"content offer,\" \"email capture content,\" \"Notion template,\" \"spreadsheet template,\" or \"what should I give away for emails.\" Use this for planning what to create and how to distribute it. For interactive tools as lead magnets, see free-tools. For writing the actual content, see copywriting. For the email sequence after capture, see emails.",
+      "relative_path": "marketingskills\\skills\\lead-magnets\\SKILL.md",
+      "frontmatter": {
+        "name": "lead-magnets",
+        "description": "When the user wants to create, plan, or optimize a lead magnet for email capture or lead generation. Also use when the user mentions \"lead magnet,\" \"gated content,\" \"content upgrade,\" \"downloadable,\" \"ebook,\" \"cheat sheet,\" \"checklist,\" \"template download,\" \"opt-in,\" \"freebie,\" \"PDF download,\" \"resource library,\" \"content offer,\" \"email capture content,\" \"Notion template,\" \"spreadsheet template,\" or \"what should I give away for emails.\" Use this for planning what to create and how to distribute it. For interactive tools as lead magnets, see free-tools. For writing the actual content, see copywriting. For the email sequence after capture, see emails.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "marketing-council",
+      "description": "When the user wants multiple expert perspectives on a marketing question — a simulated board of advisors staffed by legendary marketers (Seth Godin, David Ogilvy, Eugene Schwartz, April Dunford, Rory Sutherland, Alex Hormozi, Byron Sharp, and more). Also use when the user mentions 'marketing council,' 'board of advisors,' 'advisory board,' 'what would Seth Godin say,' 'what would Ogilvy think,' 'channel Hormozi,' 'get multiple perspectives,' 'debate this,' 'have the council review,' 'marketing mentors,' or asks how a famous marketer would approach their problem. The council gives each advisor's take through their documented frameworks, surfaces where they disagree, and synthesizes a recommendation. For executing the winning direction, hand off to positioning, offers, copywriting, ads, or the relevant skill.",
+      "relative_path": "marketingskills\\skills\\marketing-council\\SKILL.md",
+      "frontmatter": {
+        "name": "marketing-council",
+        "description": "When the user wants multiple expert perspectives on a marketing question — a simulated board of advisors staffed by legendary marketers (Seth Godin, David Ogilvy, Eugene Schwartz, April Dunford, Rory Sutherland, Alex Hormozi, Byron Sharp, and more). Also use when the user mentions 'marketing council,' 'board of advisors,' 'advisory board,' 'what would Seth Godin say,' 'what would Ogilvy think,' 'channel Hormozi,' 'get multiple perspectives,' 'debate this,' 'have the council review,' 'marketing mentors,' or asks how a famous marketer would approach their problem. The council gives each advisor's take through their documented frameworks, surfaces where they disagree, and synthesizes a recommendation. For executing the winning direction, hand off to positioning, offers, copywriting, ads, or the relevant skill.",
+        "metadata": "",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "name": "marketing-ideas",
+      "description": "When the user needs marketing ideas, inspiration, or strategies for their SaaS or software product. Also use when the user asks for 'marketing ideas,' 'growth ideas,' 'how to market,' 'marketing strategies,' 'marketing tactics,' 'ways to promote,' 'ideas to grow,' 'what else can I try,' 'I don't know how to market this,' 'brainstorm marketing,' or 'what marketing should I do.' Use this as a starting point whenever someone is stuck or looking for inspiration on how to grow. For specific channel execution, see the relevant skill (ads, social, emails, etc.).",
+      "relative_path": "marketingskills\\skills\\marketing-ideas\\SKILL.md",
+      "frontmatter": {
+        "name": "marketing-ideas",
+        "description": "When the user needs marketing ideas, inspiration, or strategies for their SaaS or software product. Also use when the user asks for 'marketing ideas,' 'growth ideas,' 'how to market,' 'marketing strategies,' 'marketing tactics,' 'ways to promote,' 'ideas to grow,' 'what else can I try,' 'I don't know how to market this,' 'brainstorm marketing,' or 'what marketing should I do.' Use this as a starting point whenever someone is stuck or looking for inspiration on how to grow. For specific channel execution, see the relevant skill (ads, social, emails, etc.).",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "marketing-loops",
+      "description": "When the user wants to set up a recurring, self-running marketing workflow — a repeatable loop an AI agent runs on a cadence (weekly, daily, on a trigger) rather than a one-off task. Also use when the user mentions 'marketing loop,' 'recurring marketing workflow,' 'automate my marketing,' 'marketing on autopilot,' 'weekly marketing review,' 'ad fatigue check,' 'content refresh loop,' 'churn watch,' 'ranking drop alert,' 'always-on marketing,' 'marketing automation workflow,' or 'run this every week.' Use this to pick, adapt, and schedule an ongoing marketing loop that orchestrates the other marketing skills. For one-off marketing ideas, see marketing-ideas. For the experimentation loop specifically, see ab-testing.",
+      "relative_path": "marketingskills\\skills\\marketing-loops\\SKILL.md",
+      "frontmatter": {
+        "name": "marketing-loops",
+        "description": "When the user wants to set up a recurring, self-running marketing workflow — a repeatable loop an AI agent runs on a cadence (weekly, daily, on a trigger) rather than a one-off task. Also use when the user mentions 'marketing loop,' 'recurring marketing workflow,' 'automate my marketing,' 'marketing on autopilot,' 'weekly marketing review,' 'ad fatigue check,' 'content refresh loop,' 'churn watch,' 'ranking drop alert,' 'always-on marketing,' 'marketing automation workflow,' or 'run this every week.' Use this to pick, adapt, and schedule an ongoing marketing loop that orchestrates the other marketing skills. For one-off marketing ideas, see marketing-ideas. For the experimentation loop specifically, see ab-testing.",
+        "metadata": "",
+        "version": "1.2.0"
+      }
+    },
+    {
+      "name": "marketing-plan",
+      "description": "When the user needs a comprehensive marketing plan for a client, a company they advise, or their own product. Also use when the user mentions \"marketing plan,\" \"growth plan,\" \"GTM plan,\" \"go-to-market plan,\" \"AARRR plan,\" \"90-day marketing plan,\" \"12-month marketing roadmap,\" \"fractional CMO plan,\" or \"fCMO plan.\" Generates an exhaustive 13-section plan structured by AARRR (Acquisition, Activation, Retention, Referral, Revenue), customized to the client's current budget, team, and stage, mapped to future funding milestones, cross-referenced with the 139-idea marketing-ideas library and an embedded 17-section current-state audit rubric, with a full marketing operations stack showing which skills and MCP/API integrations execute each part. Outputs a Notion-paste-ready markdown document. For positioning and ICP context before planning, see product-marketing. For stage-specific deep work, see onboarding, signup, emails, referrals, pricing.",
+      "relative_path": "marketingskills\\skills\\marketing-plan\\SKILL.md",
+      "frontmatter": {
+        "name": "marketing-plan",
+        "description": "When the user needs a comprehensive marketing plan for a client, a company they advise, or their own product. Also use when the user mentions \"marketing plan,\" \"growth plan,\" \"GTM plan,\" \"go-to-market plan,\" \"AARRR plan,\" \"90-day marketing plan,\" \"12-month marketing roadmap,\" \"fractional CMO plan,\" or \"fCMO plan.\" Generates an exhaustive 13-section plan structured by AARRR (Acquisition, Activation, Retention, Referral, Revenue), customized to the client's current budget, team, and stage, mapped to future funding milestones, cross-referenced with the 139-idea marketing-ideas library and an embedded 17-section current-state audit rubric, with a full marketing operations stack showing which skills and MCP/API integrations execute each part. Outputs a Notion-paste-ready markdown document. For positioning and ICP context before planning, see product-marketing. For stage-specific deep work, see onboarding, signup, emails, referrals, pricing."
+      }
+    },
+    {
+      "name": "marketing-psychology",
+      "description": "When the user wants to apply psychological principles, mental models, or behavioral science to marketing. Also use when the user mentions 'psychology,' 'mental models,' 'cognitive bias,' 'persuasion,' 'behavioral science,' 'why people buy,' 'decision-making,' 'consumer behavior,' 'anchoring,' 'social proof,' 'scarcity,' 'loss aversion,' 'framing,' or 'nudge.' Use this whenever someone wants to understand or leverage how people think and make decisions in a marketing context. For applying psychology to specific pages, see cro; for pricing tactics, see pricing; for copy framing, see copywriting.",
+      "relative_path": "marketingskills\\skills\\marketing-psychology\\SKILL.md",
+      "frontmatter": {
+        "name": "marketing-psychology",
+        "description": "When the user wants to apply psychological principles, mental models, or behavioral science to marketing. Also use when the user mentions 'psychology,' 'mental models,' 'cognitive bias,' 'persuasion,' 'behavioral science,' 'why people buy,' 'decision-making,' 'consumer behavior,' 'anchoring,' 'social proof,' 'scarcity,' 'loss aversion,' 'framing,' or 'nudge.' Use this whenever someone wants to understand or leverage how people think and make decisions in a marketing context. For applying psychology to specific pages, see cro; for pricing tactics, see pricing; for copy framing, see copywriting.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "offers",
+      "description": "When the user wants to design, construct, or improve an offer — the thing they actually sell — including value framing, bonus stacking, guarantee design, scarcity/urgency, naming, and payment structure. Also use when the user mentions 'offer,' 'offer design,' 'build an offer,' 'grand slam offer,' 'irresistible offer,' 'value stack,' 'bonus stack,' 'guarantee,' 'risk reversal,' 'money-back guarantee,' 'scarcity,' 'urgency,' 'high-ticket offer,' 'productize a service,' 'naming an offer,' 'payment plan,' 'down-sell,' 'upsell offer,' or 'why isn't my offer converting.' Best for services, agencies, courses, coaching, info products, high-ticket B2B, and direct-response. If you run pure self-serve SaaS, read pricing first — tiers and packaging do more work there. For price level itself (tiers, freemium, value metric), see pricing. For the page that presents the offer, see copywriting. For the launch moment, see launch. For sales collateral, see sales-enablement.",
+      "relative_path": "marketingskills\\skills\\offers\\SKILL.md",
+      "frontmatter": {
+        "name": "offers",
+        "description": "When the user wants to design, construct, or improve an offer — the thing they actually sell — including value framing, bonus stacking, guarantee design, scarcity/urgency, naming, and payment structure. Also use when the user mentions 'offer,' 'offer design,' 'build an offer,' 'grand slam offer,' 'irresistible offer,' 'value stack,' 'bonus stack,' 'guarantee,' 'risk reversal,' 'money-back guarantee,' 'scarcity,' 'urgency,' 'high-ticket offer,' 'productize a service,' 'naming an offer,' 'payment plan,' 'down-sell,' 'upsell offer,' or 'why isn't my offer converting.' Best for services, agencies, courses, coaching, info products, high-ticket B2B, and direct-response. If you run pure self-serve SaaS, read pricing first — tiers and packaging do more work there. For price level itself (tiers, freemium, value metric), see pricing. For the page that presents the offer, see copywriting. For the launch moment, see launch. For sales collateral, see sales-enablement.",
+        "metadata": "",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "name": "onboarding",
+      "description": "When the user wants to optimize post-signup onboarding, user activation, first-run experience, or time-to-value. Also use when the user mentions \"onboarding flow,\" \"activation rate,\" \"user activation,\" \"first-run experience,\" \"empty states,\" \"onboarding checklist,\" \"aha moment,\" \"new user experience,\" \"users aren't activating,\" \"nobody completes setup,\" \"low activation rate,\" \"users sign up but don't use the product,\" \"time to value,\" or \"first session experience.\" Use this whenever users are signing up but not sticking around. For signup/registration optimization, see signup. For ongoing email sequences, see emails.",
+      "relative_path": "marketingskills\\skills\\onboarding\\SKILL.md",
+      "frontmatter": {
+        "name": "onboarding",
+        "description": "When the user wants to optimize post-signup onboarding, user activation, first-run experience, or time-to-value. Also use when the user mentions \"onboarding flow,\" \"activation rate,\" \"user activation,\" \"first-run experience,\" \"empty states,\" \"onboarding checklist,\" \"aha moment,\" \"new user experience,\" \"users aren't activating,\" \"nobody completes setup,\" \"low activation rate,\" \"users sign up but don't use the product,\" \"time to value,\" or \"first session experience.\" Use this whenever users are signing up but not sticking around. For signup/registration optimization, see signup. For ongoing email sequences, see emails.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "paywalls",
+      "description": "When the user wants to create or optimize in-app paywalls, upgrade screens, upsell modals, or feature gates. Also use when the user mentions \"paywall,\" \"upgrade screen,\" \"upgrade modal,\" \"upsell,\" \"feature gate,\" \"convert free to paid,\" \"freemium conversion,\" \"trial expiration screen,\" \"limit reached screen,\" \"plan upgrade prompt,\" \"in-app pricing,\" \"free users won't upgrade,\" \"trial to paid conversion,\" or \"how do I get users to pay.\" Use this for any in-product moment where you're asking users to upgrade. Distinct from public pricing pages (see cro) — this focuses on in-product upgrade moments where the user has already experienced value. For pricing decisions, see pricing.",
+      "relative_path": "marketingskills\\skills\\paywalls\\SKILL.md",
+      "frontmatter": {
+        "name": "paywalls",
+        "description": "When the user wants to create or optimize in-app paywalls, upgrade screens, upsell modals, or feature gates. Also use when the user mentions \"paywall,\" \"upgrade screen,\" \"upgrade modal,\" \"upsell,\" \"feature gate,\" \"convert free to paid,\" \"freemium conversion,\" \"trial expiration screen,\" \"limit reached screen,\" \"plan upgrade prompt,\" \"in-app pricing,\" \"free users won't upgrade,\" \"trial to paid conversion,\" or \"how do I get users to pay.\" Use this for any in-product moment where you're asking users to upgrade. Distinct from public pricing pages (see cro) — this focuses on in-product upgrade moments where the user has already experienced value. For pricing decisions, see pricing.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "popups",
+      "description": "When the user wants to create or optimize popups, modals, overlays, slide-ins, or banners for conversion purposes. Also use when the user mentions \"exit intent,\" \"popup conversions,\" \"modal optimization,\" \"lead capture popup,\" \"email popup,\" \"announcement banner,\" \"overlay,\" \"collect emails with a popup,\" \"exit popup,\" \"scroll trigger,\" \"sticky bar,\" or \"notification bar.\" Use this for any overlay or interrupt-style conversion element. For forms outside of popups, see cro. For general page conversion optimization, see cro.",
+      "relative_path": "marketingskills\\skills\\popups\\SKILL.md",
+      "frontmatter": {
+        "name": "popups",
+        "description": "When the user wants to create or optimize popups, modals, overlays, slide-ins, or banners for conversion purposes. Also use when the user mentions \"exit intent,\" \"popup conversions,\" \"modal optimization,\" \"lead capture popup,\" \"email popup,\" \"announcement banner,\" \"overlay,\" \"collect emails with a popup,\" \"exit popup,\" \"scroll trigger,\" \"sticky bar,\" or \"notification bar.\" Use this for any overlay or interrupt-style conversion element. For forms outside of popups, see cro. For general page conversion optimization, see cro.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "pricing",
+      "description": "When the user wants help with pricing decisions, packaging, or monetization strategy. Also use when the user mentions 'pricing,' 'pricing tiers,' 'freemium,' 'free trial,' 'packaging,' 'price increase,' 'value metric,' 'Van Westendorp,' 'willingness to pay,' 'monetization,' 'how much should I charge,' 'my pricing is wrong,' 'pricing page,' 'annual vs monthly,' 'per seat pricing,' or 'should I offer a free plan.' Use this whenever someone is figuring out what to charge or how to structure their plans. For in-app upgrade screens, see paywalls. For offer construction (bonuses, guarantees, value framing, naming) on services/courses/coaching/high-ticket B2B, see offers.",
+      "relative_path": "marketingskills\\skills\\pricing\\SKILL.md",
+      "frontmatter": {
+        "name": "pricing",
+        "description": "When the user wants help with pricing decisions, packaging, or monetization strategy. Also use when the user mentions 'pricing,' 'pricing tiers,' 'freemium,' 'free trial,' 'packaging,' 'price increase,' 'value metric,' 'Van Westendorp,' 'willingness to pay,' 'monetization,' 'how much should I charge,' 'my pricing is wrong,' 'pricing page,' 'annual vs monthly,' 'per seat pricing,' or 'should I offer a free plan.' Use this whenever someone is figuring out what to charge or how to structure their plans. For in-app upgrade screens, see paywalls. For offer construction (bonuses, guarantees, value framing, naming) on services/courses/coaching/high-ticket B2B, see offers.",
+        "metadata": "",
+        "version": "2.0.1"
+      }
+    },
+    {
+      "name": "product-marketing",
+      "description": "When the user wants to create or update their product marketing context document. Also use when the user mentions 'product context,' 'marketing context,' 'set up context,' 'positioning,' 'who is my target audience,' 'describe my product,' 'ICP,' 'ideal customer profile,' or wants to avoid repeating foundational information across marketing tasks. Use this at the start of any new project before using other marketing skills — it creates `.agents/product-marketing.md` that all other skills reference for product, audience, and positioning context.",
+      "relative_path": "marketingskills\\skills\\product-marketing\\SKILL.md",
+      "frontmatter": {
+        "name": "product-marketing",
+        "description": "When the user wants to create or update their product marketing context document. Also use when the user mentions 'product context,' 'marketing context,' 'set up context,' 'positioning,' 'who is my target audience,' 'describe my product,' 'ICP,' 'ideal customer profile,' or wants to avoid repeating foundational information across marketing tasks. Use this at the start of any new project before using other marketing skills — it creates `.agents/product-marketing.md` that all other skills reference for product, audience, and positioning context.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "programmatic-seo",
+      "description": "When the user wants to create SEO-driven pages at scale using templates and data. Also use when the user mentions \"programmatic SEO,\" \"template pages,\" \"pages at scale,\" \"directory pages,\" \"location pages,\" \"[keyword] + [city] pages,\" \"comparison pages,\" \"integration pages,\" \"building many pages for SEO,\" \"pSEO,\" \"generate 100 pages,\" \"data-driven pages,\" or \"templated landing pages.\" Use this whenever someone wants to create many similar pages targeting different keywords or locations. For auditing existing SEO issues, see seo-audit. For content strategy planning, see content-strategy.",
+      "relative_path": "marketingskills\\skills\\programmatic-seo\\SKILL.md",
+      "frontmatter": {
+        "name": "programmatic-seo",
+        "description": "When the user wants to create SEO-driven pages at scale using templates and data. Also use when the user mentions \"programmatic SEO,\" \"template pages,\" \"pages at scale,\" \"directory pages,\" \"location pages,\" \"[keyword] + [city] pages,\" \"comparison pages,\" \"integration pages,\" \"building many pages for SEO,\" \"pSEO,\" \"generate 100 pages,\" \"data-driven pages,\" or \"templated landing pages.\" Use this whenever someone wants to create many similar pages targeting different keywords or locations. For auditing existing SEO issues, see seo-audit. For content strategy planning, see content-strategy.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "prospecting",
+      "description": "When the user wants to find, qualify, and build a list of prospects to reach out to — across B2B SaaS, general B2B, or local small businesses. Also use when the user mentions \"prospecting,\" \"build a prospect list,\" \"find prospects,\" \"find leads,\" \"lead gen list,\" \"find SaaS companies that,\" \"find B2B companies,\" \"find local businesses,\" \"ICP-fit accounts,\" \"who should we go after,\" \"outbound list,\" \"target account list,\" \"find clients near me,\" \"businesses without websites,\" \"prospect research,\" \"qualified leads,\" \"find my first customers,\" \"early adopters,\" \"design partners,\" \"beta users,\" or \"who has this problem.\" Use this for the list-building and qualification phase. For writing the outbound copy after the list is built, see cold-email. For deep competitive research on specific accounts, see competitor-profiling.",
+      "relative_path": "marketingskills\\skills\\prospecting\\SKILL.md",
+      "frontmatter": {
+        "name": "prospecting",
+        "description": "When the user wants to find, qualify, and build a list of prospects to reach out to — across B2B SaaS, general B2B, or local small businesses. Also use when the user mentions \"prospecting,\" \"build a prospect list,\" \"find prospects,\" \"find leads,\" \"lead gen list,\" \"find SaaS companies that,\" \"find B2B companies,\" \"find local businesses,\" \"ICP-fit accounts,\" \"who should we go after,\" \"outbound list,\" \"target account list,\" \"find clients near me,\" \"businesses without websites,\" \"prospect research,\" \"qualified leads,\" \"find my first customers,\" \"early adopters,\" \"design partners,\" \"beta users,\" or \"who has this problem.\" Use this for the list-building and qualification phase. For writing the outbound copy after the list is built, see cold-email. For deep competitive research on specific accounts, see competitor-profiling.",
+        "metadata": "",
+        "version": "1.1.0"
+      }
+    },
+    {
+      "name": "public-relations",
+      "description": "When the user wants help with public relations, earned media, press coverage, journalist outreach, or media strategy (not pull requests). Also use when the user mentions 'PR,' 'public relations,' 'press,' 'press release,' 'press coverage,' 'media outreach,' 'pitch a journalist,' 'get featured,' 'media list,' 'media kit,' 'press kit,' 'newsjacking,' 'news hijack,' 'HARO,' 'Qwoted,' 'Featured,' 'Help A Reporter,' 'reporter request,' 'tech press,' 'TechCrunch,' 'earned media,' 'thought leadership placement,' 'op-ed,' 'guest article,' 'press contacts,' or 'how do I get press.' Use this for earned media work — finding journalists, pitching stories, newsjacking, and responding to press requests. For startup/SaaS/AI directory submissions, see directory-submissions. For product launches, see launch. For social-media engagement, see social. For cold-email outreach to prospects, see cold-email.",
+      "relative_path": "marketingskills\\skills\\public-relations\\SKILL.md",
+      "frontmatter": {
+        "name": "public-relations",
+        "description": "When the user wants help with public relations, earned media, press coverage, journalist outreach, or media strategy (not pull requests). Also use when the user mentions 'PR,' 'public relations,' 'press,' 'press release,' 'press coverage,' 'media outreach,' 'pitch a journalist,' 'get featured,' 'media list,' 'media kit,' 'press kit,' 'newsjacking,' 'news hijack,' 'HARO,' 'Qwoted,' 'Featured,' 'Help A Reporter,' 'reporter request,' 'tech press,' 'TechCrunch,' 'earned media,' 'thought leadership placement,' 'op-ed,' 'guest article,' 'press contacts,' or 'how do I get press.' Use this for earned media work — finding journalists, pitching stories, newsjacking, and responding to press requests. For startup/SaaS/AI directory submissions, see directory-submissions. For product launches, see launch. For social-media engagement, see social. For cold-email outreach to prospects, see cold-email.",
+        "metadata": "",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "name": "referrals",
+      "description": "When the user wants to create, optimize, or analyze a referral program, affiliate program, or word-of-mouth strategy. Also use when the user mentions 'referral,' 'affiliate,' 'ambassador,' 'word of mouth,' 'viral loop,' 'refer a friend,' 'partner program,' 'referral incentive,' 'how to get referrals,' 'customers referring customers,' or 'affiliate payout.' Use this whenever someone wants existing users or partners to bring in new customers. For launch-specific virality, see launch.",
+      "relative_path": "marketingskills\\skills\\referrals\\SKILL.md",
+      "frontmatter": {
+        "name": "referrals",
+        "description": "When the user wants to create, optimize, or analyze a referral program, affiliate program, or word-of-mouth strategy. Also use when the user mentions 'referral,' 'affiliate,' 'ambassador,' 'word of mouth,' 'viral loop,' 'refer a friend,' 'partner program,' 'referral incentive,' 'how to get referrals,' 'customers referring customers,' or 'affiliate payout.' Use this whenever someone wants existing users or partners to bring in new customers. For launch-specific virality, see launch.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "revops",
+      "description": "When the user wants help with revenue operations, lead lifecycle management, or marketing-to-sales handoff processes. Also use when the user mentions 'RevOps,' 'revenue operations,' 'lead scoring,' 'lead routing,' 'MQL,' 'SQL,' 'pipeline stages,' 'deal desk,' 'CRM automation,' 'marketing-to-sales handoff,' 'data hygiene,' 'leads aren't getting to sales,' 'pipeline management,' 'lead qualification,' or 'when should marketing hand off to sales.' Use this for anything involving the systems and processes that connect marketing to revenue. For cold outreach emails, see cold-email. For email drip campaigns, see emails. For pricing decisions, see pricing.",
+      "relative_path": "marketingskills\\skills\\revops\\SKILL.md",
+      "frontmatter": {
+        "name": "revops",
+        "description": "When the user wants help with revenue operations, lead lifecycle management, or marketing-to-sales handoff processes. Also use when the user mentions 'RevOps,' 'revenue operations,' 'lead scoring,' 'lead routing,' 'MQL,' 'SQL,' 'pipeline stages,' 'deal desk,' 'CRM automation,' 'marketing-to-sales handoff,' 'data hygiene,' 'leads aren't getting to sales,' 'pipeline management,' 'lead qualification,' or 'when should marketing hand off to sales.' Use this for anything involving the systems and processes that connect marketing to revenue. For cold outreach emails, see cold-email. For email drip campaigns, see emails. For pricing decisions, see pricing.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "sales-enablement",
+      "description": "When the user wants to create sales collateral, pitch decks, one-pagers, objection handling docs, or demo scripts. Also use when the user mentions 'sales deck,' 'pitch deck,' 'one-pager,' 'leave-behind,' 'objection handling,' 'deal-specific ROI analysis,' 'demo script,' 'talk track,' 'sales playbook,' 'proposal template,' 'buyer persona card,' 'help my sales team,' 'sales materials,' or 'what should I give my sales reps.' Use this for any document or asset that helps a sales team close deals. For competitor comparison pages and battle cards, see competitors. For marketing website copy, see copywriting. For cold outreach emails, see cold-email. For the offer being sold (bonuses, guarantees, pricing structure), see offers.",
+      "relative_path": "marketingskills\\skills\\sales-enablement\\SKILL.md",
+      "frontmatter": {
+        "name": "sales-enablement",
+        "description": "When the user wants to create sales collateral, pitch decks, one-pagers, objection handling docs, or demo scripts. Also use when the user mentions 'sales deck,' 'pitch deck,' 'one-pager,' 'leave-behind,' 'objection handling,' 'deal-specific ROI analysis,' 'demo script,' 'talk track,' 'sales playbook,' 'proposal template,' 'buyer persona card,' 'help my sales team,' 'sales materials,' or 'what should I give my sales reps.' Use this for any document or asset that helps a sales team close deals. For competitor comparison pages and battle cards, see competitors. For marketing website copy, see copywriting. For cold outreach emails, see cold-email. For the offer being sold (bonuses, guarantees, pricing structure), see offers.",
+        "metadata": "",
+        "version": "2.0.1"
+      }
+    },
+    {
+      "name": "schema",
+      "description": "When the user wants to add, fix, or optimize schema markup and structured data on their site. Also use when the user mentions \"schema markup,\" \"structured data,\" \"JSON-LD,\" \"rich snippets,\" \"schema.org,\" \"FAQ schema,\" \"product schema,\" \"review schema,\" \"breadcrumb schema,\" \"Google rich results,\" \"knowledge panel,\" \"star ratings in search,\" or \"add structured data.\" Use this whenever someone wants their pages to show enhanced results in Google. For broader SEO issues, see seo-audit. For AI search optimization, see ai-seo.",
+      "relative_path": "marketingskills\\skills\\schema\\SKILL.md",
+      "frontmatter": {
+        "name": "schema",
+        "description": "When the user wants to add, fix, or optimize schema markup and structured data on their site. Also use when the user mentions \"schema markup,\" \"structured data,\" \"JSON-LD,\" \"rich snippets,\" \"schema.org,\" \"FAQ schema,\" \"product schema,\" \"review schema,\" \"breadcrumb schema,\" \"Google rich results,\" \"knowledge panel,\" \"star ratings in search,\" or \"add structured data.\" Use this whenever someone wants their pages to show enhanced results in Google. For broader SEO issues, see seo-audit. For AI search optimization, see ai-seo.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "seo-audit",
+      "description": "When the user wants to audit, review, or diagnose SEO issues on their site. Also use when the user mentions \"SEO audit,\" \"technical SEO,\" \"why am I not ranking,\" \"SEO issues,\" \"on-page SEO,\" \"meta tags review,\" \"SEO health check,\" \"my traffic dropped,\" \"lost rankings,\" \"not showing up in Google,\" \"site isn't ranking,\" \"Google update hit me,\" \"page speed,\" \"core web vitals,\" \"crawl errors,\" or \"indexing issues.\" Use this even if the user just says something vague like \"my SEO is bad\" or \"help with SEO\" — start with an audit. For building pages at scale to target keywords, see programmatic-seo. For adding structured data, see schema. For AI search optimization, see ai-seo.",
+      "relative_path": "marketingskills\\skills\\seo-audit\\SKILL.md",
+      "frontmatter": {
+        "name": "seo-audit",
+        "description": "When the user wants to audit, review, or diagnose SEO issues on their site. Also use when the user mentions \"SEO audit,\" \"technical SEO,\" \"why am I not ranking,\" \"SEO issues,\" \"on-page SEO,\" \"meta tags review,\" \"SEO health check,\" \"my traffic dropped,\" \"lost rankings,\" \"not showing up in Google,\" \"site isn't ranking,\" \"Google update hit me,\" \"page speed,\" \"core web vitals,\" \"crawl errors,\" or \"indexing issues.\" Use this even if the user just says something vague like \"my SEO is bad\" or \"help with SEO\" — start with an audit. For building pages at scale to target keywords, see programmatic-seo. For adding structured data, see schema. For AI search optimization, see ai-seo.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "signup",
+      "description": "When the user wants to optimize signup, registration, account creation, or trial activation flows. Also use when the user mentions \"signup conversions,\" \"registration friction,\" \"signup form optimization,\" \"free trial signup,\" \"reduce signup dropoff,\" \"account creation flow,\" \"people aren't signing up,\" \"signup abandonment,\" \"trial conversion rate,\" \"nobody completes registration,\" \"too many steps to sign up,\" or \"simplify our signup.\" Use this whenever the user has a signup or registration flow that isn't performing. For post-signup onboarding, see onboarding. For lead capture forms (not account creation), see cro.",
+      "relative_path": "marketingskills\\skills\\signup\\SKILL.md",
+      "frontmatter": {
+        "name": "signup",
+        "description": "When the user wants to optimize signup, registration, account creation, or trial activation flows. Also use when the user mentions \"signup conversions,\" \"registration friction,\" \"signup form optimization,\" \"free trial signup,\" \"reduce signup dropoff,\" \"account creation flow,\" \"people aren't signing up,\" \"signup abandonment,\" \"trial conversion rate,\" \"nobody completes registration,\" \"too many steps to sign up,\" or \"simplify our signup.\" Use this whenever the user has a signup or registration flow that isn't performing. For post-signup onboarding, see onboarding. For lead capture forms (not account creation), see cro.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "site-architecture",
+      "description": "When the user wants to plan, map, or restructure their website's page hierarchy, navigation, URL structure, or internal linking. Also use when the user mentions \"sitemap,\" \"site map,\" \"visual sitemap,\" \"site structure,\" \"page hierarchy,\" \"information architecture,\" \"IA,\" \"navigation design,\" \"URL structure,\" \"breadcrumbs,\" \"internal linking strategy,\" \"website planning,\" \"what pages do I need,\" \"how should I organize my site,\" or \"site navigation.\" Use this whenever someone is planning what pages a website should have and how they connect. NOT for XML sitemaps (that's technical SEO — see seo-audit). For SEO audits, see seo-audit. For structured data, see schema.",
+      "relative_path": "marketingskills\\skills\\site-architecture\\SKILL.md",
+      "frontmatter": {
+        "name": "site-architecture",
+        "description": "When the user wants to plan, map, or restructure their website's page hierarchy, navigation, URL structure, or internal linking. Also use when the user mentions \"sitemap,\" \"site map,\" \"visual sitemap,\" \"site structure,\" \"page hierarchy,\" \"information architecture,\" \"IA,\" \"navigation design,\" \"URL structure,\" \"breadcrumbs,\" \"internal linking strategy,\" \"website planning,\" \"what pages do I need,\" \"how should I organize my site,\" or \"site navigation.\" Use this whenever someone is planning what pages a website should have and how they connect. NOT for XML sitemaps (that's technical SEO — see seo-audit). For SEO audits, see seo-audit. For structured data, see schema.",
+        "metadata": "",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "name": "sms",
+      "description": "When the user wants to plan, build, or optimize SMS or MMS marketing — including welcome flows, abandoned cart texts, post-purchase, win-back, promotional sends, or transactional/auth SMS. Also use when the user mentions \"SMS marketing,\" \"text message campaigns,\" \"SMS sequence,\" \"SMS automation,\" \"abandoned cart text,\" \"post-purchase SMS,\" \"Klaviyo SMS,\" \"Postscript,\" \"Attentive,\" \"Twilio,\" \"A2P 10DLC,\" \"TCPA,\" \"SMS compliance,\" \"short code,\" \"toll-free SMS,\" \"MMS campaign,\" \"should I do SMS,\" or \"SMS vs email.\" For email sequences, see emails. For SMS copy framing, see copywriting. For opt-in popups that capture phone numbers, see popups.",
+      "relative_path": "marketingskills\\skills\\sms\\SKILL.md",
+      "frontmatter": {
+        "name": "sms",
+        "description": "When the user wants to plan, build, or optimize SMS or MMS marketing — including welcome flows, abandoned cart texts, post-purchase, win-back, promotional sends, or transactional/auth SMS. Also use when the user mentions \"SMS marketing,\" \"text message campaigns,\" \"SMS sequence,\" \"SMS automation,\" \"abandoned cart text,\" \"post-purchase SMS,\" \"Klaviyo SMS,\" \"Postscript,\" \"Attentive,\" \"Twilio,\" \"A2P 10DLC,\" \"TCPA,\" \"SMS compliance,\" \"short code,\" \"toll-free SMS,\" \"MMS campaign,\" \"should I do SMS,\" or \"SMS vs email.\" For email sequences, see emails. For SMS copy framing, see copywriting. For opt-in popups that capture phone numbers, see popups.",
+        "metadata": "",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "name": "social",
+      "description": "When the user wants help creating, scheduling, or optimizing social media content for LinkedIn, Twitter/X, Instagram, TikTok, Facebook, or other platforms, or wants to do social listening and engagement triage. Also use when the user mentions 'LinkedIn post,' 'Twitter thread,' 'social media,' 'content calendar,' 'social scheduling,' 'engagement,' 'viral content,' 'what should I post,' 'repurpose this content,' 'tweet ideas,' 'LinkedIn carousel,' 'social media strategy,' 'grow my following,' 'TikTok video,' 'Reels,' 'Shorts,' 'video script,' 'video hook,' 'short-form video,' 'create a reel,' 'social listening,' 'brand mentions,' 'competitor monitoring,' 'top posts to comment on,' 'find people asking for,' 'carousel,' 'slide-by-slide,' or 'document post.' Use this for social media content creation, repurposing, scheduling, short-form video scripting, and social listening. For broader content strategy, see content-strategy. For paid ads, see ad-creative. For earned media, see public-relations.",
+      "relative_path": "marketingskills\\skills\\social\\SKILL.md",
+      "frontmatter": {
+        "name": "social",
+        "description": "When the user wants help creating, scheduling, or optimizing social media content for LinkedIn, Twitter/X, Instagram, TikTok, Facebook, or other platforms, or wants to do social listening and engagement triage. Also use when the user mentions 'LinkedIn post,' 'Twitter thread,' 'social media,' 'content calendar,' 'social scheduling,' 'engagement,' 'viral content,' 'what should I post,' 'repurpose this content,' 'tweet ideas,' 'LinkedIn carousel,' 'social media strategy,' 'grow my following,' 'TikTok video,' 'Reels,' 'Shorts,' 'video script,' 'video hook,' 'short-form video,' 'create a reel,' 'social listening,' 'brand mentions,' 'competitor monitoring,' 'top posts to comment on,' 'find people asking for,' 'carousel,' 'slide-by-slide,' or 'document post.' Use this for social media content creation, repurposing, scheduling, short-form video scripting, and social listening. For broader content strategy, see content-strategy. For paid ads, see ad-creative. For earned media, see public-relations.",
+        "metadata": "",
+        "version": "2.2.0"
+      }
+    },
+    {
+      "name": "video",
+      "description": "When the user wants to create, generate, or produce video content using AI tools or programmatic frameworks. Also use when the user mentions 'video production,' 'AI video,' 'Remotion,' 'Hyperframes,' 'HeyGen,' 'Synthesia,' 'Veo,' 'Sora,' 'Runway,' 'Kling,' 'Seedance,' 'Hailuo,' 'MiniMax,' 'Pika,' 'Hunyuan,' 'Wan,' 'video generation,' 'AI avatar,' 'talking head video,' 'programmatic video,' 'video template,' 'explainer video,' 'product demo video,' 'video pipeline,' 'copy this edit,' 'match this video style,' 'reverse-engineer this video,' 'edit like this reference,' or 'make me a video.' Use this for video creation, generation, and production workflows. For video content strategy and what to post, see social. For paid video ad creative, see ad-creative.",
+      "relative_path": "marketingskills\\skills\\video\\SKILL.md",
+      "frontmatter": {
+        "name": "video",
+        "description": "When the user wants to create, generate, or produce video content using AI tools or programmatic frameworks. Also use when the user mentions 'video production,' 'AI video,' 'Remotion,' 'Hyperframes,' 'HeyGen,' 'Synthesia,' 'Veo,' 'Sora,' 'Runway,' 'Kling,' 'Seedance,' 'Hailuo,' 'MiniMax,' 'Pika,' 'Hunyuan,' 'Wan,' 'video generation,' 'AI avatar,' 'talking head video,' 'programmatic video,' 'video template,' 'explainer video,' 'product demo video,' 'video pipeline,' 'copy this edit,' 'match this video style,' 'reverse-engineer this video,' 'edit like this reference,' or 'make me a video.' Use this for video creation, generation, and production workflows. For video content strategy and what to post, see social. For paid video ad creative, see ad-creative.",
+        "metadata": "",
+        "version": "2.1.0"
+      }
+    }
+  ],
+  "hallmark": [
+    {
+      "name": "hallmark",
+      "description": "Anti-AI-slop design skill for greenfield pages, audits, redesigns, and design extraction from URLs or screenshots. Use when the user asks to build a new app or landing page, wants to redesign something, invokes Hallmark by name, or uses audit/redesign/study.",
+      "relative_path": "hallmark\\skills\\hallmark\\SKILL.md",
+      "frontmatter": {
+        "name": "hallmark",
+        "description": "Anti-AI-slop design skill for greenfield pages, audits, redesigns, and design extraction from URLs or screenshots. Use when the user asks to build a new app or landing page, wants to redesign something, invokes Hallmark by name, or uses audit/redesign/study.",
+        "version": "1.1.0"
+      }
+    }
+  ],
+  "Claude-Skills-collection": [
+    {
+      "name": "Agent Tooling",
+      "description": "Building the skills, hooks, commands, and plugins that agents run on.",
+      "relative_path": "Claude-Skills-collection\\categories\\agent-tooling.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "AI & LLM",
+      "description": "Prompting, retrieval, evaluation, agents, and the production concerns of shipping a model.",
+      "relative_path": "Claude-Skills-collection\\categories\\ai.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Backend",
+      "description": "APIs, services, messaging, and the frameworks that carry them.",
+      "relative_path": "Claude-Skills-collection\\categories\\backend.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Business",
+      "description": "Competitive analysis, product metrics, user research, and go-to-market work.",
+      "relative_path": "Claude-Skills-collection\\categories\\business.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Data",
+      "description": "Databases, schema design, and the pipelines that move data around.",
+      "relative_path": "Claude-Skills-collection\\categories\\data.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Design",
+      "description": "Visual design, brand systems, theming, and interface critique.",
+      "relative_path": "Claude-Skills-collection\\categories\\design.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Development",
+      "description": "The craft that is independent of language: review, debugging, refactoring, design, and version control.",
+      "relative_path": "Claude-Skills-collection\\categories\\development.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "DevOps & Cloud",
+      "description": "Infrastructure, delivery, reliability, and the arithmetic of running things in production.",
+      "relative_path": "Claude-Skills-collection\\categories\\devops.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Documents",
+      "description": "Producing and parsing Word, Excel, PowerPoint, PDF, and diagrams.",
+      "relative_path": "Claude-Skills-collection\\categories\\documents.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Finance",
+      "description": "Position sizing, risk, market analysis, and quantitative method. Educational, not advice.",
+      "relative_path": "Claude-Skills-collection\\categories\\finance.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Frontend",
+      "description": "Frameworks, architecture, accessibility, and performance in the browser.",
+      "relative_path": "Claude-Skills-collection\\categories\\frontend.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Languages",
+      "description": "Idiomatic, modern practice for each language, with the quality gate that keeps it honest.",
+      "relative_path": "Claude-Skills-collection\\categories\\languages.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Mobile",
+      "description": "Native and cross-platform mobile development, and shipping it safely.",
+      "relative_path": "Claude-Skills-collection\\categories\\mobile.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Productivity",
+      "description": "Research, verification, notes, files, and getting data out of the web.",
+      "relative_path": "Claude-Skills-collection\\categories\\productivity.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Security",
+      "description": "Writing secure code, auditing it, and protecting the supply chain around it.",
+      "relative_path": "Claude-Skills-collection\\categories\\security.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Testing",
+      "description": "What to test, at which level, and how to keep a suite worth running.",
+      "relative_path": "Claude-Skills-collection\\categories\\testing.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Writing",
+      "description": "Documentation, changelogs, internal communication, and editing.",
+      "relative_path": "Claude-Skills-collection\\categories\\writing.md",
+      "frontmatter": {}
+    }
+  ],
+  "ui-ux-pro-max-skill": [
+    {
+      "name": "banner-design",
+      "description": "Design banners for social media, ads, website heroes, creative assets, and print. Multiple art direction options with AI-generated visuals. Actions: design, create, generate banner. Platforms: Facebook, Twitter/X, LinkedIn, YouTube, Instagram, Google Display, website hero, print. Styles: minimalist, gradient, bold typography, photo-based, illustrated, geometric, retro, glassmorphism, 3D, neon, duotone, editorial, collage. Uses ui-ux-pro-max, frontend-design, ai-artist, ai-multimodal skills.",
+      "relative_path": "ui-ux-pro-max-skill\\.claude\\skills\\banner-design\\SKILL.md",
+      "frontmatter": {
+        "name": "banner-design",
+        "description": "Design banners for social media, ads, website heroes, creative assets, and print. Multiple art direction options with AI-generated visuals. Actions: design, create, generate banner. Platforms: Facebook, Twitter/X, LinkedIn, YouTube, Instagram, Google Display, website hero, print. Styles: minimalist, gradient, bold typography, photo-based, illustrated, geometric, retro, glassmorphism, 3D, neon, duotone, editorial, collage. Uses ui-ux-pro-max, frontend-design, ai-artist, ai-multimodal skills.",
+        "argument-hint": "[platform] [style] [dimensions]",
+        "license": "MIT",
+        "metadata": "",
+        "author": "claudekit",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "name": "brand",
+      "description": "Brand voice, visual identity, messaging frameworks, asset management, brand consistency. Activate for branded content, tone of voice, marketing assets, brand compliance, style guides.",
+      "relative_path": "ui-ux-pro-max-skill\\.claude\\skills\\brand\\SKILL.md",
+      "frontmatter": {
+        "name": "brand",
+        "description": "Brand voice, visual identity, messaging frameworks, asset management, brand consistency. Activate for branded content, tone of voice, marketing assets, brand compliance, style guides.",
+        "argument-hint": "[update|review|create] [args]",
+        "metadata": "",
+        "author": "claudekit",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "name": "design",
+      "description": "Comprehensive design skill: brand identity, design tokens, UI styling, logo generation (55 styles, Gemini AI), corporate identity program (50 deliverables, CIP mockups), HTML presentations (Chart.js), banner design (22 styles, social/ads/web/print), icon design (15 styles, SVG, Gemini 3.1 Pro), social photos (HTML→screenshot, multi-platform). Actions: design logo, create CIP, generate mockups, build slides, design banner, generate icon, create social photos, social media images, brand identity, design system. Platforms: Facebook, Twitter, LinkedIn, YouTube, Instagram, Pinterest, TikTok, Threads, Google Ads.",
+      "relative_path": "ui-ux-pro-max-skill\\.claude\\skills\\design\\SKILL.md",
+      "frontmatter": {
+        "name": "design",
+        "description": "Comprehensive design skill: brand identity, design tokens, UI styling, logo generation (55 styles, Gemini AI), corporate identity program (50 deliverables, CIP mockups), HTML presentations (Chart.js), banner design (22 styles, social/ads/web/print), icon design (15 styles, SVG, Gemini 3.1 Pro), social photos (HTML→screenshot, multi-platform). Actions: design logo, create CIP, generate mockups, build slides, design banner, generate icon, create social photos, social media images, brand identity, design system. Platforms: Facebook, Twitter, LinkedIn, YouTube, Instagram, Pinterest, TikTok, Threads, Google Ads.",
+        "argument-hint": "[design-type] [context]",
+        "license": "MIT",
+        "metadata": "",
+        "author": "claudekit",
+        "version": "2.1.0"
+      }
+    },
+    {
+      "name": "design-system",
+      "description": "Token architecture, component specifications, and slide generation. Three-layer tokens (primitive→semantic→component), CSS variables, spacing/typography scales, component specs, strategic slide creation. Use for design tokens, systematic design, brand-compliant presentations.",
+      "relative_path": "ui-ux-pro-max-skill\\.claude\\skills\\design-system\\SKILL.md",
+      "frontmatter": {
+        "name": "design-system",
+        "description": "Token architecture, component specifications, and slide generation. Three-layer tokens (primitive→semantic→component), CSS variables, spacing/typography scales, component specs, strategic slide creation. Use for design tokens, systematic design, brand-compliant presentations.",
+        "argument-hint": "[component or token]",
+        "license": "MIT",
+        "metadata": "",
+        "author": "claudekit",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "name": "slides",
+      "description": "Create strategic HTML presentations with Chart.js, design tokens, responsive layouts, copywriting formulas, and contextual slide strategies.",
+      "relative_path": "ui-ux-pro-max-skill\\.claude\\skills\\slides\\SKILL.md",
+      "frontmatter": {
+        "name": "slides",
+        "description": "Create strategic HTML presentations with Chart.js, design tokens, responsive layouts, copywriting formulas, and contextual slide strategies.",
+        "argument-hint": "[topic] [slide-count]",
+        "metadata": "",
+        "author": "claudekit",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "name": "ui-styling",
+      "description": "Create beautiful, accessible user interfaces with shadcn/ui components (built on Radix UI + Tailwind), Tailwind CSS utility-first styling, and canvas-based visual designs. Use when building user interfaces, implementing design systems, creating responsive layouts, adding accessible components (dialogs, dropdowns, forms, tables), customizing themes and colors, implementing dark mode, generating visual designs and posters, or establishing consistent styling patterns across applications.",
+      "relative_path": "ui-ux-pro-max-skill\\.claude\\skills\\ui-styling\\SKILL.md",
+      "frontmatter": {
+        "name": "ui-styling",
+        "description": "Create beautiful, accessible user interfaces with shadcn/ui components (built on Radix UI + Tailwind), Tailwind CSS utility-first styling, and canvas-based visual designs. Use when building user interfaces, implementing design systems, creating responsive layouts, adding accessible components (dialogs, dropdowns, forms, tables), customizing themes and colors, implementing dark mode, generating visual designs and posters, or establishing consistent styling patterns across applications.",
+        "argument-hint": "[component or layout]",
+        "license": "MIT",
+        "metadata": "",
+        "author": "claudekit",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "name": "ui-ux-pro-max",
+      "description": "UI/UX design intelligence for web and mobile. Searchable local database with 84 styles, 192 color palettes, 74 font pairings, 192 product types, 98 UX guidelines, 104 icon entries, 16 GSAP motion presets, and 25 chart types across 22 stacks (React, Next.js, Vue, Nuxt, Svelte, Astro, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui, Jetpack Compose, Angular, Laravel, JavaFX, WPF, WinUI, Avalonia, Uno Platform, UWP, Three.js, and HTML/CSS). Use when designing, building, or reviewing UI: pages, components, color schemes, typography, layout, accessibility, animation, or data visualization.",
+      "relative_path": "ui-ux-pro-max-skill\\.claude\\skills\\ui-ux-pro-max\\SKILL.md",
+      "frontmatter": {
+        "name": "ui-ux-pro-max",
+        "description": "UI/UX design intelligence for web and mobile. Searchable local database with 84 styles, 192 color palettes, 74 font pairings, 192 product types, 98 UX guidelines, 104 icon entries, 16 GSAP motion presets, and 25 chart types across 22 stacks (React, Next.js, Vue, Nuxt, Svelte, Astro, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui, Jetpack Compose, Angular, Laravel, JavaFX, WPF, WinUI, Avalonia, Uno Platform, UWP, Three.js, and HTML/CSS). Use when designing, building, or reviewing UI: pages, components, color schemes, typography, layout, accessibility, animation, or data visualization."
+      }
+    }
+  ],
+  "emilkowalski-skills": [
+    {
+      "name": "animation-vocabulary",
+      "description": "Reverse-lookup glossary that turns a vague description of a web animation or motion effect into its exact term (\"the bouncy thing when a popover opens\" → Pop in; \"the iOS rubber-band scroll\" → Rubber-banding). Use when the user asks \"what's it called when…\", or describes a motion effect without knowing its name and wants the right word to prompt an AI or designer with. For naming an effect, not designing or building one.",
+      "relative_path": "emilkowalski-skills\\skills\\animation-vocabulary\\SKILL.md",
+      "frontmatter": {
+        "name": "animation-vocabulary",
+        "description": "Reverse-lookup glossary that turns a vague description of a web animation or motion effect into its exact term (\"the bouncy thing when a popover opens\" → Pop in; \"the iOS rubber-band scroll\" → Rubber-banding). Use when the user asks \"what's it called when…\", or describes a motion effect without knowing its name and wants the right word to prompt an AI or designer with. For naming an effect, not designing or building one."
+      }
+    },
+    {
+      "name": "apple-design",
+      "description": "Apple's approach to interface design and fluid, physical motion, translated for the web. Use when building or reviewing gesture-driven UI, spring animations, drag/swipe/sheet interactions, momentum and interruptible transitions, translucent materials and depth, typography (optical sizing, tracking, leading), reduced-motion, or the design foundations (feedback, spatial consistency, restraint) behind Apple-style interfaces.",
+      "relative_path": "emilkowalski-skills\\skills\\apple-design\\SKILL.md",
+      "frontmatter": {
+        "name": "apple-design",
+        "description": "Apple's approach to interface design and fluid, physical motion, translated for the web. Use when building or reviewing gesture-driven UI, spring animations, drag/swipe/sheet interactions, momentum and interruptible transitions, translucent materials and depth, typography (optical sizing, tracking, leading), reduced-motion, or the design foundations (feedback, spatial consistency, restraint) behind Apple-style interfaces."
+      }
+    },
+    {
+      "name": "emil-design-eng",
+      "description": "This skill encodes Emil Kowalski's philosophy on UI polish, component design, animation decisions, and the invisible details that make software feel great.",
+      "relative_path": "emilkowalski-skills\\skills\\emil-design-eng\\SKILL.md",
+      "frontmatter": {
+        "name": "emil-design-eng",
+        "description": "This skill encodes Emil Kowalski's philosophy on UI polish, component design, animation decisions, and the invisible details that make software feel great."
+      }
+    },
+    {
+      "name": "find-animation-opportunities",
+      "description": "Search a codebase or UI for places that don't animate but should, and reject everything that shouldn't. Read-only; it proposes motion with exact values, it does not implement it. Use when the user asks \"what could be animated here?\" or wants to \"make this feel more alive\". For fixing existing animations, use improve-animations or review-animations instead.",
+      "relative_path": "emilkowalski-skills\\skills\\find-animation-opportunities\\SKILL.md",
+      "frontmatter": {
+        "name": "find-animation-opportunities",
+        "description": "Search a codebase or UI for places that don't animate but should, and reject everything that shouldn't. Read-only; it proposes motion with exact values, it does not implement it. Use when the user asks \"what could be animated here?\" or wants to \"make this feel more alive\". For fixing existing animations, use improve-animations or review-animations instead."
+      }
+    },
+    {
+      "name": "improve-animations",
+      "description": "Survey a codebase's animation and motion code as a senior motion advisor, then produce a prioritized audit and self-contained implementation plans for other agents (or cheaper models) to execute. Read-only on source code — it plans improvements, it does not apply them. Use when the user asks to \"improve the animations\", \"audit the motion\", \"make this app feel better\", or wants a roadmap of animation fixes rather than a review of a single diff.",
+      "relative_path": "emilkowalski-skills\\skills\\improve-animations\\SKILL.md",
+      "frontmatter": {
+        "name": "improve-animations",
+        "description": "Survey a codebase's animation and motion code as a senior motion advisor, then produce a prioritized audit and self-contained implementation plans for other agents (or cheaper models) to execute. Read-only on source code — it plans improvements, it does not apply them. Use when the user asks to \"improve the animations\", \"audit the motion\", \"make this app feel better\", or wants a roadmap of animation fixes rather than a review of a single diff."
+      }
+    },
+    {
+      "name": "review-animations",
+      "description": "Reviews animation and motion code against a high craft bar derived from Emil Kowalski's design engineering philosophy. Default to flagging; approval is earned.",
+      "relative_path": "emilkowalski-skills\\skills\\review-animations\\SKILL.md",
+      "frontmatter": {
+        "name": "review-animations",
+        "description": "Reviews animation and motion code against a high craft bar derived from Emil Kowalski's design engineering philosophy. Default to flagging; approval is earned.",
+        "disable-model-invocation": "true"
+      }
+    }
+  ],
+  "mattpocock-skills": [
+    {
+      "name": "Agent Rule: Model-invoked vs user-invoked",
+      "description": "Every `SKILL.md` in this repo is a skill. The one axis that splits them is **invocation** — who can reach it:",
+      "relative_path": "mattpocock-skills\\.agents\\invocation.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Agent Rule: Writing docs pages",
+      "description": "Every skill in `engineering/` and `productivity/` has a human-facing **docs page** at `docs/<bucket>/<skill-name>.md` — the docs tree mirrors those two bucket folders under `skills/`. It is published at `https://aihero.dev/skills-<skill-name>`; the URL is always `skills-<skill-name>` regardless of bucket, so the docs path is repo organisation only. The page is not the skill and not a copy of `SKILL.md`. Only these two buckets are promoted; the rest (`misc/`, `personal/`, `in-progress/`, `deprecated/`) ship no docs page.",
+      "relative_path": "mattpocock-skills\\.agents\\writing-docs.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: ask-matt.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\ask-matt.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: code-review.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\code-review.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: codebase-design.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\codebase-design.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: diagnosing-bugs.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\diagnosing-bugs.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: domain-modeling.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\domain-modeling.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: grill-with-docs.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\grill-with-docs.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: implement.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\implement.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: improve-codebase-architecture.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\improve-codebase-architecture.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: prototype.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\prototype.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: research.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\research.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: resolving-merge-conflicts.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\resolving-merge-conflicts.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: setup-matt-pocock-skills.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\setup-matt-pocock-skills.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: tdd.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\tdd.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: to-spec.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\to-spec.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: to-tickets.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\to-tickets.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: triage.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\triage.md",
+      "frontmatter": {}
+    },
+    {
+      "name": "Engineering Guide: wayfinder.md",
+      "description": "Quickstart:",
+      "relative_path": "mattpocock-skills\\docs\\engineering\\wayfinder.md",
+      "frontmatter": {}
+    }
+  ],
+  "humanizer": [
+    {
+      "name": "humanizer",
+      "description": "|",
+      "relative_path": "humanizer\\SKILL.md",
+      "frontmatter": {
+        "name": "humanizer",
+        "version": "2.8.2",
+        "description": "|",
+        "comprehensive \"Signs of AI writing\" guide. Detects and fixes patterns including": "",
+        "license": "MIT",
+        "compatibility": "any-agent",
+        "allowed-tools": ""
+      }
+    }
+  ],
+  "google-skills": [
+    {
+      "name": "data-manager-api-audience-ingestion",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\ads\\data-manager-api-audience-ingestion\\SKILL.md",
+      "frontmatter": {
+        "name": "data-manager-api-audience-ingestion",
+        "description": ">-",
+        "metadata": "",
+        "version": "1.1",
+        "category": "GoogleAds"
+      }
+    },
+    {
+      "name": "data-manager-api-event-ingestion",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\ads\\data-manager-api-event-ingestion\\SKILL.md",
+      "frontmatter": {
+        "name": "data-manager-api-event-ingestion",
+        "description": ">-",
+        "metadata": "",
+        "version": "1.1",
+        "category": "GoogleAds"
+      }
+    },
+    {
+      "name": "data-manager-api-setup",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\ads\\data-manager-api-setup\\SKILL.md",
+      "frontmatter": {
+        "name": "data-manager-api-setup",
+        "description": ">-",
+        "metadata": "",
+        "version": "1.0",
+        "category": "GoogleAds"
+      }
+    },
+    {
+      "name": "google-ads-api-mcp-setup",
+      "description": "Guides developers through downloading, configuring, and installing the official open-source Google Ads MCP Server. Use this skill when a user wants to connect their AI assistant (such as Gemini, Claude Code, or Cursor) to their Google Ads account to query campaigns or retrieve reporting metrics using natural language.",
+      "relative_path": "google-skills\\skills\\ads\\google-ads-api-mcp-setup\\SKILL.md",
+      "frontmatter": {
+        "name": "google-ads-api-mcp-setup",
+        "description": "Guides developers through downloading, configuring, and installing the official open-source Google Ads MCP Server. Use this skill when a user wants to connect their AI assistant (such as Gemini, Claude Code, or Cursor) to their Google Ads account to query campaigns or retrieve reporting metrics using natural language.",
+        "compatibility": "Python 3.12+, pipx",
+        "metadata": "",
+        "author": "google-ads-api-team",
+        "version": "1.0",
+        "category": "GoogleAds"
+      }
+    },
+    {
+      "name": "google-ads-api-quickstart",
+      "description": "|",
+      "relative_path": "google-skills\\skills\\ads\\google-ads-api-quickstart\\SKILL.md",
+      "frontmatter": {
+        "name": "google-ads-api-quickstart",
+        "description": "|",
+        "Guides developers through Google Ads API quickstart": "credential setup, choosing from 6 client libraries/REST, configuring environments, and running a \"retrieve campaigns\" script. Troubleshoots common setup errors: USER_PERMISSION_DENIED, login_customer_id issues, and DEVELOPER_TOKEN_NOT_APPROVED.",
+        "Use this skill when": "",
+        "compatibility": "Outbound HTTPS connectivity required to access the Google Ads API and documentation. Note: If network access is restricted, the agent will fall back to using the last-known stable versions cached within the skill resources.",
+        "metadata": "",
+        "author": "google-ads-api-team",
+        "version": "1.0",
+        "category": "GoogleAds"
+      }
+    },
+    {
+      "name": "google-mobile-ads-android-migrate-to-next-gen",
+      "description": "Migrates Android applications from the old, legacy Google Mobile",
+      "relative_path": "google-skills\\skills\\ads\\google-mobile-ads-android-migrate-to-next-gen\\SKILL.md",
+      "frontmatter": {
+        "name": "google-mobile-ads-android-migrate-to-next-gen",
+        "description": "Migrates Android applications from the old, legacy Google Mobile",
+        "Ads (GMA) SDK (com.google.android.gms": "play-services-ads) to the new GMA",
+        "Next-Gen SDK (com.google.android.libraries.ads.mobile.sdk": "ads-mobile-sdk).",
+        "metadata": "",
+        "version": "1.1.0",
+        "category": "GoogleAds"
+      }
+    },
+    {
+      "name": "google-mobile-ads-banner",
+      "description": "Provides instructions to implement, integrate, or configure",
+      "relative_path": "google-skills\\skills\\ads\\google-mobile-ads-banner\\SKILL.md",
+      "frontmatter": {
+        "name": "google-mobile-ads-banner",
+        "description": "Provides instructions to implement, integrate, or configure",
+        "metadata": "",
+        "version": "1.0.0",
+        "category": "GoogleAds"
+      }
+    },
+    {
+      "name": "google-mobile-ads-get-started",
+      "description": "Provides instructions for integrating the Google Mobile Ads (GMA)",
+      "relative_path": "google-skills\\skills\\ads\\google-mobile-ads-get-started\\SKILL.md",
+      "frontmatter": {
+        "name": "google-mobile-ads-get-started",
+        "description": "Provides instructions for integrating the Google Mobile Ads (GMA)",
+        "metadata": "",
+        "version": "1.1.0",
+        "category": "GoogleAds"
+      }
+    },
+    {
+      "name": "google-mobile-ads-interstitial",
+      "description": "Provides instructions for implementing, integrating, or configuring",
+      "relative_path": "google-skills\\skills\\ads\\google-mobile-ads-interstitial\\SKILL.md",
+      "frontmatter": {
+        "name": "google-mobile-ads-interstitial",
+        "description": "Provides instructions for implementing, integrating, or configuring",
+        "metadata": "",
+        "version": "1.0.0",
+        "category": "GoogleAds"
+      }
+    },
+    {
+      "name": "google-mobile-ads-rewarded",
+      "description": "Provides instructions for implementing, integrating, or configuring",
+      "relative_path": "google-skills\\skills\\ads\\google-mobile-ads-rewarded\\SKILL.md",
+      "frontmatter": {
+        "name": "google-mobile-ads-rewarded",
+        "description": "Provides instructions for implementing, integrating, or configuring",
+        "metadata": "",
+        "version": "1.0.0",
+        "category": "GoogleAds"
+      }
+    },
+    {
+      "name": "ima-sdk-basics",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\ads\\ima-sdk-basics\\SKILL.md",
+      "frontmatter": {
+        "name": "ima-sdk-basics",
+        "description": ">-",
+        "license": "Apache-2.0",
+        "metadata": "",
+        "author": "Google LLC",
+        "version": "1.0.0",
+        "category": "GoogleAds"
+      }
+    },
+    {
+      "name": "google-analytics-admin-api-basics",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\analytics\\google-analytics-admin-api-basics\\SKILL.md",
+      "frontmatter": {
+        "name": "google-analytics-admin-api-basics",
+        "metadata": "",
+        "category": "GoogleAnalytics",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "google-analytics-data-api-basics",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\analytics\\google-analytics-data-api-basics\\SKILL.md",
+      "frontmatter": {
+        "name": "google-analytics-data-api-basics",
+        "metadata": "",
+        "category": "GoogleAnalytics",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "agent-platform-alert-configuration",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\agent-platform-alert-configuration\\SKILL.md",
+      "frontmatter": {
+        "name": "agent-platform-alert-configuration",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">-",
+        "NOTE": "This skill currently only works for the Agent Runtime. Don't use for",
+        "allowed-tools": "terraform gcloud python"
+      }
+    },
+    {
+      "name": "agent-platform-deploy",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\agent-platform-deploy\\SKILL.md",
+      "frontmatter": {
+        "name": "agent-platform-deploy",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "agent-platform-endpoint-management",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\agent-platform-endpoint-management\\SKILL.md",
+      "frontmatter": {
+        "name": "agent-platform-endpoint-management",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "agent-platform-eval-flywheel",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\agent-platform-eval-flywheel\\SKILL.md",
+      "frontmatter": {
+        "name": "agent-platform-eval-flywheel",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "agent-platform-inference",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\agent-platform-inference\\SKILL.md",
+      "frontmatter": {
+        "name": "agent-platform-inference",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "agent-platform-migrate-from-ai-studio",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\agent-platform-migrate-from-ai-studio\\SKILL.md",
+      "frontmatter": {
+        "name": "agent-platform-migrate-from-ai-studio",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "agent-platform-model-registry",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\agent-platform-model-registry\\SKILL.md",
+      "frontmatter": {
+        "name": "agent-platform-model-registry",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "agent-platform-prompt-management",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\agent-platform-prompt-management\\SKILL.md",
+      "frontmatter": {
+        "name": "agent-platform-prompt-management",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "agent-platform-rag-engine-management",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\agent-platform-rag-engine-management\\SKILL.md",
+      "frontmatter": {
+        "name": "agent-platform-rag-engine-management",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "agent-platform-skill-registry",
+      "description": ">",
+      "relative_path": "google-skills\\skills\\cloud\\agent-platform-skill-registry\\SKILL.md",
+      "frontmatter": {
+        "name": "agent-platform-skill-registry",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">"
+      }
+    },
+    {
+      "name": "agent-platform-tuning",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\agent-platform-tuning\\SKILL.md",
+      "frontmatter": {
+        "name": "agent-platform-tuning",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "agent-platform-tuning-management",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\agent-platform-tuning-management\\SKILL.md",
+      "frontmatter": {
+        "name": "agent-platform-tuning-management",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "alloydb-basics",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\alloydb-basics\\SKILL.md",
+      "frontmatter": {
+        "name": "alloydb-basics",
+        "metadata": "",
+        "category": "Databases",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "bigquery-ai-ml",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\bigquery-ai-ml\\SKILL.md",
+      "frontmatter": {
+        "name": "bigquery-ai-ml",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "bigquery-basics",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\bigquery-basics\\SKILL.md",
+      "frontmatter": {
+        "name": "bigquery-basics",
+        "metadata": "",
+        "category": "BigDataAndAnalytics",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "bigquery-bigframes",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\bigquery-bigframes\\SKILL.md",
+      "frontmatter": {
+        "name": "bigquery-bigframes",
+        "metadata": "",
+        "category": "BigDataAndAnalytics",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "bigtable-basics",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\bigtable-basics\\SKILL.md",
+      "frontmatter": {
+        "name": "bigtable-basics",
+        "metadata": "",
+        "category": "Databases",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "cloud-logging-query-generation",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\cloud-logging-query-generation\\SKILL.md",
+      "frontmatter": {
+        "name": "cloud-logging-query-generation",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "cloud-run-basics",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\cloud-run-basics\\SKILL.md",
+      "frontmatter": {
+        "name": "cloud-run-basics",
+        "metadata": "",
+        "category": "Serverless",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "cloud-sql-basics",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\cloud-sql-basics\\SKILL.md",
+      "frontmatter": {
+        "name": "cloud-sql-basics",
+        "metadata": "",
+        "category": "Databases",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "datalineage-bigquery-asset-impact-analysis",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\datalineage-bigquery-asset-impact-analysis\\SKILL.md",
+      "frontmatter": {
+        "name": "datalineage-bigquery-asset-impact-analysis",
+        "metadata": "",
+        "category": "BigDataAndAnalytics",
+        "description": ">-",
+        "Use when": "",
+        "Don't use for": ""
+      }
+    },
+    {
+      "name": "detection-engineering-coverage-evaluation",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\detection-engineering-coverage-evaluation\\SKILL.md",
+      "frontmatter": {
+        "name": "detection-engineering-coverage-evaluation",
+        "metadata": "",
+        "category": "Security",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "firebase-basics",
+      "description": "Use this skill whenever you are working on a project that uses Firebase products or services, especially for mobile or web apps.",
+      "relative_path": "google-skills\\skills\\cloud\\firebase-basics\\SKILL.md",
+      "frontmatter": {
+        "name": "firebase-basics",
+        "metadata": "",
+        "category": "Serverless",
+        "description": "Use this skill whenever you are working on a project that uses Firebase products or services, especially for mobile or web apps."
+      }
+    },
+    {
+      "name": "gcloud",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gcloud\\SKILL.md",
+      "frontmatter": {
+        "name": "gcloud",
+        "metadata": "",
+        "category": "DevOps",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "gemini-agents-api",
+      "description": "Manages custom Agent resources on Gemini Enterprise Agent Platform. Use when the user wants to programmatically create, configure, list, update, or delete stateful, server-managed Agent resources (including mounting files, skills, and tools) before executing conversations.",
+      "relative_path": "google-skills\\skills\\cloud\\gemini-agents-api\\SKILL.md",
+      "frontmatter": {
+        "name": "gemini-agents-api",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": "Manages custom Agent resources on Gemini Enterprise Agent Platform. Use when the user wants to programmatically create, configure, list, update, or delete stateful, server-managed Agent resources (including mounting files, skills, and tools) before executing conversations."
+      }
+    },
+    {
+      "name": "gemini-api",
+      "description": "Use when the user asks about using Gemini in an enterprise environment or explicitly mentions Vertex AI, Google Cloud, or Agent Platform. Guides the usage of the Gemini API on Agent Platform with the Google Gen AI SDK. Covers SDK usage (Python, JS/TS, Go, Java, C#), capabilities like multimodal inputs, tools, media generation, caching, batch prediction, and Live API.",
+      "relative_path": "google-skills\\skills\\cloud\\gemini-api\\SKILL.md",
+      "frontmatter": {
+        "name": "gemini-api",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": "Use when the user asks about using Gemini in an enterprise environment or explicitly mentions Vertex AI, Google Cloud, or Agent Platform. Guides the usage of the Gemini API on Agent Platform with the Google Gen AI SDK. Covers SDK usage (Python, JS/TS, Go, Java, C#), capabilities like multimodal inputs, tools, media generation, caching, batch prediction, and Live API.",
+        "compatibility": "Requires active Google Cloud credentials and Agent Platform API enabled."
+      }
+    },
+    {
+      "name": "gemini-interactions-api",
+      "description": "Guides the usage of Gemini Interactions API on Gemini Enterprise Agent Platform. Use when the user wants to use the stateful, server-managed Interactions API for multi-turn conversations, background execution, streaming, structured output, and function calling on the Agent Platform.",
+      "relative_path": "google-skills\\skills\\cloud\\gemini-interactions-api\\SKILL.md",
+      "frontmatter": {
+        "name": "gemini-interactions-api",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": "Guides the usage of Gemini Interactions API on Gemini Enterprise Agent Platform. Use when the user wants to use the stateful, server-managed Interactions API for multi-turn conversations, background execution, streaming, structured output, and function calling on the Agent Platform."
+      }
+    },
+    {
+      "name": "gke-app-onboarding",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-app-onboarding\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-app-onboarding",
+        "description": ">-",
+        "metadata": "",
+        "category": "Containers"
+      }
+    },
+    {
+      "name": "gke-backup-dr",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-backup-dr\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-backup-dr",
+        "description": ">-",
+        "metadata": "",
+        "category": "Storage"
+      }
+    },
+    {
+      "name": "gke-basics",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-basics\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-basics",
+        "metadata": "",
+        "category": "Containers",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "gke-batch-hpc",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-batch-hpc\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-batch-hpc",
+        "description": ">-",
+        "metadata": "",
+        "category": "Containers"
+      }
+    },
+    {
+      "name": "gke-cluster-autoscaler",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-cluster-autoscaler\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-cluster-autoscaler",
+        "metadata": "",
+        "category": "Containers",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "gke-cluster-creation",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-cluster-creation\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-cluster-creation",
+        "description": ">-",
+        "metadata": "",
+        "category": "Containers"
+      }
+    },
+    {
+      "name": "gke-compute-classes",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-compute-classes\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-compute-classes",
+        "description": ">-",
+        "metadata": "",
+        "category": "Containers"
+      }
+    },
+    {
+      "name": "gke-cost",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-cost\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-cost",
+        "description": ">-",
+        "metadata": "",
+        "category": "CloudObservabilityAndMonitoring"
+      }
+    },
+    {
+      "name": "gke-golden-path",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-golden-path\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-golden-path",
+        "description": ">-",
+        "metadata": "",
+        "category": "Containers"
+      }
+    },
+    {
+      "name": "gke-inference",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-inference\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-inference",
+        "description": ">-",
+        "metadata": "",
+        "category": "Containers"
+      }
+    },
+    {
+      "name": "gke-multitenancy",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-multitenancy\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-multitenancy",
+        "description": ">-",
+        "metadata": "",
+        "category": "Containers"
+      }
+    },
+    {
+      "name": "gke-networking",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-networking\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-networking",
+        "description": ">-",
+        "metadata": "",
+        "category": "Networking"
+      }
+    },
+    {
+      "name": "gke-observability",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-observability\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-observability",
+        "description": ">-",
+        "metadata": "",
+        "category": "CloudObservabilityAndMonitoring"
+      }
+    },
+    {
+      "name": "gke-reliability",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-reliability\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-reliability",
+        "description": ">-",
+        "metadata": "",
+        "category": "Containers"
+      }
+    },
+    {
+      "name": "gke-scaling",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-scaling\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-scaling",
+        "description": ">-",
+        "metadata": "",
+        "category": "Containers"
+      }
+    },
+    {
+      "name": "gke-security",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-security\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-security",
+        "description": ">-",
+        "metadata": "",
+        "category": "Security"
+      }
+    },
+    {
+      "name": "gke-storage",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-storage\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-storage",
+        "description": ">-",
+        "metadata": "",
+        "category": "Storage"
+      }
+    },
+    {
+      "name": "gke-upgrades",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\gke-upgrades\\SKILL.md",
+      "frontmatter": {
+        "name": "gke-upgrades",
+        "metadata": "",
+        "category": "Containers",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "google-agents-cli-onboarding",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\google-agents-cli-onboarding\\SKILL.md",
+      "frontmatter": {
+        "name": "google-agents-cli-onboarding",
+        "metadata": "",
+        "category": "DevOps",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "google-cloud-global-frontend-configuration",
+      "description": "|",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-global-frontend-configuration\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-global-frontend-configuration",
+        "metadata": "",
+        "category": "Networking",
+        "description": "|",
+        "Use when": "",
+        "Don't use for": ""
+      }
+    },
+    {
+      "name": "google-cloud-networking-observability",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-networking-observability\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-networking-observability",
+        "metadata": "",
+        "category": "Compute",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "google-cloud-recipe-auth",
+      "description": "Provides expert guidance on authenticating and authorizing to Google Cloud services and APIs, covering human users, service identities, Application Default Credentials (ADC), and best practices for secure access.",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-recipe-auth\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-recipe-auth",
+        "metadata": "",
+        "category": "GettingStarted",
+        "description": "Provides expert guidance on authenticating and authorizing to Google Cloud services and APIs, covering human users, service identities, Application Default Credentials (ADC), and best practices for secure access."
+      }
+    },
+    {
+      "name": "google-cloud-recipe-foundation-builder",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-recipe-foundation-builder\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-recipe-foundation-builder",
+        "metadata": "",
+        "category": "GettingStarted",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "google-cloud-recipe-onboarding",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-recipe-onboarding\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-recipe-onboarding",
+        "metadata": "",
+        "category": "GettingStarted",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "google-cloud-solution-agentic-ai-bidirectional-streaming",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-solution-agentic-ai-bidirectional-streaming\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-solution-agentic-ai-bidirectional-streaming",
+        "metadata": "",
+        "category": "AiAndMachineLearning",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "google-cloud-solution-agentic-ai-borderless-data-lakehouse",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-solution-agentic-ai-borderless-data-lakehouse\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-solution-agentic-ai-borderless-data-lakehouse",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "google-cloud-solution-agentic-ai-data-science-workflow",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-solution-agentic-ai-data-science-workflow\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-solution-agentic-ai-data-science-workflow",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "google-cloud-solution-architecture",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-solution-architecture\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-solution-architecture",
+        "metadata": "",
+        "category": "GettingStarted",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "google-cloud-solution-rag-enterprise-search-gke-sqldb",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-solution-rag-enterprise-search-gke-sqldb\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-solution-rag-enterprise-search-gke-sqldb",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "google-cloud-waf-cost-optimization",
+      "description": "Generates cost optimization guidance for Google Cloud workloads based on the Google Cloud Well-Architected Framework (WAF). Use this skill to evaluate a workload, identify cost requirements and constraints, and provide actionable recommendations for build, deploy, and manage the workload cost-efficiently in Google Cloud.",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-waf-cost-optimization\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-waf-cost-optimization",
+        "metadata": "",
+        "category": "WellArchitectedFramework",
+        "description": "Generates cost optimization guidance for Google Cloud workloads based on the Google Cloud Well-Architected Framework (WAF). Use this skill to evaluate a workload, identify cost requirements and constraints, and provide actionable recommendations for build, deploy, and manage the workload cost-efficiently in Google Cloud."
+      }
+    },
+    {
+      "name": "google-cloud-waf-operational-excellence",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-waf-operational-excellence\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-waf-operational-excellence",
+        "metadata": "",
+        "category": "WellArchitectedFramework",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "google-cloud-waf-performance-optimization",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-waf-performance-optimization\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-waf-performance-optimization",
+        "metadata": "",
+        "category": "WellArchitectedFramework",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "google-cloud-waf-reliability",
+      "description": "Generates reliability-focused guidance for Google Cloud workloads based on the design principles and recommendations in the Google Cloud Well-Architected Framework. Use this skill to evaluate a workload, identify reliability requirements, and provide actionable recommendations for build, deploy, and manage the workload reliably in Google Cloud.",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-waf-reliability\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-waf-reliability",
+        "metadata": "",
+        "category": "WellArchitectedFramework",
+        "description": "Generates reliability-focused guidance for Google Cloud workloads based on the design principles and recommendations in the Google Cloud Well-Architected Framework. Use this skill to evaluate a workload, identify reliability requirements, and provide actionable recommendations for build, deploy, and manage the workload reliably in Google Cloud."
+      }
+    },
+    {
+      "name": "google-cloud-waf-security",
+      "description": "Generates security-focused guidance for Google Cloud workloads based on the design principles and recommendations in the Google Cloud Well-Architected Framework (WAF). Use this skill to evaluate a workload, identify security requirements, and provide actionable recommendations for IAM, network security, data protection, and operational security.",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-waf-security\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-waf-security",
+        "metadata": "",
+        "category": "WellArchitectedFramework",
+        "description": "Generates security-focused guidance for Google Cloud workloads based on the design principles and recommendations in the Google Cloud Well-Architected Framework (WAF). Use this skill to evaluate a workload, identify security requirements, and provide actionable recommendations for IAM, network security, data protection, and operational security."
+      }
+    },
+    {
+      "name": "google-cloud-waf-sustainability",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\google-cloud-waf-sustainability\\SKILL.md",
+      "frontmatter": {
+        "name": "google-cloud-waf-sustainability",
+        "metadata": "",
+        "category": "WellArchitectedFramework",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "iam-recommendations-fetcher",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\iam-recommendations-fetcher\\SKILL.md",
+      "frontmatter": {
+        "name": "iam-recommendations-fetcher",
+        "metadata": "",
+        "category": "Identity",
+        "description": ">-"
+      }
+    },
+    {
+      "name": "workload-manager-basics",
+      "description": ">-",
+      "relative_path": "google-skills\\skills\\cloud\\workload-manager-basics\\SKILL.md",
+      "frontmatter": {
+        "name": "workload-manager-basics",
+        "metadata": "",
+        "category": "CloudObservabilityAndMonitoring",
+        "description": ">-"
+      }
+    }
+  ],
+  "logo-generator-skill": [
+    {
+      "name": "logo-generator",
+      "description": ">",
+      "relative_path": "logo-generator-skill\\SKILL.md",
+      "frontmatter": {
+        "name": "logo-generator",
+        "description": ">",
+        "Generate professional SVG logos and high-end showcase images. Use when the user wants to": "(1) Create a logo or icon for their product/brand, (2) Generate logo design concepts based on product information, (3) Create professional logo showcase presentations with multiple background styles, (4) Export logos in various formats (SVG, PNG), or (5) Iterate on logo designs with different visual styles. Supports geometric patterns, dot matrix designs, line systems, and mixed compositions. Generates showcase images using Nano Banana (Gemini image generation) with 12 professional background styles."
+      }
+    }
+  ]
+}

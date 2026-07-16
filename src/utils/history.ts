@@ -26,7 +26,27 @@ export async function saveSearchLog(projectPath: string, queries: string[], resu
     const filename = `search_${timestamp}_${hash}.md`;
     const filePath = path.join(outputsDir, filename);
 
-    const fileContent = `# Search Queries\n${queriesTitle}\n\n## Results\n${resultText}`;
+    const lines = resultText
+        .replace(/\r\n/g, '\n')
+        .split('\n')
+        .map(line => line.trimEnd());
+
+    const cleanedLines: string[] = [];
+    let emptyLineCount = 0;
+    for (const line of lines) {
+        if (line === '') {
+            emptyLineCount++;
+            if (emptyLineCount <= 1) {
+                cleanedLines.push(line);
+            }
+        } else {
+            emptyLineCount = 0;
+            cleanedLines.push(line);
+        }
+    }
+    const cleanedResultText = cleanedLines.join('\n');
+
+    const fileContent = `# Search Queries\n${queriesTitle}\n\n## Results\n${cleanedResultText}`;
     
     let indexEntry = `\n---\n## Search: ${queriesTitle}\n*Date: ${new Date().toLocaleString()}*\n\n`;
 
@@ -40,13 +60,11 @@ export async function saveSearchLog(projectPath: string, queries: string[], resu
                 reflow: true
             });
             
-            indexEntry += `> [!NOTE]\n> This content is highly compressed using pxpipe vision tokens. Mentally decode and process the visual text.\n\n`;
-            
             pages.forEach((page: any, idx: number) => {
                 const imgName = `search_${timestamp}_${hash}_page_${idx}.png`;
                 const imgPath = path.join(outputsDir, imgName);
                 fs.writeFileSync(imgPath, page.png);
-                indexEntry += `![${imgName}](file:///${imgPath.replace(/\\/g, '/')})\n\n`;
+                indexEntry += `![${imgName}](${imgName})\n\n`;
             });
         } else {
             throw new Error('pxpipe not found');

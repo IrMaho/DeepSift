@@ -136,7 +136,10 @@ export async function editCommand(
     patchFilePath: string,
     format: OutputFormat
 ) {
-    const fullPatchPath = path.resolve(projectPath, patchFilePath);
+    let fullPatchPath = path.resolve(process.cwd(), patchFilePath);
+    if (!fs.existsSync(fullPatchPath)) {
+        fullPatchPath = path.resolve(projectPath, patchFilePath);
+    }
     
     if (!fs.existsSync(fullPatchPath)) {
         throw new Error(`Patch file not found: ${fullPatchPath}`);
@@ -180,7 +183,10 @@ export async function editCommand(
         // 1. Resolve Block-Level Clipboard (captures indentation)
         // Matches: ^<indentation>📋<filepath>:L<start>-L<end>
         expanded = expanded.replace(/^([ \t]*)📋\s*([^:\s]+):L(\d+)(?:-L?(\d+))?\s*$/gm, (match, indent, filepath, start, end) => {
-            const fullPath = path.resolve(projectPath, filepath.trim());
+            let fullPath = path.resolve(process.cwd(), filepath.trim());
+            if (!fs.existsSync(fullPath)) {
+                fullPath = path.resolve(projectPath, filepath.trim());
+            }
             if (!fs.existsSync(fullPath)) return match;
             
             const startLine = parseInt(start, 10);
@@ -199,7 +205,10 @@ export async function editCommand(
 
         // 2. Resolve Inline Clipboard
         expanded = expanded.replace(/📋\s*([^:\s]+):L(\d+)(?:-L?(\d+))?/g, (match, filepath, start, end) => {
-            const fullPath = path.resolve(projectPath, filepath.trim());
+            let fullPath = path.resolve(process.cwd(), filepath.trim());
+            if (!fs.existsSync(fullPath)) {
+                fullPath = path.resolve(projectPath, filepath.trim());
+            }
             if (!fs.existsSync(fullPath)) return match;
             
             const startLine = parseInt(start, 10);
@@ -232,7 +241,10 @@ export async function editCommand(
     const errors: string[] = [];
 
     for (const filePatch of patchData) {
-        const fullFilePath = path.resolve(projectPath, filePatch.file);
+        let fullFilePath = path.resolve(process.cwd(), filePatch.file);
+        if (!fs.existsSync(fullFilePath)) {
+            fullFilePath = path.resolve(projectPath, filePatch.file);
+        }
         
         if (!fs.existsSync(fullFilePath)) {
             errors.push(`[Skipped] File not found: ${filePatch.file}`);

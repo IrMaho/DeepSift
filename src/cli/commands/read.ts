@@ -44,7 +44,11 @@ export async function readCommand(
             }
         }
 
-        const fullPath = path.resolve(projectPath, filePath);
+        let fullPath = path.resolve(process.cwd(), filePath);
+        if (!fs.existsSync(fullPath)) {
+            fullPath = path.resolve(projectPath, filePath);
+        }
+
         if (!fs.existsSync(fullPath)) {
             allResults.push(`--- File: ${filePath} ---\n[Error: File not found]`);
             continue;

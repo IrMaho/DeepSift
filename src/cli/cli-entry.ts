@@ -13,6 +13,8 @@ import { initCommand } from './commands/init.js';
 import { watchCommand } from './commands/watch.js';
 import { configCommand } from './commands/config.js';
 import { dnaCommand } from './commands/dna.js';
+import { realmCommand } from './commands/realm-cmd.js';
+import { compareCommand } from './commands/compare-cmd.js';
 import { scanCommand } from './commands/scan.js';
 import { resolveCommand } from './commands/resolve.js';
 import { contextCommand } from './commands/context.js';
@@ -150,6 +152,47 @@ async function main() {
                 break;
             }
 
+            case 'realm':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide an action (e.g. list, add, remove).\nUsage: deepsift realm list');
+                }
+                const action = commandArgs[0];
+                const realmId = commandArgs[1];
+                
+                let type: 'code' | 'skill' | 'docs' | undefined;
+                const typeIdx = commandArgs.indexOf('--type');
+                if (typeIdx !== -1 && commandArgs[typeIdx + 1]) {
+                    type = commandArgs[typeIdx + 1] as any;
+                }
+                
+                let source: string | undefined;
+                const sourceIdx = commandArgs.indexOf('--source');
+                if (sourceIdx !== -1 && commandArgs[sourceIdx + 1]) {
+                    source = commandArgs[sourceIdx + 1];
+                }
+
+                await realmCommand(projectPath, action, format, realmId, { type, source });
+                break;
+
+            case 'compare':
+                if (commandArgs.length < 2) {
+                    throw new Error('Please provide two realms to compare.\nUsage: deepsift compare <realm1> <realm2> --query "keyword"');
+                }
+                const r1 = commandArgs[0];
+                const r2 = commandArgs[1];
+                
+                let compareQuery: string | undefined;
+                const compareQueryIdx = commandArgs.indexOf('--query');
+                if (compareQueryIdx !== -1 && commandArgs[compareQueryIdx + 1]) {
+                    compareQuery = commandArgs[compareQueryIdx + 1];
+                }
+                if (!compareQuery) {
+                    throw new Error('Please provide a --query to compare.');
+                }
+                
+                await compareCommand(projectPath, r1, r2, compareQuery, format, compress);
+                break;
+
             case 'scan':
                 if (commandArgs.length === 0) {
                     throw new Error('Please provide a scan target.\nUsage: deepsift scan <tokens|i18n|duplicates|conventions|assets>');
@@ -168,6 +211,7 @@ async function main() {
             case 's':
                 const skipSync = commandArgs.includes('--no-sync') || commandArgs.includes('-n');
                 const verboseSearch = commandArgs.includes('--verbose') || commandArgs.includes('-v');
+                const allRealmsSearch = commandArgs.includes('--all-realms');
                 
                 let filterPath: string | undefined;
                 const includeIdx = commandArgs.findIndex(arg => arg === '--include' || arg === '-i');
@@ -181,18 +225,33 @@ async function main() {
                     contextLines = parseInt(commandArgs[contextIdx + 1], 10);
                     if (isNaN(contextLines)) contextLines = undefined;
                 }
+                
+                let searchRealm: string | undefined = undefined;
+                const searchRealmIdx = commandArgs.indexOf('--realm');
+                if (searchRealmIdx !== -1 && searchRealmIdx + 1 < commandArgs.length) {
+                    searchRealm = commandArgs[searchRealmIdx + 1];
+                }
 
                 const searchQueries = commandArgs.filter((arg, idx) => {
                     if (arg.startsWith('-')) return false;
                     if (idx > 0 && (commandArgs[idx - 1] === '--include' || commandArgs[idx - 1] === '-i')) return false;
                     if (idx > 0 && (commandArgs[idx - 1] === '--context-lines' || commandArgs[idx - 1] === '-C')) return false;
+                    if (idx > 0 && commandArgs[idx - 1] === '--realm') return false;
                     return true;
                 });
                 
                 if (searchQueries.length === 0) {
                     throw new Error('Please provide at least one search query.\nUsage: deepsift search "your query"');
                 }
-                await searchCommand(projectPath, searchQueries, format, skipSync, verboseSearch, filterPath, compress, contextLines);
+                await searchCommand(projectPath, searchQueries, format, {
+                    skipSync,
+                    verbose: verboseSearch,
+                    filterPath,
+                    compress,
+                    contextLines,
+                    realm: searchRealm,
+                    allRealms: allRealmsSearch
+                });
                 break;
 
             case 'read':
@@ -215,7 +274,23 @@ async function main() {
             case 'i':
                 const force = commandArgs.includes('--force') || commandArgs.includes('-f');
                 const verboseIndex = commandArgs.includes('--verbose') || commandArgs.includes('-v');
-                await indexCommand(projectPath, force, format, verboseIndex);
+                
+                const allRealmsIdx = commandArgs.indexOf('--all-realms');
+                const allRealms = allRealmsIdx !== -1;
+                
+                const realmFlagIdx = commandArgs.indexOf('--realm');
+                let realm: string | undefined = undefined;
+                if (realmFlagIdx !== -1 && realmFlagIdx + 1 < commandArgs.length) {
+                    realm = commandArgs[realmFlagIdx + 1];
+                }
+
+                await indexCommand(projectPath, { 
+                    force, 
+                    format, 
+                    verbose: verboseIndex,
+                    realm,
+                    allRealms 
+                });
                 break;
 
             case 'watch':
@@ -306,11 +381,30 @@ function resolveProjectPath(override?: string, args: string[] = []): string {
     if (override) {
         currentDir = path.resolve(process.cwd(), override);
     } else {
-        // Try to infer project root if an absolute path is provided in args
-        for (const arg of args) {
-            if (path.isAbsolute(arg) && fs.existsSync(arg)) {
-                currentDir = fs.statSync(arg).isDirectory() ? arg : path.dirname(arg);
+        // First check if current working directory or any parent is a valid project root
+        let tempDir = currentDir;
+        const rootPath = path.parse(tempDir).root;
+        let insideProject = false;
+        while (tempDir !== rootPath) {
+            if (
+                fs.existsSync(path.join(tempDir, '.deepsift')) ||
+                fs.existsSync(path.join(tempDir, '.git')) ||
+                fs.existsSync(path.join(tempDir, 'package.json')) ||
+                fs.existsSync(path.join(tempDir, 'pubspec.yaml'))
+            ) {
+                insideProject = true;
                 break;
+            }
+            tempDir = path.dirname(tempDir);
+        }
+
+        // Only try to infer project root from absolute path arguments if NOT already in a project
+        if (!insideProject) {
+            for (const arg of args) {
+                if (path.isAbsolute(arg) && fs.existsSync(arg)) {
+                    currentDir = fs.statSync(arg).isDirectory() ? arg : path.dirname(arg);
+                    break;
+                }
             }
         }
     }

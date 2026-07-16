@@ -1,45 +1,56 @@
 import fs from 'fs';
 import path from 'path';
-import { NativeStore } from '../../storage/native-store.js';
-import { Indexer } from '../../core/indexer.js';
-import { Searcher } from '../../core/searcher.js';
+import { RealmRouter, CrossRealmResult } from '../../core/realm-router.js';
 import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';
-import { getDbPath } from '../cli-paths.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 import { ContextInjector } from '../../core/context-injector.js';
+
+export interface SearchOptions {
+    skipSync?: boolean;
+    verbose?: boolean;
+    filterPath?: string;
+    compress?: boolean;
+    contextLines?: number;
+    realm?: string;
+    allRealms?: boolean;
+}
 
 export async function searchCommand(
     projectPath: string, 
     queries: string[], 
     format: OutputFormat, 
-    skipSync: boolean = false, 
-    verbose: boolean = false, 
-    filterPath?: string,
-    compress: boolean = true,
-    contextLines?: number
+    options: SearchOptions = {}
 ) {
-    const store = new NativeStore(getDbPath(projectPath));
-    const indexer = new Indexer(store);
-    const searcher = new Searcher(store);
+    const router = new RealmRouter(projectPath);
+    const targetRealms = options.allRealms ? undefined : (options.realm ? [options.realm] : undefined);
 
-    if (!skipSync) {
+    if (!options.skipSync) {
         printInfo('Syncing index before search...');
-        try {
-            await indexer.indexProject(projectPath, false, (current, total, file) => {
-                if (verbose && format !== 'json') {
-                    process.stdout.write(`\rIndexing: ${current}/${total} files (Processing: ${file})`);
-                    process.stdout.write('\x1b[K');
-                }
-            });
-            if (verbose && format !== 'json') {
-                process.stdout.write('\n');
+        const realmsToSync = targetRealms || ['code'];
+        const realmsConfig = router.listRealms();
+        for (const rid of realmsToSync) {
+            const rConfig = realmsConfig[rid];
+            if (rConfig && rConfig.autoIndex === false) {
+                printInfo(`[${rid}] Auto-index is disabled. Skipping sync...`);
+                continue;
             }
-        } catch (e: any) {
-            if (e.message.includes('locked')) {
-                printInfo('Database is locked by another process. Skipping sync and searching current index...');
-            } else {
-                throw e;
+            try {
+                await router.indexRealm(rid, undefined, false, (current, total, file) => {
+                    if (options.verbose && format !== 'json') {
+                        process.stdout.write(`\r[${rid}] Indexing: ${current}/${total} files (Processing: ${file})`);
+                        process.stdout.write('\x1b[K');
+                    }
+                });
+                if (options.verbose && format !== 'json') {
+                    process.stdout.write('\n');
+                }
+            } catch (e: any) {
+                if (e.message.includes('locked')) {
+                    printInfo(`[${rid}] Database is locked by another process. Skipping sync...`);
+                } else {
+                    printInfo(`[${rid}] Skipping sync due to error: ${e.message}`);
+                }
             }
         }
     } else {
@@ -47,33 +58,33 @@ export async function searchCommand(
     }
 
     if (queries.length === 1) {
-        return executeSingleSearch(searcher, projectPath, queries[0], format, filterPath, compress, contextLines);
+        return executeSingleSearch(router, projectPath, queries[0], format, options, targetRealms);
     }
 
-    return executeMultiSearch(searcher, projectPath, queries, format, filterPath, compress, contextLines);
+    return executeMultiSearch(router, projectPath, queries, format, options, targetRealms);
 }
 
-async function executeSingleSearch(searcher: Searcher, projectPath: string, query: string, format: OutputFormat, filterPath?: string, compress: boolean = true, contextLines?: number) {
-    const results = await searcher.search({ query, topK: 10, filterPath });
+async function executeSingleSearch(router: RealmRouter, projectPath: string, query: string, format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
+    const results = await router.searchAllRealms({ query, topK: 10, filterPath: options.filterPath }, targetRealms);
 
     if (results.length === 0) {
         printResult('No relevant code found.', format);
         return;
     }
 
-    const formattedResults = results.map((res: any, i: number) => {
+    const formattedResults = results.map((res: CrossRealmResult, i: number) => {
         let contentToDisplay = res.chunk.content;
         let displayStartLine = res.chunk.startLine;
         let displayEndLine = res.chunk.endLine;
 
-        if (contextLines !== undefined && contextLines > 0) {
+        if (options.contextLines !== undefined && options.contextLines > 0) {
             try {
                 const fullPath = path.join(projectPath, res.chunk.filePath);
                 const fileContent = fs.readFileSync(fullPath, 'utf-8');
                 const lines = fileContent.split('\n');
                 
-                displayStartLine = Math.max(1, res.chunk.startLine - contextLines);
-                displayEndLine = Math.min(lines.length, res.chunk.endLine + contextLines);
+                displayStartLine = Math.max(1, res.chunk.startLine - options.contextLines);
+                displayEndLine = Math.min(lines.length, res.chunk.endLine + options.contextLines);
                 
                 contentToDisplay = lines.slice(displayStartLine - 1, displayEndLine).join('\n');
             } catch (err) {
@@ -81,16 +92,16 @@ async function executeSingleSearch(searcher: Searcher, projectPath: string, quer
             }
         }
         
-        return `${i + 1}. [${res.chunk.filePath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)}, match: ${res.matchType})\n   Type: ${res.chunk.type}\n   \`\`\`${res.chunk.language}\n${contentToDisplay}\n   \`\`\``;
+        return `${i + 1}. [${res.realmId}] [${res.chunk.filePath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)}, match: ${res.matchType})\n   Type: ${res.chunk.type}\n   \`\`\`${res.chunk.language}\n${contentToDisplay}\n   \`\`\``;
     }).join('\n\n');
 
     const injector = new ContextInjector(projectPath);
-    const contextStr = injector.formatForOutput(injector.inject([query]));
+    const contextStr = injector.formatForOutput(await injector.inject([query]));
 
     const rawOutput = `${contextStr}Found ${results.length} relevant code sections:\n\n${formattedResults}`;
     let finalOutput = rawOutput;
     
-    if (compress && format !== 'json') {
+    if (options.compress !== false && format !== 'json') {
         const optimizer = new TokenOptimizerService();
         const payload = optimizer.optimize(rawOutput);
         finalOutput = payload.toUnifiedString();
@@ -104,27 +115,27 @@ async function executeSingleSearch(searcher: Searcher, projectPath: string, quer
     }
 }
 
-async function executeMultiSearch(searcher: Searcher, projectPath: string, queries: string[], format: OutputFormat, filterPath?: string, compress: boolean = true, contextLines?: number) {
+async function executeMultiSearch(router: RealmRouter, projectPath: string, queries: string[], format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
     const allResults: string[] = [];
     let totalHits = 0;
 
     for (let i = 0; i < queries.length; i++) {
-        const results = await searcher.search({ query: queries[i], topK: 5, filterPath });
+        const results = await router.searchAllRealms({ query: queries[i], topK: 5, filterPath: options.filterPath }, targetRealms);
         totalHits += results.length;
 
-        const formattedResults = results.map((res: any, j: number) => {
+        const formattedResults = results.map((res: CrossRealmResult, j: number) => {
             let contentToDisplay = res.chunk.content;
             let displayStartLine = res.chunk.startLine;
             let displayEndLine = res.chunk.endLine;
 
-            if (contextLines !== undefined && contextLines > 0) {
+            if (options.contextLines !== undefined && options.contextLines > 0) {
                 try {
                     const fullPath = path.join(projectPath, res.chunk.filePath);
                     const fileContent = fs.readFileSync(fullPath, 'utf-8');
                     const lines = fileContent.split('\n');
                     
-                    displayStartLine = Math.max(1, res.chunk.startLine - contextLines);
-                    displayEndLine = Math.min(lines.length, res.chunk.endLine + contextLines);
+                    displayStartLine = Math.max(1, res.chunk.startLine - options.contextLines);
+                    displayEndLine = Math.min(lines.length, res.chunk.endLine + options.contextLines);
                     
                     contentToDisplay = lines.slice(displayStartLine - 1, displayEndLine).join('\n');
                 } catch (err) {
@@ -132,19 +143,19 @@ async function executeMultiSearch(searcher: Searcher, projectPath: string, queri
                 }
             }
 
-            return `    ${j + 1}. [${res.chunk.filePath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)})\n       \`\`\`${res.chunk.language}\n${contentToDisplay}\n       \`\`\``;
+            return `    ${j + 1}. [${res.realmId}] [${res.chunk.filePath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)})\n       \`\`\`${res.chunk.language}\n${contentToDisplay}\n       \`\`\``;
         }).join('\n\n');
 
         allResults.push(`--- Query ${i + 1}: "${queries[i]}" ---\nFound ${results.length} results:\n${formattedResults}`);
     }
 
     const injector = new ContextInjector(projectPath);
-    const contextStr = injector.formatForOutput(injector.inject(queries));
+    const contextStr = injector.formatForOutput(await injector.inject(queries));
 
     const rawOutput = `${contextStr}Multi-Search Complete. ${queries.length} queries, ${totalHits} total results.\n\n${allResults.join('\n\n')}`;
     let finalOutput = rawOutput;
 
-    if (compress && format !== 'json') {
+    if (options.compress !== false && format !== 'json') {
         const optimizer = new TokenOptimizerService();
         const payload = optimizer.optimize(rawOutput);
         finalOutput = payload.toUnifiedString();

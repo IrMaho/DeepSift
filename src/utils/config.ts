@@ -1,6 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 
+export interface RealmDefinition {
+    displayName: string;
+    sourcePaths: string[];
+    parserProfile: 'code' | 'skill' | 'docs';
+    autoIndex: boolean;
+    excludeDirs?: string[];
+}
+
 export interface DeepSiftConfig {
     search?: {
         defaultTopK?: number;
@@ -14,7 +22,8 @@ export interface DeepSiftConfig {
     };
     format?: {
         outputTheme?: string;
-    }
+    };
+    realms?: Record<string, RealmDefinition>;
 }
 
 export const DEFAULT_CONFIG: DeepSiftConfig = {
@@ -46,6 +55,21 @@ export const DEFAULT_CONFIG: DeepSiftConfig = {
     },
     format: {
         outputTheme: "default"
+    },
+    realms: {
+        "code": {
+            displayName: "User Codebase",
+            sourcePaths: ["."],
+            parserProfile: "code",
+            autoIndex: true,
+            excludeDirs: ["skills", "docs", "node_modules", ".git"]
+        },
+        "skills": {
+            displayName: "AI Skills Library",
+            sourcePaths: ["skills"],
+            parserProfile: "skill",
+            autoIndex: true
+        }
     }
 };
 

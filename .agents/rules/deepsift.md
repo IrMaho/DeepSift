@@ -48,11 +48,15 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 11. **Index Maintenance:** Run `deepsift index --force` after performing major refactorings or code changes to ensure search queries reflect the latest code state.
 12. **Strict DNA Filtering & Meta-Only Check:** The Project DNA is saved in `.toon` format (Token-Oriented Object Notation) which is 100% human-readable and LLM-readable text, saving ~60% size losslessly.
     - **NEVER** retrieve the entire DNA file blindly. It will overflow your context window!
-    - **ALWAYS** check the DNA metadata first by running `deepsift dna --show --meta` to understand which sections exist and their respective record counts.
+    - **ALWAYS** run `deepsift dna` first to generate the DNA (takes ~30s).
+    - **THEN** check the DNA metadata by running `deepsift dna --show --meta` to understand which sections exist and their respective record counts.
     - **PAGINATE AND FILTER:** Use `--limit <number>` and `--offset <number>` to load list arrays (such as tokens or assets) in pages.
     - **PATH FILTERING:** Use `--path-filter <path_prefix>` to fetch tokens or assets defined inside a specific directory.
     - **KEYWORD FILTERING:** Use `--query <keyword>` to prune non-matching keys and isolate only relevant JSON/TOON trees.
 13. **Graph Topology & God Nodes:** Use `deepsift dna --show --section architecture` to understand the structural layout of the project, identifying tightly coupled areas (Spaghetti vs Modular) and Core Files (God Nodes) that you should be careful modifying.
+14. **🔥 CLONE-AND-CUSTOMIZE COPY-PASTE DIRECTIVE (CRITICAL):**
+    - To copy and customize code from external files (e.g. from indexed documentation, skills, or source codes of libraries like Flutter), you **MUST** use `deepsift edit` with the `📋 filepath:Lstart-Lend` syntax inside your `.toon` patch file.
+    - **NEVER** write or copy-paste large blocks of reference code manually into your responses or tool arguments. This is the absolute priority to eliminate token bloat and prevent 99% of manual code reproduction.
 
 ## 💡 Examples
 
@@ -81,7 +85,8 @@ deepsift read "src/core/indexer.ts" "src/utils/config.ts:10-40"
 # MANDATORY: Before creating a new file
 deepsift context "src/components/MyNewButton.tsx"
 
-# Step 1: Analyze DNA structure and token/asset counts without retrieving records
+# Step 1: Generate DNA (takes ~30s) and then analyze DNA structure and metadata
+deepsift dna
 deepsift dna --show --meta
 
 # Step 2: Retrieve only the first 50 color tokens defined inside the color-editor folder
