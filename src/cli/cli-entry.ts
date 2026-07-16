@@ -22,6 +22,7 @@ import { readCommand } from './commands/read.js';
 import { editCommand } from './commands/edit.js';
 import { comCommand } from './commands/com.js';
 import { planCommand } from './commands/plan.js';
+import { healCommand } from './commands/heal.js';
 import { diagCommand } from './commands/diag.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
@@ -42,7 +43,7 @@ const HELP_TEXT = `
                                     --section <name>      Filter DNA to a specific section (e.g. tokens, conventions, architecture)
                                     --query, -q <term>    Search DNA and return only matching JSON structures
                                     --limit <number>      Limit the number of array items returned
-                                    --offset <number>     Start index for pagination of array items
+                                    --offset <number>      Start index for pagination of array items
                                     --path-filter <path>  Filter DNA records by file path prefix
                                     --meta                Only return metadata and record counts (no content)
   scan <target>                 Run a specific analyzer (tokens|i18n|duplicates|conventions|assets)
@@ -70,6 +71,7 @@ const HELP_TEXT = `
   diag "problems.json"          Read IDE problem diagnostics and output precise code snippets
   com "command"                 Execute any shell command and return compressed output
   plan "request"                Generate a Smart Plan by analyzing DNA, skills, realms, and architecture
+  heal "file"                   Attempt to fix issues in a file using the project DNA and context
 
 \x1b[33mGlobal Flags:\x1b[0m
   --json                        Output in JSON format
@@ -382,6 +384,13 @@ async function main() {
                 }
                 const planRequest = commandArgs.filter(a => !a.startsWith('-')).join(' ');
                 await planCommand(projectPath, planRequest, format, compress);
+                break;
+
+            case 'heal':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a file to heal.\nUsage: deepsift heal "src/utils.ts"');
+                }
+                await healCommand(commandArgs[0], format, compress);
                 break;
 
             default:

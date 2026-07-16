@@ -94,6 +94,10 @@ Any violation of these rules means you have failed your directive. You MUST harn
     - For **UI features**, the plan MUST include a pixel-perfect visual description (layout, spacing, borders, shadows, radius, padding, margins, icons, rows, columns, colors, fonts) so detailed that a blind person could visualize it by hearing it.
     - You MUST present the plan to the user for approval before proceeding to code.
     - During implementation, follow the milestones in order.
+19. **🏗️ AUTO-REFACTORING (ARCHITECTURE HEALER) WORKFLOW:**
+    - If the user asks to split a large file or refactor a "God Node", you MUST use `deepsift heal <filepath>` (or the `heal_god_node` MCP tool).
+    - Present the proposed modular split to the user.
+    - Once approved, write a `.toon` patch file to extract the components into the new files as proposed, and run `deepsift edit`.
 
 ## 💡 Examples of Unwavering Loyalty to DeepSift
 

@@ -564,6 +564,51 @@ const server = new McpServer({
     }
 );
 
+// Tool 16: heal_god_node
+(server as any).tool(
+    "heal_god_node",
+    "Scans a God Node (large file) and proposes a file split based on internal AST community detection. Returns a suggested split for TOON Patching.",
+    {
+        filePath: z.string().describe("Absolute path to the file to heal")
+    },
+    async (args: any) => {
+        const { filePath } = args;
+        broadcastEvent('tool_call', { tool: 'heal_god_node', args, response: 'Scanning God Node...' });
+        
+        try {
+            const { InternalGraphBuilder } = await import('./intelligence/internal-graph.js');
+            const { HealEngine } = await import('./intelligence/heal-engine.js');
+            const { TokenOptimizerService } = await import('./utils/token-compressor.js');
+            const path = await import('path');
+            
+            const builder = new InternalGraphBuilder(filePath);
+            const graph = builder.build();
+            const engine = new HealEngine(graph);
+            const proposal = engine.computeProposal(filePath);
+
+            let output = `# 🩹 Architecture Healer Proposal\n`;
+            output += `File: ${path.basename(filePath)}\n\n`;
+            
+            for (const cluster of proposal.clusters) {
+                output += `### Module: ${cluster.suggestedName} (${cluster.totalLines} lines)\n`;
+                const previewNodes = cluster.nodes.slice(0, 10);
+                previewNodes.forEach(n => {
+                    output += `- ${n.type} ${n.name} (L${n.startLine}-L${n.endLine})\n`;
+                });
+                output += '\n';
+            }
+
+            const optimizer = new TokenOptimizerService();
+            const compressed = optimizer.optimize(output).toUnifiedString();
+
+            broadcastEvent('tool_call', { tool: 'heal_god_node', args, response: 'Healer proposal generated.' });
+            return { content: [{ type: "text", text: compressed }] };
+        } catch (e: any) {
+            return { content: [{ type: "text", text: `Error generating heal proposal: ${e.message}` }] };
+        }
+    }
+);
+
 // Start server
 async function main() {
     const transport = new StdioServerTransport();
