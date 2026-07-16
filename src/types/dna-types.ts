@@ -176,6 +176,37 @@ export interface TemporalDNA {
     recentUncommittedAnomalies?: any[];
 }
 
+export interface PlanRisk {
+    file: string;
+    reason: string;
+    severity: 'low' | 'medium' | 'high';
+}
+
+export interface PlanMilestone {
+    id: number;
+    title: string;
+    description: string;
+    files: { path: string; action: 'create' | 'modify' | 'delete' }[];
+    estimatedComplexity: 'low' | 'medium' | 'high';
+    dependencies: number[];
+}
+
+export interface SmartPlan {
+    id: string;
+    createdAt: string;
+    request: string;
+    requestType: 'ui' | 'feature' | 'refactor' | 'bugfix' | 'api' | 'other';
+    executiveSummary: string;
+    visualDescription?: string;
+    structureMap: string;
+    milestones: PlanMilestone[];
+    dependencies: string[];
+    risks: PlanRisk[];
+    skillsUsed: string[];
+    dnaConstraints: string[];
+    realmInsights: string[];
+}
+
 export interface ProjectDNA {
     version: string;
     generatedAt: string;

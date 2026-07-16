@@ -21,6 +21,7 @@ import { contextCommand } from './commands/context.js';
 import { readCommand } from './commands/read.js';
 import { editCommand } from './commands/edit.js';
 import { comCommand } from './commands/com.js';
+import { planCommand } from './commands/plan.js';
 import { diagCommand } from './commands/diag.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
@@ -68,6 +69,7 @@ const HELP_TEXT = `
   edit "patch.json"             Apply a batch of string replacements across multiple files
   diag "problems.json"          Read IDE problem diagnostics and output precise code snippets
   com "command"                 Execute any shell command and return compressed output
+  plan "request"                Generate a Smart Plan by analyzing DNA, skills, realms, and architecture
 
 \x1b[33mGlobal Flags:\x1b[0m
   --json                        Output in JSON format
@@ -371,6 +373,15 @@ async function main() {
                 }
                 const commandStr = commandArgs.join(' ');
                 await comCommand(projectPath, commandStr, format, compress);
+                break;
+
+            case 'plan':
+            case 'p':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a feature request.\nUsage: deepsift plan "Create a login page with email and password"');
+                }
+                const planRequest = commandArgs.filter(a => !a.startsWith('-')).join(' ');
+                await planCommand(projectPath, planRequest, format, compress);
                 break;
 
             default:

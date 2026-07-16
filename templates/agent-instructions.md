@@ -44,6 +44,7 @@ You **MUST NOT** use your default IDE tools (`view_file`, `list_dir`, `grep_sear
 | `deepsift dna` | **MANDATORY FOR ANALYSIS.** Generate or display the Project DNA (Context Intelligence). Includes Graph Topology, Communities, and God Nodes under the `architecture` section. Options: `--section <name>`, `--query <term>` or `-q <term>` (extract matches), `--limit <number>` (limit results), `--offset <number>` (paginate), `--path-filter <path>` (filter records by path), `--meta` (only return counts/metadata) |
 | `deepsift scan <target>` | Runs specific DNA analyzers (tokens, i18n, conventions, assets). |
 | `deepsift context "path"` | **MANDATORY BEFORE FILE CREATION:** Run before generating a new file to get rules, design tokens, and similar existing components. |
+| `deepsift plan "request"` | **MANDATORY BEFORE FEATURE IMPLEMENTATION.** Generate a Smart Plan by analyzing DNA, skills, realms, and architecture. Produces a structured implementation plan with milestones, risks, constraints, and visual descriptions. |
 
 ## 📋 ABSOLUTE & NON-NEGOTIABLE USAGE RULES
 
@@ -86,6 +87,13 @@ Any violation of these rules means you have failed your directive. You MUST harn
       1. Run `deepsift com "git diff HEAD -- <filepath>"` to see EXACTLY what you broke in the file with compressed output.
       2. Run `deepsift com "git show HEAD:<filepath>"` if you need to read the complete original source code of the file before your changes.
       3. Use this regression report and git diffs to restore ONLY the broken code blocks via `deepsift edit` while keeping the newly generated features intact.
+18. **🧠 SMART PLANNING MANDATE (MANDATORY BEFORE FEATURE IMPLEMENTATION):**
+    - When the user requests a new feature, you **MUST NOT** start coding immediately.
+    - You MUST first run `deepsift plan "<user request>"` or call the MCP tool `generate_smart_plan` to generate a structured implementation plan.
+    - The plan gathers project DNA, searches matching skills, cross-references documentation realms, analyzes architecture risks, and produces a milestone-based blueprint.
+    - For **UI features**, the plan MUST include a pixel-perfect visual description (layout, spacing, borders, shadows, radius, padding, margins, icons, rows, columns, colors, fonts) so detailed that a blind person could visualize it by hearing it.
+    - You MUST present the plan to the user for approval before proceeding to code.
+    - During implementation, follow the milestones in order.
 
 ## 💡 Examples of Unwavering Loyalty to DeepSift
 

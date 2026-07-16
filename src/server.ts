@@ -535,6 +535,35 @@ const server = new McpServer({
     }
 );
 
+// Tool 15: generate_smart_plan
+(server as any).tool(
+    "generate_smart_plan",
+    "Generates a Smart Plan by analyzing DNA, skills, realms, and architecture before implementing any feature. Returns a structured implementation plan with milestones, risks, constraints, and visual descriptions.",
+    {
+        projectPath: z.string().describe("Absolute path to the root of the project"),
+        request: z.string().describe("The feature request or task description from the user")
+    },
+    async (args: any) => {
+        const { projectPath, request } = args;
+        broadcastEvent('tool_call', { tool: 'generate_smart_plan', args, response: 'Generating smart plan...' });
+        
+        try {
+            const { PlannerEngine } = await import('./intelligence/plan-engine.js');
+            const engine = new PlannerEngine(projectPath);
+            const plan = await engine.generatePlan(request);
+            const markdown = engine.formatPlanAsMarkdown(plan);
+
+            const optimizer = new TokenOptimizerService();
+            const compressed = optimizer.optimize(markdown).toUnifiedString();
+
+            broadcastEvent('tool_call', { tool: 'generate_smart_plan', args, response: 'Smart plan generated.' });
+            return { content: [{ type: "text", text: compressed }] };
+        } catch (e: any) {
+            return { content: [{ type: "text", text: `Error generating smart plan: ${e.message}` }] };
+        }
+    }
+);
+
 // Start server
 async function main() {
     const transport = new StdioServerTransport();
