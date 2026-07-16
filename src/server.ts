@@ -555,9 +555,12 @@ const server = new McpServer({
 
             const optimizer = new TokenOptimizerService();
             const compressed = optimizer.optimize(markdown).toUnifiedString();
+            
+            const logInfo = await saveSearchLog(projectPath, [`[SmartPlan] ${request}`], compressed);
+            const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
 
             broadcastEvent('tool_call', { tool: 'generate_smart_plan', args, response: 'Smart plan generated.' });
-            return { content: [{ type: "text", text: compressed }] };
+            return { content: [{ type: "text", text: `✔ Plan Generated.\n\n${compressed}\n\n[MANDATORY]: You MUST read the visual cache at ${link} before writing your implementation_plan.md. Expand your plan to at least 500 lines with high detail.` }] };
         } catch (e: any) {
             return { content: [{ type: "text", text: `Error generating smart plan: ${e.message}` }] };
         }
@@ -601,8 +604,12 @@ const server = new McpServer({
             const optimizer = new TokenOptimizerService();
             const compressed = optimizer.optimize(output).toUnifiedString();
 
+            const projectPath = process.cwd(); // MCP server runs in project root
+            const logInfo = await saveSearchLog(projectPath, [`[HealGodNode] ${filePath}`], compressed);
+            const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
+
             broadcastEvent('tool_call', { tool: 'heal_god_node', args, response: 'Healer proposal generated.' });
-            return { content: [{ type: "text", text: compressed }] };
+            return { content: [{ type: "text", text: `✔ Healer Proposal Generated.\n\n${compressed}\n\n[MANDATORY]: You MUST read the visual cache at ${link} before writing the patch.` }] };
         } catch (e: any) {
             return { content: [{ type: "text", text: `Error generating heal proposal: ${e.message}` }] };
         }

@@ -93,6 +93,7 @@ Any violation of these rules means you have failed your directive. You MUST harn
     - The plan gathers project DNA, searches matching skills, cross-references documentation realms, analyzes architecture risks, and produces a milestone-based blueprint.
     - For **UI features**, the plan MUST include a pixel-perfect visual description (layout, spacing, borders, shadows, radius, padding, margins, icons, rows, columns, colors, fonts) so detailed that a blind person could visualize it by hearing it.
     - You MUST present the plan to the user for approval before proceeding to code.
+    - **CRITICAL QUALITY REQUIREMENT:** The `implementation_plan.md` artifact you create MUST NOT be a short summary. It MUST be an extremely comprehensive, deep, and meticulously detailed document (at least 500 lines). Before writing it, you MUST use `deepsift search` and `deepsift read` to gather deep context and visually analyze the cached `INDEX.md` files. Use your full creativity, explore edge cases, and detail every single file, function, and architecture change.
     - During implementation, follow the milestones in order.
 19. **🏗️ AUTO-REFACTORING (ARCHITECTURE HEALER) WORKFLOW:**
     - If the user asks to split a large file or refactor a "God Node", you MUST use `deepsift heal <filepath>` (or the `heal_god_node` MCP tool).
