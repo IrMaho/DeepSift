@@ -24,6 +24,9 @@ You **MUST NOT** use your default IDE tools (`view_file`, `list_dir`, `grep_sear
 | `deepsift status` | Check index statistics |
 | `deepsift config` | Interactive menu to configure which directories are indexed |
 | `deepsift realm list` | List all configured realms (e.g., 'code', 'skills', 'docs') and their paths. |
+| `deepsift realm add <name> --type <docs|code|skill> --source <path>` | Dynamically add a new knowledge realm (like documentation, skills, or extra code) and index it using `deepsift index --realm <name>`. |
+| `deepsift realm remove <name>` | Remove a realm from the configuration. |
+| `deepsift compare <realm1> <realm2> --query "keyword"` | **VECTOR DIFF SEARCH:** Cross-references two realms based on a keyword and identifies semantic Similarities (Score >= 0.45) and Gaps (Missing/Mismatch). Extremely useful for comparing code vs docs. |
 | `deepsift arch` | **MANDATORY FOR FOLDER EXPLORATION.** Get project architecture blueprint utilizing Graphify communities. Automatically ignores directories configured under `excludeDirs` in `deepsift.config.json` |
 | `deepsift deps "filename"` | Find which files import/depend on a target |
 | `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) |
@@ -54,6 +57,16 @@ Any violation of these rules means you have failed your directive. You MUST harn
     - **THEN** check DNA metadata: `deepsift dna --show --meta`.
     - **PAGINATE AND FILTER:** Use `--limit`, `--offset`, `--path-filter`, and `--query` to extract exact TOON trees.
 11. **🕸️ GRAPH TOPOLOGY & GOD NODES:** Always use `deepsift dna --show --section architecture` to map out spaghetti vs modular zones and identify dangerous Core Files (God Nodes) before heavy refactoring.
+12. **🤖 AUTONOMOUS ORCHESTRATION (USER PROXY):** When the user asks you to "index a framework", "configure the project", "add skills", or "learn a package", you MUST act autonomously to orchestrate DeepSift:
+    - Download or create the requested skills/docs in a folder.
+    - Generate any requested JSON registries (e.g., `inspection_summary.json` or `registry.json`) to categorize them for the user.
+    - Use `deepsift realm add <name> --type <type> --source <path>` to register the new knowledge base.
+    - Use `deepsift index --realm <name>` to build the vector database.
+    - DO NOT ask the user how to do this; execute the full pipeline (Fetch -> Write -> Add Realm -> Index) on their behalf.
+13. **🧙‍♂️ INTERACTIVE CONFIG WIZARD:** If the user requests "DeepSift Config" or "کانفیگ", you must act as an interactive setup wizard. Ask them step-by-step:
+    - Do they want to use the default AI skills provided in the project? (If yes, you configure them).
+    - Do they have custom frameworks, packages, or documentation they want you to learn? (If yes, you ask for the names/URLs, fetch them, add them as a realm, and index them).
+    - Guide the user professionally, explain what each realm will do for them, and handle the entire CLI orchestration on your own.
 
 ## 💡 Examples of Unwavering Loyalty to DeepSift
 
@@ -83,4 +96,7 @@ deepsift search "how to connect to bigquery" --realm skills
 
 # GOOD: Querying everything
 deepsift search "auth handler" --all-realms
+
+# GOOD: Comparing the codebase to flutter documentation to find missing implementation
+deepsift compare code flutter_docs --query "state management"
 ```

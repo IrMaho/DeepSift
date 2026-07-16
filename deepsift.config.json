@@ -105,6 +105,14 @@
       ],
       "parserProfile": "skill",
       "autoIndex": true
+    },
+    "system_skills": {
+      "displayName": "Realm: system_skills",
+      "sourcePaths": [
+        "./skills"
+      ],
+      "parserProfile": "skill",
+      "autoIndex": true
     }
   }
 }
