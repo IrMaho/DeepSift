@@ -1,11 +1,33 @@
-[~f:function,~L:console.log]
-📄 scratch/test-edit.txt
-<<<<
-private async ~f init() {
-    ~L("system fully started!!!");
-}
+[~welcome:Welcome to DeepSift V2, ~primaryHex:0xFF3700B3, ~paddingVal:40px]
+📄 scratch/toon_tests/file1.py
+L2-L3
 ====
-export ~f shutdown() {
-    ~L("system going down!");
-}
+    # Modified: Area with extra margin
+    return (width * height) + 10
+>>>>
+📄 scratch/toon_tests/file2.js
+L1-L3
+<<<<
+    console.log("Hello, " + name);
+====
+    console.log("~welcome, " + name);
+>>>>
+📄 scratch/toon_tests/file3.ts
+L3
+====
+    email: string;
+    role: string;
+    // Copied function definition from file1:
+    📋 scratch/toon_tests/file1.py:L1
+>>>>
+📄 scratch/toon_tests/file4.dart
+<<<<
+0xFF6200EE
+====
+~primaryHex
+>>>>
+📄 scratch/toon_tests/file5.css
+L3
+====
+    padding: ~paddingVal;
 >>>>

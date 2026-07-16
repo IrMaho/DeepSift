@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { SQLiteStore } from './src/storage/sqlite-store.js';
+import { NativeStore } from './src/storage/native-store.js';
 import { Indexer } from './src/core/indexer.js';
 import { Searcher } from './src/core/searcher.js';
 
@@ -82,7 +82,7 @@ async function runBenchmark() {
     }
 
     console.log("📦 Initializing test database...");
-    const store = new SQLiteStore(dbPath);
+    const store = new NativeStore(dbPath);
     const indexer = new Indexer(store);
     const searcher = new Searcher(store);
 
