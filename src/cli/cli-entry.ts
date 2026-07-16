@@ -20,6 +20,7 @@ import { resolveCommand } from './commands/resolve.js';
 import { contextCommand } from './commands/context.js';
 import { readCommand } from './commands/read.js';
 import { editCommand } from './commands/edit.js';
+import { comCommand } from './commands/com.js';
 import { diagCommand } from './commands/diag.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
@@ -66,6 +67,7 @@ const HELP_TEXT = `
   read "file1" ["file2"...]     Read file contents and output compressed tokens (Supports line ranges: file:10-50)
   edit "patch.json"             Apply a batch of string replacements across multiple files
   diag "problems.json"          Read IDE problem diagnostics and output precise code snippets
+  com "command"                 Execute any shell command and return compressed output
 
 \x1b[33mGlobal Flags:\x1b[0m
   --json                        Output in JSON format
@@ -363,6 +365,13 @@ async function main() {
                 await diagCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
+            case 'com':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a command to execute.\nUsage: deepsift com "git status"');
+                }
+                const commandStr = commandArgs.join(' ');
+                await comCommand(projectPath, commandStr, format, compress);
+                break;
 
             default:
                 throw new Error(`Unknown command: "${command}"\nRun 'deepsift --help' for available commands.`);
