@@ -3,6 +3,7 @@ import { mineTokens } from '../analyzers/property-miner.js';
 import { mineConventions } from '../analyzers/convention-miner.js';
 import { detectLocalization } from '../analyzers/l10n-detector.js';
 import { analyzeArchitecture } from '../analyzers/graph-analyzer.js';
+import { integrateTestAnalyzer } from '../analyzers/test-analyzer.js';
 import { detectSimilarities } from '../analyzers/similarity-engine.js';
 import { mapResources } from '../analyzers/resource-mapper.js';
 import { NativeStore } from '../storage/native-store.js';
@@ -105,6 +106,9 @@ export async function generateDNA(
 
     if (onProgress) onProgress('graph', 'Analyzing dependency graph...');
     integrateGraphAnalyzer(projectPath, dna, onProgress);
+
+    if (onProgress) onProgress('testing', 'Analyzing test coverage and Time Bombs...');
+    integrateTestAnalyzer(projectPath, dna, onProgress);
 
     if (onProgress) onProgress('similarity', 'Detecting component similarities...');
     integrateSimilarityEngine(projectPath, dna, onProgress);
@@ -444,6 +448,21 @@ export function formatDNASummary(dna: ProjectDNA): string {
         lines.push('## 📜 Rules');
         dna.rules.forEach(rule => lines.push(`- ${rule}`));
         lines.push('');
+    }
+
+    if (dna.testing) {
+        if (dna.testing.timeBombs && dna.testing.timeBombs.length > 0) {
+            lines.push(`\n\x1b[31;1m💣 SEMANTIC TIME BOMBS DETECTED 💣\x1b[0m`);
+            lines.push(`The following core architecture files have critically low test coverage and pose a massive regression risk:`);
+            dna.testing.timeBombs.forEach((b: any) => {
+                lines.push(` - \x1b[31m${b.filePath}\x1b[0m (Coverage: ${b.coveragePercent}% | In-Degree: ${b.inDegree})`);
+            });
+            lines.push('');
+        } else if (dna.testing.safeCores && dna.testing.safeCores.length > 0) {
+            lines.push(`\n\x1b[32;1m🛡️ SECURE ARCHITECTURE\x1b[0m`);
+            lines.push(`Your God Nodes are well-tested and robust. Excellent work.\n`);
+            lines.push('');
+        }
     }
 
     return lines.join('\n');

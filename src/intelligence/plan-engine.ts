@@ -21,6 +21,7 @@ interface ContextData {
     i18nRequired: boolean;
     designTokensSample: string;
     temporalWarnings: string[];
+    timeBombs?: any[];
 }
 
 interface SkillMatch {
@@ -100,12 +101,17 @@ export class PlannerEngine {
             i18nRequired: false,
             designTokensSample: '',
             temporalWarnings: [],
+            timeBombs: [],
         };
 
         if (!dna) return data;
 
         data.rules = dna.rules || [];
         data.i18nRequired = dna.localization?.hasI18n || false;
+
+        if (dna.testing?.timeBombs) {
+            data.timeBombs = dna.testing.timeBombs;
+        }
 
         if (dna.conventions?.naming) {
             data.conventions = [
@@ -245,6 +251,18 @@ export class PlannerEngine {
                     reason: 'Target path overlaps with a core file. Changes may have wide impact.',
                     severity: 'medium',
                 });
+            }
+        }
+
+        // Add Time Bomb risks
+        if (context.timeBombs && context.timeBombs.length > 0) {
+            for (const bomb of context.timeBombs) {
+                risks.push({
+                    file: bomb.filePath,
+                    reason: `💣 TIME BOMB: ${bomb.reason}`,
+                    severity: 'high',
+                });
+                dnaConstraints.push(`🚨 CRITICAL INSTRUCTION: Milestone 0 MUST be to write Vitest/Jest unit tests for ${bomb.filePath} before any other implementation!`);
             }
         }
 

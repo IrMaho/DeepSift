@@ -176,6 +176,33 @@ export interface TemporalDNA {
     recentUncommittedAnomalies?: any[];
 }
 
+export interface FileCoverage {
+    filePath: string;
+    lineCoverage: number;
+    statementCoverage?: number;
+    branchCoverage?: number;
+    functionCoverage?: number;
+    uncoveredLines: number[];
+}
+
+export interface TimeBomb {
+    filePath: string;
+    inDegree: number;
+    pageRank: number;
+    coveragePercent: number;
+    riskSeverity: 'Critical' | 'High' | 'Medium';
+    reason: string;
+}
+
+export interface TestDNA {
+    hasCoverageData: boolean;
+    frameworksDetected: string[];
+    globalCoverage: number;
+    fileCoverages: FileCoverage[];
+    timeBombs: TimeBomb[];
+    safeCores: string[];
+}
+
 export interface PlanRisk {
     file: string;
     reason: string;
@@ -266,6 +293,7 @@ export interface ProjectDNA {
     assets: ResourceMap;
 
     temporal?: TemporalDNA;
+    testing?: TestDNA;
 
     rules: string[];
 }
