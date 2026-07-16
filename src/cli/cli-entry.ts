@@ -381,11 +381,30 @@ function resolveProjectPath(override?: string, args: string[] = []): string {
     if (override) {
         currentDir = path.resolve(process.cwd(), override);
     } else {
-        // Try to infer project root if an absolute path is provided in args
-        for (const arg of args) {
-            if (path.isAbsolute(arg) && fs.existsSync(arg)) {
-                currentDir = fs.statSync(arg).isDirectory() ? arg : path.dirname(arg);
+        // First check if current working directory or any parent is a valid project root
+        let tempDir = currentDir;
+        const rootPath = path.parse(tempDir).root;
+        let insideProject = false;
+        while (tempDir !== rootPath) {
+            if (
+                fs.existsSync(path.join(tempDir, '.deepsift')) ||
+                fs.existsSync(path.join(tempDir, '.git')) ||
+                fs.existsSync(path.join(tempDir, 'package.json')) ||
+                fs.existsSync(path.join(tempDir, 'pubspec.yaml'))
+            ) {
+                insideProject = true;
                 break;
+            }
+            tempDir = path.dirname(tempDir);
+        }
+
+        // Only try to infer project root from absolute path arguments if NOT already in a project
+        if (!insideProject) {
+            for (const arg of args) {
+                if (path.isAbsolute(arg) && fs.existsSync(arg)) {
+                    currentDir = fs.statSync(arg).isDirectory() ? arg : path.dirname(arg);
+                    break;
+                }
             }
         }
     }
