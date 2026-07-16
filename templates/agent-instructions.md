@@ -2,97 +2,77 @@
 trigger: always_on
 ---
 
-# 🔍 DeepSift — Semantic Codebase Search (CLI Mode)
+# 🔍 DeepSift — Semantic Codebase Search & Edit (CLI Mode)
 
-You have access to **DeepSift**, a powerful local semantic search engine enhanced with **native Graphify topology awareness**.
-It runs entirely on your machine — no API calls, no internet needed. It doesn't just do semantic search; it understands code architecture, "God Nodes" (highly connected core files), and file communities.
-Use the terminal commands below to search, analyze, and understand the codebase.
+You have access to **DeepSift**, a powerful local semantic search engine and codebase manipulation toolset enhanced with **native Graphify topology awareness**.
+It runs entirely on your machine — no API calls, no internet needed. It understands code architecture, "God Nodes" (highly connected core files), and file communities.
+
+**🛑 EXTREME RESTRICTION WARNING: YOU ARE BOUND BY THE DEEPSIFT DIRECTIVE.**
+You **MUST NOT** use your default IDE tools (`view_file`, `list_dir`, `grep_search`, `replace_file_content`, `multi_replace_file_content`) or standard shell commands (`cat`, `ls`, `grep`, `find`, `sed`, `awk`) for exploring, reading, or modifying the codebase unless a specific DeepSift tool critically fails. DeepSift is your **PRIMARY AND EXCLUSIVE** interface to the project.
 
 ## 🛠 Available Commands
 
 | Command | Description |
 |---|---|
 | `deepsift search "query"` | Semantic search enhanced with Graphify PageRank. Results are automatically boosted based on architectural importance (God Nodes) and community detection. Options: `--include` or `-i <path>` (filter path), `--no-sync` or `-n` (skip index update), `--verbose` or `-v` (show file index progress), `--context-lines N` or `-C N` (show N lines of context around matches) |
-| `deepsift read "file"` | Read file contents and output highly compressed DEC_v2 tokens to save token context. Supports specific lines (e.g., `deepsift read "src/file.ts:10-50"`). Use `--no-compress` to get raw plain text. You can pass multiple files at once. |
-| `deepsift edit "patch.toon"` | Apply replacements. **CRITICAL:** Use TOON-Patch v3 to eliminate old code duplication. Dictionary `[~token:value]`. Target files `📄 file/path`. **Format 1 (Zero Duplication):** Use `L10-L15` (or `L10`) to target exact lines: `L10-L15` \n `====` \n `new code...` \n `>>>>`. **Format 2 (Granular):** Replace a small string on a line: `L5:<<<<` \n `old` \n `====` \n `new` \n `>>>>`. **Format 3 (AI Copy-Paste):** Inside the new code, use `📋 filepath:Lstart-Lend` to inject code from any file. Indentation before `📋` will smartly format all copied lines! |
+| `deepsift read "file"` | **MANDATORY FOR READING FILES.** Read file contents and output highly compressed DEC_v2 tokens to save token context. Supports specific lines (e.g., `deepsift read "src/file.ts:10-50"`). Use `--no-compress` to get raw plain text. You can pass multiple files at once. |
+| `deepsift edit "patch.toon"` | **MANDATORY FOR EDITING.** Apply replacements via TOON-Patch v3. Create a `.toon` file on disk, then run this. Dictionary `[~token:value]`. Target files `📄 file/path`. **Format 1 (Zero Duplication):** Use `L10-L15` (or `L10`) to target exact lines: `L10-L15` \n `====` \n `new code...` \n `>>>>`. **Format 2 (Granular):** Replace a small string on a line: `L5:<<<<` \n `old` \n `====` \n `new` \n `>>>>`. **Format 3 (AI Copy-Paste):** Inside the new code, use `📋 filepath:Lstart-Lend` to inject code from any file. Indentation before `📋` will smartly format all copied lines! |
 | `deepsift diag "problems.json"` | Read an IDE-generated problems/diagnostics JSON array and output the exact files, errors, and precise code snippets surrounding the errors for quick context. |
 | `deepsift search "q1" "q2" "q3"` | Multi-query batch search (saves time) |
 | `deepsift index` | Re-index the project (incremental). Options: `--verbose` or `-v` (show files being indexed) |
 | `deepsift index --force` | Full re-index from scratch |
 | `deepsift status` | Check index statistics |
 | `deepsift config` | Interactive menu to configure which directories are indexed |
-| `deepsift arch` | Get project architecture blueprint utilizing Graphify communities. Automatically ignores directories configured under `excludeDirs` in `deepsift.config.json` |
+| `deepsift arch` | **MANDATORY FOR FOLDER EXPLORATION.** Get project architecture blueprint utilizing Graphify communities. Automatically ignores directories configured under `excludeDirs` in `deepsift.config.json` |
 | `deepsift deps "filename"` | Find which files import/depend on a target |
 | `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) |
 | `deepsift history` | Read past search results (avoid redundant searches) |
 | `deepsift clean` | Clear search history logs and index |
 | `deepsift drill "logfile.md" "keyword"` | Deep-search within previous results |
 | `deepsift resolve "token"` | Decode a compressed token from the most recent cached dictionary |
-| `deepsift dna` | Generate or display the Project DNA (Context Intelligence). Includes Graph Topology, Communities, and God Nodes under the `architecture` section. Options: `--section <name>`, `--query <term>` or `-q <term>` (extract matches), `--limit <number>` (limit results), `--offset <number>` (paginate), `--path-filter <path>` (filter records by path), `--meta` (only return counts/metadata) |
+| `deepsift dna` | **MANDATORY FOR ANALYSIS.** Generate or display the Project DNA (Context Intelligence). Includes Graph Topology, Communities, and God Nodes under the `architecture` section. Options: `--section <name>`, `--query <term>` or `-q <term>` (extract matches), `--limit <number>` (limit results), `--offset <number>` (paginate), `--path-filter <path>` (filter records by path), `--meta` (only return counts/metadata) |
 | `deepsift scan <target>` | Runs specific DNA analyzers (tokens, i18n, conventions, assets). |
-| `deepsift context "path"` | **MANDATORY**: Run before generating a new file to get rules, design tokens, and similar existing components. |
+| `deepsift context "path"` | **MANDATORY BEFORE FILE CREATION:** Run before generating a new file to get rules, design tokens, and similar existing components. |
 
-## 📋 Mandatory Usage Rules
+## 📋 ABSOLUTE & NON-NEGOTIABLE USAGE RULES
 
-1. **DeepSift-First Mandate:** You **MUST NOT** use any general grep search, manual directory listing, or file viewing tools to find files or logic *unless* you have first executed a relevant `deepsift search`, `deepsift deps`, or `deepsift arch` command.
-2. **Compressed Reading:** When you need to read an entire file or large chunks of a file, you **MUST** use `deepsift read "path"` instead of IDE file viewing tools. This outputs compressed image tokens, drastically saving context usage. Use `--no-compress` only if you specifically need raw, copyable text.
-2. **Pre-Generation Context (MANDATORY):** You **MUST** run `deepsift context "target_path"` **BEFORE** creating any new file or component. This gives you project conventions, required design tokens, i18n rules, and similar existing components to prevent code duplication and style drift.
-3. **Search History Check:** You **MUST** run `deepsift history` at the start of any codebase investigation to see if the required search results have already been cached.
-4. **Visual Cache First:** Read the `INDEX.md` file under `.deepsift/outputs/` before running a new search query. The exact absolute path of the `INDEX.md` file is printed in the terminal as a clickable file link (e.g. `file:///...`) at the end of each search. You MUST open `INDEX.md` and visually parse the embedded PNG images, which contain highly compressed `pxpipe` tokens holding the context.
-5. **No Manual Codebase Exploration:** Do not traverse directories or search files using generic commands. Use `deepsift arch` to understand the codebase skeleton, `deepsift feature` to analyze a specific feature folder, and `deepsift deps` to find file dependencies.
-6. **DEC_v2 Compression Priority:** By default, allow search results to be compressed to save tokens. File paths, folder paths, and file names are NEVER compressed; they are kept verbatim to prevent hallucinations. Only use the `--no-compress` flag as a fallback if you struggle to decode/reconstruct other compressed words after multiple attempts, or when you need to inspect the exact literal syntax of a code snippet for precise copying.
-7. **Retrieving Surrounding Context:** Always append `--context-lines N` (or `-C N`, where N is typically 10 to 30) when searching to retrieve the surrounding code lines around matches.
-8. **Bulk Editing (Batch Edit):** When making identical or massive string replacements across multiple files (or many non-contiguous edits in a large file), write a JSON patch file to disk and use `deepsift edit "patch.json"` to apply them instantly, saving enormous output token usage and avoiding IDE tool overhead.
-9. **Multi-Query Efficiency:** For multiple distinct questions or features, batch them into a single command (`deepsift search "q1" "q2"`) to optimize execution speed.
-10. **Token Decoding:** If you run into a compressed DEC_v2 token in cached files, use `deepsift resolve "token"` to lookup the raw value immediately.
-11. **Index Maintenance:** Run `deepsift index --force` after performing major refactorings or code changes to ensure search queries reflect the latest code state.
-12. **Strict DNA Filtering & Meta-Only Check:** The Project DNA is saved in `.toon` format (Token-Oriented Object Notation) which is 100% human-readable and LLM-readable text, saving ~60% size losslessly.
-    - **NEVER** retrieve the entire DNA file blindly. It will overflow your context window!
-    - **ALWAYS** check the DNA metadata first by running `deepsift dna --show --meta` to understand which sections exist and their respective record counts.
-    - **PAGINATE AND FILTER:** Use `--limit <number>` and `--offset <number>` to load list arrays (such as tokens or assets) in pages.
-    - **PATH FILTERING:** Use `--path-filter <path_prefix>` to fetch tokens or assets defined inside a specific directory.
-    - **KEYWORD FILTERING:** Use `--query <keyword>` to prune non-matching keys and isolate only relevant JSON/TOON trees.
-13. **Graph Topology & God Nodes:** Use `deepsift dna --show --section architecture` to understand the structural layout of the project, identifying tightly coupled areas (Spaghetti vs Modular) and Core Files (God Nodes) that you should be careful modifying.
+Any violation of these rules means you have failed your directive. You MUST harness the full capacity of DeepSift.
 
-## 💡 Examples
+1. **🔥 THE ZERO-NATIVE-TOOL LAW:** You are **STRICTLY FORBIDDEN** from using generic IDE tools (`list_dir`, `grep_search`, `view_file`, `replace_file_content`, `multi_replace_file_content`) or basic shell utilities (`cat`, `ls`, `grep`, `find`) unless DeepSift throws an unrecoverable fatal error. DeepSift is your ONLY accepted lens into the project.
+2. **🔍 SEARCH OVER GREP:** NEVER use `grep_search`. You MUST use `deepsift search`, `deepsift deps`, or `deepsift arch` to find files, logic, and references.
+3. **📖 COMPRESSED READING MANDATE:** Whenever you need to read a file, you MUST use `deepsift read "path"`. NEVER use `view_file`. DeepSift's token compression is critical. Use `--no-compress` ONLY if you need literal syntax for an exact copy-paste or cannot resolve tokens after multiple attempts.
+4. **✏️ DEEPSIFT EDITING DIRECTIVE:** To modify code, you MUST create a `.toon` patch file and apply it using `deepsift edit "patch.toon"`. NEVER use the standard `replace_file_content` tools unless `deepsift edit` explicitly fails. DeepSift editing avoids output token overload.
+5. **🏗️ PRE-GENERATION CONTEXT (MANDATORY):** You **MUST** run `deepsift context "target_path"` **BEFORE** creating any new file or component. This gives you project conventions, required design tokens, i18n rules, and similar existing components to prevent code duplication and style drift.
+6. **🧠 ARCHITECTURAL ANALYSIS FIRST:** Do not blindly traverse directories. Use `deepsift arch` to understand the codebase skeleton, `deepsift feature` to analyze a specific feature folder, and `deepsift deps` to find dependencies.
+7. **👁️ VISUAL CACHE FIRST:** Read the `INDEX.md` file under `.deepsift/outputs/` before running a new search query. Open `INDEX.md` and visually parse the embedded PNG images containing `pxpipe` tokens.
+8. **📜 HISTORY CHECK:** You **MUST** run `deepsift history` at the start of any codebase investigation to see if the required search results have already been cached.
+9. **⚙️ MULTI-QUERY EFFICIENCY:** Batch multiple queries into a single command (`deepsift search "q1" "q2"`) to optimize speed.
+10. **🧬 STRICT DNA FILTERING & META-ONLY CHECK:**
+    - **NEVER** retrieve the entire DNA file blindly.
+    - **ALWAYS** check DNA metadata first: `deepsift dna --show --meta`.
+    - **PAGINATE AND FILTER:** Use `--limit`, `--offset`, `--path-filter`, and `--query` to extract exact TOON trees.
+11. **🕸️ GRAPH TOPOLOGY & GOD NODES:** Always use `deepsift dna --show --section architecture` to map out spaghetti vs modular zones and identify dangerous Core Files (God Nodes) before heavy refactoring.
+
+## 💡 Examples of Unwavering Loyalty to DeepSift
 
 ```bash
-# Find authentication logic
+# BAD: using grep_search (FORBIDDEN)
+# GOOD: 
 deepsift search "authentication login handler"
 
-# Multiple questions at once
-deepsift search "database connection setup" "error handling middleware" "user validation"
+# BAD: using view_file (FORBIDDEN)
+# GOOD:
+deepsift read "src/core/indexer.ts"
 
-# Understand project structure
-deepsift arch
-
-# Find who uses a specific module
-deepsift deps "auth-service.ts"
-
-# Get overview of a feature directory
+# GOOD: Batch analysis of an entire feature
 deepsift feature "src/features/auth"
 
-# Decode a compressed token you cannot understand
-deepsift resolve "0A"
+# GOOD: Safe, token-efficient architectural discovery
+deepsift arch
 
-# Read file contents optimally without consuming massive text tokens
-deepsift read "src/core/indexer.ts" "src/utils/config.ts:10-40"
-
-# MANDATORY: Before creating a new file
+# GOOD: Mandatory check before generating code
 deepsift context "src/components/MyNewButton.tsx"
 
-# Step 1: Analyze DNA structure and token/asset counts without retrieving records
-deepsift dna --show --meta
-
-# Step 2: Retrieve only the first 50 color tokens defined inside the color-editor folder
-deepsift dna --show --section tokens --path-filter "color-editor" --limit 50 --offset 0
-
-# Step 3: Search for any conventions or rules related to fonts
-deepsift dna --show --query "font"
-
-# Step 4: Understand the Graphify structural topology and God Nodes
-deepsift dna --show --section architecture
-
-# Configure which folders to index
-deepsift config
+# GOOD: Applying edits via DeepSift (requires patch.toon creation first)
+deepsift edit "patch.toon"
 ```
