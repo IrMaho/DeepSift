@@ -1,0 +1,12 @@
+[~c:console]
+📄 scratch/dummy.txt
+
+L1-L8
+====
+function newFeature() {
+    ~c.log("Before copy");
+    📋 scratch/source.ts:L2-L4
+    ~c.log("After copy");
+}
+const currentVer = 📋 scratch/source.ts:L6;
+>>>>

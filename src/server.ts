@@ -82,7 +82,8 @@ uiServer.listen(UI_PORT, () => {
 
 // --- MCP Core ---
 const dbPath = path.join(os.homedir(), '.ternlight_mcp_search.db');
-const store = new NativeStore(dbPath);
+const graphDbPath = path.join(os.homedir(), '.ternlight_mcp_graph.db');
+const store = new NativeStore(dbPath, graphDbPath);
 const indexer = new Indexer(store);
 const searcher = new Searcher(store);
 

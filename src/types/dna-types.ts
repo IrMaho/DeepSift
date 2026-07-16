@@ -196,6 +196,8 @@ export interface ProjectDNA {
             edgeCount: number;
             modularity: number;
             layerViolations: string[];
+            godNodes: string[];
+            communities: { id: number; label: string; size: number; cohesion: number }[];
         };
     };
 
@@ -247,7 +249,7 @@ export function createEmptyDNA(projectName: string): ProjectDNA {
             clusters: [],
             templatePatterns: [],
             coreFiles: [],
-            graph: { nodeCount: 0, edgeCount: 0, modularity: 0, layerViolations: [] },
+            graph: { nodeCount: 0, edgeCount: 0, modularity: 0, layerViolations: [], godNodes: [], communities: [] },
         },
         components: {
             totalCount: 0,

@@ -35,6 +35,8 @@ export interface GraphResult {
         edgeCount: number;
         modularity: number;
         layerViolations: string[];
+        godNodes: string[];
+        communities: { id: number; label: string; size: number; cohesion: number }[];
     };
 }
 
@@ -64,6 +66,8 @@ export function analyzeArchitecture(
             edgeCount: edges.length,
             modularity,
             layerViolations,
+            godNodes: coreFiles.slice(0, 5),
+            communities: []
         },
     };
 }
