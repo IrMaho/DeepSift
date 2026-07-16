@@ -4,7 +4,7 @@ import path from 'path';
 export interface RealmDefinition {
     displayName: string;
     sourcePaths: string[];
-    parserProfile: 'code' | 'skill' | 'documentation';
+    parserProfile: 'code' | 'skill' | 'docs';
     autoIndex: boolean;
     excludeDirs?: string[];
 }

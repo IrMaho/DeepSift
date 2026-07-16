@@ -79,4 +79,45 @@ export class RealmRouter {
 
         return indexer.indexProject(fullPath, force, onProgress);
     }
+
+    public async compareRealms(realm1: string, realm2: string, query: string, topK: number = 5) {
+        const r1Results = await this.searchRealm(realm1, { query, topK });
+        
+        const similarities: any[] = [];
+        const gaps: any[] = [];
+
+        for (const r1 of r1Results) {
+            // Search realm2 using the exact content of r1 as the query to find vector matches
+            // We use a shorter snippet of the content to avoid overly long queries (limit to first 500 chars)
+            const queryContent = r1.chunk.content.substring(0, 500);
+            const r2Results = await this.searchRealm(realm2, { query: queryContent, topK: 1 });
+            
+            if (r2Results.length > 0) {
+                const bestMatch = r2Results[0];
+                const similarityScore = bestMatch.score;
+
+                const comparison = {
+                    sourceChunk: r1,
+                    targetChunk: bestMatch,
+                    similarityScore
+                };
+
+                // Tunable threshold for similarity: 0.45 because semantic-only matches
+                // peak at 0.50 in our RRF normalization (unless there is an exact keyword match)
+                if (similarityScore >= 0.45) {
+                    similarities.push(comparison);
+                } else {
+                    gaps.push(comparison);
+                }
+            } else {
+                gaps.push({
+                    sourceChunk: r1,
+                    targetChunk: null,
+                    similarityScore: 0
+                });
+            }
+        }
+
+        return { similarities, gaps };
+    }
 }

@@ -13,6 +13,8 @@ import { initCommand } from './commands/init.js';
 import { watchCommand } from './commands/watch.js';
 import { configCommand } from './commands/config.js';
 import { dnaCommand } from './commands/dna.js';
+import { realmCommand } from './commands/realm-cmd.js';
+import { compareCommand } from './commands/compare-cmd.js';
 import { scanCommand } from './commands/scan.js';
 import { resolveCommand } from './commands/resolve.js';
 import { contextCommand } from './commands/context.js';
@@ -149,6 +151,47 @@ async function main() {
                 await dnaCommand(projectPath, showOnly, format, section, dnaQuery, compress, limit, offset, pathFilter, showMetaOnly);
                 break;
             }
+
+            case 'realm':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide an action (e.g. list, add, remove).\nUsage: deepsift realm list');
+                }
+                const action = commandArgs[0];
+                const realmId = commandArgs[1];
+                
+                let type: 'code' | 'skill' | 'docs' | undefined;
+                const typeIdx = commandArgs.indexOf('--type');
+                if (typeIdx !== -1 && commandArgs[typeIdx + 1]) {
+                    type = commandArgs[typeIdx + 1] as any;
+                }
+                
+                let source: string | undefined;
+                const sourceIdx = commandArgs.indexOf('--source');
+                if (sourceIdx !== -1 && commandArgs[sourceIdx + 1]) {
+                    source = commandArgs[sourceIdx + 1];
+                }
+
+                await realmCommand(projectPath, action, format, realmId, { type, source });
+                break;
+
+            case 'compare':
+                if (commandArgs.length < 2) {
+                    throw new Error('Please provide two realms to compare.\nUsage: deepsift compare <realm1> <realm2> --query "keyword"');
+                }
+                const r1 = commandArgs[0];
+                const r2 = commandArgs[1];
+                
+                let compareQuery: string | undefined;
+                const compareQueryIdx = commandArgs.indexOf('--query');
+                if (compareQueryIdx !== -1 && commandArgs[compareQueryIdx + 1]) {
+                    compareQuery = commandArgs[compareQueryIdx + 1];
+                }
+                if (!compareQuery) {
+                    throw new Error('Please provide a --query to compare.');
+                }
+                
+                await compareCommand(projectPath, r1, r2, compareQuery, format, compress);
+                break;
 
             case 'scan':
                 if (commandArgs.length === 0) {

@@ -14,9 +14,9 @@ import { GraphClusterer } from '../graphify/graph-cluster.js';
 export class Indexer {
     private store: NativeStore;
     private isIndexing: boolean = false;
-    private parserProfile: 'code' | 'skill' | 'documentation';
+    private parserProfile: 'code' | 'skill' | 'docs';
 
-    constructor(store: NativeStore, parserProfile: 'code' | 'skill' | 'documentation' = 'code') {
+    constructor(store: NativeStore, parserProfile: 'code' | 'skill' | 'docs' = 'code') {
         this.store = store;
         this.parserProfile = parserProfile;
     }
@@ -92,7 +92,7 @@ export class Indexer {
                         const ext = path.extname(file).replace('.', '');
                         
                         let chunks;
-                        if (this.parserProfile === 'skill' && ext === 'md') {
+                        if ((this.parserProfile === 'skill' || this.parserProfile === 'docs') && ext === 'md') {
                             chunks = parseSkillFile(file, content);
                         } else {
                             chunks = parseAST(content, file, ext);
