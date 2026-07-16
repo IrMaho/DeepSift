@@ -120,7 +120,7 @@
         "C:\\src2\\flutter"
       ],
       "parserProfile": "code",
-      "autoIndex": true
+      "autoIndex": false
     }
   }
 }

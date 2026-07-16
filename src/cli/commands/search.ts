@@ -28,7 +28,13 @@ export async function searchCommand(
     if (!options.skipSync) {
         printInfo('Syncing index before search...');
         const realmsToSync = targetRealms || ['code'];
+        const realmsConfig = router.listRealms();
         for (const rid of realmsToSync) {
+            const rConfig = realmsConfig[rid];
+            if (rConfig && rConfig.autoIndex === false) {
+                printInfo(`[${rid}] Auto-index is disabled. Skipping sync...`);
+                continue;
+            }
             try {
                 await router.indexRealm(rid, undefined, false, (current, total, file) => {
                     if (options.verbose && format !== 'json') {
