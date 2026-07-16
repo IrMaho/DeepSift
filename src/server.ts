@@ -497,6 +497,125 @@ const server = new McpServer({
     }
 );
 
+// Tool 14: analyze_ai_regressions
+(server as any).tool(
+    "analyze_ai_regressions",
+    "Analyzes recent uncommitted Git diffs to help AI identify regressions and broken code in God Nodes after generating a massive patch. This saves the AI from reverting the whole commit and helps it isolate the broken logic.",
+    {
+        projectPath: z.string().describe("Absolute path to the root of the project")
+    },
+    async (args: any) => {
+        const { projectPath } = args;
+        broadcastEvent('tool_call', { tool: 'analyze_ai_regressions', args, response: 'Analyzing regressions...' });
+        
+        try {
+            const dna = loadDNA(projectPath);
+            if (!dna || !dna.temporal || !dna.temporal.recentUncommittedAnomalies) {
+                return { content: [{ type: "text", text: "Temporal DNA not found. Please run generate_project_dna first." }] };
+            }
+
+            const anomalies = dna.temporal.recentUncommittedAnomalies;
+            if (anomalies.length === 0) {
+                return { content: [{ type: "text", text: "No significant uncommitted anomalies or AI regressions detected in God Nodes!" }] };
+            }
+
+            let report = "⚠️ AI Regression Analysis (Temporal Diff):\n\n";
+            for (const anomaly of anomalies) {
+                report += `File: ${anomaly.filePath}\n`;
+                report += `Change: +${anomaly.addedLines} | -${anomaly.deletedLines}\n`;
+                report += `Warning: ${anomaly.warning}\n\n`;
+            }
+            report += "Tip: Check these specific files and restore the wrongly deleted blocks instead of reverting everything.";
+
+            broadcastEvent('tool_call', { tool: 'analyze_ai_regressions', args, response: 'Regression analysis complete.' });
+            return { content: [{ type: "text", text: report }] };
+        } catch (e: any) {
+            return { content: [{ type: "text", text: `Error analyzing regressions: ${e.message}` }] };
+        }
+    }
+);
+
+// Tool 15: generate_smart_plan
+(server as any).tool(
+    "generate_smart_plan",
+    "Generates a Smart Plan by analyzing DNA, skills, realms, and architecture before implementing any feature. Returns a structured implementation plan with milestones, risks, constraints, and visual descriptions.",
+    {
+        projectPath: z.string().describe("Absolute path to the root of the project"),
+        request: z.string().describe("The feature request or task description from the user")
+    },
+    async (args: any) => {
+        const { projectPath, request } = args;
+        broadcastEvent('tool_call', { tool: 'generate_smart_plan', args, response: 'Generating smart plan...' });
+        
+        try {
+            const { PlannerEngine } = await import('./intelligence/plan-engine.js');
+            const engine = new PlannerEngine(projectPath);
+            const plan = await engine.generatePlan(request);
+            const markdown = engine.formatPlanAsMarkdown(plan);
+
+            const optimizer = new TokenOptimizerService();
+            const compressed = optimizer.optimize(markdown).toUnifiedString();
+            
+            const logInfo = await saveSearchLog(projectPath, [`[SmartPlan] ${request}`], compressed);
+            const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
+
+            broadcastEvent('tool_call', { tool: 'generate_smart_plan', args, response: 'Smart plan generated.' });
+            return { content: [{ type: "text", text: `✔ Plan Generated.\n\n${compressed}\n\n[MANDATORY]: You MUST read the visual cache at ${link} before writing your implementation_plan.md. Expand your plan to at least 500 lines with high detail.` }] };
+        } catch (e: any) {
+            return { content: [{ type: "text", text: `Error generating smart plan: ${e.message}` }] };
+        }
+    }
+);
+
+// Tool 16: heal_god_node
+(server as any).tool(
+    "heal_god_node",
+    "Scans a God Node (large file) and proposes a file split based on internal AST community detection. Returns a suggested split for TOON Patching.",
+    {
+        filePath: z.string().describe("Absolute path to the file to heal")
+    },
+    async (args: any) => {
+        const { filePath } = args;
+        broadcastEvent('tool_call', { tool: 'heal_god_node', args, response: 'Scanning God Node...' });
+        
+        try {
+            const { InternalGraphBuilder } = await import('./intelligence/internal-graph.js');
+            const { HealEngine } = await import('./intelligence/heal-engine.js');
+            const { TokenOptimizerService } = await import('./utils/token-compressor.js');
+            const path = await import('path');
+            
+            const builder = new InternalGraphBuilder(filePath);
+            const graph = builder.build();
+            const engine = new HealEngine(graph);
+            const proposal = engine.computeProposal(filePath);
+
+            let output = `# 🩹 Architecture Healer Proposal\n`;
+            output += `File: ${path.basename(filePath)}\n\n`;
+            
+            for (const cluster of proposal.clusters) {
+                output += `### Module: ${cluster.suggestedName} (${cluster.totalLines} lines)\n`;
+                const previewNodes = cluster.nodes.slice(0, 10);
+                previewNodes.forEach(n => {
+                    output += `- ${n.type} ${n.name} (L${n.startLine}-L${n.endLine})\n`;
+                });
+                output += '\n';
+            }
+
+            const optimizer = new TokenOptimizerService();
+            const compressed = optimizer.optimize(output).toUnifiedString();
+
+            const projectPath = process.cwd(); // MCP server runs in project root
+            const logInfo = await saveSearchLog(projectPath, [`[HealGodNode] ${filePath}`], compressed);
+            const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
+
+            broadcastEvent('tool_call', { tool: 'heal_god_node', args, response: 'Healer proposal generated.' });
+            return { content: [{ type: "text", text: `✔ Healer Proposal Generated.\n\n${compressed}\n\n[MANDATORY]: You MUST read the visual cache at ${link} before writing the patch.` }] };
+        } catch (e: any) {
+            return { content: [{ type: "text", text: `Error generating heal proposal: ${e.message}` }] };
+        }
+    }
+);
+
 // Start server
 async function main() {
     const transport = new StdioServerTransport();

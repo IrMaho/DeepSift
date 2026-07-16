@@ -98,6 +98,17 @@ export interface StructureTemplate {
     confidence: number;
 }
 
+export interface LearnedPattern {
+    category: 'StateManagement' | 'Networking' | 'ComponentStructure' | 'Styling' | 'ErrorHandling' | 'Other';
+    name: string;
+    description: string;
+    evidence: {
+        filePaths: string[];
+        frequency: number;
+    };
+    snippets: string[];
+}
+
 export interface GraphNode {
     filePath: string;
     inDegree: number;
@@ -159,6 +170,81 @@ export interface CreationContext {
     conventionReminders: string[];
 }
 
+export interface TemporalDNA {
+    godNodeAges: {
+        filePath: string;
+        createdAt: string;
+        totalCommits: number;
+        recentCommits: number;
+        contributors: string[];
+    }[];
+    bottlenecks: string[];
+    deadZones: {
+        filePath: string;
+        lastModified: string;
+        daysSinceModified: number;
+    }[];
+    recentUncommittedAnomalies?: any[];
+}
+
+export interface FileCoverage {
+    filePath: string;
+    lineCoverage: number;
+    statementCoverage?: number;
+    branchCoverage?: number;
+    functionCoverage?: number;
+    uncoveredLines: number[];
+}
+
+export interface TimeBomb {
+    filePath: string;
+    inDegree: number;
+    pageRank: number;
+    coveragePercent: number;
+    riskSeverity: 'Critical' | 'High' | 'Medium';
+    reason: string;
+}
+
+export interface TestDNA {
+    hasCoverageData: boolean;
+    frameworksDetected: string[];
+    globalCoverage: number;
+    fileCoverages: FileCoverage[];
+    timeBombs: TimeBomb[];
+    safeCores: string[];
+}
+
+export interface PlanRisk {
+    file: string;
+    reason: string;
+    severity: 'low' | 'medium' | 'high';
+}
+
+export interface PlanMilestone {
+    id: number;
+    title: string;
+    description: string;
+    files: { path: string; action: 'create' | 'modify' | 'delete' }[];
+    estimatedComplexity: 'low' | 'medium' | 'high';
+    dependencies: number[];
+}
+
+export interface SmartPlan {
+    id: string;
+    createdAt: string;
+    request: string;
+    requestType: 'ui' | 'feature' | 'refactor' | 'bugfix' | 'api' | 'other';
+    executiveSummary: string;
+    visualDescription?: string;
+    structureMap: string;
+    milestones: PlanMilestone[];
+    dependencies: string[];
+    risks: PlanRisk[];
+    skillsUsed: string[];
+    dnaConstraints: string[];
+    realmInsights: string[];
+}
+
 export interface ProjectDNA {
     version: string;
     generatedAt: string;
@@ -213,9 +299,13 @@ export interface ProjectDNA {
         naming: NamingConventions;
         structureTemplate: StructureTemplate | null;
         importPatterns: string[];
+        learnedPatterns?: LearnedPattern[];
     };
 
     assets: ResourceMap;
+
+    temporal?: TemporalDNA;
+    testing?: TestDNA;
 
     rules: string[];
 }
@@ -283,6 +373,12 @@ export function createEmptyDNA(projectName: string): ProjectDNA {
             fontFiles: [],
             iconUsagePattern: { type: 'unknown', importSource: '', exampleUsages: [] },
             unusedAssets: [],
+        },
+        temporal: {
+            godNodeAges: [],
+            bottlenecks: [],
+            deadZones: [],
+            recentUncommittedAnomalies: []
         },
         rules: [],
     };

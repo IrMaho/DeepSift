@@ -121,6 +121,14 @@
       ],
       "parserProfile": "code",
       "autoIndex": false
+    },
+    "flutter_new": {
+      "displayName": "Realm: flutter_new",
+      "sourcePaths": [
+        "C:\\src\\flutter"
+      ],
+      "parserProfile": "code",
+      "autoIndex": false
     }
   }
 }

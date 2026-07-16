@@ -24,9 +24,29 @@ export class RealmRouter {
     }
 
     public getStore(realmId: string): NativeStore {
-        ensureRealmDir(this.projectPath, realmId);
-        const dbPath = getRealmDbPath(this.projectPath, realmId);
-        const graphPath = getRealmGraphPath(this.projectPath, realmId);
+        const realmConfig = this.config.realms?.[realmId];
+        
+        let dbPath = getRealmDbPath(this.projectPath, realmId);
+        let graphPath = getRealmGraphPath(this.projectPath, realmId);
+
+        if (realmConfig?.isolatedDbPath) {
+            const path = require('path');
+            dbPath = path.isAbsolute(realmConfig.isolatedDbPath)
+                ? realmConfig.isolatedDbPath
+                : path.resolve(this.projectPath, realmConfig.isolatedDbPath);
+            // Derive graph path by replacing .db with .graph
+            graphPath = dbPath.replace(/\.db$/, '.graph');
+            
+            // Ensure directory exists if it's not external
+            if (!realmConfig.isExternalHivemind) {
+                const fs = require('fs');
+                const dir = path.dirname(dbPath);
+                if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+            }
+        } else {
+            ensureRealmDir(this.projectPath, realmId);
+        }
+
         return new NativeStore(dbPath, graphPath, realmId, this.projectPath);
     }
 
@@ -69,6 +89,12 @@ export class RealmRouter {
     ): Promise<{ files: number; chunks: number }> {
         const store = this.getStore(realmId);
         const realmConfig = this.config.realms?.[realmId];
+        
+        if (realmConfig?.isExternalHivemind) {
+            // External hiveminds are read-only, do not index locally
+            return { files: 0, chunks: 0 };
+        }
+
         const parserProfile = realmConfig?.parserProfile || 'code';
         const indexer = new Indexer(store, parserProfile);
 

@@ -20,6 +20,10 @@ import { resolveCommand } from './commands/resolve.js';
 import { contextCommand } from './commands/context.js';
 import { readCommand } from './commands/read.js';
 import { editCommand } from './commands/edit.js';
+import { comCommand } from './commands/com.js';
+import { planCommand } from './commands/plan.js';
+import { healCommand } from './commands/heal.js';
+import { startCommand } from './commands/start.js';
 import { diagCommand } from './commands/diag.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
@@ -40,7 +44,7 @@ const HELP_TEXT = `
                                     --section <name>      Filter DNA to a specific section (e.g. tokens, conventions, architecture)
                                     --query, -q <term>    Search DNA and return only matching JSON structures
                                     --limit <number>      Limit the number of array items returned
-                                    --offset <number>     Start index for pagination of array items
+                                    --offset <number>      Start index for pagination of array items
                                     --path-filter <path>  Filter DNA records by file path prefix
                                     --meta                Only return metadata and record counts (no content)
   scan <target>                 Run a specific analyzer (tokens|i18n|duplicates|conventions|assets)
@@ -66,6 +70,9 @@ const HELP_TEXT = `
   read "file1" ["file2"...]     Read file contents and output compressed tokens (Supports line ranges: file:10-50)
   edit "patch.json"             Apply a batch of string replacements across multiple files
   diag "problems.json"          Read IDE problem diagnostics and output precise code snippets
+  com "command"                 Execute any shell command and return compressed output
+  plan "request"                Generate a Smart Plan by analyzing DNA, skills, realms, and architecture
+  heal "file"                   Attempt to fix issues in a file using the project DNA and context
 
 \x1b[33mGlobal Flags:\x1b[0m
   --json                        Output in JSON format
@@ -107,6 +114,10 @@ async function main() {
         switch (command) {
             case 'init':
                 await initCommand(projectPath);
+                break;
+
+            case 'start':
+                startCommand(compress);
                 break;
 
             case 'config':
@@ -363,6 +374,29 @@ async function main() {
                 await diagCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
+            case 'com':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a command to execute.\nUsage: deepsift com "git status"');
+                }
+                const commandStr = commandArgs.join(' ');
+                await comCommand(projectPath, commandStr, format, compress);
+                break;
+
+            case 'plan':
+            case 'p':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a feature request.\nUsage: deepsift plan "Create a login page with email and password"');
+                }
+                const planRequest = commandArgs.filter(a => !a.startsWith('-')).join(' ');
+                await planCommand(projectPath, planRequest, format, compress);
+                break;
+
+            case 'heal':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a file to heal.\nUsage: deepsift heal "src/utils.ts"');
+                }
+                await healCommand(commandArgs[0], format, compress);
+                break;
 
             default:
                 throw new Error(`Unknown command: "${command}"\nRun 'deepsift --help' for available commands.`);

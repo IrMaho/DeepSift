@@ -3,9 +3,11 @@ import { mineTokens } from '../analyzers/property-miner.js';
 import { mineConventions } from '../analyzers/convention-miner.js';
 import { detectLocalization } from '../analyzers/l10n-detector.js';
 import { analyzeArchitecture } from '../analyzers/graph-analyzer.js';
+import { integrateTestAnalyzer } from '../analyzers/test-analyzer.js';
 import { detectSimilarities } from '../analyzers/similarity-engine.js';
 import { mapResources } from '../analyzers/resource-mapper.js';
 import { NativeStore } from '../storage/native-store.js';
+import { integrateTemporalMiner } from './temporal-analyzer.js';
 import fs from 'fs';
 import path from 'path';
 import { jsonToToon, toonToJson } from '../utils/toon-serializer.js';
@@ -105,11 +107,26 @@ export async function generateDNA(
     if (onProgress) onProgress('graph', 'Analyzing dependency graph...');
     integrateGraphAnalyzer(projectPath, dna, onProgress);
 
+    if (onProgress) onProgress('testing', 'Analyzing test coverage and Time Bombs...');
+    integrateTestAnalyzer(projectPath, dna, onProgress);
+
     if (onProgress) onProgress('similarity', 'Detecting component similarities...');
     integrateSimilarityEngine(projectPath, dna, onProgress);
 
     if (onProgress) onProgress('resources', 'Mapping static resources and icons...');
     integrateResourceMapper(projectPath, dna, onProgress);
+
+    if (onProgress) onProgress('temporal', 'Mining temporal dynamics and AI regressions...');
+    integrateTemporalMiner(projectPath, dna, onProgress);
+
+    // Read learned patterns if they exist
+    const learnedPatternsPath = path.join(projectPath, '.deepsift', 'learned-patterns.json');
+    if (fs.existsSync(learnedPatternsPath)) {
+        try {
+            dna.conventions.learnedPatterns = JSON.parse(fs.readFileSync(learnedPatternsPath, 'utf-8'));
+            if (onProgress) onProgress('patterns', `Loaded ${dna.conventions.learnedPatterns?.length} auto-learned patterns.`);
+        } catch { /* skip */ }
+    }
 
     if (onProgress) onProgress('rules', 'Generating rules from discovered data...');
     generateRules(dna);
@@ -426,12 +443,45 @@ export function formatDNASummary(dna: ProjectDNA): string {
     lines.push(`- **File Naming:** ${dna.conventions.naming.files.dominant}`);
     lines.push(`- **Class Naming:** ${dna.conventions.naming.classes.dominant}`);
     lines.push(`- **Function Naming:** ${dna.conventions.naming.functions.dominant}`);
+    
+    if (dna.conventions.learnedPatterns && dna.conventions.learnedPatterns.length > 0) {
+        lines.push('');
+        lines.push('## 🧠 Learned Coding Patterns (Auto-Discovered)');
+        dna.conventions.learnedPatterns.forEach(p => {
+            lines.push(`- **${p.category}**: ${p.name} (Confidence: ${(p.evidence.frequency * 100).toFixed(0)}%)`);
+            lines.push(`  ↳ ${p.description}`);
+        });
+    }
+    
     lines.push('');
+
+    if (dna.temporal) {
+        lines.push('## ⏳ Temporal Dynamics');
+        lines.push(`- **Bottlenecks:** ${dna.temporal.bottlenecks.length}`);
+        lines.push(`- **Dead Zones:** ${dna.temporal.deadZones.length}`);
+        lines.push(`- **Uncommitted Anomalies:** ${dna.temporal.recentUncommittedAnomalies?.length || 0}`);
+        lines.push('');
+    }
 
     if (dna.rules.length > 0) {
         lines.push('## 📜 Rules');
         dna.rules.forEach(rule => lines.push(`- ${rule}`));
         lines.push('');
+    }
+
+    if (dna.testing) {
+        if (dna.testing.timeBombs && dna.testing.timeBombs.length > 0) {
+            lines.push(`\n\x1b[31;1m💣 SEMANTIC TIME BOMBS DETECTED 💣\x1b[0m`);
+            lines.push(`The following core architecture files have critically low test coverage and pose a massive regression risk:`);
+            dna.testing.timeBombs.forEach((b: any) => {
+                lines.push(` - \x1b[31m${b.filePath}\x1b[0m (Coverage: ${b.coveragePercent}% | In-Degree: ${b.inDegree})`);
+            });
+            lines.push('');
+        } else if (dna.testing.safeCores && dna.testing.safeCores.length > 0) {
+            lines.push(`\n\x1b[32;1m🛡️ SECURE ARCHITECTURE\x1b[0m`);
+            lines.push(`Your God Nodes are well-tested and robust. Excellent work.\n`);
+            lines.push('');
+        }
     }
 
     return lines.join('\n');
