@@ -54,6 +54,9 @@ Use the terminal commands below to search, analyze, and understand the codebase.
     - **PATH FILTERING:** Use `--path-filter <path_prefix>` to fetch tokens or assets defined inside a specific directory.
     - **KEYWORD FILTERING:** Use `--query <keyword>` to prune non-matching keys and isolate only relevant JSON/TOON trees.
 13. **Graph Topology & God Nodes:** Use `deepsift dna --show --section architecture` to understand the structural layout of the project, identifying tightly coupled areas (Spaghetti vs Modular) and Core Files (God Nodes) that you should be careful modifying.
+14. **🔥 CLONE-AND-CUSTOMIZE COPY-PASTE DIRECTIVE (CRITICAL):**
+    - To copy and customize code from external files (e.g. from indexed documentation, skills, or source codes of libraries like Flutter), you **MUST** use `deepsift edit` with the `📋 filepath:Lstart-Lend` syntax inside your `.toon` patch file.
+    - **NEVER** write or copy-paste large blocks of reference code manually into your responses or tool arguments. This is the absolute priority to eliminate token bloat and prevent 99% of manual code reproduction.
 
 ## 💡 Examples
 
