@@ -143,7 +143,7 @@ async function main() {
 
                 const showMetaOnly = commandArgs.includes('--meta');
 
-                await await dnaCommand(projectPath, showOnly, format, section, dnaQuery, compress, limit, offset, pathFilter, showMetaOnly);
+                await dnaCommand(projectPath, showOnly, format, section, dnaQuery, compress, limit, offset, pathFilter, showMetaOnly);
                 break;
             }
 
@@ -151,7 +151,7 @@ async function main() {
                 if (commandArgs.length === 0) {
                     throw new Error('Please provide a scan target.\nUsage: deepsift scan <tokens|i18n|duplicates|conventions|assets>');
                 }
-                await await scanCommand(projectPath, commandArgs[0], format);
+                await scanCommand(projectPath, commandArgs[0], format);
                 break;
 
             case 'context':
@@ -278,12 +278,6 @@ async function main() {
                 resolveCommand(projectPath, commandArgs[0], format);
                 break;
 
-            case 'context':
-                if (commandArgs.length === 0) {
-                    throw new Error('Please provide a target path.\nUsage: deepsift context "src/components/button.tsx"');
-                }
-                contextCommand(projectPath, commandArgs[0], format, compress);
-                break;
 
             default:
                 throw new Error(`Unknown command: "${command}"\nRun 'deepsift --help' for available commands.`);

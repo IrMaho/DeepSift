@@ -1,0 +1,18 @@
+# Ignore source and dev assets, but keep dist for execution
+node_modules/
+tests/
+bench/
+demo/
+eval/
+docs/
+assets/
+src/
+.github/
+.gitignore
+pnpm-lock.yaml
+pnpm-workspace.yaml
+tsconfig.json
+vitest.config.ts
+wrangler.toml
+*.ts
+*.map
