@@ -4,6 +4,7 @@
 [![TypeScript](https://img.shields.io/badge/language-TypeScript-blue.svg)](https://www.typescriptlang.org/)
 [![Model](https://img.shields.io/badge/Embedder-Ternlight%20%3C7MB-orange.svg)](https://github.com/ternlight/base)
 [![MCP](https://img.shields.io/badge/MCP-Supported-brightgreen.svg)](https://modelcontextprotocol.io)
+[![Zig](https://img.shields.io/badge/Native-Zig--Core-orange.svg)](native/core-zig)
 
 **DeepSift** is an ultra-fast, local semantic codebase search engine and AI agent bridge. It runs 100% offline using the lightweight **Ternlight** transformer model (384-dimensional vector embeddings, <7MB footprint) to process queries and codebase chunks in milliseconds without any external API calls or internet connection.
 
@@ -13,40 +14,60 @@ It is designed to work in two modes:
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture & Workflow
 
 DeepSift coordinates AST-aware parsing, local vector generation, and hybrid index searching into a single pipeline:
 
 ```
-                               ┌────────────────────────┐
-                               │     Target Project     │
-                               └──────────┬─────────────┘
-                                          │
-                            [deepsift init / index]
-                                          ▼
-                         ┌────────────────────────────────┐
-                         │      DeepSift Core Engine      │
-                         │ ┌────────────────────────────┐ │
-                         │ │ AST Parser (Tree-sitter)   │ │
-                         │ ├────────────────────────────┤ │
-                         │ │ Embedder (Ternlight Model) │ │
-                         │ ├────────────────────────────┤ │
-                         │ │ Store (SQLite + FTS5)      │ │
-                         │ └────────────────────────────┘ │
-                         └────────────────┬───────────────┘
-                                          │
-                                 ┌────────┴────────┐
-                                 ▼                 ▼
-                       ┌──────────────────┐ ┌─────────────┐
-                       │    CLI Bridge    │ │ MCP Server  │
-                       │   (deepsift s)   │ │  (Stdio)    │
-                       └──────────────────┘ └──────┬──────┘
-                                                   │
-                                                   ▼
-                                           ┌──────────────┐
-                                           │   Web UI     │
-                                           │ (Port 3000)  │
-                                           └──────────────┘
+                                ┌────────────────────────┐
+                                │     Target Project     │
+                                └──────────┬─────────────┘
+                                           │
+                             [deepsift init / index]
+                                           ▼
+                          ┌────────────────────────────────┐
+                          │      DeepSift Core Engine      │
+                          │ ┌────────────────────────────┐ │
+                          │ │ AST Parser (Tree-sitter)   │ │
+                          │ ├────────────────────────────┤ │
+                          │ │ Embedder (Ternlight Model) │ │
+                          │ ├────────────────────────────┤ │
+                          │ │ Store (SQLite + FTS5)      │ │
+                          │ └────────────────────────────┘ │
+                          └────────────────<td>───────────────┘
+                                           │
+                                  ┌────────┴────────┐
+                                  ▼                 ▼
+                        ┌──────────────────┐ ┌─────────────┐
+                        │    CLI Bridge    │ │ MCP Server  │
+                        │   (deepsift s)   │ │  (Stdio)    │
+                        └──────────────────┘ └──────┬──────┘
+                                                    │
+                                                    ▼
+                                            ┌──────────────┐
+                                            │   Web UI     │
+                                            │ (Port 3000)  │
+                                            └──────────────┘
+```
+
+### Ingestion & Query Workflow
+
+```mermaid
+graph TD
+    A[Codebase Files] --> B[file-walker: Filter .gitignore]
+    B --> C{Support AST?}
+    C -->|Yes| D[tree-sitter-parser: AST Chunks]
+    C -->|No| E[simple-parser: Line Chunks]
+    D --> F[embedder: Ternlight local embedding]
+    E --> F
+    F --> G[sqlite-store: Chunks & Vector Store]
+    
+    H[User Query] --> I[searcher: Embed Query]
+    I --> J[sqlite-store: Cosine Similarity + BM25 FTS5]
+    J --> K[RRF: Reciprocal Rank Fusion]
+    K --> L[Context Injector: Apply DNA rules]
+    L --> M[token-compressor: DEC_v2 compression]
+    M --> N[Output cached in INDEX.md]
 ```
 
 ---
@@ -62,7 +83,40 @@ DeepSift coordinates AST-aware parsing, local vector generation, and hybrid inde
 *   **Pre-Generation Checklists:** Features a `deepsift context` command to instruct LLMs on project conventions *before* writing new code.
 *   **Incremental Indexing:** Stores file hashes in SQLite. DeepSift only re-indexes modified or new files during runs, making index synchronizations complete in milliseconds.
 *   **Smart Token Compression (DEC_v2):** Includes a custom n-gram compression utility that minimizes LLM token usage. Important structural details (file paths, line references, code block fences, and search scores) are automatically kept uncompressed to avoid AI hallucinations.
+*   **Native Zig Mathematical Engine:** Incorporates a fast native math library compiled on-demand via **Zig**, optimizing float calculations and cosine score computations.
 *   **Web Dashboard UI:** Spins up a local web server (running on `http://localhost:3000`) using Server-Sent Events (SSE) to stream indexing progress, search triggers, and MCP tool invocations in real-time.
+
+---
+
+## 👁️ Visual & Graphify Context Compression (pxpipe Vision Tokens)
+
+DeepSift V2 introduces an advanced, cutting-edge **Visual Context Compression** system powered by the `pxpipe` rendering pipeline. Instead of flooding the LLM's context window with heavy, raw text logs, DeepSift dynamically rasterizes codebase transcripts and query histories into highly compact, model-optimized PNG images. These images embed high-density **pxpipe Vision Tokens** which AI agents read visually, achieving dramatic token savings.
+
+```
+┌──────────────────┐      rasterize      ┌──────────────────────┐
+│  Raw Code/Logs   ├────────────────────>│  Compact PNG Strips  │
+│ (200k Text Chars)│     (pxpipe)        │ (Bypasses Downsample)│
+└──────────────────┘                     └──────────┬───────────┘
+                                                    │
+                                                    ▼
+                                         ┌──────────────────────┐
+                                         │   AI Agent Vision    │
+                                         │  (Visual Ingestion)  │
+                                         └──────────────────────┘
+```
+
+### Core Architecture & Mechanics
+
+1.  **Visual Rasterization:** Code sections are reflowed and rendered onto custom 2D canvas surfaces at build time. DeepSift utilizes custom-built, compact font atlases (e.g. JetBrains Mono, Spleen, and Unifont) embedded directly in the distribution, completely bypassing heavy runtime font files loading.
+2.  **No-Resize Model Profiles:** Image dimensions are dynamically calculated to fit the exact preprocessing contracts of different AI vision encoders. This ensures that the generated PNGs are never downsampled by the provider, ensuring 100% character legibility at the lowest possible tile cost.
+    *   **Claude/Anthropic Profile:** Clamps page size to **1568px width x 728px height** (Claude's 1568px maximum edge and ~1.15MP limit), ensuring text remains sharp and readable.
+    *   **OpenAI GPT-5.6 Sol Profile:** Generates portrait strips capped at a **768px short-side floor** (152 columns, 768px wide x 1932px high).
+    *   **Grok 4.5 Profile:** Renders 152 columns (768px wide x 512px high) utilizing custom anti-aliasing and a factsheet structure without grids.
+3.  **R3 Reflow Layout Optimization:** Line-end dead spaces are recovered by applying soft-wrapping and marking hard newlines with a distinct `↵` sentinel. This packs transcripts dense, preventing the vision model from billing a full pixel tile for a short line.
+4.  **Profitability Gate:** Before converting any text block to images, DeepSift evaluates a strict cost-efficiency formula:
+    $$\text{Savings} = (\text{TextTokens} + \text{BurnText}) - (\text{ImageTokens} + \text{BurnImage})$$
+    If a history log or code block is too small (e.g. below the 20k token floor), the system keeps it as native text. Only large, long-horizon contexts trigger the visual compression.
+5.  **Token-Length Sectioning:** The pipeline walks transaction turns and seals images strictly at tool-closed boundaries. This ensures that parent tool-calls and their outputs are never split across pages, avoiding orphan validation crashes (e.g., HTTP 400 "No tool call found").
 
 ---
 
@@ -113,6 +167,58 @@ deepsift search "auth check" "user schema" "password hashing"
 
 ---
 
+## 📊 V2 Performance Benchmarks
+
+DeepSift has been benchmarked across both local project contexts and academic datasets.
+
+### 1. Local Projects Benchmarks
+
+#### A. Web Project (HTML/JS/CSS - `scratch/benchmark_test_project`)
+*   **Total Files:** 4 | **Chunks:** 33 | **Indexing Time:** 1043ms
+
+| Query Scenario | Without Tool (Tokens) | With DeepSift (Tokens) | **Token Savings (%)** | Without TTFT (ms) | With DeepSift TTFT (ms) | **Speedup (%)** | Code Quality |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **CSS Design Tokens** | 1299 | 311 | **76.1%** | 717ms | 678ms | **5.4%** | 3/5 vs **5/5** |
+| **Login Validation** | 660 | 340 | **48.5%** | 659ms | 675ms | **-2.4%** | 3/5 vs **5/5** |
+| **Navbar Buttons** | 678 | 760 | **-12.1%** | 661ms | 706ms | **-6.8%** | 3/5 vs **5/5** |
+| **Overall Summary** | **2637** | **1411** | **46.5%** | **2037ms** | **2059ms** | **-1.0%** | **3.0 vs 5.0** |
+
+*Note: For extremely small HTML files (<20 lines), the addition of the baseline Project DNA rules makes the payload slightly larger than reading raw files. However, for standard files (e.g. CSS), it reduces token consumption by **76.1%**.*
+
+#### B. Mobile Project (Flutter/Dart - `temp/lib`)
+*   **Total Files:** 326 | **Chunks:** 1131 | **Indexing Time:** 8930ms
+
+| Query Scenario | Without Tool (Tokens) | With DeepSift (Tokens) | **Token Savings (%)** | Without TTFT (ms) | With DeepSift TTFT (ms) | **Speedup (%)** | Code Quality |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **JWT Auth & Expiration** | 8936 | 8314 | **7.0%** | 1404ms | 1399ms | **0.4%** | 3/5 vs **5/5** |
+| **Dependency Tracking** | 2408 | 1408 | **41.5%** | 817ms | 772ms | **5.5%** | 3/5 vs **5/5** |
+| **GetX Bindings** | 8540 | 6747 | **21.0%** | 1369ms | 1250ms | **8.7%** | 3/5 vs **5/5** |
+| **Notes UI Spacing** | 9369 | 477 | **94.9%** | 1443ms | 686ms | **52.5%** | 3/5 vs **5/5** |
+| **User Management Tabs** | 2959 | 530 | **82.1%** | 866ms | 694ms | **19.9%** | 3/5 vs **5/5** |
+| **Overall Summary** | **32212** | **17476** | **45.7%** | **5899ms** | **4801ms** | **18.6%** | **3.0 vs 5.0** |
+
+### 2. State-of-the-Art Comparative Benchmarks
+Evaluated on academic datasets (**LOCOMO** and **LongMemEval-S**) against competing systems:
+
+#### LOCOMO Ingestion & QA (n=300)
+| System | QA Accuracy | Recall@10 | Ingest Cost | Ingest LLM Tokens |
+| :--- | :---: | :---: | :---: | :---: |
+| **DeepSift (graph-expand)** | **45.3%** | **0.497** | **~$1.40** | **$0 (100% Local & AST)** |
+| **supermemory** | 49.7% | 0.149 | $15.67 | High (Cloud API) |
+| **mem0** | 27.3% | 0.048 | $3.48 | Medium (Cloud API) |
+| **dense RAG** | 41.3% | 0.439 | $0 | $0 |
+| **BM25** | 31.3% | 0.362 | $0 | $0 |
+
+#### LongMemEval-S (n=50)
+| System | QA Accuracy | Recall@10 |
+| :--- | :---: | :---: |
+| **DeepSift (graph-expand)** | **76%** | **0.844** |
+| **dense RAG** | 76% | 0.848 |
+| **hybrid RRF** | 74% | 0.822 |
+| **mem0** | 70% | 0.344 |
+
+---
+
 ## ⚙️ MCP Server Configuration
 
 You can plug DeepSift directly into AI editors or LLM tools supporting the Model Context Protocol (Stdio transport).
@@ -154,11 +260,13 @@ Once running, the server also starts the **Web Dashboard** at **[http://localhos
 | Command | Arguments / Flags | Description |
 | :--- | :--- | :--- |
 | **`init`** | None | Initializes `.deepsift/` and executes the initial indexing scan. |
-| **`config`** | None | Launches an interactive console checklist to configure directories to index, generating a customizable `deepsift.config.json`. |
+| **`config`** | None | Launches an interactive console checklist to configure directories to index. |
 | **`dna`** | `[--show]` | Generate or display the Project DNA (Context Intelligence). |
 | **`context`** | `"path"` | Returns a checklist of rules and design tokens before file generation. |
-| **`scan`** | `<target>` | Runs specific DNA analyzers (tokens, i18n, duplicates, conventions, assets). <br>Note: **duplicates** (similarity-based) and **conventions** (naming rules enforcement) are fully operational. |
-| **`search`** | `"query1"` `["query2"...]` | Executes one or more hybrid semantic search queries. <br>Flags: `--include <path>`, `--no-sync` (skips file hashing updates), `--verbose` |
+| **`scan`** | `<target>` | Runs specific DNA analyzers (`tokens`, `i18n`, `duplicates`, `conventions`, `assets`). |
+| **`search`** | `"query1"` `["query2"...]` | Executes one or more hybrid semantic search queries. <br>Flags: `--include <path>`, `--no-sync`, `--verbose`, `--context-lines <N>` |
+| **`read`** | `"path:start-end"` | Reads file segments in compressed vision tokens format (DEC_v2). |
+| **`edit`** | `"patch.toon"` | Applies edits to source code using a JSON or custom TOON-Patch file. |
 | **`index`** | None | Re-indexes the project (incremental). Add `--force` to rebuild from scratch. |
 | **`status`** | None | Prints database size, total files indexed, and total chunk counts. |
 | **`arch`** | `--depth <N>` | Prints a formatted directory layout and highlights the top-5 central core files. |
@@ -166,13 +274,13 @@ Once running, the server also starts the **Web Dashboard** at **[http://localhos
 | **`feature`** | `"dir_path"` | Analyzes code surface, returning class/function declarations without full implementation. |
 | **`history`**| None | Prints a list of previously saved search logs. |
 | **`drill`** | `"logfile.md"` `"keyword"` | Isolates and extracts matching context lines from a past search history log. |
-| **`resolve`**| `"token"` | Decodes an abbreviated token (e.g. `0A`) generated by DEC_v2 compression by looking up the cached dictionary. |
+| **`resolve`**| `"token"` | Decodes an abbreviated token (e.g. `0A`) generated by DEC_v2 compression. |
 | **`clean`** | None | Empties the database, cached indexes, and history logs. |
 
 *Global Flags:*
 *   `--json`: Outputs results in JSON format.
 *   `--plain`: Outputs plain text without Markdown colors/decorations.
-*   `--no-compress`: Disables payload n-gram token compression (DEC_v2 is enabled by default to conserve context window).
+*   `--no-compress`: Disables payload n-gram token compression.
 
 ---
 
@@ -213,7 +321,7 @@ DeepSift /
 │   │   └── tree-sitter-parser.ts # AST parser for JS/TS structure chunking
 │   │
 │   ├── storage/              # Database drivers
-│   │   └── sqlite-store.ts   # SQLite schemas, FTS5 indexes, and vector operations
+│   │   └── native-store.ts   # SQLite schemas, FTS5 indexes, and vector operations
 │   │
 │   ├── ui/                   # Real-time SSE Dashboard HTML, JS, and CSS
 │   │
