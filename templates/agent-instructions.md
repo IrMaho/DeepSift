@@ -4,15 +4,15 @@ trigger: always_on
 
 # 🔍 DeepSift — Semantic Codebase Search (CLI Mode)
 
-You have access to **DeepSift**, a powerful local semantic search engine.
-It runs entirely on your machine — no API calls, no internet needed.
+You have access to **DeepSift**, a powerful local semantic search engine enhanced with **native Graphify topology awareness**.
+It runs entirely on your machine — no API calls, no internet needed. It doesn't just do semantic search; it understands code architecture, "God Nodes" (highly connected core files), and file communities.
 Use the terminal commands below to search, analyze, and understand the codebase.
 
 ## 🛠 Available Commands
 
 | Command | Description |
 |---|---|
-| `deepsift search "query"` | Semantic search. Options: `--include` or `-i <path>` (filter path), `--no-sync` or `-n` (skip index update), `--verbose` or `-v` (show file index progress), `--context-lines N` or `-C N` (show N lines of context around matches) |
+| `deepsift search "query"` | Semantic search enhanced with Graphify PageRank. Results are automatically boosted based on architectural importance (God Nodes) and community detection. Options: `--include` or `-i <path>` (filter path), `--no-sync` or `-n` (skip index update), `--verbose` or `-v` (show file index progress), `--context-lines N` or `-C N` (show N lines of context around matches) |
 | `deepsift read "file"` | Read file contents and output highly compressed DEC_v2 tokens to save token context. Supports specific lines (e.g., `deepsift read "src/file.ts:10-50"`). Use `--no-compress` to get raw plain text. You can pass multiple files at once. |
 | `deepsift edit "patch.json"` | Apply a batch of string replacements across multiple files instantly. Create a JSON file with `[{ "file": "path", "edits": [{ "search": "old", "replace": "new" }] }]` and pass it to this command. |
 | `deepsift search "q1" "q2" "q3"` | Multi-query batch search (saves time) |
@@ -20,14 +20,14 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 | `deepsift index --force` | Full re-index from scratch |
 | `deepsift status` | Check index statistics |
 | `deepsift config` | Interactive menu to configure which directories are indexed |
-| `deepsift arch` | Get project architecture blueprint (options: `--depth N` to limit tree depth). It automatically ignores directories configured under `excludeDirs` in `deepsift.config.json` |
+| `deepsift arch` | Get project architecture blueprint utilizing Graphify communities. Automatically ignores directories configured under `excludeDirs` in `deepsift.config.json` |
 | `deepsift deps "filename"` | Find which files import/depend on a target |
 | `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) |
 | `deepsift history` | Read past search results (avoid redundant searches) |
 | `deepsift clean` | Clear search history logs and index |
 | `deepsift drill "logfile.md" "keyword"` | Deep-search within previous results |
 | `deepsift resolve "token"` | Decode a compressed token from the most recent cached dictionary |
-| `deepsift dna` | Generate or display the Project DNA (Context Intelligence). Options: `--section <name>`, `--query <term>` or `-q <term>` (extract matches), `--limit <number>` (limit results), `--offset <number>` (paginate), `--path-filter <path>` (filter records by path), `--meta` (only return counts/metadata) |
+| `deepsift dna` | Generate or display the Project DNA (Context Intelligence). Includes Graph Topology, Communities, and God Nodes under the `architecture` section. Options: `--section <name>`, `--query <term>` or `-q <term>` (extract matches), `--limit <number>` (limit results), `--offset <number>` (paginate), `--path-filter <path>` (filter records by path), `--meta` (only return counts/metadata) |
 | `deepsift scan <target>` | Runs specific DNA analyzers (tokens, i18n, conventions, assets). |
 | `deepsift context "path"` | **MANDATORY**: Run before generating a new file to get rules, design tokens, and similar existing components. |
 
@@ -51,6 +51,7 @@ Use the terminal commands below to search, analyze, and understand the codebase.
     - **PAGINATE AND FILTER:** Use `--limit <number>` and `--offset <number>` to load list arrays (such as tokens or assets) in pages.
     - **PATH FILTERING:** Use `--path-filter <path_prefix>` to fetch tokens or assets defined inside a specific directory.
     - **KEYWORD FILTERING:** Use `--query <keyword>` to prune non-matching keys and isolate only relevant JSON/TOON trees.
+13. **Graph Topology & God Nodes:** Use `deepsift dna --show --section architecture` to understand the structural layout of the project, identifying tightly coupled areas (Spaghetti vs Modular) and Core Files (God Nodes) that you should be careful modifying.
 
 ## 💡 Examples
 
@@ -87,6 +88,9 @@ deepsift dna --show --section tokens --path-filter "color-editor" --limit 50 --o
 
 # Step 3: Search for any conventions or rules related to fonts
 deepsift dna --show --query "font"
+
+# Step 4: Understand the Graphify structural topology and God Nodes
+deepsift dna --show --section architecture
 
 # Configure which folders to index
 deepsift config

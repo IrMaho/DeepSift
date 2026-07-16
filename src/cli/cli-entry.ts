@@ -32,7 +32,7 @@ const HELP_TEXT = `
 \x1b[33mCommands:\x1b[0m
   init                          Initialize DeepSift for the current project
   config                        Interactive menu to configure DeepSift (e.g. excluded folders)
-  dna [--show]                  Generate or display Project DNA (context intelligence)
+  dna [--show]                  Generate or display Project DNA (context intelligence). Includes Graph Topology, Communities, and God Nodes under the 'architecture' section.
                                    Options:
                                     --section <name>      Filter DNA to a specific section (e.g. tokens, conventions, architecture)
                                     --query, -q <term>    Search DNA and return only matching JSON structures
@@ -42,7 +42,8 @@ const HELP_TEXT = `
                                     --meta                Only return metadata and record counts (no content)
   scan <target>                 Run a specific analyzer (tokens|i18n|duplicates|conventions|assets)
   context "path"                Generate a pre-creation checklist for a new component/feature
-  search "query" ["query2" ...]  Semantic search (single or multi-query)
+  search "query" ["query2" ...]  Semantic search (single or multi-query) enhanced with Graphify PageRank.
+                                  Results are automatically boosted based on architectural importance (God Nodes) and community detection.
                                   Options:
                                     --include, -i <path>  Only search within path
                                     --no-sync, -n         Skip index synchronization
@@ -52,7 +53,7 @@ const HELP_TEXT = `
                                     --verbose, -v         Show files being processed
   status                        Show index statistics
   watch, w                      Start background watcher for real-time indexing
-  arch [--depth N]              Project architecture blueprint
+  arch [--depth N]              Project architecture blueprint utilizing Graphify communities.
   deps "target"                 Trace dependencies for a file/module
   feature "path"                Feature outline (classes, functions)
   history                       Show past search results
