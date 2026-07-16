@@ -18,6 +18,7 @@ import { resolveCommand } from './commands/resolve.js';
 import { contextCommand } from './commands/context.js';
 import { readCommand } from './commands/read.js';
 import { editCommand } from './commands/edit.js';
+import { diagCommand } from './commands/diag.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
@@ -62,6 +63,7 @@ const HELP_TEXT = `
   resolve "token"               Decode a compressed token from the last search result
   read "file1" ["file2"...]     Read file contents and output compressed tokens (Supports line ranges: file:10-50)
   edit "patch.json"             Apply a batch of string replacements across multiple files
+  diag "problems.json"          Read IDE problem diagnostics and output precise code snippets
 
 \x1b[33mGlobal Flags:\x1b[0m
   --json                        Output in JSON format
@@ -277,6 +279,13 @@ async function main() {
                     throw new Error('Please provide a token to resolve.\nUsage: deepsift resolve "token"');
                 }
                 resolveCommand(projectPath, commandArgs[0], format);
+                break;
+
+            case 'diag':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a path to a problems JSON file.\nUsage: deepsift diag "problems.json"');
+                }
+                await diagCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
 
