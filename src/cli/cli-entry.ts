@@ -168,6 +168,7 @@ async function main() {
             case 's':
                 const skipSync = commandArgs.includes('--no-sync') || commandArgs.includes('-n');
                 const verboseSearch = commandArgs.includes('--verbose') || commandArgs.includes('-v');
+                const allRealmsSearch = commandArgs.includes('--all-realms');
                 
                 let filterPath: string | undefined;
                 const includeIdx = commandArgs.findIndex(arg => arg === '--include' || arg === '-i');
@@ -181,18 +182,33 @@ async function main() {
                     contextLines = parseInt(commandArgs[contextIdx + 1], 10);
                     if (isNaN(contextLines)) contextLines = undefined;
                 }
+                
+                let searchRealm: string | undefined = undefined;
+                const searchRealmIdx = commandArgs.indexOf('--realm');
+                if (searchRealmIdx !== -1 && searchRealmIdx + 1 < commandArgs.length) {
+                    searchRealm = commandArgs[searchRealmIdx + 1];
+                }
 
                 const searchQueries = commandArgs.filter((arg, idx) => {
                     if (arg.startsWith('-')) return false;
                     if (idx > 0 && (commandArgs[idx - 1] === '--include' || commandArgs[idx - 1] === '-i')) return false;
                     if (idx > 0 && (commandArgs[idx - 1] === '--context-lines' || commandArgs[idx - 1] === '-C')) return false;
+                    if (idx > 0 && commandArgs[idx - 1] === '--realm') return false;
                     return true;
                 });
                 
                 if (searchQueries.length === 0) {
                     throw new Error('Please provide at least one search query.\nUsage: deepsift search "your query"');
                 }
-                await searchCommand(projectPath, searchQueries, format, skipSync, verboseSearch, filterPath, compress, contextLines);
+                await searchCommand(projectPath, searchQueries, format, {
+                    skipSync,
+                    verbose: verboseSearch,
+                    filterPath,
+                    compress,
+                    contextLines,
+                    realm: searchRealm,
+                    allRealms: allRealmsSearch
+                });
                 break;
 
             case 'read':
@@ -215,7 +231,23 @@ async function main() {
             case 'i':
                 const force = commandArgs.includes('--force') || commandArgs.includes('-f');
                 const verboseIndex = commandArgs.includes('--verbose') || commandArgs.includes('-v');
-                await indexCommand(projectPath, force, format, verboseIndex);
+                
+                const allRealmsIdx = commandArgs.indexOf('--all-realms');
+                const allRealms = allRealmsIdx !== -1;
+                
+                const realmFlagIdx = commandArgs.indexOf('--realm');
+                let realm: string | undefined = undefined;
+                if (realmFlagIdx !== -1 && realmFlagIdx + 1 < commandArgs.length) {
+                    realm = commandArgs[realmFlagIdx + 1];
+                }
+
+                await indexCommand(projectPath, { 
+                    force, 
+                    format, 
+                    verbose: verboseIndex,
+                    realm,
+                    allRealms 
+                });
                 break;
 
             case 'watch':

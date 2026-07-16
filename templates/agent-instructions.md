@@ -14,7 +14,7 @@ You **MUST NOT** use your default IDE tools (`view_file`, `list_dir`, `grep_sear
 
 | Command | Description |
 |---|---|
-| `deepsift search "query"` | Semantic search enhanced with Graphify PageRank. Results are automatically boosted based on architectural importance (God Nodes) and community detection. Options: `--include` or `-i <path>` (filter path), `--no-sync` or `-n` (skip index update), `--verbose` or `-v` (show file index progress), `--context-lines N` or `-C N` (show N lines of context around matches) |
+| `deepsift search "query"` | Semantic search enhanced with Graphify PageRank. Options: `--include` or `-i <path>` (filter path), `--no-sync` or `-n` (skip index update), `--context-lines N` or `-C N`, `--realm <id>` (search a specific realm like 'skills'), `--all-realms` (search codebase + all realms) |
 | `deepsift read "file"` | **MANDATORY FOR READING FILES.** Read file contents and output highly compressed DEC_v2 tokens to save token context. Supports specific lines (e.g., `deepsift read "src/file.ts:10-50"`). Use `--no-compress` to get raw plain text. You can pass multiple files at once. |
 | `deepsift edit "patch.toon"` | **MANDATORY FOR EDITING.** Apply replacements via TOON-Patch v3. Create a `.toon` file on disk, then run this. Dictionary `[~token:value]`. Target files `📄 file/path`. **Format 1 (Zero Duplication):** Use `L10-L15` (or `L10`) to target exact lines: `L10-L15` \n `====` \n `new code...` \n `>>>>`. **Format 2 (Granular):** Replace a small string on a line: `L5:<<<<` \n `old` \n `====` \n `new` \n `>>>>`. **Format 3 (AI Copy-Paste):** Inside the new code, use `📋 filepath:Lstart-Lend` to inject code from any file. Indentation before `📋` will smartly format all copied lines! |
 | `deepsift diag "problems.json"` | Read an IDE-generated problems/diagnostics JSON array and output the exact files, errors, and precise code snippets surrounding the errors for quick context. |
@@ -23,6 +23,7 @@ You **MUST NOT** use your default IDE tools (`view_file`, `list_dir`, `grep_sear
 | `deepsift index --force` | Full re-index from scratch |
 | `deepsift status` | Check index statistics |
 | `deepsift config` | Interactive menu to configure which directories are indexed |
+| `deepsift realm list` | List all configured realms (e.g., 'code', 'skills', 'docs') and their paths. |
 | `deepsift arch` | **MANDATORY FOR FOLDER EXPLORATION.** Get project architecture blueprint utilizing Graphify communities. Automatically ignores directories configured under `excludeDirs` in `deepsift.config.json` |
 | `deepsift deps "filename"` | Find which files import/depend on a target |
 | `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) |
@@ -76,4 +77,10 @@ deepsift context "src/components/MyNewButton.tsx"
 
 # GOOD: Applying edits via DeepSift (requires patch.toon creation first)
 deepsift edit "patch.toon"
+
+# GOOD: Querying the skills database
+deepsift search "how to connect to bigquery" --realm skills
+
+# GOOD: Querying everything
+deepsift search "auth handler" --all-realms
 ```

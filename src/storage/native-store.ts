@@ -23,12 +23,15 @@ const EXE_PATH = process.platform === 'win32'
 export class NativeStore {
     private dbPath: string;
     private graphDbPath?: string;
+    private realmId?: string;
+    private projectPath?: string;
 
-    constructor(dbPath: string, graphDbPath?: string) {
+    constructor(dbPath: string, graphDbPath?: string, realmId?: string, projectPath?: string) {
         this.dbPath = dbPath;
         this.graphDbPath = graphDbPath;
+        this.realmId = realmId;
+        this.projectPath = projectPath;
         
-        // Ensure the executable exists
         if (!fs.existsSync(EXE_PATH)) {
             throw new Error(`Zig database executable not found at ${EXE_PATH}. Please compile it first.`);
         }
@@ -39,6 +42,8 @@ export class NativeStore {
             action,
             dbPath: this.dbPath,
             graphDbPath: this.graphDbPath,
+            realmId: this.realmId,
+            projectPath: this.projectPath,
             ...payload
         };
 

@@ -1,6 +1,7 @@
 import { NativeStore, BatchOperation } from '../storage/native-store.js';
 import { getFiles } from '../utils/file-walker.js';
 import { parseAST } from '../parsers/tree-sitter-parser.js';
+import { parseSkillFile } from '../parsers/skill-parser.js';
 import { getEmbeddings } from './embedder.js';
 import { isBinaryFile } from '../utils/binary-check.js';
 import * as crypto from 'crypto';
@@ -13,9 +14,11 @@ import { GraphClusterer } from '../graphify/graph-cluster.js';
 export class Indexer {
     private store: NativeStore;
     private isIndexing: boolean = false;
+    private parserProfile: 'code' | 'skill' | 'documentation';
 
-    constructor(store: NativeStore) {
+    constructor(store: NativeStore, parserProfile: 'code' | 'skill' | 'documentation' = 'code') {
         this.store = store;
+        this.parserProfile = parserProfile;
     }
 
     public async indexProject(
@@ -87,7 +90,13 @@ export class Indexer {
                     try {
                         const content = await fs.readFile(file, 'utf-8');
                         const ext = path.extname(file).replace('.', '');
-                        const chunks = parseAST(content, file, ext);
+                        
+                        let chunks;
+                        if (this.parserProfile === 'skill' && ext === 'md') {
+                            chunks = parseSkillFile(file, content);
+                        } else {
+                            chunks = parseAST(content, file, ext);
+                        }
                         
                         const existingMeta = allMetadata.get(file);
                         if (existingMeta) {

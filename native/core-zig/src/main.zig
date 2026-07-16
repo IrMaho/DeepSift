@@ -1,6 +1,7 @@
 const std = @import("std");
 const db = @import("db.zig");
 const graph = @import("graph.zig");
+const realm_mod = @import("realm.zig");
 
 const BatchOperation = struct {
     action: []const u8,
@@ -13,6 +14,8 @@ const Request = struct {
     action: []const u8,
     dbPath: []const u8,
     graphDbPath: ?[]const u8 = null,
+    realmId: ?[]const u8 = null,
+    projectPath: ?[]const u8 = null,
     metadata: ?db.FileMetadata = null,
     filePath: ?[]const u8 = null,
     chunks: ?[]db.Chunk = null,
@@ -22,7 +25,6 @@ const Request = struct {
     queryEmbedding: ?[db.VECTOR_BQ_U32_COUNT]u32 = null,
     batch: ?[]BatchOperation = null,
     
-    // Graph specific fields
     graphNodes: ?[]db.GraphNode = null,
     graphEdges: ?[]db.GraphEdge = null,
     startNodes: ?[]u32 = null,
@@ -189,15 +191,39 @@ pub fn main() !void {
 
     const req = parsed.value;
 
-    // Load Database
+    var resolved_db_path: []const u8 = req.dbPath;
+    var resolved_graph_path: ?[]const u8 = req.graphDbPath;
+    var realm_allocated_db = false;
+    var realm_allocated_graph = false;
+
+    if (req.projectPath) |pp| {
+        var rm = realm_mod.RealmManager.init(allocator, pp);
+        const r_db = rm.resolveDbPath(req.realmId, req.dbPath) catch null;
+        if (r_db) |rdp| {
+            resolved_db_path = rdp;
+            realm_allocated_db = true;
+        }
+        const r_graph = rm.resolveGraphPath(req.realmId, req.graphDbPath) catch null;
+        if (r_graph) |rgp| {
+            resolved_graph_path = rgp;
+            realm_allocated_graph = true;
+        }
+    }
+    defer if (realm_allocated_db) allocator.free(resolved_db_path);
+    defer {
+        if (realm_allocated_graph) {
+            if (resolved_graph_path) |rgp| allocator.free(rgp);
+        }
+    }
+
     std.debug.print("Loading database...\n", .{});
-    database.loadFromFile(io, req.dbPath) catch |err| {
+    database.loadFromFile(io, resolved_db_path) catch |err| {
         std.debug.print("Failed to load database: {any}\n", .{err});
     };
     std.debug.print("Database loaded.\n", .{});
 
     var graph_modified = false;
-    if (req.graphDbPath) |graphPath| {
+    if (resolved_graph_path) |graphPath| {
         std.debug.print("Loading graph database...\n", .{});
         graph_db.loadFromFile(io, graphPath) catch |err| {
             std.debug.print("Failed to load graph database: {any}\n", .{err});
@@ -423,13 +449,13 @@ pub fn main() !void {
     try writer.flush();
 
     if (modified) {
-        database.saveToFile(io, req.dbPath) catch |err| {
+        database.saveToFile(io, resolved_db_path) catch |err| {
             std.debug.print("Failed to save database: {any}\n", .{err});
         };
     }
     
     if (graph_modified) {
-        if (req.graphDbPath) |graphPath| {
+        if (resolved_graph_path) |graphPath| {
             graph_db.saveToFile(io, graphPath) catch |err| {
                 std.debug.print("Failed to save graph database: {any}\n", .{err});
             };
