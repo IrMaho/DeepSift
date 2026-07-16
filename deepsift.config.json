@@ -113,6 +113,14 @@
       ],
       "parserProfile": "skill",
       "autoIndex": true
+    },
+    "flutter_src": {
+      "displayName": "Realm: flutter_src",
+      "sourcePaths": [
+        "C:\\src2\\flutter"
+      ],
+      "parserProfile": "code",
+      "autoIndex": true
     }
   }
 }

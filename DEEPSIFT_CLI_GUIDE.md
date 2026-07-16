@@ -25,6 +25,9 @@ deepsift realm add backend_api --type code --source ../backend_repo
 
 # اضافه کردن مهارت‌های هوش مصنوعی
 deepsift realm add ai_skills --type skill --source ./skills
+
+# استفاده از سورس‌کد یک فریم‌ورک/پروژه خارجی (مانند سورس فلاتر) به عنوان مرجع یا مستندات در پروژه فعلی
+deepsift realm add flutter_src --type code --source C:\src2\flutter
 ```
 
 ### مشاهده و حذف قلمروها
@@ -45,6 +48,9 @@ deepsift realm remove backend_api
 ```bash
 # ایندکس کردن قلمرو جدیدی که ساختید (مثلاً مستندات فلاتر)
 deepsift index --realm flutter_docs
+
+# ایندکس کردن سورس فلاتر به عنوان رفرنس خارجی
+deepsift index --realm flutter_src
 
 # ایندکس کردن قلمرو پیش‌فرض پروژه (کدهای اصلی)
 deepsift index --realm code
