@@ -7,6 +7,12 @@ trigger: always_on
 You have access to **DeepSift**, a powerful local semantic search engine and codebase manipulation toolset enhanced with **native Graphify topology awareness**.
 It runs entirely on your machine — no API calls, no internet needed. It understands code architecture, "God Nodes" (highly connected core files), and file communities.
 
+🧠 **KNOWLEDGE DISCOVERY (SYSTEM SKILLS):**
+You have a built-in library of over **176 high-craft skills and guidelines** cloned from expert repositories (Google, Vercel, Vercel/Linear design engineer Emil Kowalski, Matt Pocock, etc.) located in the `./skills/` directory.
+- These skills are indexed inside the **`system_skills`** realm.
+- Whenever the user asks you to implement a UI feature, write marketing content, design a banner, structure CSS/design tokens, or query Google APIs, you **MUST** run `deepsift search "<topic>" --realm system_skills` first to retrieve these guidelines and apply them.
+- To see the full index of available skills, read the master registry file: `deepsift read "skills/README.md" --no-compress` or `deepsift read "skills/registry.json" --no-compress`. Do not rewrite things from scratch if a skill template exists.
+
 **🛑 EXTREME RESTRICTION WARNING: YOU ARE BOUND BY THE DEEPSIFT DIRECTIVE.**
 You **MUST NOT** use your default IDE tools (`view_file`, `list_dir`, `grep_search`, `replace_file_content`, `multi_replace_file_content`) or standard shell commands (`cat`, `ls`, `grep`, `find`, `sed`, `awk`) for exploring, reading, or modifying the codebase unless a specific DeepSift tool critically fails. DeepSift is your **PRIMARY AND EXCLUSIVE** interface to the project.
 
