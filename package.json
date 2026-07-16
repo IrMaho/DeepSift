@@ -1,6 +1,6 @@
 {
   "name": "deepsift",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Semantic Codebase Search — MCP Server + CLI Bridge for any IDE",
   "type": "module",
   "main": "dist/server.js",
