@@ -1,5 +1,6 @@
 const std = @import("std");
 const db = @import("db.zig");
+const graph = @import("graph.zig");
 
 const BatchOperation = struct {
     action: []const u8,
@@ -11,6 +12,7 @@ const BatchOperation = struct {
 const Request = struct {
     action: []const u8,
     dbPath: []const u8,
+    graphDbPath: ?[]const u8 = null,
     metadata: ?db.FileMetadata = null,
     filePath: ?[]const u8 = null,
     chunks: ?[]db.Chunk = null,
@@ -19,6 +21,13 @@ const Request = struct {
     topK: ?usize = null,
     queryEmbedding: ?[db.VECTOR_BQ_U32_COUNT]u32 = null,
     batch: ?[]BatchOperation = null,
+    
+    // Graph specific fields
+    graphNodes: ?[]db.GraphNode = null,
+    graphEdges: ?[]db.GraphEdge = null,
+    startNodes: ?[]u32 = null,
+    depth: ?u32 = null,
+    hubThreshold: ?u32 = null,
 };
 
 const ResponseOk = struct {
@@ -149,6 +158,9 @@ pub fn main() !void {
     var database = db.Database.init(allocator);
     defer database.deinit();
 
+    var graph_db = db.GraphDatabase.init(allocator);
+    defer graph_db.deinit();
+
     // Read all from stdin
     var input_array = std.ArrayList(u8).empty;
     defer input_array.deinit(allocator);
@@ -184,10 +196,43 @@ pub fn main() !void {
     };
     std.debug.print("Database loaded.\n", .{});
 
+    var graph_modified = false;
+    if (req.graphDbPath) |graphPath| {
+        std.debug.print("Loading graph database...\n", .{});
+        graph_db.loadFromFile(io, graphPath) catch |err| {
+            std.debug.print("Failed to load graph database: {any}\n", .{err});
+        };
+        std.debug.print("Graph database loaded.\n", .{});
+    }
 
     var modified = false;
 
-    if (std.mem.eql(u8, req.action, "saveMetadata")) {
+    if (std.mem.eql(u8, req.action, "saveGraph")) {
+        std.debug.print("Processing saveGraph...\n", .{});
+        if (req.graphNodes) |nodes| {
+            graph_db.reset();
+            try graph_db.nodes.appendSlice(allocator, nodes);
+            if (req.graphEdges) |edges| {
+                try graph_db.edges.appendSlice(allocator, edges);
+            }
+            graph_modified = true;
+            try writeResponse(allocator, &writer.interface, ResponseOk{});
+        }
+    } else if (std.mem.eql(u8, req.action, "graphBFS")) {
+        if (req.startNodes) |sn| {
+            var algos = graph.GraphAlgorithms.init(allocator, &graph_db);
+            defer algos.deinit();
+            
+            const depth = req.depth orelse 3;
+            const threshold = req.hubThreshold orelse 50;
+            
+            var result = try algos.bfs(sn, depth, threshold);
+            defer result.deinit(allocator);
+            
+            // For now just return the OK, we should ideally return the nodes
+            try writeResponse(allocator, &writer.interface, ResponseOk{});
+        }
+    } else if (std.mem.eql(u8, req.action, "saveMetadata")) {
         std.debug.print("Processing saveMetadata...\n", .{});
         if (req.metadata) |m| {
             try database.addMetadata(m);
@@ -381,5 +426,13 @@ pub fn main() !void {
         database.saveToFile(io, req.dbPath) catch |err| {
             std.debug.print("Failed to save database: {any}\n", .{err});
         };
+    }
+    
+    if (graph_modified) {
+        if (req.graphDbPath) |graphPath| {
+            graph_db.saveToFile(io, graphPath) catch |err| {
+                std.debug.print("Failed to save graph database: {any}\n", .{err});
+            };
+        }
     }
 }

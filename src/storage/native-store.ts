@@ -22,9 +22,11 @@ const EXE_PATH = process.platform === 'win32'
 
 export class NativeStore {
     private dbPath: string;
+    private graphDbPath?: string;
 
-    constructor(dbPath: string) {
+    constructor(dbPath: string, graphDbPath?: string) {
         this.dbPath = dbPath;
+        this.graphDbPath = graphDbPath;
         
         // Ensure the executable exists
         if (!fs.existsSync(EXE_PATH)) {
@@ -36,6 +38,7 @@ export class NativeStore {
         const req = {
             action,
             dbPath: this.dbPath,
+            graphDbPath: this.graphDbPath,
             ...payload
         };
 
@@ -273,6 +276,13 @@ export class NativeStore {
 
     public close() {
         // No-op for the native store, as the process exits after each request.
+    }
+
+    public saveGraph(nodes: any[], edges: any[]) {
+        this.executeAction('saveGraph', {
+            graphNodes: nodes,
+            graphEdges: edges
+        });
     }
 
     public getStatus() {

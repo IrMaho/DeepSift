@@ -6,6 +6,9 @@ import { isBinaryFile } from '../utils/binary-check.js';
 import * as crypto from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { GraphExtractor } from '../graphify/graph-extractor.js';
+import { GraphBuilder } from '../graphify/graph-builder.js';
+import { GraphClusterer } from '../graphify/graph-cluster.js';
 
 export class Indexer {
     private store: NativeStore;
@@ -135,6 +138,41 @@ export class Indexer {
                     }
                     this.store.executeBatch(subBatch);
                 }
+            }
+            
+            // Phase 4: Graph Building
+            if (onProgress) {
+                onProgress(totalFilesToProcess, totalFilesToProcess, "Building dependency graph...");
+            }
+            try {
+                const extractor = new GraphExtractor();
+                const builder = new GraphBuilder();
+                
+                for (const file of allFiles) {
+                    if (await isBinaryFile(file)) continue;
+                    try {
+                        const result = extractor.extractFromFile(file);
+                        builder.addExtraction(result);
+                    } catch (err) {
+                        // ignore unparseable for graph
+                    }
+                }
+                
+                const { nodes, edges } = builder.build();
+                
+                if (onProgress) {
+                    onProgress(totalFilesToProcess, totalFilesToProcess, "Detecting communities...");
+                }
+                const clusterer = new GraphClusterer(nodes, edges);
+                clusterer.detectCommunities(10, 1.0);
+                
+                if (onProgress) {
+                    onProgress(totalFilesToProcess, totalFilesToProcess, "Saving graph database...");
+                }
+                this.store.saveGraph(nodes, edges);
+                
+            } catch (err) {
+                console.error("Failed to build graph:", err);
             }
 
         } finally {

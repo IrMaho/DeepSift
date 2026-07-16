@@ -28,6 +28,25 @@ pub const SearchResult = struct {
     match_type: []const u8,
 };
 
+pub const GraphNode = struct {
+    id: []const u8,
+    label: []const u8,
+    source_file: []const u8,
+    source_location: []const u8,
+    community: u32,
+    in_degree: u32,
+    out_degree: u32,
+    page_rank: f32,
+};
+
+pub const GraphEdge = struct {
+    source: u32,
+    target: u32,
+    relation: []const u8,
+    confidence: []const u8,
+};
+
+
 pub const Database = struct {
     allocator: mem.Allocator,
     arena: std.heap.ArenaAllocator,
@@ -232,5 +251,157 @@ pub const Database = struct {
             .chunk_count = meta.chunk_count,
         };
         try self.metadata.put(duped_meta.file_path, duped_meta);
+    }
+};
+
+pub const GraphDatabase = struct {
+    allocator: mem.Allocator,
+    arena: std.heap.ArenaAllocator,
+    nodes: std.ArrayList(GraphNode),
+    edges: std.ArrayList(GraphEdge),
+
+    const Self = @This();
+
+    pub fn init(allocator: mem.Allocator) Self {
+        return Self{
+            .allocator = allocator,
+            .arena = std.heap.ArenaAllocator.init(allocator),
+            .nodes = std.ArrayList(GraphNode).empty,
+            .edges = std.ArrayList(GraphEdge).empty,
+        };
+    }
+
+    pub fn deinit(self: *Self) void {
+        self.nodes.deinit(self.allocator);
+        self.edges.deinit(self.allocator);
+        self.arena.deinit();
+    }
+
+    pub fn reset(self: *Self) void {
+        self.nodes.clearRetainingCapacity();
+        self.edges.clearRetainingCapacity();
+        _ = self.arena.reset(.retain_capacity);
+    }
+
+    fn writeString(writer: anytype, str: []const u8) !void {
+        try writer.writeInt(u32, @intCast(str.len), .little);
+        try writer.writeAll(str);
+    }
+
+    fn readString(reader: anytype, alloc: mem.Allocator) ![]const u8 {
+        const len = try reader.takeInt(u32, .little);
+        const buf = try alloc.alloc(u8, len);
+        try reader.readSliceAll(buf);
+        return buf;
+    }
+
+    pub fn saveToFile(self: *Self, io: anytype, file_path: []const u8) !void {
+        var uncompressed_data = std.Io.Writer.Allocating.init(self.allocator);
+        defer uncompressed_data.deinit();
+        const writer = &uncompressed_data.writer;
+
+        try writer.writeAll("GRF1");
+
+        try writer.writeInt(u32, @intCast(self.nodes.items.len), .little);
+        for (self.nodes.items) |node| {
+            try writeString(writer, node.id);
+            try writeString(writer, node.label);
+            try writeString(writer, node.source_file);
+            try writeString(writer, node.source_location);
+            try writer.writeInt(u32, node.community, .little);
+            try writer.writeInt(u32, node.in_degree, .little);
+            try writer.writeInt(u32, node.out_degree, .little);
+            try writer.writeInt(u32, @bitCast(node.page_rank), .little);
+        }
+
+        try writer.writeInt(u32, @intCast(self.edges.items.len), .little);
+        for (self.edges.items) |edge| {
+            try writer.writeInt(u32, edge.source, .little);
+            try writer.writeInt(u32, edge.target, .little);
+            try writeString(writer, edge.relation);
+            try writeString(writer, edge.confidence);
+        }
+
+        const file = try std.Io.Dir.cwd().createFile(io, file_path, .{});
+        defer file.close(io);
+        
+        var out_buf: [4096]u8 = undefined;
+        var file_writer = file.writer(io, &out_buf);
+        
+        try file_writer.interface.writeAll(uncompressed_data.written());
+        try file_writer.flush();
+    }
+
+    pub fn loadFromFile(self: *Self, io: anytype, file_path: []const u8) !void {
+        const file = std.Io.Dir.cwd().openFile(io, file_path, .{}) catch |err| {
+            if (err == error.FileNotFound) return;
+            return err;
+        };
+        defer file.close(io);
+
+        const stat = try file.stat(io);
+        if (stat.size == 0) return;
+
+        var in_buf: [4096]u8 = undefined;
+        var file_reader = file.reader(io, &in_buf);
+
+        var uncompressed = std.Io.Writer.Allocating.init(self.allocator);
+        defer uncompressed.deinit();
+
+        _ = file_reader.interface.streamRemaining(&uncompressed.writer) catch |err| {
+            std.debug.print("db: Read error: {any}\n", .{err});
+        };
+
+        var data_reader: std.Io.Reader = .fixed(uncompressed.written());
+
+        var magic: [4]u8 = undefined;
+        try data_reader.readSliceAll(&magic);
+        if (!mem.eql(u8, &magic, "GRF1")) return error.InvalidFormat;
+
+        self.reset();
+        const arena_alloc = self.arena.allocator();
+
+        const node_count = try data_reader.takeInt(u32, .little);
+        try self.nodes.ensureTotalCapacity(self.allocator, node_count);
+        var i: u32 = 0;
+        while (i < node_count) : (i += 1) {
+            const id = try readString(&data_reader, arena_alloc);
+            const label = try readString(&data_reader, arena_alloc);
+            const source_file = try readString(&data_reader, arena_alloc);
+            const source_location = try readString(&data_reader, arena_alloc);
+            const community = try data_reader.takeInt(u32, .little);
+            const in_degree = try data_reader.takeInt(u32, .little);
+            const out_degree = try data_reader.takeInt(u32, .little);
+            const page_rank_bits = try data_reader.takeInt(u32, .little);
+            const page_rank: f32 = @bitCast(page_rank_bits);
+            
+            self.nodes.appendAssumeCapacity(.{
+                .id = id,
+                .label = label,
+                .source_file = source_file,
+                .source_location = source_location,
+                .community = community,
+                .in_degree = in_degree,
+                .out_degree = out_degree,
+                .page_rank = page_rank,
+            });
+        }
+
+        const edge_count = try data_reader.takeInt(u32, .little);
+        try self.edges.ensureTotalCapacity(self.allocator, edge_count);
+        var j: u32 = 0;
+        while (j < edge_count) : (j += 1) {
+            const source = try data_reader.takeInt(u32, .little);
+            const target = try data_reader.takeInt(u32, .little);
+            const relation = try readString(&data_reader, arena_alloc);
+            const confidence = try readString(&data_reader, arena_alloc);
+            
+            self.edges.appendAssumeCapacity(.{
+                .source = source,
+                .target = target,
+                .relation = relation,
+                .confidence = confidence,
+            });
+        }
     }
 };
