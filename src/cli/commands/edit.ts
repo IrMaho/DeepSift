@@ -15,6 +15,74 @@ export interface PatchPayload {
     files: FileEdit[];
 }
 
+function parseToonPatch(content: string): PatchPayload {
+    const dictionary: Record<string, string> = {};
+    const files: FileEdit[] = [];
+    
+    const lines = content.split('\n');
+    let currentFile: FileEdit | null = null;
+    let inSearch = false;
+    let inReplace = false;
+    let currentSearch: string[] = [];
+    let currentReplace: string[] = [];
+
+    for (const line of lines) {
+        if (line.trim().startsWith('[') && line.trim().endsWith(']') && Object.keys(dictionary).length === 0 && files.length === 0) {
+            const dictStr = line.trim().slice(1, -1);
+            if (dictStr) {
+                const pairs = dictStr.split(',');
+                for (const pair of pairs) {
+                    const colonIdx = pair.indexOf(':');
+                    if (colonIdx !== -1) {
+                        dictionary[pair.slice(0, colonIdx).trim()] = pair.slice(colonIdx + 1).trim();
+                    }
+                }
+            }
+            continue;
+        }
+
+        if (line.startsWith('📄')) {
+            currentFile = { file: line.replace('📄', '').trim(), edits: [] };
+            files.push(currentFile);
+            continue;
+        }
+
+        if (line.startsWith('<<<<')) {
+            inSearch = true;
+            inReplace = false;
+            currentSearch = [];
+            currentReplace = [];
+            continue;
+        }
+
+        if (line.startsWith('====')) {
+            inSearch = false;
+            inReplace = true;
+            continue;
+        }
+
+        if (line.startsWith('>>>>')) {
+            inSearch = false;
+            inReplace = false;
+            if (currentFile) {
+                currentFile.edits.push({
+                    search: currentSearch.join('\n'),
+                    replace: currentReplace.join('\n')
+                });
+            }
+            continue;
+        }
+
+        if (inSearch) {
+            currentSearch.push(line);
+        } else if (inReplace) {
+            currentReplace.push(line);
+        }
+    }
+
+    return { dictionary, files };
+}
+
 export async function editCommand(
     projectPath: string,
     patchFilePath: string,
@@ -26,24 +94,33 @@ export async function editCommand(
         throw new Error(`Patch file not found: ${fullPatchPath}`);
     }
 
-    let parsedData: any;
-    try {
-        const content = fs.readFileSync(fullPatchPath, 'utf-8');
-        parsedData = JSON.parse(content);
-    } catch (e: any) {
-        throw new Error(`Invalid JSON in patch file: ${e.message}`);
-    }
-
-    let patchData: FileEdit[];
+    let patchData: FileEdit[] = [];
     let dictionary: Record<string, string> | undefined;
 
-    if (Array.isArray(parsedData)) {
-        patchData = parsedData;
-    } else if (parsedData && Array.isArray(parsedData.files)) {
-        patchData = parsedData.files;
-        dictionary = parsedData.dictionary;
-    } else {
-        throw new Error('Patch file must contain an array of FileEdit objects, or a { dictionary, files } object.');
+    const content = fs.readFileSync(fullPatchPath, 'utf-8');
+    try {
+        const parsedData = JSON.parse(content);
+        if (Array.isArray(parsedData)) {
+            patchData = parsedData;
+        } else if (parsedData && Array.isArray(parsedData.files)) {
+            patchData = parsedData.files;
+            dictionary = parsedData.dictionary;
+        } else {
+            throw new Error('Invalid JSON schema');
+        }
+    } catch (e: any) {
+        // Fallback to TOON-Patch custom parser if JSON parsing fails
+        try {
+            const parsedToon = parseToonPatch(content);
+            patchData = parsedToon.files;
+            dictionary = parsedToon.dictionary;
+        } catch (err: any) {
+            throw new Error(`Failed to parse patch file as JSON or TOON format: ${err.message}`);
+        }
+    }
+
+    if (patchData.length === 0) {
+        throw new Error('Patch file contains no valid file edits.');
     }
 
     // Sort dictionary keys by length descending to safely expand longer tokens first

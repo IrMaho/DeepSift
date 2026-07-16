@@ -1,0 +1,11 @@
+[~f:function,~L:console.log]
+📄 scratch/test-edit.txt
+<<<<
+private async ~f init() {
+    ~L("system fully started!!!");
+}
+====
+export ~f shutdown() {
+    ~L("system going down!");
+}
+>>>>
