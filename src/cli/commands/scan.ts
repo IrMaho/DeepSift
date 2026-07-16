@@ -3,9 +3,11 @@ import { NativeStore } from '../../storage/native-store.js';
 import { getDbPath } from '../cli-paths.js';
 import { calculateCosineSimilarity } from '../../utils/similarity.js';
 
-export type ScanTarget = 'tokens' | 'i18n' | 'duplicates' | 'conventions' | 'assets';
+import { learnCommand } from './learn.js';
 
-const VALID_TARGETS: ScanTarget[] = ['tokens', 'i18n', 'duplicates', 'conventions', 'assets'];
+export type ScanTarget = 'tokens' | 'i18n' | 'duplicates' | 'conventions' | 'assets' | 'patterns';
+
+const VALID_TARGETS: ScanTarget[] = ['tokens', 'i18n', 'duplicates', 'conventions', 'assets', 'patterns'];
 
 const PHASE_MAP: Record<string, { emoji: string; label: string; phase: string }> = {
     tokens:      { emoji: '🔬', label: 'Property Miner',    phase: 'F2' },
@@ -82,6 +84,8 @@ export async function scanCommand(
         if (violationCount === 0) printSuccess('Codebase follows basic conventions!');
         else printSuccess(`Found ${violationCount} convention violations.`);
         
+    } else if (target === 'patterns') {
+        await learnCommand(projectPath, target);
     } else {
         const info = PHASE_MAP[target];
         process.stdout.write(

@@ -22,6 +22,7 @@ interface ContextData {
     designTokensSample: string;
     temporalWarnings: string[];
     timeBombs?: any[];
+    learnedPatterns?: any[];
 }
 
 interface SkillMatch {
@@ -111,6 +112,10 @@ export class PlannerEngine {
 
         if (dna.testing?.timeBombs) {
             data.timeBombs = dna.testing.timeBombs;
+        }
+
+        if (dna.conventions?.learnedPatterns) {
+            data.learnedPatterns = dna.conventions.learnedPatterns;
         }
 
         if (dna.conventions?.naming) {
@@ -231,6 +236,11 @@ export class PlannerEngine {
         }
         if (context.conventions) {
             dnaConstraints.push(`📛 Naming: ${context.conventions}`);
+        }
+        if (context.learnedPatterns) {
+            for (const p of context.learnedPatterns) {
+                dnaConstraints.push(`🧠 Pattern [${p.category}]: ${p.name} - ${p.description}`);
+            }
         }
         for (const tw of context.temporalWarnings) {
             dnaConstraints.push(tw);

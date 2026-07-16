@@ -98,6 +98,17 @@ export interface StructureTemplate {
     confidence: number;
 }
 
+export interface LearnedPattern {
+    category: 'StateManagement' | 'Networking' | 'ComponentStructure' | 'Styling' | 'ErrorHandling' | 'Other';
+    name: string;
+    description: string;
+    evidence: {
+        filePaths: string[];
+        frequency: number;
+    };
+    snippets: string[];
+}
+
 export interface GraphNode {
     filePath: string;
     inDegree: number;
@@ -288,6 +299,7 @@ export interface ProjectDNA {
         naming: NamingConventions;
         structureTemplate: StructureTemplate | null;
         importPatterns: string[];
+        learnedPatterns?: LearnedPattern[];
     };
 
     assets: ResourceMap;

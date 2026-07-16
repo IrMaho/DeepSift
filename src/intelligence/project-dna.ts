@@ -119,6 +119,15 @@ export async function generateDNA(
     if (onProgress) onProgress('temporal', 'Mining temporal dynamics and AI regressions...');
     integrateTemporalMiner(projectPath, dna, onProgress);
 
+    // Read learned patterns if they exist
+    const learnedPatternsPath = path.join(projectPath, '.deepsift', 'learned-patterns.json');
+    if (fs.existsSync(learnedPatternsPath)) {
+        try {
+            dna.conventions.learnedPatterns = JSON.parse(fs.readFileSync(learnedPatternsPath, 'utf-8'));
+            if (onProgress) onProgress('patterns', `Loaded ${dna.conventions.learnedPatterns?.length} auto-learned patterns.`);
+        } catch { /* skip */ }
+    }
+
     if (onProgress) onProgress('rules', 'Generating rules from discovered data...');
     generateRules(dna);
 
@@ -434,6 +443,16 @@ export function formatDNASummary(dna: ProjectDNA): string {
     lines.push(`- **File Naming:** ${dna.conventions.naming.files.dominant}`);
     lines.push(`- **Class Naming:** ${dna.conventions.naming.classes.dominant}`);
     lines.push(`- **Function Naming:** ${dna.conventions.naming.functions.dominant}`);
+    
+    if (dna.conventions.learnedPatterns && dna.conventions.learnedPatterns.length > 0) {
+        lines.push('');
+        lines.push('## 🧠 Learned Coding Patterns (Auto-Discovered)');
+        dna.conventions.learnedPatterns.forEach(p => {
+            lines.push(`- **${p.category}**: ${p.name} (Confidence: ${(p.evidence.frequency * 100).toFixed(0)}%)`);
+            lines.push(`  ↳ ${p.description}`);
+        });
+    }
+    
     lines.push('');
 
     if (dna.temporal) {
