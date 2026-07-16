@@ -6,7 +6,7 @@ import { printInfo, printSuccess, printError } from '../cli-output.js';
 import { getDbPath } from '../cli-paths.js';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
-
+import { dnaCommand } from './dna.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -181,6 +181,12 @@ export async function initCommand(projectPath: string) {
         printSuccess(`Initial index complete: ${stats.files} files, ${stats.chunks} chunks`);
     } catch (err: any) {
         printError(`Indexing failed: ${err.message}`);
+    }
+
+    try {
+        await dnaCommand(projectPath, false, 'plain');
+    } catch (err: any) {
+        printError(`DNA generation failed: ${err.message}`);
     }
 
     printSuccess('DeepSift is ready! The AI agent can now use terminal commands to search your codebase.');

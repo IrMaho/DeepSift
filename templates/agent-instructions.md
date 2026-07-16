@@ -49,7 +49,8 @@ Any violation of these rules means you have failed your directive. You MUST harn
 9. **⚙️ MULTI-QUERY EFFICIENCY:** Batch multiple queries into a single command (`deepsift search "q1" "q2"`) to optimize speed.
 10. **🧬 STRICT DNA FILTERING & META-ONLY CHECK:**
     - **NEVER** retrieve the entire DNA file blindly.
-    - **ALWAYS** check DNA metadata first: `deepsift dna --show --meta`.
+    - **ALWAYS** run `deepsift dna` first to generate DNA (takes ~30s).
+    - **THEN** check DNA metadata: `deepsift dna --show --meta`.
     - **PAGINATE AND FILTER:** Use `--limit`, `--offset`, `--path-filter`, and `--query` to extract exact TOON trees.
 11. **🕸️ GRAPH TOPOLOGY & GOD NODES:** Always use `deepsift dna --show --section architecture` to map out spaghetti vs modular zones and identify dangerous Core Files (God Nodes) before heavy refactoring.
 

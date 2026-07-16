@@ -48,7 +48,8 @@ Use the terminal commands below to search, analyze, and understand the codebase.
 11. **Index Maintenance:** Run `deepsift index --force` after performing major refactorings or code changes to ensure search queries reflect the latest code state.
 12. **Strict DNA Filtering & Meta-Only Check:** The Project DNA is saved in `.toon` format (Token-Oriented Object Notation) which is 100% human-readable and LLM-readable text, saving ~60% size losslessly.
     - **NEVER** retrieve the entire DNA file blindly. It will overflow your context window!
-    - **ALWAYS** check the DNA metadata first by running `deepsift dna --show --meta` to understand which sections exist and their respective record counts.
+    - **ALWAYS** run `deepsift dna` first to generate the DNA (takes ~30s).
+    - **THEN** check the DNA metadata by running `deepsift dna --show --meta` to understand which sections exist and their respective record counts.
     - **PAGINATE AND FILTER:** Use `--limit <number>` and `--offset <number>` to load list arrays (such as tokens or assets) in pages.
     - **PATH FILTERING:** Use `--path-filter <path_prefix>` to fetch tokens or assets defined inside a specific directory.
     - **KEYWORD FILTERING:** Use `--query <keyword>` to prune non-matching keys and isolate only relevant JSON/TOON trees.
@@ -81,7 +82,8 @@ deepsift read "src/core/indexer.ts" "src/utils/config.ts:10-40"
 # MANDATORY: Before creating a new file
 deepsift context "src/components/MyNewButton.tsx"
 
-# Step 1: Analyze DNA structure and token/asset counts without retrieving records
+# Step 1: Generate DNA (takes ~30s) and then analyze DNA structure and metadata
+deepsift dna
 deepsift dna --show --meta
 
 # Step 2: Retrieve only the first 50 color tokens defined inside the color-editor folder
