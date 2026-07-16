@@ -2,12 +2,17 @@ import fs from 'fs';
 import path from 'path';
 import { printResult, printSuccess, printError, printInfo, OutputFormat } from '../cli-output.js';
 
+export interface EditOperation {
+    type: 'search' | 'line';
+    search?: string;
+    replace: string;
+    startLine?: number;
+    endLine?: number;
+}
+
 export interface FileEdit {
     file: string;
-    edits: {
-        search: string;
-        replace: string;
-    }[];
+    edits: EditOperation[];
 }
 
 export interface PatchPayload {
@@ -25,6 +30,9 @@ function parseToonPatch(content: string): PatchPayload {
     let inReplace = false;
     let currentSearch: string[] = [];
     let currentReplace: string[] = [];
+    let currentStartLine: number | undefined;
+    let currentEndLine: number | undefined;
+    let currentType: 'search' | 'line' = 'search';
 
     for (const line of lines) {
         if (line.trim().startsWith('[') && line.trim().endsWith(']') && Object.keys(dictionary).length === 0 && files.length === 0) {
@@ -47,7 +55,21 @@ function parseToonPatch(content: string): PatchPayload {
             continue;
         }
 
+        // Line range match: L10-L15 or L10-15 or L10
+        const lineMatch = line.match(/^L(\d+)(?:-L?(\d+))?(?::<<<<)?$/);
+        if (lineMatch) {
+            currentType = 'line';
+            currentStartLine = parseInt(lineMatch[1], 10);
+            currentEndLine = lineMatch[2] ? parseInt(lineMatch[2], 10) : currentStartLine;
+            inSearch = line.endsWith('<<<<'); // If it's a targeted search L10:<<<< it starts the search block
+            inReplace = false;
+            currentSearch = [];
+            currentReplace = [];
+            continue;
+        }
+
         if (line.startsWith('<<<<')) {
+            currentType = 'search';
             inSearch = true;
             inReplace = false;
             currentSearch = [];
@@ -65,11 +87,37 @@ function parseToonPatch(content: string): PatchPayload {
             inSearch = false;
             inReplace = false;
             if (currentFile) {
-                currentFile.edits.push({
-                    search: currentSearch.join('\n'),
-                    replace: currentReplace.join('\n')
-                });
+                if (currentType === 'line' && currentStartLine) {
+                    if (currentSearch.length > 0) {
+                        // Targeted search L10:<<<< ... ==== ... >>>>
+                        currentFile.edits.push({
+                            type: 'search',
+                            search: currentSearch.join('\n'),
+                            replace: currentReplace.join('\n'),
+                            startLine: currentStartLine,
+                            endLine: currentEndLine
+                        });
+                    } else {
+                        // Line replacement
+                        currentFile.edits.push({
+                            type: 'line',
+                            replace: currentReplace.join('\n'),
+                            startLine: currentStartLine,
+                            endLine: currentEndLine
+                        });
+                    }
+                } else {
+                    currentFile.edits.push({
+                        type: 'search',
+                        search: currentSearch.join('\n'),
+                        replace: currentReplace.join('\n')
+                    });
+                }
             }
+            // reset
+            currentType = 'search';
+            currentStartLine = undefined;
+            currentEndLine = undefined;
             continue;
         }
 
@@ -154,19 +202,62 @@ export async function editCommand(
             let fileContent = fs.readFileSync(fullFilePath, 'utf-8');
             let modified = false;
 
-            for (let i = 0; i < filePatch.edits.length; i++) {
-                const edit = filePatch.edits[i];
+            const editsWithLines = filePatch.edits.filter(e => e.startLine !== undefined);
+            const globalSearches = filePatch.edits.filter(e => e.startLine === undefined);
+
+            editsWithLines.sort((a, b) => b.startLine! - a.startLine!);
+
+            let fileLines = fileContent.split('\n');
+
+            for (let i = 0; i < editsWithLines.length; i++) {
+                const edit = editsWithLines[i];
+                const startLine = edit.startLine!;
+                const endLine = edit.endLine || startLine;
+                const replaceStr = expandText(edit.replace);
+                
+                const startIdx = startLine - 1;
+                const endIdx = endLine - 1;
+
+                if (startIdx < 0 || startIdx >= fileLines.length || endIdx >= fileLines.length || startIdx > endIdx) {
+                    errors.push(`[Warning] Invalid line range ${startLine}-${endLine} in ${filePatch.file}`);
+                    continue;
+                }
+
+                if (edit.type === 'search' || edit.search) {
+                    const searchStr = expandText(edit.search || '');
+                    const chunk = fileLines.slice(startIdx, endIdx + 1).join('\n');
+                    if (chunk.includes(searchStr)) {
+                        const newChunk = chunk.replace(searchStr, replaceStr);
+                        const newChunkLines = newChunk.split('\n');
+                        fileLines.splice(startIdx, endIdx - startIdx + 1, ...newChunkLines);
+                        modified = true;
+                        totalReplacements++;
+                    } else {
+                        errors.push(`[Warning] Targeted search not found at lines ${startLine}-${endLine} in ${filePatch.file}`);
+                    }
+                } else {
+                    // Line replacement
+                    const newChunkLines = replaceStr.split('\n');
+                    fileLines.splice(startIdx, endIdx - startIdx + 1, ...newChunkLines);
+                    modified = true;
+                    totalReplacements++;
+                }
+            }
+
+            fileContent = fileLines.join('\n');
+
+            for (let i = 0; i < globalSearches.length; i++) {
+                const edit = globalSearches[i];
+                if (!edit.search) continue;
                 const searchStr = expandText(edit.search);
                 const replaceStr = expandText(edit.replace);
 
                 if (fileContent.includes(searchStr)) {
-                    // Replace all occurrences just in case, or just the first?
-                    // Typically search & replace should be exact.
                     fileContent = fileContent.replace(searchStr, replaceStr);
                     modified = true;
                     totalReplacements++;
                 } else {
-                    errors.push(`[Warning] Exact match not found in ${filePatch.file} for edit #${i + 1}`);
+                    errors.push(`[Warning] Exact match not found in ${filePatch.file}`);
                 }
             }
 

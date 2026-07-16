@@ -1,0 +1,7 @@
+Line 1: A
+Line 2: Z
+Line 3: C
+Line 4: D
+Line 5 and 6 replaced!
+Line 5 and 6 replaced twice!
+Line 7: G
