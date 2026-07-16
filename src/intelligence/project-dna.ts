@@ -6,6 +6,7 @@ import { analyzeArchitecture } from '../analyzers/graph-analyzer.js';
 import { detectSimilarities } from '../analyzers/similarity-engine.js';
 import { mapResources } from '../analyzers/resource-mapper.js';
 import { NativeStore } from '../storage/native-store.js';
+import { integrateTemporalMiner } from './temporal-analyzer.js';
 import fs from 'fs';
 import path from 'path';
 import { jsonToToon, toonToJson } from '../utils/toon-serializer.js';
@@ -110,6 +111,9 @@ export async function generateDNA(
 
     if (onProgress) onProgress('resources', 'Mapping static resources and icons...');
     integrateResourceMapper(projectPath, dna, onProgress);
+
+    if (onProgress) onProgress('temporal', 'Mining temporal dynamics and AI regressions...');
+    integrateTemporalMiner(projectPath, dna, onProgress);
 
     if (onProgress) onProgress('rules', 'Generating rules from discovered data...');
     generateRules(dna);
@@ -427,6 +431,14 @@ export function formatDNASummary(dna: ProjectDNA): string {
     lines.push(`- **Class Naming:** ${dna.conventions.naming.classes.dominant}`);
     lines.push(`- **Function Naming:** ${dna.conventions.naming.functions.dominant}`);
     lines.push('');
+
+    if (dna.temporal) {
+        lines.push('## ⏳ Temporal Dynamics');
+        lines.push(`- **Bottlenecks:** ${dna.temporal.bottlenecks.length}`);
+        lines.push(`- **Dead Zones:** ${dna.temporal.deadZones.length}`);
+        lines.push(`- **Uncommitted Anomalies:** ${dna.temporal.recentUncommittedAnomalies?.length || 0}`);
+        lines.push('');
+    }
 
     if (dna.rules.length > 0) {
         lines.push('## 📜 Rules');

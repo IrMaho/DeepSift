@@ -159,6 +159,23 @@ export interface CreationContext {
     conventionReminders: string[];
 }
 
+export interface TemporalDNA {
+    godNodeAges: {
+        filePath: string;
+        createdAt: string;
+        totalCommits: number;
+        recentCommits: number;
+        contributors: string[];
+    }[];
+    bottlenecks: string[];
+    deadZones: {
+        filePath: string;
+        lastModified: string;
+        daysSinceModified: number;
+    }[];
+    recentUncommittedAnomalies?: any[];
+}
+
 export interface ProjectDNA {
     version: string;
     generatedAt: string;
@@ -216,6 +233,8 @@ export interface ProjectDNA {
     };
 
     assets: ResourceMap;
+
+    temporal?: TemporalDNA;
 
     rules: string[];
 }
@@ -283,6 +302,12 @@ export function createEmptyDNA(projectName: string): ProjectDNA {
             fontFiles: [],
             iconUsagePattern: { type: 'unknown', importSource: '', exampleUsages: [] },
             unusedAssets: [],
+        },
+        temporal: {
+            godNodeAges: [],
+            bottlenecks: [],
+            deadZones: [],
+            recentUncommittedAnomalies: []
         },
         rules: [],
     };

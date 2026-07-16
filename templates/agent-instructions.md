@@ -78,6 +78,13 @@ Any violation of these rules means you have failed your directive. You MUST harn
 16. **🔥 CLONE-AND-CUSTOMIZE COPY-PASTE DIRECTIVE (CRITICAL):**
     - To copy and customize code from external files (e.g. from indexed documentation, skills, or source codes of libraries like Flutter), you **MUST** use `deepsift edit` with the `📋 filepath:Lstart-Lend` syntax inside your `.toon` patch file.
     - **NEVER** write or copy-paste large blocks of reference code manually into your responses or tool arguments. This is the absolute priority to eliminate token bloat and prevent 99% of manual code reproduction.
+17. **🩹 AI REGRESS HEALER (MANDATORY FOR FIXING BAD PATCHES):**
+    - If you generated code that broke existing functionality or wrongly deleted code in a "God Node", you **MUST NOT** blindly revert the entire commit.
+    - Instead, you MUST use the MCP tool `analyze_ai_regressions` to see the exact Temporal Diff and isolate the lines that were wrongly modified or deleted.
+    - **Healer Command Workflow:**
+      1. Run `git diff HEAD -- <filepath>` via the terminal to see EXACTLY what you broke in the file.
+      2. Run `git show HEAD:<filepath>` via the terminal if you need to read the complete original source code of the file before your changes.
+      3. Use this regression report and git diffs to restore ONLY the broken code blocks via `deepsift edit` while keeping the newly generated features intact.
 
 ## 💡 Examples of Unwavering Loyalty to DeepSift
 

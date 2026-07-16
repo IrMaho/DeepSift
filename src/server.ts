@@ -497,6 +497,44 @@ const server = new McpServer({
     }
 );
 
+// Tool 14: analyze_ai_regressions
+(server as any).tool(
+    "analyze_ai_regressions",
+    "Analyzes recent uncommitted Git diffs to help AI identify regressions and broken code in God Nodes after generating a massive patch. This saves the AI from reverting the whole commit and helps it isolate the broken logic.",
+    {
+        projectPath: z.string().describe("Absolute path to the root of the project")
+    },
+    async (args: any) => {
+        const { projectPath } = args;
+        broadcastEvent('tool_call', { tool: 'analyze_ai_regressions', args, response: 'Analyzing regressions...' });
+        
+        try {
+            const dna = loadDNA(projectPath);
+            if (!dna || !dna.temporal || !dna.temporal.recentUncommittedAnomalies) {
+                return { content: [{ type: "text", text: "Temporal DNA not found. Please run generate_project_dna first." }] };
+            }
+
+            const anomalies = dna.temporal.recentUncommittedAnomalies;
+            if (anomalies.length === 0) {
+                return { content: [{ type: "text", text: "No significant uncommitted anomalies or AI regressions detected in God Nodes!" }] };
+            }
+
+            let report = "⚠️ AI Regression Analysis (Temporal Diff):\n\n";
+            for (const anomaly of anomalies) {
+                report += `File: ${anomaly.filePath}\n`;
+                report += `Change: +${anomaly.addedLines} | -${anomaly.deletedLines}\n`;
+                report += `Warning: ${anomaly.warning}\n\n`;
+            }
+            report += "Tip: Check these specific files and restore the wrongly deleted blocks instead of reverting everything.";
+
+            broadcastEvent('tool_call', { tool: 'analyze_ai_regressions', args, response: 'Regression analysis complete.' });
+            return { content: [{ type: "text", text: report }] };
+        } catch (e: any) {
+            return { content: [{ type: "text", text: `Error analyzing regressions: ${e.message}` }] };
+        }
+    }
+);
+
 // Start server
 async function main() {
     const transport = new StdioServerTransport();
