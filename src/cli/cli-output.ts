@@ -39,22 +39,29 @@ export function printInfo(message: string) {
     process.stderr.write(`\x1b[36mℹ\x1b[0m ${message}\n`);
 }
 
-export function parseGlobalFlags(args: string[]): { format: OutputFormat; compress: boolean; cleanArgs: string[] } {
+export function parseGlobalFlags(args: string[]): { format: OutputFormat; compress: boolean; cleanArgs: string[]; projectPathOverride?: string } {
     let format: OutputFormat = 'markdown';
     let compress = true;
+    let projectPathOverride: string | undefined = undefined;
     const cleanArgs: string[] = [];
 
-    for (const arg of args) {
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
         if (arg === '--json') {
             format = 'json';
         } else if (arg === '--plain') {
             format = 'plain';
         } else if (arg === '--no-compress') {
             compress = false;
+        } else if (arg === '--project' || arg === '-p') {
+            if (i + 1 < args.length) {
+                projectPathOverride = args[i + 1];
+                i++; // Skip the next argument
+            }
         } else {
             cleanArgs.push(arg);
         }
     }
 
-    return { format, compress, cleanArgs };
+    return { format, compress, cleanArgs, projectPathOverride };
 }
