@@ -1,7 +1,8 @@
-Line 1: A
-Line 2: Z
-Line 3: C
-Line 4: D
-Line 5 and 6 replaced!
-Line 5 and 6 replaced twice!
-Line 7: G
+function newFeature() {
+    console.log("Before copy");
+        console.log("Existing Step 1");
+        console.log("Existing Step 2");
+        console.log("Existing Step 3");
+    console.log("After copy");
+}
+const currentVer = const version = "1.0.0";;

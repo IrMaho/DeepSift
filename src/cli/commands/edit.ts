@@ -175,14 +175,55 @@ export async function editCommand(
     const dictKeys = dictionary ? Object.keys(dictionary).sort((a, b) => b.length - a.length) : [];
 
     function expandText(text: string): string {
-        if (!dictionary || dictKeys.length === 0) return text;
         let expanded = text;
-        for (const key of dictKeys) {
-            // Escape key for regex
-            const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const regex = new RegExp(escapedKey, 'g');
-            expanded = expanded.replace(regex, dictionary[key]);
+
+        // 1. Resolve Block-Level Clipboard (captures indentation)
+        // Matches: ^<indentation>📋<filepath>:L<start>-L<end>
+        expanded = expanded.replace(/^([ \t]*)📋\s*([^:\s]+):L(\d+)(?:-L?(\d+))?\s*$/gm, (match, indent, filepath, start, end) => {
+            const fullPath = path.resolve(projectPath, filepath.trim());
+            if (!fs.existsSync(fullPath)) return match;
+            
+            const startLine = parseInt(start, 10);
+            const endLine = end ? parseInt(end, 10) : startLine;
+            
+            const fileContent = fs.readFileSync(fullPath, 'utf-8');
+            const lines = fileContent.split('\n');
+            const startIdx = startLine - 1;
+            const endIdx = endLine - 1;
+            
+            if (startIdx < 0 || endIdx >= lines.length || startIdx > endIdx) return match;
+            
+            const copiedLines = lines.slice(startIdx, endIdx + 1);
+            return copiedLines.map(l => indent + l).join('\n');
+        });
+
+        // 2. Resolve Inline Clipboard
+        expanded = expanded.replace(/📋\s*([^:\s]+):L(\d+)(?:-L?(\d+))?/g, (match, filepath, start, end) => {
+            const fullPath = path.resolve(projectPath, filepath.trim());
+            if (!fs.existsSync(fullPath)) return match;
+            
+            const startLine = parseInt(start, 10);
+            const endLine = end ? parseInt(end, 10) : startLine;
+            
+            const fileContent = fs.readFileSync(fullPath, 'utf-8');
+            const lines = fileContent.split('\n');
+            const startIdx = startLine - 1;
+            const endIdx = endLine - 1;
+            
+            if (startIdx < 0 || endIdx >= lines.length || startIdx > endIdx) return match;
+            
+            return lines.slice(startIdx, endIdx + 1).join('\n');
+        });
+
+        // 3. Apply Dictionary
+        if (dictionary && dictKeys.length > 0) {
+            for (const key of dictKeys) {
+                const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(escapedKey, 'g');
+                expanded = expanded.replace(regex, dictionary[key]);
+            }
         }
+        
         return expanded;
     }
 
