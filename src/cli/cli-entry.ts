@@ -23,6 +23,7 @@ import { editCommand } from './commands/edit.js';
 import { comCommand } from './commands/com.js';
 import { planCommand } from './commands/plan.js';
 import { healCommand } from './commands/heal.js';
+import { startCommand } from './commands/start.js';
 import { diagCommand } from './commands/diag.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
@@ -113,6 +114,10 @@ async function main() {
         switch (command) {
             case 'init':
                 await initCommand(projectPath);
+                break;
+
+            case 'start':
+                startCommand(compress);
                 break;
 
             case 'config':

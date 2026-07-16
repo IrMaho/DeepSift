@@ -7,6 +7,8 @@ export interface RealmDefinition {
     parserProfile: 'code' | 'skill' | 'docs';
     autoIndex: boolean;
     excludeDirs?: string[];
+    isolatedDbPath?: string;
+    isExternalHivemind?: boolean;
 }
 
 export interface DeepSiftConfig {

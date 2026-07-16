@@ -23,7 +23,7 @@ export async function searchCommand(
     options: SearchOptions = {}
 ) {
     const router = new RealmRouter(projectPath);
-    const targetRealms = options.allRealms ? undefined : (options.realm ? [options.realm] : undefined);
+    const targetRealms = options.allRealms ? undefined : (options.realm ? options.realm.split(',').map(r => r.trim()) : undefined);
 
     if (!options.skipSync) {
         printInfo('Syncing index before search...');
