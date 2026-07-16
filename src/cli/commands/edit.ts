@@ -10,6 +10,11 @@ export interface FileEdit {
     }[];
 }
 
+export interface PatchPayload {
+    dictionary?: Record<string, string>;
+    files: FileEdit[];
+}
+
 export async function editCommand(
     projectPath: string,
     patchFilePath: string,
@@ -21,16 +26,39 @@ export async function editCommand(
         throw new Error(`Patch file not found: ${fullPatchPath}`);
     }
 
-    let patchData: FileEdit[];
+    let parsedData: any;
     try {
         const content = fs.readFileSync(fullPatchPath, 'utf-8');
-        patchData = JSON.parse(content);
+        parsedData = JSON.parse(content);
     } catch (e: any) {
         throw new Error(`Invalid JSON in patch file: ${e.message}`);
     }
 
-    if (!Array.isArray(patchData)) {
-        throw new Error('Patch file must contain an array of FileEdit objects.');
+    let patchData: FileEdit[];
+    let dictionary: Record<string, string> | undefined;
+
+    if (Array.isArray(parsedData)) {
+        patchData = parsedData;
+    } else if (parsedData && Array.isArray(parsedData.files)) {
+        patchData = parsedData.files;
+        dictionary = parsedData.dictionary;
+    } else {
+        throw new Error('Patch file must contain an array of FileEdit objects, or a { dictionary, files } object.');
+    }
+
+    // Sort dictionary keys by length descending to safely expand longer tokens first
+    const dictKeys = dictionary ? Object.keys(dictionary).sort((a, b) => b.length - a.length) : [];
+
+    function expandText(text: string): string {
+        if (!dictionary || dictKeys.length === 0) return text;
+        let expanded = text;
+        for (const key of dictKeys) {
+            // Escape key for regex
+            const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(escapedKey, 'g');
+            expanded = expanded.replace(regex, dictionary[key]);
+        }
+        return expanded;
     }
 
     let totalFilesEdited = 0;
@@ -51,10 +79,13 @@ export async function editCommand(
 
             for (let i = 0; i < filePatch.edits.length; i++) {
                 const edit = filePatch.edits[i];
-                if (fileContent.includes(edit.search)) {
+                const searchStr = expandText(edit.search);
+                const replaceStr = expandText(edit.replace);
+
+                if (fileContent.includes(searchStr)) {
                     // Replace all occurrences just in case, or just the first?
                     // Typically search & replace should be exact.
-                    fileContent = fileContent.replace(edit.search, edit.replace);
+                    fileContent = fileContent.replace(searchStr, replaceStr);
                     modified = true;
                     totalReplacements++;
                 } else {
