@@ -63,7 +63,14 @@ export async function compareCommand(
     const logInfo = await saveSearchLog(projectPath, [`COMPARE: ${query} (${realm1} vs ${realm2})`], finalOutput);
     printResult(finalOutput, format);
     if (format !== 'json') {
-        const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
-        printSuccess(`Comparison results cached in: ${link}`);
+        if (logInfo.images && logInfo.images.length > 0) {
+            logInfo.images.forEach((img: string, idx: number) => {
+                const link = `file:///${img.replace(/\\/g, '/')}`;
+                printSuccess(`Comparison results cached in (Page ${idx + 1}): ${link}`);
+            });
+        } else {
+            const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
+            printSuccess(`Comparison results cached in: ${link}`);
+        }
     }
 }

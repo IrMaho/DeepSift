@@ -32,7 +32,7 @@ export async function scanCommand(
     if (target === 'duplicates') {
         printInfo('🔍 Scanning for duplicate code blocks...');
         const store = new NativeStore(getDbPath(projectPath));
-        const chunks = store.getAllChunks();
+        const chunks = await store.getAllChunks();
         let dupCount = 0;
         
         for (let i = 0; i < chunks.length; i++) {
@@ -60,7 +60,7 @@ export async function scanCommand(
     } else if (target === 'conventions') {
         printInfo('📛 Scanning for naming convention violations...');
         const store = new NativeStore(getDbPath(projectPath));
-        const chunks = store.getAllChunks();
+        const chunks = await store.getAllChunks();
         let violationCount = 0;
         
         for (const item of chunks) {

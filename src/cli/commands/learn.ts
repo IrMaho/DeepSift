@@ -14,8 +14,11 @@ export async function learnCommand(projectPath: string, target: string): Promise
     try {
         process.stdout.write(`\x1b[36m🧠 Scanning codebase for auto-discoverable patterns...\x1b[0m\n`);
         
+        const { unifiedWalk } = await import('../../core/unified-walker.js');
+        const walkResult = await unifiedWalk(projectPath);
+
         // We generate a lightweight DNA to get the SimilarityGroups
-        const dna = await generateDNA(projectPath, (phase, detail) => {
+        const dna = await generateDNA(projectPath, walkResult, (phase: string, detail: string) => {
             if (phase === 'similarity' || phase === 'graph') {
                 process.stdout.write(`  \x1b[33m[${phase}]\x1b[0m ${detail}\n`);
             }

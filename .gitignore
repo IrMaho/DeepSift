@@ -6,4 +6,12 @@ dist/
 temp
 # DeepSift local cache
 .deepsift/
-ai
+ai 
+# Build artifacts
+.zig-cache/
+Output/
+release/
+bin/
+*.exe
+*.pdb
+*.obj

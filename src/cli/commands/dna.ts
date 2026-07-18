@@ -27,7 +27,12 @@ export async function dnaCommand(
 
     process.stdout.write('\x1b[36m🧬 Generating Project DNA...\x1b[0m\n');
 
-    const dna = await generateDNA(projectPath, (phase, detail) => {
+    const { unifiedWalk } = await import('../../core/unified-walker.js');
+    const walkResult = await unifiedWalk(projectPath, (phase, detail) => {
+        process.stdout.write(`\x1b[33m  [${phase}]\x1b[0m ${detail}\n`);
+    });
+
+    const dna = await generateDNA(projectPath, walkResult, (phase, detail) => {
         process.stdout.write(`\x1b[33m  [${phase}]\x1b[0m ${detail}\n`);
     });
 

@@ -19,6 +19,7 @@ import { scanCommand } from './commands/scan.js';
 import { resolveCommand } from './commands/resolve.js';
 import { contextCommand } from './commands/context.js';
 import { readCommand } from './commands/read.js';
+import { readFeatureCommand } from './commands/read-feature.js';
 import { editCommand } from './commands/edit.js';
 import { comCommand } from './commands/com.js';
 import { planCommand } from './commands/plan.js';
@@ -59,10 +60,14 @@ const HELP_TEXT = `
                                   Options:
                                     --verbose, -v         Show files being processed
   status                        Show index statistics
+  realm <action>                Manage knowledge realms (list, add, remove, mount, snapshot)
+                                  mount: Auto-discover and mount copied databases in .deepsift/realms
+                                  snapshot <id>: Get a summary of all indexed files in a realm
   watch, w                      Start background watcher for real-time indexing
   arch [--depth N]              Project architecture blueprint utilizing Graphify communities.
   deps "target"                 Trace dependencies for a file/module
   feature "path"                Feature outline (classes, functions)
+  read-feature, rf "path"       Read and extract all code from a feature directory
   history                       Show past search results
   clean                         Clear search history logs and index
   drill "logfile" "keyword"     Deep-search within a previous result
@@ -89,6 +94,22 @@ const HELP_TEXT = `
   deepsift index --force --verbose
   deepsift arch --depth 3
 `;
+
+function logError(projectPath: string, command: string, args: string[], err: any) {
+    try {
+        const deepsiftDir = path.join(projectPath, '.deepsift');
+        if (fs.existsSync(deepsiftDir)) {
+            const logPath = path.join(deepsiftDir, 'error_log.txt');
+            const timestamp = new Date().toISOString();
+            const cmdStr = `deepsift ${command} ${args.join(' ')}`;
+            const errMsg = err.stack || err.message || String(err);
+            const logEntry = `\n[${timestamp}] ERROR executing: ${cmdStr}\n${errMsg}\n----------------------------------------\n`;
+            fs.appendFileSync(logPath, logEntry, 'utf-8');
+        }
+    } catch (e) {
+        // Ignore logging errors
+    }
+}
 
 async function main() {
     const rawArgs = process.argv.slice(2);
@@ -273,6 +294,63 @@ async function main() {
                 await readCommand(projectPath, targets, format, compress);
                 break;
 
+            case 'read-feature':
+            case 'rf':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a feature path.\nUsage: deepsift read-feature "src/path"');
+                }
+                await readFeatureCommand(projectPath, commandArgs[0], format, compress);
+                break;
+
+            case 'sed': {
+                const { sedCommand } = await import('./commands/sed.js');
+                const all = commandArgs.includes('--all');
+                const dryRun = commandArgs.includes('--dry-run');
+                
+                const filesIdx = commandArgs.indexOf('--files');
+                const files = filesIdx !== -1 && filesIdx + 1 < commandArgs.length 
+                    ? [commandArgs[filesIdx + 1]] 
+                    : [];
+
+                const otherArgs = commandArgs.filter((arg, i) => {
+                    if (arg === '--all' || arg === '--dry-run') return false;
+                    if (arg === '--files' || (i > 0 && commandArgs[i - 1] === '--files')) return false;
+                    return true;
+                });
+
+                if (otherArgs.length < 2) {
+                    throw new Error('Please provide pattern and replacement.\nUsage: deepsift sed "old" "new" --files "src/**/*.ts"');
+                }
+
+                await sedCommand(otherArgs[0], otherArgs[1], files, { all, dryRun });
+                break;
+            }
+
+            case 'pipe': {
+                const { pipeCommand } = await import('./commands/pipe.js');
+                const all = commandArgs.includes('--all');
+                const dryRun = commandArgs.includes('--dry-run');
+                
+                const filesIdx = commandArgs.indexOf('--files');
+                const files = filesIdx !== -1 && filesIdx + 1 < commandArgs.length 
+                    ? [commandArgs[filesIdx + 1]] 
+                    : [];
+
+                const operations: { pattern: string, replacement: string }[] = [];
+                for (let i = 0; i < commandArgs.length; i++) {
+                    if (commandArgs[i] === '--sed' && i + 2 < commandArgs.length) {
+                        operations.push({
+                            pattern: commandArgs[i + 1],
+                            replacement: commandArgs[i + 2]
+                        });
+                        i += 2;
+                    }
+                }
+
+                await pipeCommand(files, operations, { all, dryRun });
+                break;
+            }
+
             case 'edit':
             case 'e':
                 if (commandArgs.length === 0) {
@@ -402,6 +480,7 @@ async function main() {
                 throw new Error(`Unknown command: "${command}"\nRun 'deepsift --help' for available commands.`);
         }
     } catch (err: any) {
+        logError(projectPath, command, commandArgs, err);
         printError(err.message || String(err));
         process.exit(1);
     } finally {

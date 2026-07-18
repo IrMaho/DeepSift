@@ -16,15 +16,15 @@ function cosineSimilarity(vecA: Float32Array, vecB: Float32Array): number {
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-export function detectSimilarities(
+export async function detectSimilarities(
     projectPath: string,
     onProgress?: (current: number, total: number) => void
-): SimilarityGroup[] {
+): Promise<SimilarityGroup[]> {
     const dbPath = path.join(projectPath, '.deepsift', 'deepsift.db');
     let allChunks: EmbeddedChunk[] = [];
     try {
         const store = new NativeStore(dbPath);
-        allChunks = store.getAllChunks();
+        allChunks = await store.getAllChunks();
     } catch {
         return [];
     }

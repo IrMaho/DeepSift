@@ -1,0 +1,4 @@
+hello universe
+this is a patched super file via stdin
+we want to test AWESOME here
+end of file

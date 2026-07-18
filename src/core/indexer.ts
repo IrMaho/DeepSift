@@ -25,23 +25,36 @@ export class Indexer {
         rootDir: string, 
         forceReindex: boolean = false,
         onProgress?: (current: number, total: number, currentFile: string) => void
-    ): Promise<{ files: number; chunks: number }> {
+    ): Promise<{ files: number; chunks: number; newOrUpdated: number; deleted: number }> {
         if (this.isIndexing) {
             throw new Error('Indexing is already in progress');
         }
 
         this.isIndexing = true;
         let filesProcessed = 0;
+        let deletedCount = 0;
         let chunksProcessed = 0;
+        const batchOperations: any[] = [];
 
         try {
-            const allFiles = await getFiles(rootDir);
+            const { unifiedWalk } = await import('./unified-walker.js');
+            const walkResult = await unifiedWalk(rootDir);
+            const allFiles = walkResult.allFiles;
             
             // Phase 1: Fetch all metadata in a SINGLE call!
-            const allMetadata = forceReindex ? new Map() : this.store.getAllMetadata();
+            const allMetadata = forceReindex ? new Map() : await this.store.getAllMetadata();
 
             const filesToProcess: string[] = [];
             const fileHashes = new Map<string, string>();
+            const currentFilesSet = new Set(allFiles);
+
+            
+            for (const [file, meta] of allMetadata.entries()) {
+                if (!currentFilesSet.has(file)) {
+                    batchOperations.push({ action: 'deleteFileChunks', filePath: file });
+                    deletedCount++;
+                }
+            }
 
             // Phase 2: Rapid file scanning (No DB spawn!)
             for (let i = 0; i < allFiles.length; i++) {
@@ -76,7 +89,7 @@ export class Indexer {
             let currentFileIndex = 0;
             const totalFilesToProcess = filesToProcess.length;
 
-            const batchOperations: BatchOperation[] = [];
+            
 
             for (let i = 0; i < filesToProcess.length; i += BATCH_SIZE) {
                 const batchFiles = filesToProcess.slice(i, i + BATCH_SIZE);
@@ -145,7 +158,7 @@ export class Indexer {
                     if (onProgress) {
                         onProgress(totalFilesToProcess, totalFilesToProcess, `Saving to database... (${batchNum}/${totalBatches})`);
                     }
-                    this.store.executeBatch(subBatch);
+                    await this.store.executeBatch(subBatch);
                 }
             }
             
@@ -178,7 +191,7 @@ export class Indexer {
                 if (onProgress) {
                     onProgress(totalFilesToProcess, totalFilesToProcess, "Saving graph database...");
                 }
-                this.store.saveGraph(nodes, edges);
+                await this.store.saveGraph(nodes, edges);
                 
             } catch (err) {
                 console.error("Failed to build graph:", err);
@@ -188,11 +201,11 @@ export class Indexer {
             this.isIndexing = false;
         }
 
-        return { files: filesProcessed, chunks: chunksProcessed };
+        return { files: filesProcessed, chunks: chunksProcessed, newOrUpdated: filesProcessed, deleted: deletedCount };
     }
 
-    public getStatus() {
-        const status = this.store.getStatus();
+    public async getStatus() {
+        const status = await this.store.getStatus();
         status.isIndexing = this.isIndexing;
         return status;
     }

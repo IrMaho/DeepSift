@@ -86,35 +86,38 @@ export function saveDNA(projectPath: string, dna: ProjectDNA): void {
     fs.writeFileSync(dnaPath, toonText, 'utf-8');
 }
 
+import { WalkResult } from '../core/unified-walker.js';
+
 export async function generateDNA(
     projectPath: string,
+    walkResult: WalkResult,
     onProgress?: (phase: string, detail: string) => void
 ): Promise<ProjectDNA> {
     const dna = createEmptyDNA(path.basename(projectPath));
 
     if (onProgress) onProgress('identity', 'Detecting project identity...');
-    detectIdentity(projectPath, dna);
+    detectIdentity(projectPath, dna, walkResult);
 
     if (onProgress) onProgress('tokens', 'Mining design tokens...');
-    integratePropertyMiner(projectPath, dna, onProgress);
+    integratePropertyMiner(projectPath, dna, walkResult, onProgress);
 
     if (onProgress) onProgress('conventions', 'Mining naming conventions...');
-    integrateConventionMiner(projectPath, dna);
+    integrateConventionMiner(projectPath, dna, walkResult);
 
     if (onProgress) onProgress('i18n', 'Detecting localization...');
-    integrateL10nDetector(projectPath, dna);
+    integrateL10nDetector(projectPath, dna, walkResult);
 
     if (onProgress) onProgress('graph', 'Analyzing dependency graph...');
     integrateGraphAnalyzer(projectPath, dna, onProgress);
 
     if (onProgress) onProgress('testing', 'Analyzing test coverage and Time Bombs...');
-    integrateTestAnalyzer(projectPath, dna, onProgress);
+    integrateTestAnalyzer(projectPath, dna, walkResult.testFiles, onProgress);
 
     if (onProgress) onProgress('similarity', 'Detecting component similarities...');
-    integrateSimilarityEngine(projectPath, dna, onProgress);
+    await integrateSimilarityEngine(projectPath, dna, onProgress);
 
     if (onProgress) onProgress('resources', 'Mapping static resources and icons...');
-    integrateResourceMapper(projectPath, dna, onProgress);
+    integrateResourceMapper(projectPath, dna, walkResult, onProgress);
 
     if (onProgress) onProgress('temporal', 'Mining temporal dynamics and AI regressions...');
     integrateTemporalMiner(projectPath, dna, onProgress);
@@ -136,9 +139,9 @@ export async function generateDNA(
     return dna;
 }
 
-function detectIdentity(projectPath: string, dna: ProjectDNA): void {
+function detectIdentity(projectPath: string, dna: ProjectDNA, walkResult: WalkResult): void {
     dna.identity.name = detectProjectName(projectPath);
-    dna.identity.languages = scanLanguages(projectPath);
+    dna.identity.languages = walkResult.languageCounts;
     dna.identity.packageManager = detectPackageManager(projectPath);
     dna.identity.framework = detectFramework(projectPath);
 }
@@ -264,9 +267,10 @@ function detectFramework(projectPath: string): string {
 function integratePropertyMiner(
     projectPath: string,
     dna: ProjectDNA,
+    walkResult: WalkResult,
     onProgress?: (phase: string, detail: string) => void
 ): void {
-    const { tokens, clusters } = mineTokens(projectPath, (current, total) => {
+    const { tokens, clusters } = mineTokens(projectPath, walkResult.tokenFiles, (current, total) => {
         if (onProgress && current % 50 === 0) {
             onProgress('tokens', `Scanning files... (${current}/${total})`);
         }
@@ -299,14 +303,14 @@ function integratePropertyMiner(
         : tokens.length > 0 ? 0.3 : 0;
 }
 
-function integrateConventionMiner(projectPath: string, dna: ProjectDNA): void {
-    const { naming, structureTemplate } = mineConventions(projectPath);
+function integrateConventionMiner(projectPath: string, dna: ProjectDNA, walkResult: WalkResult): void {
+    const { naming, structureTemplate } = mineConventions(projectPath, walkResult.allFiles);
     dna.conventions.naming = naming;
     dna.conventions.structureTemplate = structureTemplate;
 }
 
-function integrateL10nDetector(projectPath: string, dna: ProjectDNA): void {
-    dna.localization = detectLocalization(projectPath);
+function integrateL10nDetector(projectPath: string, dna: ProjectDNA, walkResult: WalkResult): void {
+    dna.localization = detectLocalization(projectPath, walkResult.l10nFiles);
 }
 
 function integrateGraphAnalyzer(projectPath: string, dna: ProjectDNA, onProgress?: (phase: string, detail: string) => void): void {
@@ -322,8 +326,8 @@ function integrateGraphAnalyzer(projectPath: string, dna: ProjectDNA, onProgress
     dna.architecture.graph = archResult.graph;
 }
 
-function integrateSimilarityEngine(projectPath: string, dna: ProjectDNA, onProgress?: (phase: string, detail: string) => void): void {
-    const groups = detectSimilarities(projectPath, (current, total) => {
+async function integrateSimilarityEngine(projectPath: string, dna: ProjectDNA, onProgress?: (phase: string, detail: string) => void): Promise<void> {
+    const groups = await detectSimilarities(projectPath, (current, total) => {
         if (onProgress && current % 50 === 0) {
             onProgress('similarity', `Comparing embeddings... (${current}/${total})`);
         }
@@ -336,15 +340,15 @@ function integrateSimilarityEngine(projectPath: string, dna: ProjectDNA, onProgr
     try {
         const dbPath = path.join(projectPath, '.deepsift', 'deepsift.db');
         const store = new NativeStore(dbPath);
-        const all = store.getAllChunks();
+        const all = await store.getAllChunks();
         totalCount = all.filter((c: any) => c.chunk.type === 'class' || c.chunk.type === 'function').length;
     } catch { /* ignore */ }
     
     dna.components.totalCount = totalCount;
 }
 
-function integrateResourceMapper(projectPath: string, dna: ProjectDNA, onProgress?: (phase: string, detail: string) => void): void {
-    dna.assets = mapResources(projectPath, onProgress);
+function integrateResourceMapper(projectPath: string, dna: ProjectDNA, walkResult: WalkResult, onProgress?: (phase: string, detail: string) => void): void {
+    dna.assets = mapResources(projectPath, walkResult.allFiles, onProgress);
 }
 
 function generateRules(dna: ProjectDNA): void {

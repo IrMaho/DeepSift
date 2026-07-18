@@ -49,7 +49,7 @@ const TRANSLATION_JSON_PATTERNS = [
     /^strings_[a-z]{2}\.json$/i,
 ];
 
-export function detectLocalization(projectPath: string): L10nReport {
+export function detectLocalization(projectPath: string, l10nFiles: string[]): L10nReport {
     const signals: L10nSignals = {
         translationFiles: [],
         translationFunctions: [],

@@ -19,18 +19,38 @@ interface ConventionResult {
     structureTemplate: StructureTemplate | null;
 }
 
-export function mineConventions(projectPath: string): ConventionResult {
+export function mineConventions(projectPath: string, allFiles: string[]): ConventionResult {
     const fileNames: string[] = [];
-    const dirNames: string[] = [];
+    const dirNames = new Set<string>();
     const identifiers: { classes: string[]; functions: string[]; variables: string[]; constants: string[] } = {
         classes: [], functions: [], variables: [], constants: [],
     };
 
-    walkForConventions(projectPath, fileNames, dirNames, identifiers, 0);
+    for (const file of allFiles) {
+        const ext = path.extname(file).toLowerCase();
+        
+        const dirName = path.basename(path.dirname(file));
+        if (dirName && dirName !== '.') {
+            dirNames.add(dirName);
+        }
+
+        if (SOURCE_EXTENSIONS.has(ext)) {
+            const baseName = path.basename(file, ext);
+            fileNames.push(baseName);
+
+            try {
+                const stats = fs.statSync(file);
+                if (stats.size <= 300_000) {
+                    const fileContent = fs.readFileSync(file, 'utf-8');
+                    extractIdentifiers(fileContent, identifiers);
+                }
+            } catch { /* skip */ }
+        }
+    }
 
     const naming: NamingConventions = {
         files: analyzeNaming(fileNames),
-        directories: analyzeNaming(dirNames),
+        directories: analyzeNaming(Array.from(dirNames)),
         classes: analyzeNaming(identifiers.classes),
         functions: analyzeNaming(identifiers.functions),
         variables: analyzeNaming(identifiers.variables),

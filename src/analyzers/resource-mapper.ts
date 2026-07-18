@@ -9,39 +9,26 @@ const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.dart', '.vue'
 
 export function mapResources(
     projectPath: string,
+    allFiles: string[],
     onProgress?: (phase: string, detail: string) => void
 ): ResourceMap {
     const images: string[] = [];
     const fonts: string[] = [];
     const sourceFiles: string[] = [];
 
-    // Walk project to find assets and source files
-    function walk(dir: string) {
-        let items: fs.Dirent[];
-        try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+        // Walk project to find assets and source files
+    for (const full of allFiles) {
+        const ext = path.extname(full).toLowerCase();
+        const relPath = path.relative(projectPath, full).replace(/\\/g, '/');
 
-        for (const item of items) {
-            if (item.name.startsWith('.') || IGNORED_DIRS.has(item.name)) continue;
-            const full = path.join(dir, item.name);
-            
-            if (item.isDirectory()) {
-                walk(full);
-            } else {
-                const ext = path.extname(item.name).toLowerCase();
-                const relPath = path.relative(projectPath, full).replace(/\\/g, '/');
-
-                if (IMAGE_EXTENSIONS.has(ext)) {
-                    images.push(relPath);
-                } else if (FONT_EXTENSIONS.has(ext)) {
-                    fonts.push(relPath);
-                } else if (SOURCE_EXTENSIONS.has(ext)) {
-                    sourceFiles.push(full);
-                }
-            }
+        if (IMAGE_EXTENSIONS.has(ext)) {
+            images.push(relPath);
+        } else if (FONT_EXTENSIONS.has(ext)) {
+            fonts.push(relPath);
+        } else if (SOURCE_EXTENSIONS.has(ext)) {
+            sourceFiles.push(full);
         }
     }
-
-    walk(projectPath);
 
     // Analyze Icon Usage and Unused Assets
     const allCodeContent: string[] = [];

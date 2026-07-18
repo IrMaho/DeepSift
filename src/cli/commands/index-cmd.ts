@@ -32,15 +32,34 @@ export async function indexCommand(projectPath: string, options: IndexOptions) {
     for (const realmId of targetRealms) {
         printInfo(options.force ? `Force re-indexing realm [${realmId}]...` : `Indexing realm [${realmId}] (incremental)...`);
         
+        const startTime = Date.now();
         try {
             const stats = await router.indexRealm(realmId, undefined, options.force, (current, total, file) => {
-                if (options.verbose && options.format !== 'json') {
-                    process.stdout.write(`\r[${realmId}] Indexing: ${current}/${total} files (Processing: ${file})`);
+                if (options.format !== 'json') {
+                    const elapsedMs = Date.now() - startTime;
+                    const elapsedSec = Math.floor(elapsedMs / 1000);
+                    let itemsPerSec = current / (elapsedSec || 1);
+                    if (itemsPerSec === 0) itemsPerSec = 1;
+                    const remainingItems = total - current;
+                    const etaSec = Math.floor(remainingItems / itemsPerSec);
+                    
+                    const formatTime = (s: number) => {
+                        if (!isFinite(s) || isNaN(s)) return '...';
+                        const m = Math.floor(s / 60);
+                        const sec = Math.floor(s % 60);
+                        return m > 0 ? `${m}m${sec}s` : `${sec}s`;
+                    };
+
+                    const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+                    
+                    const shortFile = file.length > 35 ? '...' + file.substring(file.length - 35) : file;
+                    
+                    process.stdout.write(`\r[${realmId}] ⏳ ${percent}% | ${current}/${total} files | Elapsed: ${formatTime(elapsedSec)} | ETA: ${formatTime(etaSec)} | ${shortFile}`);
                     process.stdout.write('\x1b[K');
                 }
             });
 
-            if (options.verbose && options.format !== 'json') {
+            if (options.format !== 'json') {
                 process.stdout.write('\n');
             }
 

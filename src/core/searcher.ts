@@ -14,18 +14,18 @@ export class Searcher {
     public async search(searchQuery: SearchQuery): Promise<SearchResult[]> {
         const { query, topK = 10, filterType, filterPath } = searchQuery;
         
-        const keywordResultsRaw = this.store.searchKeyword(query, topK * 2);
+        const keywordResultsRaw = await this.store.searchKeyword(query, topK * 2);
         const keywordResults = this.filterResults(keywordResultsRaw, filterType, filterPath);
 
         const queryVectorF32 = await getEmbedding(query);
-        const semanticResultsRaw = this.store.searchSemantic(queryVectorF32, topK * 2);
+        const semanticResultsRaw = await this.store.searchSemantic(queryVectorF32, topK * 2);
         const semanticResults = this.filterResults(semanticResultsRaw, filterType, filterPath);
 
 
         // Calculate Structural Weights from DNA
         let structuralWeights: Map<string, number> | undefined;
         try {
-            const dna = loadDNA(process.cwd());
+            const dna = await loadDNA(process.cwd());
             if (dna && dna.architecture && dna.architecture.coreFiles) {
                 structuralWeights = new Map<string, number>();
                 dna.architecture.coreFiles.forEach((f: string) => structuralWeights!.set(f, 1.5));
