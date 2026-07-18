@@ -21,7 +21,7 @@ fs.mkdirSync(tempDir, { recursive: true });
 
 try {
     // Run pxpipe to generate the PNG
-    execSync(`npx pxpipe export "${targetFile}" --out "${tempDir}"`, { 
+    execSync(`.\\node.exe pxpipe-main/bin/cli.js export "${targetFile}" --out "${tempDir}"`, { 
         cwd: projectRoot, 
         stdio: 'inherit' 
     });
