@@ -23,7 +23,11 @@ export interface SearchLogResult {
     images?: string[];
 }
 
-export async function saveSearchLog(projectPath: string, queries: string[], resultText: string): Promise<SearchLogResult> {
+export interface SaveLogOptions {
+    skipVisuals?: boolean;
+}
+
+export async function saveSearchLog(projectPath: string, queries: string[], resultText: string, options?: SaveLogOptions): Promise<SearchLogResult> {
     const outputsDir = resolveOutputsDir(projectPath);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -58,6 +62,9 @@ export async function saveSearchLog(projectPath: string, queries: string[], resu
     const generatedImages: string[] = [];
 
     try {
+        if (options?.skipVisuals) {
+            throw new Error('Visual cache skipped by request');
+        }
         // @ts-ignore
         const pxpipe = await import('pxpipe-proxy');
         if (pxpipe && pxpipe.renderTextToImages) {
@@ -78,7 +85,11 @@ export async function saveSearchLog(projectPath: string, queries: string[], resu
             throw new Error('pxpipe not found');
         }
     } catch (e: any) {
-        console.error('Pxpipe rendering failed, falling back to raw text index:', e.message);
+        if (options?.skipVisuals) {
+            indexEntry += '*Visual cache generation skipped for this log.*\n\n';
+        } else {
+            console.error('Pxpipe rendering failed, falling back to raw text index:', e.message);
+        }
         indexEntry += `\`\`\`json\n${fileContent}\n\`\`\`\n\n`;
     }
 

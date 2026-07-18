@@ -15,6 +15,7 @@ export interface SearchOptions {
     contextLines?: number;
     realm?: string;
     allRealms?: boolean;
+    noVisual?: boolean;
 }
 
 export async function searchCommand(
@@ -108,7 +109,7 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
         finalOutput = payload.toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, [query], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [query], finalOutput, { skipVisuals: options.noVisual });
     printResult(finalOutput, format);
     if (format !== 'json') {
         if (logInfo.images && logInfo.images.length > 0) {
@@ -171,7 +172,7 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
         finalOutput = payload.toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, queries, finalOutput);
+    const logInfo = await saveSearchLog(projectPath, queries, finalOutput, { skipVisuals: options.noVisual });
     printResult(finalOutput, format);
     if (format !== 'json') {
         if (logInfo.images && logInfo.images.length > 0) {

@@ -40,7 +40,7 @@ export async function comCommand(
         finalOutput = payload.toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, [`Command: ${commandStr}`], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [`Command: ${commandStr}`], finalOutput, { skipVisuals: true });
     printResult(finalOutput, format);
     
     if (format !== 'json') {
