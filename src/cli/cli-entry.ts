@@ -28,7 +28,7 @@ import { diagCommand } from './commands/diag.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
-const VERSION = '1.0.0';
+const VERSION = '1.0.01-amir';
 
 const HELP_TEXT = `
 \x1b[36m🔍 DeepSift v${VERSION}\x1b[0m — Semantic Codebase Search (CLI Engine)

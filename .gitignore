@@ -7,3 +7,7 @@ temp
 # DeepSift local cache
 .deepsift/
 ai
+.npm-cache/
+.node-portable/
+.zig-cache/
+*.exe
