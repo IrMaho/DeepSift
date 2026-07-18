@@ -509,6 +509,20 @@ async function main() {
         process.exit(1);
     } finally {
         terminateWorkers();
+        if (command !== 'memo' && command !== 'm' && format !== 'json') {
+            try {
+                const { MemoEngine } = await import('../memo/memo-engine.js');
+                const engine = new MemoEngine(projectPath);
+                const openTags = engine.getOpenTags();
+                if (openTags.length > 0) {
+                    const tagNames = openTags.map(t => t.name).join(', ');
+                    printInfo(`\n\x1b[33m⚠️  [DRM REMINDER] You still have open research tags: [${tagNames}]\x1b[0m`);
+                    printInfo(`\x1b[36m👉 Close them when task is done: deepsift memo close "<tag>"\x1b[0m`);
+                }
+            } catch {
+                // Safe ignore
+            }
+        }
     }
 }
 

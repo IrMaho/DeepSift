@@ -73,9 +73,19 @@ export class MemoManifestManager {
     }
 
     createTag(name: string, description?: string): MemoTag {
+        const trimmedName = name.trim();
+        if (trimmedName.length < 3) {
+            throw new Error(`Tag name '${name}' is too short. Choose a descriptive, task-specific name (at least 3 characters).`);
+        }
+
+        const genericNames = ['temp', 'test', 'a', 'memo', 'task', 'tag', 'default', 'new', 'research', 'my-research', 'fix', 'bug', 'todo', 'notes'];
+        if (genericNames.includes(trimmedName.toLowerCase()) || /^(task|tag|memo|test)[_-]?\d+$/i.test(trimmedName)) {
+            throw new Error(`Tag name '${name}' is too generic. Choose a meaningful, task-specific name representing the actual feature or bug (e.g., 'grid-presets-fix', 'jwt-auth-refactor').`);
+        }
+
         const manifest = this.loadManifest();
 
-        const existing = Object.values(manifest.tags).find(t => t.name === name);
+        const existing = Object.values(manifest.tags).find(t => t.name === trimmedName);
         if (existing) {
             throw new Error(`Tag '${name}' already exists (id: ${existing.id}, status: ${existing.status}).`);
         }
