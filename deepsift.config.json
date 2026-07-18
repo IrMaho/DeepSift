@@ -150,6 +150,14 @@
       "parserProfile": "skill",
       "autoIndex": false,
       "isExternalHivemind": true
+    },
+    "my_skills": {
+      "displayName": "Realm: my_skills",
+      "sourcePaths": [
+        "./skills"
+      ],
+      "parserProfile": "skill",
+      "autoIndex": true
     }
   }
 }
