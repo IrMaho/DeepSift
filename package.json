@@ -1,6 +1,6 @@
 {
   "name": "deepsift",
-  "version": "1.0.0",
+  "version": "1.0.01-amir",
   "description": "Semantic Codebase Search — MCP Server + CLI Bridge for any IDE",
   "type": "module",
   "main": "dist/server.js",
@@ -10,8 +10,8 @@
   "scripts": {
     "build": ".\\node.exe .\\node_modules\\typescript\\bin\\tsc && .\\node.exe scripts/build-zig.js",
     "build:release": ".\\node.exe scripts/build-release.js",
-    "dev": ".\\node.exe .\\node_modules\\tsx\\dist\\cli.js src/server.ts",
-    "dev:cli": ".\\node.exe .\\node_modules\\tsx\\dist\\cli.js src/cli/cli-entry.ts",
+    "dev": ".\\node.exe .\\node_modules\\tsx\\dist\\cli.mjs src/server.ts",
+    "dev:cli": ".\\node.exe .\\node_modules\\tsx\\dist\\cli.mjs src/cli/cli-entry.ts",
     "start": ".\\node.exe dist/server.js",
     "start:cli": ".\\node.exe dist/cli/cli-entry.js",
     "test": ".\\node.exe .\\node_modules\\vitest\\vitest.mjs run"
