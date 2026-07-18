@@ -45,3 +45,5 @@ export interface IndexStatus {
     lastUpdated: number;
     isIndexing: boolean;
 }
+
+export * from './memo-types.js';

@@ -26,6 +26,7 @@ import { planCommand } from './commands/plan.js';
 import { healCommand } from './commands/heal.js';
 import { startCommand } from './commands/start.js';
 import { diagCommand } from './commands/diag.js';
+import { memoCommand } from './commands/memo.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
@@ -78,6 +79,18 @@ const HELP_TEXT = `
   com "command"                 Execute any shell command and return compressed output
   plan "request"                Generate a Smart Plan by analyzing DNA, skills, realms, and architecture
   heal "file"                   Attempt to fix issues in a file using the project DNA and context
+  memo <action>                 Dynamic Research Memory (DRM) — Persistent research note-taking
+                                  open "name"         Create a new research tag
+                                  close "name"        Close a tag (no more entries)
+                                  archive "name"      Archive a closed tag
+                                  purge "name"        Delete tag and all data
+                                  list [--open]       List all tags
+                                  add "name" --data   Record a finding
+                                  query "name" "q"    Search within a tag
+                                  show "name"         Tag summary and stats
+                                  graph "name"        Show insight graph
+                                  export "name"       Export as readable MD
+                                  prompt              Check open tags & ask for notes
 
 \x1b[33mGlobal Flags:\x1b[0m
   --json                        Output in JSON format
@@ -475,6 +488,17 @@ async function main() {
                 }
                 await healCommand(commandArgs[0], format, compress);
                 break;
+
+            case 'memo':
+            case 'm': {
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide an action.\nUsage: deepsift memo open "tag-name"\nActions: open, close, archive, purge, list, add, query, show, graph, export, prompt');
+                }
+                const memoAction = commandArgs[0];
+                const memoTarget = commandArgs[1];
+                await memoCommand(projectPath, memoAction, memoTarget, commandArgs.slice(2), format);
+                break;
+            }
 
             default:
                 throw new Error(`Unknown command: "${command}"\nRun 'deepsift --help' for available commands.`);

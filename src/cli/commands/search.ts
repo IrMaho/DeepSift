@@ -5,6 +5,7 @@ import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-outpu
 import { saveSearchLog } from '../../utils/history.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 import { ContextInjector } from '../../core/context-injector.js';
+import { MemoManifestManager } from '../../memo/manifest-manager.js';
 
 export interface SearchOptions {
     skipSync?: boolean;
@@ -120,6 +121,8 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
             printSuccess(`Results cached in: ${link}`);
         }
     }
+
+    emitMemoPrompt(projectPath, format);
 }
 
 async function executeMultiSearch(router: RealmRouter, projectPath: string, queries: string[], format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
@@ -180,5 +183,21 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
             const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
             printSuccess(`Results cached in: ${link}`);
         }
+    }
+
+    emitMemoPrompt(projectPath, format);
+}
+
+function emitMemoPrompt(projectPath: string, format: OutputFormat) {
+    if (format === 'json') return;
+    try {
+        const manifest = new MemoManifestManager(projectPath);
+        const openTags = manifest.getOpenTags();
+        if (openTags.length > 0) {
+            const tagNames = openTags.map(t => t.name).join(', ');
+            printInfo(`\n\x1b[33m\u{1F4DD} Open memo tags: [${tagNames}]\x1b[0m`);
+            printInfo(`\x1b[36m\u{1F4A1} Notable findings? Use: deepsift memo add "<tag>" --data "<your findings>"\x1b[0m`);
+        }
+    } catch {
     }
 }
