@@ -216,7 +216,7 @@ const server = new McpServer({
     "Get the current status of the vector index",
     {},
     async (args: any) => {
-        const status = indexer.getStatus();
+        const status = await indexer.getStatus();
         broadcastEvent('tool_call', { tool: 'search_status', args, response: status });
         
         const lastUpdatedDate = status.lastUpdated > 0 ? new Date(status.lastUpdated).toLocaleString() : 'Never';
@@ -394,7 +394,9 @@ const server = new McpServer({
         broadcastEvent('tool_call', { tool: 'generate_project_dna', args, response: 'Generating DNA...' });
         
         try {
-            const dna = await generateDNA(projectPath);
+            const { unifiedWalk } = await import('./core/unified-walker.js');
+            const walkResult = await unifiedWalk(projectPath);
+            const dna = await generateDNA(projectPath, walkResult);
             const msg = `Successfully generated Project DNA for ${dna.identity.name}.`;
             broadcastEvent('tool_call', { tool: 'generate_project_dna', args, response: msg });
             return { content: [{ type: "text", text: msg }] };
@@ -612,6 +614,46 @@ const server = new McpServer({
             return { content: [{ type: "text", text: `✔ Healer Proposal Generated.\n\n${compressed}\n\n[MANDATORY]: You MUST read the visual cache at ${link} before writing the patch.` }] };
         } catch (e: any) {
             return { content: [{ type: "text", text: `Error generating heal proposal: ${e.message}` }] };
+        }
+    }
+);
+
+// Tool 17: batch_sed
+(server as any).tool(
+    "batch_sed",
+    "Applies regex or raw text replacements directly to multiple files on disk without creating temporary files.",
+    {
+        files: z.array(z.string()).describe("List of glob patterns or specific paths (e.g., ['src/**/*.ts'])"),
+        replacements: z.array(z.object({
+            search: z.string(),
+            replace: z.string(),
+            regex: z.boolean().optional().describe("If true, treats 'search' as a regex pattern (e.g. '^foo'). If false, treats as raw string."),
+            all: z.boolean().optional().describe("If true, replaces all occurrences. Default is false (only first occurrence).")
+        }))
+    },
+    async (args: any) => {
+        const { files, replacements } = args;
+        broadcastEvent('tool_call', { tool: 'batch_sed', args, response: 'Running batch replacement...' });
+        try {
+            const { pipeCommand } = await import('./cli/commands/pipe.js');
+            const operations = replacements.map((r: any) => ({
+                pattern: r.regex ? `/${r.search}/${r.all ? 'g' : ''}` : r.search,
+                replacement: r.replace
+            }));
+            
+            // Redirect console.log to capture output
+            const originalLog = console.log;
+            let logs = '';
+            console.log = (msg: string) => { logs += msg + '\n'; };
+            
+            const allFlag = replacements.some((r: any) => r.all && !r.regex); // regex 'all' is handled in the pattern string
+            await pipeCommand(files, operations, { all: allFlag });
+            
+            console.log = originalLog;
+            
+            return { content: [{ type: "text", text: logs.trim() || "Batch replacement complete." }] };
+        } catch (e: any) {
+            return { content: [{ type: "text", text: `Error running batch sed: ${e.message}` }] };
         }
     }
 );

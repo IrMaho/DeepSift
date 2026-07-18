@@ -129,6 +129,27 @@
       ],
       "parserProfile": "code",
       "autoIndex": false
+    },
+    "fake_code": {
+      "displayName": "External Realm: fake_code",
+      "sourcePaths": [],
+      "parserProfile": "skill",
+      "autoIndex": false,
+      "isExternalHivemind": true
+    },
+    "flutter_docs": {
+      "displayName": "External Realm: flutter_docs",
+      "sourcePaths": [],
+      "parserProfile": "skill",
+      "autoIndex": false,
+      "isExternalHivemind": true
+    },
+    "test_db": {
+      "displayName": "External Realm: test_db",
+      "sourcePaths": [],
+      "parserProfile": "skill",
+      "autoIndex": false,
+      "isExternalHivemind": true
     }
   }
 }

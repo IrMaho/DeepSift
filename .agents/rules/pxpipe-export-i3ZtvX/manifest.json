@@ -1,0 +1,24 @@
+{
+  "sourceChars": 15375,
+  "files": [
+    "deepsift.md"
+  ],
+  "pages": [
+    {
+      "filename": "page-001.png",
+      "bytes": 59693,
+      "width": 1568,
+      "height": 408
+    }
+  ],
+  "cols": 312,
+  "model": "claude-sonnet-4-5",
+  "generatedAt": "2026-07-17T13:20:33.296Z",
+  "tokenReport": {
+    "textTokens": 4155,
+    "imageTokens": 939,
+    "percentSaved": 77.4,
+    "factsheetItemCount": 29,
+    "factsheetDropped": 0
+  }
+}

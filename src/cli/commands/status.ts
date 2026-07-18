@@ -3,10 +3,10 @@ import { Indexer } from '../../core/indexer.js';
 import { printResult, OutputFormat } from '../cli-output.js';
 import { getDbPath } from '../cli-paths.js';
 
-export function statusCommand(projectPath: string, format: OutputFormat) {
+export async function statusCommand(projectPath: string, format: OutputFormat) {
     const store = new NativeStore(getDbPath(projectPath));
     const indexer = new Indexer(store);
-    const status = indexer.getStatus();
+    const status = await indexer.getStatus();
 
     if (format === 'json') {
         printResult(JSON.stringify(status), format);

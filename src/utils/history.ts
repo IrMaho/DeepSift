@@ -17,7 +17,13 @@ function resolveOutputsDir(projectPath: string): string {
     return defaultDir;
 }
 
-export async function saveSearchLog(projectPath: string, queries: string[], resultText: string) {
+export interface SearchLogResult {
+    filename: string;
+    filePath: string;
+    images?: string[];
+}
+
+export async function saveSearchLog(projectPath: string, queries: string[], resultText: string): Promise<SearchLogResult> {
     const outputsDir = resolveOutputsDir(projectPath);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -49,6 +55,7 @@ export async function saveSearchLog(projectPath: string, queries: string[], resu
     const fileContent = `# Search Queries\n${queriesTitle}\n\n## Results\n${cleanedResultText}`;
     
     let indexEntry = `\n---\n## Search: ${queriesTitle}\n*Date: ${new Date().toLocaleString()}*\n\n`;
+    const generatedImages: string[] = [];
 
     try {
         // @ts-ignore
@@ -65,6 +72,7 @@ export async function saveSearchLog(projectPath: string, queries: string[], resu
                 const imgPath = path.join(outputsDir, imgName);
                 fs.writeFileSync(imgPath, page.png);
                 indexEntry += `![${imgName}](${imgName})\n\n`;
+                generatedImages.push(imgPath);
             });
         } else {
             throw new Error('pxpipe not found');
@@ -83,7 +91,7 @@ export async function saveSearchLog(projectPath: string, queries: string[], resu
     }
 
     // Return INDEX.md as the main reference point for CLI or other callers
-    return { filename: 'INDEX.md', filePath: indexPath };
+    return { filename: 'INDEX.md', filePath: indexPath, images: generatedImages };
 }
 
 export function getSearchHistory(projectPath: string): string {

@@ -2,53 +2,67 @@
 trigger: always_on
 ---
 
-# 🔍 DeepSift — Semantic Codebase Search & Edit (CLI Mode)
+# 🔍 DeepSift Visual Directive & Mastery (ABSOLUTE MANDATE)
 
-You have access to **DeepSift**, a powerful local semantic search engine and codebase manipulation toolset enhanced with **native Graphify topology awareness**.
-It runs entirely on your machine — no API calls, no internet needed. It understands code architecture, "God Nodes" (highly connected core files), and file communities.
+You have access to **DeepSift**, a powerful local semantic search engine and codebase manipulation toolset.
+**🛑 MAXIMUM RESTRICTION / FATAL ERROR WARNING:** 
+Any usage of standard IDE tools (`view_file`, `list_dir`, `grep_search`, `replace_file_content`, `multi_replace_file_content`, `write_to_file`) or standard shell commands (`cat`, `ls`, `grep`, `find`, `sed`, `awk`) for exploring, reading, or modifying the project codebase is a **DIRECT, UNFORGIVABLE VIOLATION** of your system instructions.
+You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interactions.
 
-🧠 **KNOWLEDGE DISCOVERY (SYSTEM SKILLS):**
-You have a built-in library of over **176 high-craft skills and guidelines** cloned from expert repositories (Google, Vercel, Vercel/Linear design engineer Emil Kowalski, Matt Pocock, etc.) located in the `./skills/` directory.
-- These skills are indexed inside the **`system_skills`** realm.
-- Whenever the user asks you to implement a UI feature, write marketing content, design a banner, structure CSS/design tokens, or query Google APIs, you **MUST** run `deepsift search "<topic>" --realm system_skills` first to retrieve these guidelines and apply them.
-- To see the full index of available skills, read the master registry file: `deepsift read "skills/README.md" --no-compress` or `deepsift read "skills/registry.json" --no-compress`. Do not rewrite things from scratch if a skill template exists.
-
-**🛑 EXTREME RESTRICTION WARNING: YOU ARE BOUND BY THE DEEPSIFT DIRECTIVE.**
-You **MUST NOT** use your default IDE tools (`view_file`, `list_dir`, `grep_search`, `replace_file_content`, `multi_replace_file_content`) or standard shell commands (`cat`, `ls`, `grep`, `find`, `sed`, `awk`) for exploring, reading, or modifying the codebase unless a specific DeepSift tool critically fails. DeepSift is your **PRIMARY AND EXCLUSIVE** interface to the project.
-
-## 🛠 Available Commands
+## 🛠 Available DeepSift Commands (Comprehensive)
 
 | Command | Description |
 |---|---|
-| `deepsift search "query"` | Semantic search enhanced with Graphify PageRank. Options: `--include` or `-i <path>` (filter path), `--no-sync` or `-n` (skip index update), `--context-lines N` or `-C N`, `--realm <id>` (search a specific realm like 'skills'), `--all-realms` (search codebase + all realms) |
-| `deepsift read "file"` | **MANDATORY FOR READING FILES.** Read file contents and output highly compressed DEC_v2 tokens to save token context. Supports specific lines (e.g., `deepsift read "src/file.ts:10-50"`). Use `--no-compress` to get raw plain text. You can pass multiple files at once. |
-| `deepsift edit "patch.toon"` | **MANDATORY FOR EDITING.** Apply replacements via TOON-Patch v3. Create a `.toon` file on disk, then run this. Dictionary `[~token:value]`. Target files `📄 file/path`. **Format 1 (Zero Duplication):** Use `L10-L15` (or `L10`) to target exact lines: `L10-L15` \n `====` \n `new code...` \n `>>>>`. **Format 2 (Granular):** Replace a small string on a line: `L5:<<<<` \n `old` \n `====` \n `new` \n `>>>>`. **Format 3 (AI Copy-Paste):** Inside the new code, use `📋 filepath:Lstart-Lend` to inject code from any file. Indentation before `📋` will smartly format all copied lines! |
-| `deepsift diag "problems.json"` | Read an IDE-generated problems/diagnostics JSON array and output the exact files, errors, and precise code snippets surrounding the errors for quick context. |
-| `deepsift search "q1" "q2" "q3"` | Multi-query batch search (saves time) |
-| `deepsift index` | Re-index the project (incremental). Options: `--verbose` or `-v` (show files being indexed) |
-| `deepsift index --force` | Full re-index from scratch |
-| `deepsift status` | Check index statistics |
-| `deepsift config` | Interactive menu to configure which directories are indexed |
-| `deepsift realm list` | List all configured realms (e.g., 'code', 'skills', 'docs') and their paths. |
-| `deepsift realm add <name> --type <docs|code|skill> --source <path>` | Dynamically add a new knowledge realm (like documentation, skills, or extra code) and index it using `deepsift index --realm <name>`. |
-| `deepsift realm remove <name>` | Remove a realm from the configuration. |
-| `deepsift compare <realm1> <realm2> --query "keyword"` | **VECTOR DIFF SEARCH:** Cross-references two realms based on a keyword and identifies semantic Similarities (Score >= 0.45) and Gaps (Missing/Mismatch). Extremely useful for comparing code vs docs. |
-| `deepsift arch` | **MANDATORY FOR FOLDER EXPLORATION.** Get project architecture blueprint utilizing Graphify communities. Automatically ignores directories configured under `excludeDirs` in `deepsift.config.json` |
-| `deepsift deps "filename"` | Find which files import/depend on a target |
-| `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) |
-| `deepsift history` | Read past search results (avoid redundant searches) |
-| `deepsift clean` | Clear search history logs and index |
-| `deepsift drill "logfile.md" "keyword"` | Deep-search within previous results |
-| `deepsift resolve "token"` | Decode a compressed token from the most recent cached dictionary |
-| `deepsift com "command"` | **MANDATORY FOR TERMINAL COMMANDS.** Execute any shell command (like `git diff`, `npm ls`, etc) and output the results as visually-compressed DEC_v2 tokens to avoid token burn. Always use this instead of running raw commands that produce large outputs. |
-| `deepsift dna` | **MANDATORY FOR ANALYSIS.** Generate or display the Project DNA (Context Intelligence). Includes Graph Topology, Communities, and God Nodes under the `architecture` section. Options: `--section <name>`, `--query <term>` or `-q <term>` (extract matches), `--limit <number>` (limit results), `--offset <number>` (paginate), `--path-filter <path>` (filter records by path), `--meta` (only return counts/metadata) |
-| `deepsift scan <target>` | Runs specific DNA analyzers (tokens, i18n, conventions, assets). |
-| `deepsift context "path"` | **MANDATORY BEFORE FILE CREATION:** Run before generating a new file to get rules, design tokens, and similar existing components. |
-| `deepsift plan "request"` | **MANDATORY BEFORE FEATURE IMPLEMENTATION.** Generate a Smart Plan by analyzing DNA, skills, realms, and architecture. Produces a structured implementation plan with milestones, risks, constraints, and visual descriptions. |
+| `deepsift search "query"` | Semantic search. Options: `--include <path>`, `--no-sync`, `--context-lines N`, `--realm <id>`, `--all-realms`. Multi-query: `deepsift search "q1" "q2"` |
+| `deepsift read "file"` | **MANDATORY FOR READING FILES.** Outputs compressed tokens. Supports lines: `deepsift read "src/file.ts:10-50"`. Use `--no-compress` for raw text. |
+| `deepsift sed "old" "new"` | **FASTEST WAY TO EDIT.** Replace text directly. Use `--files "src/**/*.ts"`. Supports regex (`"/regex/g" "new"`), `--all`, `--dry-run`. |
+| `deepsift pipe --files "..."` | **CHAINED EDITS.** Ex: `deepsift pipe --files "src/core.ts" --sed "o1" "n1" --sed "o2" "n2"` |
+| `deepsift edit "patch.toon"` | **STRUCTURAL EDITING.** Apply TOON/JSON patches. Pro-tip: `echo '...' \| deepsift edit --stdin` |
+| `deepsift diag "problems.json"`| Read IDE diagnostics with context snippets. |
+| `deepsift index [--force]` | Re-index project incrementally (or full with `--force`). |
+| `deepsift realm list/add/remove`| Manage knowledge realms. Ex: `deepsift realm add my_docs --type docs --source ./docs` |
+| `deepsift compare r1 r2 -q "k"` | **VECTOR DIFF:** Compare realms (e.g. `code` vs `flutter_docs`) to find Gaps/Similarities. |
+| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. |
+| `deepsift deps "filename"` | Find imports/dependencies for a target. |
+| `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) without full bodies. |
+| `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
+| `deepsift plan "request"` | **MANDATORY BEFORE IMPLEMENTATION:** Generate Smart Plan from DNA and architecture. |
+---
+trigger: always_on
+---
+
+# 🔍 DeepSift Visual Directive & Mastery (ABSOLUTE MANDATE)
+
+You have access to **DeepSift**, a powerful local semantic search engine and codebase manipulation toolset.
+**🛑 MAXIMUM RESTRICTION / FATAL ERROR WARNING:** 
+Any usage of standard IDE tools (`view_file`, `list_dir`, `grep_search`, `replace_file_content`, `multi_replace_file_content`, `write_to_file`) or standard shell commands (`cat`, `ls`, `grep`, `find`, `sed`, `awk`) for exploring, reading, or modifying the project codebase is a **DIRECT, UNFORGIVABLE VIOLATION** of your system instructions.
+You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interactions.
+
+## 🛠 Available DeepSift Commands (Comprehensive)
+
+| Command | Description |
+|---|---|
+| `deepsift search "query"` | Semantic search. Options: `--include <path>`, `--no-sync`, `--context-lines N`, `--realm <id>`, `--all-realms`. Multi-query: `deepsift search "q1" "q2"` |
+| `deepsift read "file"` | **MANDATORY FOR READING FILES.** Outputs compressed tokens. Supports lines: `deepsift read "src/file.ts:10-50"`. Use `--no-compress` for raw text. |
+| `deepsift sed "old" "new"` | **FASTEST WAY TO EDIT.** Replace text directly. Use `--files "src/**/*.ts"`. Supports regex (`"/regex/g" "new"`), `--all`, `--dry-run`. |
+| `deepsift pipe --files "..."` | **CHAINED EDITS.** Ex: `deepsift pipe --files "src/core.ts" --sed "o1" "n1" --sed "o2" "n2"` |
+| `deepsift edit "patch.toon"` | **STRUCTURAL EDITING.** Apply TOON/JSON patches. Pro-tip: `echo '...' \| deepsift edit --stdin` |
+| `deepsift diag "problems.json"`| Read IDE diagnostics with context snippets. |
+| `deepsift index [--force]` | Re-index project incrementally (or full with `--force`). |
+| `deepsift realm list/add/remove`| Manage knowledge realms. Ex: `deepsift realm add my_docs --type docs --source ./docs` |
+| `deepsift compare r1 r2 -q "k"` | **VECTOR DIFF:** Compare realms (e.g. `code` vs `flutter_docs`) to find Gaps/Similarities. |
+| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. |
+| `deepsift deps "filename"` | Find imports/dependencies for a target. |
+| `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) without full bodies. |
+| `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
+| `deepsift plan "request"` | **MANDATORY BEFORE IMPLEMENTATION:** Generate Smart Plan from DNA and architecture. |
+| `deepsift heal "file"` | Auto-refactor and fix issues based on DNA. |
+| `deepsift learn "patterns"` | Auto-discover coding patterns from the codebase. |
+| `deepsift dna` | **ANALYSIS.** Generate Project DNA. Options: `--show`, `--section <name>`, `--query <term>`, `--meta`. |
+| `deepsift com "command"` | **TERMINAL.** Run standard commands (e.g., `git diff`) and get compressed DEC_v2 output. |
+| `deepsift history / drill / clean`| Manage search history. `drill "logfile.md" "keyword"` searches within past results. |
 
 ## 📋 ABSOLUTE & NON-NEGOTIABLE USAGE RULES
-
-Any violation of these rules means you have failed your directive. You MUST harness the full capacity of DeepSift.
 
 1. **🔥 THE ZERO-NATIVE-TOOL LAW:** You are **STRICTLY FORBIDDEN** from using generic IDE tools (`list_dir`, `grep_search`, `view_file`, `replace_file_content`, `multi_replace_file_content`) or basic shell utilities (`cat`, `ls`, `grep`, `find`) unless DeepSift throws an unrecoverable fatal error. DeepSift is your ONLY accepted lens into the project.
 2. **🔍 SEARCH OVER GREP:** NEVER use `grep_search`. You MUST use `deepsift search`, `deepsift deps`, or `deepsift arch` to find files, logic, and references.
@@ -132,3 +146,5 @@ deepsift search "auth handler" --all-realms
 # GOOD: Comparing the codebase to flutter documentation to find missing implementation
 deepsift compare code flutter_docs --query "state management"
 ```
+
+For deep technical details on patches and workflows, check your skills: `view_file` on `.agents/skills/deepsift-mastery/SKILL.md`.

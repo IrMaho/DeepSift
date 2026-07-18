@@ -136,19 +136,33 @@ export async function editCommand(
     patchFilePath: string,
     format: OutputFormat
 ) {
-    let fullPatchPath = path.resolve(process.cwd(), patchFilePath);
-    if (!fs.existsSync(fullPatchPath)) {
-        fullPatchPath = path.resolve(projectPath, patchFilePath);
-    }
-    
-    if (!fs.existsSync(fullPatchPath)) {
-        throw new Error(`Patch file not found: ${fullPatchPath}`);
+    let content = '';
+
+    if (patchFilePath === '--stdin') {
+        content = await new Promise<string>((resolve, reject) => {
+            let data = '';
+            process.stdin.setEncoding('utf-8');
+            process.stdin.on('data', chunk => data += chunk);
+            process.stdin.on('end', () => resolve(data));
+            process.stdin.on('error', reject);
+        });
+        if (!content.trim()) {
+            throw new Error('No content provided via stdin');
+        }
+    } else {
+        let fullPatchPath = path.resolve(process.cwd(), patchFilePath);
+        if (!fs.existsSync(fullPatchPath)) {
+            fullPatchPath = path.resolve(projectPath, patchFilePath);
+        }
+        
+        if (!fs.existsSync(fullPatchPath)) {
+            throw new Error(`Patch file not found: ${fullPatchPath}`);
+        }
+        content = fs.readFileSync(fullPatchPath, 'utf-8');
     }
 
     let patchData: FileEdit[] = [];
     let dictionary: Record<string, string> | undefined;
-
-    const content = fs.readFileSync(fullPatchPath, 'utf-8');
     try {
         const parsedData = JSON.parse(content);
         if (Array.isArray(parsedData)) {

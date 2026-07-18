@@ -110,8 +110,15 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
     const logInfo = await saveSearchLog(projectPath, [query], finalOutput);
     printResult(finalOutput, format);
     if (format !== 'json') {
-        const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
-        printSuccess(`Results cached in: ${link}`);
+        if (logInfo.images && logInfo.images.length > 0) {
+            logInfo.images.forEach((img: string, idx: number) => {
+                const link = `file:///${img.replace(/\\/g, '/')}`;
+                printSuccess(`Results cached in (Page ${idx + 1}): ${link}`);
+            });
+        } else {
+            const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
+            printSuccess(`Results cached in: ${link}`);
+        }
     }
 }
 
@@ -164,7 +171,14 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
     const logInfo = await saveSearchLog(projectPath, queries, finalOutput);
     printResult(finalOutput, format);
     if (format !== 'json') {
-        const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
-        printSuccess(`Results cached in: ${link}`);
+        if (logInfo.images && logInfo.images.length > 0) {
+            logInfo.images.forEach((img, idx) => {
+                const link = `file:///${img.replace(/\\/g, '/')}`;
+                printSuccess(`Results cached in (Page ${idx + 1}): ${link}`);
+            });
+        } else {
+            const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
+            printSuccess(`Results cached in: ${link}`);
+        }
     }
 }

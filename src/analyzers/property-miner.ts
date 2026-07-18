@@ -36,16 +36,12 @@ interface RawAssignment {
     line: number;
 }
 
-export function mineTokens(
-    projectPath: string,
-    onProgress?: (current: number, total: number) => void
-): { tokens: DiscoveredToken[]; clusters: TokenCluster[] } {
-    const candidateFiles = findCandidateFiles(projectPath);
+export function mineTokens(projectPath: string, tokenFiles: string[], onProgress?: (current: number, total: number) => void): { tokens: DiscoveredToken[]; clusters: TokenCluster[] } {
     const rawAssignments: RawAssignment[] = [];
 
-    for (let i = 0; i < candidateFiles.length; i++) {
-        if (onProgress) onProgress(i + 1, candidateFiles.length);
-        const assignments = extractAssignments(candidateFiles[i]);
+    for (let i = 0; i < tokenFiles.length; i++) {
+        if (onProgress) onProgress(i + 1, tokenFiles.length);
+        const assignments = extractAssignments(tokenFiles[i]);
         rawAssignments.push(...assignments);
     }
 

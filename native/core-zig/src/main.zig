@@ -11,6 +11,7 @@ const BatchOperation = struct {
 };
 
 const Request = struct {
+    id: ?usize = null,
     action: []const u8,
     dbPath: []const u8,
     graphDbPath: ?[]const u8 = null,
@@ -33,10 +34,12 @@ const Request = struct {
 };
 
 const ResponseOk = struct {
+    id: ?usize = null,
     success: bool = true,
 };
 
 const ResponseError = struct {
+    id: ?usize = null,
     success: bool = false,
     message: []const u8,
 };
@@ -47,22 +50,26 @@ const MetadataResponse = struct {
 };
 
 const AllMetadataResponse = struct {
+    id: ?usize = null,
     success: bool = true,
     data: []const db.FileMetadata,
 };
 
 const ChunksResponse = struct {
+    id: ?usize = null,
     success: bool = true,
     data: []const db.Chunk,
 };
 
 pub const ChunkEmbedding = struct { id: []const u8, embedding: [db.VECTOR_BQ_U32_COUNT]u32 };
 const ChunkEmbeddingsResponse = struct {
+    id: ?usize = null,
     success: bool = true,
     data: []const ChunkEmbedding,
 };
 
 const StatusResponse = struct {
+    id: ?usize = null,
     success: bool = true,
     data: struct {
         totalFiles: u32,
@@ -85,6 +92,7 @@ const SearchMatch = struct {
 };
 
 const SearchResponse = struct {
+    id: ?usize = null,
     success: bool = true,
     data: []const SearchMatch,
 };
@@ -163,58 +171,44 @@ pub fn main() !void {
     var graph_db = db.GraphDatabase.init(allocator);
     defer graph_db.deinit();
 
-    // Read all from stdin
-    var input_array = std.ArrayList(u8).empty;
-    defer input_array.deinit(allocator);
+    var req_arena = std.heap.ArenaAllocator.init(allocator);
+    defer req_arena.deinit();
+    const req_allocator = req_arena.allocator();
 
-    var read_buf: [65536]u8 = undefined;
     while (true) {
-        const n = try reader.interface.readSliceShort(&read_buf);
-        if (n == 0) break;
-        try input_array.appendSlice(allocator, read_buf[0..n]);
-        if (input_array.items.len > 1024 * 1024 * 200) return error.FileTooBig;
-    }
-    const input_data = input_array.items;
+        _ = req_arena.reset(.retain_capacity);
+        var input_array = std.ArrayList(u8).empty;
+        // No defer deinit needed since we use arena
 
-    std.debug.print("Read {d} bytes from stdin\n", .{input_data.len});
+        while (true) {
+            var byte: [1]u8 = undefined;
+            const bytes_read = reader.interface.readSliceShort(&byte) catch {
+                break;
+            };
+            if (bytes_read == 0) {
+                if (input_array.items.len == 0) return; // EOF
+                break;
+            }
+            if (byte[0] == '\n') break;
+            try input_array.append(req_allocator, byte[0]);
+            if (input_array.items.len > 1024 * 1024 * 200) return error.FileTooBig;
+        }
 
-    if (input_data.len == 0) return;
+        const input_data = input_array.items;
+        if (input_data.len == 0) continue;
 
-    var parsed = std.json.parseFromSlice(Request, allocator, input_data, .{
-        .ignore_unknown_fields = true,
-    }) catch |err| {
-        std.debug.print("Failed to parse JSON: {any}\n", .{err});
-        try writeResponse(allocator, &writer.interface, ResponseError{ .message = "Invalid JSON" });
-        return;
-    };
-    defer parsed.deinit();
+        const parsed = std.json.parseFromSlice(Request, req_allocator, input_data, .{ .ignore_unknown_fields = true }) catch {
+            try writeResponse(allocator, &writer.interface, ResponseError{ .id = null, .message = "Invalid JSON" });
+            try writer.flush();
+            continue;
+        };
+        // No need to defer parsed.deinit() since we use an arena that gets reset or deinit'd
 
     const req = parsed.value;
+        const req_id = req.id;
 
-    var resolved_db_path: []const u8 = req.dbPath;
-    var resolved_graph_path: ?[]const u8 = req.graphDbPath;
-    var realm_allocated_db = false;
-    var realm_allocated_graph = false;
-
-    if (req.projectPath) |pp| {
-        var rm = realm_mod.RealmManager.init(allocator, pp);
-        const r_db = rm.resolveDbPath(req.realmId, req.dbPath) catch null;
-        if (r_db) |rdp| {
-            resolved_db_path = rdp;
-            realm_allocated_db = true;
-        }
-        const r_graph = rm.resolveGraphPath(req.realmId, req.graphDbPath) catch null;
-        if (r_graph) |rgp| {
-            resolved_graph_path = rgp;
-            realm_allocated_graph = true;
-        }
-    }
-    defer if (realm_allocated_db) allocator.free(resolved_db_path);
-    defer {
-        if (realm_allocated_graph) {
-            if (resolved_graph_path) |rgp| allocator.free(rgp);
-        }
-    }
+    const resolved_db_path: []const u8 = req.dbPath;
+    const resolved_graph_path: ?[]const u8 = req.graphDbPath;
 
     std.debug.print("Loading database...\n", .{});
     database.loadFromFile(io, resolved_db_path) catch |err| {
@@ -236,14 +230,17 @@ pub fn main() !void {
     if (std.mem.eql(u8, req.action, "saveGraph")) {
         std.debug.print("Processing saveGraph...\n", .{});
         if (req.graphNodes) |nodes| {
+            std.debug.print("Appending {d} nodes...\n", .{nodes.len});
             graph_db.reset();
             try graph_db.nodes.appendSlice(allocator, nodes);
-            if (req.graphEdges) |edges| {
-                try graph_db.edges.appendSlice(allocator, edges);
-            }
-            graph_modified = true;
-            try writeResponse(allocator, &writer.interface, ResponseOk{});
         }
+        if (req.graphEdges) |edges| {
+            std.debug.print("Appending {d} edges...\n", .{edges.len});
+            try graph_db.edges.appendSlice(allocator, edges);
+        }
+        graph_modified = true;
+        std.debug.print("Sending ResponseOk...\n", .{});
+        try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
     } else if (std.mem.eql(u8, req.action, "graphBFS")) {
         if (req.startNodes) |sn| {
             var algos = graph.GraphAlgorithms.init(allocator, &graph_db);
@@ -256,14 +253,14 @@ pub fn main() !void {
             defer result.deinit(allocator);
             
             // For now just return the OK, we should ideally return the nodes
-            try writeResponse(allocator, &writer.interface, ResponseOk{});
+            try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
         }
     } else if (std.mem.eql(u8, req.action, "saveMetadata")) {
         std.debug.print("Processing saveMetadata...\n", .{});
         if (req.metadata) |m| {
             try database.addMetadata(m);
             modified = true;
-            try writeResponse(allocator, &writer.interface, ResponseOk{});
+            try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
         }
 
     } else if (std.mem.eql(u8, req.action, "getMetadata")) {
@@ -283,13 +280,13 @@ pub fn main() !void {
         while (it.next()) |entry| {
             try results.append(allocator, entry.value_ptr.*);
         }
-        try writeResponse(allocator, &writer.interface, AllMetadataResponse{ .data = results.items });
+        try writeResponse(allocator, &writer.interface, AllMetadataResponse{ .id = req_id, .data = results.items });
 
     } else if (std.mem.eql(u8, req.action, "deleteFileChunks")) {
         if (req.filePath) |fp| {
             database.deleteFileChunks(fp);
             modified = true;
-            try writeResponse(allocator, &writer.interface, ResponseOk{});
+            try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
         }
     } else if (std.mem.eql(u8, req.action, "saveChunks")) {
         if (req.chunks) |chunks| {
@@ -297,7 +294,7 @@ pub fn main() !void {
                 try database.addChunk(c);
             }
             modified = true;
-            try writeResponse(allocator, &writer.interface, ResponseOk{});
+            try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
         }
     } else if (std.mem.eql(u8, req.action, "batchExecute")) {
         std.debug.print("Processing batchExecute...\n", .{});
@@ -322,19 +319,19 @@ pub fn main() !void {
                     }
                 }
             }
-            try writeResponse(allocator, &writer.interface, ResponseOk{});
+            try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
         } else {
-            try writeResponse(allocator, &writer.interface, ResponseError{ .message = "Missing batch operations array" });
+            try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Missing batch operations array" });
         }
     } else if (std.mem.eql(u8, req.action, "getAllChunks")) {
-        try writeResponse(allocator, &writer.interface, ChunksResponse{ .data = database.chunks.items });
+        try writeResponse(allocator, &writer.interface, ChunksResponse{ .id = req_id, .data = database.chunks.items });
     } else if (std.mem.eql(u8, req.action, "getChunkEmbeddings")) {
         var results = std.ArrayList(ChunkEmbedding).empty;
         defer results.deinit(allocator);
         for (database.chunks.items) |c| {
             try results.append(allocator, .{ .id = c.id, .embedding = c.embedding });
         }
-        try writeResponse(allocator, &writer.interface, ChunkEmbeddingsResponse{ .data = results.items });
+        try writeResponse(allocator, &writer.interface, ChunkEmbeddingsResponse{ .id = req_id, .data = results.items });
     } else if (std.mem.eql(u8, req.action, "getChunksByIds")) {
         var results = std.ArrayList(db.Chunk).empty;
         defer results.deinit(allocator);
@@ -348,7 +345,7 @@ pub fn main() !void {
                 }
             }
         }
-        try writeResponse(allocator, &writer.interface, ChunksResponse{ .data = results.items });
+        try writeResponse(allocator, &writer.interface, ChunksResponse{ .id = req_id, .data = results.items });
     } else if (std.mem.eql(u8, req.action, "getStatus")) {
         std.debug.print("Processing getStatus...\n", .{});
         var last_updated: i64 = 0;
@@ -358,8 +355,7 @@ pub fn main() !void {
                 last_updated = entry.value_ptr.last_indexed;
             }
         }
-        try writeResponse(allocator, &writer.interface, StatusResponse{
-            .data = .{
+        try writeResponse(allocator, &writer.interface, StatusResponse{ .id = req_id, .data = .{
                 .totalFiles = @intCast(database.metadata.count()),
                 .totalChunks = @intCast(database.chunks.items.len),
                 .lastUpdated = last_updated,
@@ -407,7 +403,7 @@ pub fn main() !void {
                 .matchType = "keyword",
             };
         }
-        try writeResponse(allocator, &writer.interface, SearchResponse{ .data = final_matches });
+        try writeResponse(allocator, &writer.interface, SearchResponse{ .id = req_id, .data = final_matches });
     } else if (std.mem.eql(u8, req.action, "searchSemantic")) {
         const top_k = req.topK orelse 20;
         if (req.queryEmbedding) |qe| {
@@ -440,10 +436,10 @@ pub fn main() !void {
                     .matchType = "semantic",
                 };
             }
-            try writeResponse(allocator, &writer.interface, SearchResponse{ .data = final_matches });
+            try writeResponse(allocator, &writer.interface, SearchResponse{ .id = req_id, .data = final_matches });
         }
     } else {
-        try writeResponse(allocator, &writer.interface, ResponseError{ .message = "Unknown action" });
+        try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Unknown action" });
     }
 
     try writer.flush();
@@ -461,4 +457,5 @@ pub fn main() !void {
             };
         }
     }
+    } // End of while(true) loop
 }

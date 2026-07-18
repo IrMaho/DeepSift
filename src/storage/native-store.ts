@@ -1,7 +1,8 @@
-import { spawnSync } from 'child_process';
+import { ZigBridge } from './zig-bridge.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import zlib from 'zlib';
 import { EmbeddedChunk, IndexMetadata, SearchResult, ChunkType } from '../types/index.js';
 
 export interface BatchOperation {
@@ -25,66 +26,61 @@ export class NativeStore {
     private graphDbPath?: string;
     private realmId?: string;
     private projectPath?: string;
+    private workingDbPath: string;
 
     constructor(dbPath: string, graphDbPath?: string, realmId?: string, projectPath?: string) {
         this.dbPath = dbPath;
         this.graphDbPath = graphDbPath;
         this.realmId = realmId;
         this.projectPath = projectPath;
+        this.workingDbPath = dbPath + ".tmp";
+        
+        // Decompress database if exists
+        if (fs.existsSync(this.dbPath) && !fs.existsSync(this.workingDbPath)) {
+            try {
+                const data = fs.readFileSync(this.dbPath);
+                const uncompressed = zlib.gunzipSync(data);
+                fs.writeFileSync(this.workingDbPath, uncompressed);
+            } catch (e) {
+                // If it wasn't compressed, just copy it
+                fs.copyFileSync(this.dbPath, this.workingDbPath);
+            }
+        }
         
         if (!fs.existsSync(EXE_PATH)) {
-            throw new Error(`Zig database executable not found at ${EXE_PATH}. Please compile it first.`);
+            // Initialize bridge if needed
+            ZigBridge.getInstance();
         }
     }
 
-    private executeAction(action: string, payload: any = {}): any {
+    private async executeAction(action: string, payload: any = {}): Promise<any> {
         const req = {
             action,
-            dbPath: this.dbPath,
+            dbPath: this.workingDbPath,
             graphDbPath: this.graphDbPath,
             realmId: this.realmId,
             projectPath: this.projectPath,
             ...payload
         };
 
-        const inputJson = JSON.stringify(req);
-        const inputSizeMB = (Buffer.byteLength(inputJson, 'utf-8') / (1024 * 1024)).toFixed(2);
+        const result = await ZigBridge.getInstance().sendRequest(req);
+        return result;
+    }
 
-        const result = spawnSync(EXE_PATH, [], {
-            input: inputJson,
-            encoding: 'utf-8',
-            maxBuffer: 1024 * 1024 * 200,
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
-
-        if (result.error) {
-            throw new Error(`Failed to execute Zig database process (payload: ${inputSizeMB}MB): ${result.error.message}`);
-        }
-
-        if (result.status !== 0) {
-            throw new Error(`Zig database process exited with code ${result.status} (payload: ${inputSizeMB}MB): ${result.stderr}`);
-        }
-
-        if (!result.stdout || result.stdout.trim().length === 0) {
-            return undefined;
-        }
-
-        try {
-            const res = JSON.parse(result.stdout);
-            if (res.error) {
-                throw new Error(`Database error: ${res.message}`);
+    private async syncToDisk() {
+        if (fs.existsSync(this.workingDbPath)) {
+            try {
+                const data = await fs.promises.readFile(this.workingDbPath);
+                const compressed = zlib.gzipSync(data);
+                await fs.promises.writeFile(this.dbPath, compressed);
+            } catch (e) {
+                console.error("Failed to compress cache.db", e);
             }
-            return res.data;
-        } catch (err: any) {
-            if (err.name === 'SyntaxError') {
-                throw new Error(`Invalid JSON response from Zig database: ${result.stdout.substring(0, 200)}`);
-            }
-            throw err;
         }
     }
 
-    public saveMetadata(metadata: IndexMetadata) {
-        this.executeAction('saveMetadata', {
+    public async saveMetadata(metadata: IndexMetadata) {
+        await this.executeAction('saveMetadata', {
             metadata: {
                 file_path: metadata.filePath,
                 file_hash: metadata.fileHash,
@@ -92,10 +88,11 @@ export class NativeStore {
                 chunk_count: metadata.chunkCount
             }
         });
+        await this.syncToDisk();
     }
 
-    public getMetadata(filePath: string): IndexMetadata | undefined {
-        const data = this.executeAction('getMetadata', { filePath });
+    public async getMetadata(filePath: string): Promise<IndexMetadata | undefined> {
+        const data = await this.executeAction('getMetadata', { filePath });
         if (!data) return undefined;
         return {
             filePath: data.file_path,
@@ -105,8 +102,8 @@ export class NativeStore {
         };
     }
 
-    public getAllMetadata(): Map<string, IndexMetadata> {
-        const data = this.executeAction('getAllMetadata');
+    public async getAllMetadata(): Promise<Map<string, IndexMetadata>> {
+        const data = await this.executeAction('getAllMetadata');
         const map = new Map<string, IndexMetadata>();
         if (!data) return map;
         
@@ -121,8 +118,9 @@ export class NativeStore {
         return map;
     }
 
-    public deleteFileChunks(filePath: string) {
-        this.executeAction('deleteFileChunks', { filePath });
+    public async deleteFileChunks(filePath: string) {
+        await this.executeAction('deleteFileChunks', { filePath });
+        await this.syncToDisk();
     }
 
     private quantizeF32ToBQ(vector: Float32Array): number[] {
@@ -137,7 +135,7 @@ export class NativeStore {
         return result;
     }
 
-    public saveChunks(chunks: EmbeddedChunk[]) {
+    public async saveChunks(chunks: EmbeddedChunk[]) {
         if (chunks.length === 0) return;
         
         const serializedChunks = chunks.map(c => {
@@ -162,12 +160,14 @@ export class NativeStore {
             };
         });
 
-        this.executeAction('saveChunks', { chunks: serializedChunks });
+        await this.executeAction('saveChunks', { chunks: serializedChunks });
+        await this.syncToDisk();
     }
 
-    public executeBatch(ops: BatchOperation[]) {
+    public async executeBatch(ops: BatchOperation[]) {
         if (ops.length === 0) return;
-        this.executeAction('batchExecute', { batch: ops });
+        await this.executeAction('batchExecute', { batch: ops });
+        await this.syncToDisk();
     }
 
     public formatChunkForBatch(c: EmbeddedChunk): any {
@@ -192,9 +192,9 @@ export class NativeStore {
         };
     }
 
-    public searchSemantic(queryEmbeddingF32: Float32Array, topK: number = 20): SearchResult[] {
+    public async searchSemantic(queryEmbeddingF32: Float32Array, topK: number = 20): Promise<SearchResult[]> {
         const bqQuery = this.quantizeF32ToBQ(queryEmbeddingF32);
-        const data = this.executeAction('searchSemantic', { queryEmbedding: bqQuery, topK });
+        const data = await this.executeAction('searchSemantic', { queryEmbedding: bqQuery, topK });
         if (!data) return [];
         
         return data.map((row: any) => ({
@@ -213,8 +213,8 @@ export class NativeStore {
     }
 
 
-    public searchKeyword(query: string, topK: number = 20): SearchResult[] {
-        const data = this.executeAction('searchKeyword', { query, topK });
+    public async searchKeyword(query: string, topK: number = 20): Promise<SearchResult[]> {
+        const data = await this.executeAction('searchKeyword', { query, topK });
         if (!data) return [];
         
         return data.map((row: any) => ({
@@ -232,8 +232,8 @@ export class NativeStore {
         }));
     }
 
-    public getAllChunks(): EmbeddedChunk[] {
-        const data = this.executeAction('getAllChunks');
+    public async getAllChunks(): Promise<EmbeddedChunk[]> {
+        const data = await this.executeAction('getAllChunks');
         if (!data) return [];
         
         return data.map((row: any) => ({
@@ -250,8 +250,8 @@ export class NativeStore {
         }));
     }
 
-    public getChunkEmbeddings(): { id: string; embedding: Buffer }[] {
-        const data = this.executeAction('getChunkEmbeddings');
+    public async getChunkEmbeddings(): Promise<{ id: string; embedding: Buffer }[]> {
+        const data = await this.executeAction('getChunkEmbeddings');
         if (!data) return [];
         
         return data.map((row: any) => ({
@@ -260,9 +260,9 @@ export class NativeStore {
         }));
     }
 
-    public getChunksByIds(ids: string[]): EmbeddedChunk[] {
+    public async getChunksByIds(ids: string[]): Promise<EmbeddedChunk[]> {
         if (ids.length === 0) return [];
-        const data = this.executeAction('getChunksByIds', { ids });
+        const data = await this.executeAction('getChunksByIds', { ids });
         if (!data) return [];
         
         return data.map((row: any) => ({
@@ -283,15 +283,37 @@ export class NativeStore {
         // No-op for the native store, as the process exits after each request.
     }
 
-    public saveGraph(nodes: any[], edges: any[]) {
-        this.executeAction('saveGraph', {
-            graphNodes: nodes,
-            graphEdges: edges
+    public async saveGraph(nodes: any[], edges: any[]) {
+        const nodeIndexMap = new Map<string, number>();
+        const mappedNodes = nodes.map((node, index) => {
+            nodeIndexMap.set(node.id, index);
+            return {
+                id: node.id,
+                label: node.label,
+                source_file: node.sourceFile,
+                source_location: node.sourceLocation,
+                community: node.community || 0,
+                in_degree: node.inDegree || 0,
+                out_degree: node.outDegree || 0,
+                page_rank: node.pageRank || 0
+            };
+        });
+
+        const mappedEdges = edges.map(edge => ({
+            source: nodeIndexMap.get(edge.source) ?? 0,
+            target: nodeIndexMap.get(edge.target) ?? 0,
+            relation: edge.relation,
+            confidence: edge.confidence
+        }));
+
+        await this.executeAction('saveGraph', {
+            graphNodes: mappedNodes,
+            graphEdges: mappedEdges
         });
     }
 
-    public getStatus() {
-        const data = this.executeAction('getStatus');
+    public async getStatus(): Promise<any> {
+        const data = await this.executeAction('getStatus');
         if (!data) {
             return {
                 totalFiles: 0,

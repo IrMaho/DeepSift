@@ -85,7 +85,7 @@ function detectTimeBombs(coverages: FileCoverage[], dna: ProjectDNA): { bombs: T
     return { bombs, safes };
 }
 
-export function integrateTestAnalyzer(projectPath: string, dna: ProjectDNA, onProgress?: (phase: string, detail: string) => void): void {
+export function integrateTestAnalyzer(projectPath: string, dna: ProjectDNA, testFiles: string[], onProgress?: (phase: string, detail: string) => void): void {
     let hasCoverageData = false;
     let fileCoverages: FileCoverage[] = [];
     

@@ -9,37 +9,6 @@ permissions:
   contents: write
 
 jobs:
-  publish-npm:
-    name: Publish to NPM Registry
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          registry-url: 'https://registry.npmjs.org'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Build TypeScript
-        run: pnpm exec tsc
-
-      - name: Publish to NPM
-        run: pnpm publish --no-git-checks --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        continue-on-error: true # Prevents workflow failure if NPM_TOKEN isn't set yet
-
   create-github-release:
     name: Create GitHub Release and Upload Assets
     runs-on: windows-2022
@@ -55,7 +24,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.x
           cache: 'pnpm'
 
       - name: Setup Zig Compiler
