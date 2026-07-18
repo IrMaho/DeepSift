@@ -30,6 +30,7 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) without full bodies. |
 | `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
 | `deepsift plan "request"` | **MANDATORY BEFORE IMPLEMENTATION:** Generate Smart Plan from DNA and architecture. |
+| `deepsift memo <action>`  | **DRM ENGINE:** Dynamic Research Memory tag management, notes, queries, and relations. |
 ---
 trigger: always_on
 ---
@@ -64,6 +65,7 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
 | `deepsift dna` | **ANALYSIS.** Generate Project DNA. Options: `--show`, `--section <name>`, `--query <term>`, `--meta`. |
 | `deepsift com "command"` | **TERMINAL.** Run standard commands (e.g., `git diff`) and get compressed DEC_v2 output. |
 | `deepsift history / drill / clean`| Manage search history. `drill "logfile.md" "keyword"` searches within past results. |
+| `deepsift memo <action>`  | **DRM ENGINE:** Dynamic Research Memory tags (open, close, list, add, query, graph, export, prompt). |
 
 ## 📋 ABSOLUTE & NON-NEGOTIABLE USAGE RULES
 
@@ -198,6 +200,12 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
       - Existing imports (especially icon/asset imports like SVG files)
     - Before writing replacement code, create a **checklist** of these capabilities from the original file and verify each one exists in your replacement.
     - **WHY:** The agent deleted RTL support, `RawSvgIcon` imports, `Button` component usage, and icon asset imports during refactoring.
+26. **🧠 DYNAMIC RESEARCH MEMORY (DRM) ENGAGEMENT (MANDATORY):**
+    - To prevent losing research findings, architectural guidelines, or error resolutions, you MUST actively use `deepsift memo`.
+    - At the start of a feature/task, create a research tag using `deepsift memo open "tag-name"`.
+    - Record findings, snippets, decisions, references, or solutions with `deepsift memo add "tag-name" --data "content" --type "type"`.
+    - Query your research space using `deepsift memo query "tag-name" "query"` or cross-reference using `deepsift memo graph "tag-name"`.
+    - Once the task is fully achieved, close the tag: `deepsift memo close "tag-name"`.
 
 ## 💡 Examples of Unwavering Loyalty to DeepSift
 

@@ -30,6 +30,7 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) without full bodies. |
 | `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
 | `deepsift plan "request"` | **MANDATORY BEFORE IMPLEMENTATION:** Generate Smart Plan from DNA and architecture. |
+| `deepsift memo <action>`  | **DRM ENGINE:** Dynamic Research Memory tag management, notes, queries, and relations. |
 ---
 trigger: always_on
 ---
@@ -64,6 +65,7 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
 | `deepsift dna` | **ANALYSIS.** Generate Project DNA. Options: `--show`, `--section <name>`, `--query <term>`, `--meta`. |
 | `deepsift com "command"` | **TERMINAL.** Run standard commands (e.g., `git diff`) and get compressed DEC_v2 output. |
 | `deepsift history / drill / clean`| Manage search history. `drill "logfile.md" "keyword"` searches within past results. |
+| `deepsift memo <action>`  | **DRM ENGINE:** Dynamic Research Memory tags (open, close, list, add, query, graph, export, prompt). |
 
 ## 📋 ABSOLUTE & NON-NEGOTIABLE USAGE RULES
 
@@ -120,7 +122,7 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
     - **Healer Command Workflow:**
       1. Run `deepsift com "git diff HEAD -- <filepath>"` to see EXACTLY what you broke in the file with compressed output.
       2. Run `deepsift com "git show HEAD:<filepath>"` if you need to read the complete original source code of the file before your changes.
-      3. Use this regression report and git diffs to restore ONLY the broken code blocks via `deepsift edit` while keeping the newly generated features intact.
+      3. Use this regression report and git diffs to restore ONLY the damaged segment via `deepsift edit` while keeping the newly generated features intact.
 18. **🧠 SMART PLANNING MANDATE (MANDATORY BEFORE FEATURE IMPLEMENTATION):**
     - When the user requests a new feature, you **MUST NOT** start coding immediately.
     - You MUST first run `deepsift plan "<user request>"` or call the MCP tool `generate_smart_plan` to generate a structured implementation plan.
@@ -133,7 +135,7 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
     - If the user asks to split a large file or refactor a "God Node", you MUST use `deepsift heal <filepath>` (or the `heal_god_node` MCP tool).
     - Present the proposed modular split to the user.
     - Once approved, write a `.toon` patch file to extract the components into the new files as proposed, and run `deepsift edit`.
-
+ 
 20. **🔪 SURGICAL EDIT LAW (CRITICAL — NO FULL-FILE REPLACEMENT):**
     - You are **STRICTLY FORBIDDEN** from replacing an entire file in a single TOON patch block (e.g. `L1-L{end}:<<<<`).
     - Every TOON patch block MUST target **only the specific lines that need to change** (max 30-50 lines per block).
@@ -198,6 +200,12 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
       - Existing imports (especially icon/asset imports like SVG files)
     - Before writing replacement code, create a **checklist** of these capabilities from the original file and verify each one exists in your replacement.
     - **WHY:** The agent deleted RTL support, `RawSvgIcon` imports, `Button` component usage, and icon asset imports during refactoring.
+26. **🧠 DYNAMIC RESEARCH MEMORY (DRM) ENGAGEMENT (MANDATORY):**
+    - To prevent losing research findings, architectural guidelines, or error resolutions, you MUST actively use `deepsift memo`.
+    - At the start of a feature/task, create a research tag using `deepsift memo open "tag-name"`.
+    - Record findings, snippets, decisions, references, or solutions with `deepsift memo add "tag-name" --data "content" --type "type"`.
+    - Query your research space using `deepsift memo query "tag-name" "query"` or cross-reference using `deepsift memo graph "tag-name"`.
+    - Once the task is fully achieved, close the tag: `deepsift memo close "tag-name"`.
 
 ## 💡 Examples of Unwavering Loyalty to DeepSift
 

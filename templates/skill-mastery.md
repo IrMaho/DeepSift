@@ -225,3 +225,31 @@ If `deepsift edit` fails:
 3. Write a NEW patch targeting the current state
 4. NEVER re-run the same patch blindly
 
+## 7. Dynamic Research Memory (DRM)
+
+DeepSift features a persistent Dynamic Research Memory (`deepsift memo`) to ensure you do not lose insights, architecture constraints, or solutions during a long session. You **MUST** use this feature to retain important findings.
+
+### When to use Memo Tags
+- Before diving into a complex task, open a tag: `deepsift memo open "task-name"`.
+- As you find constraints, solutions, or patterns, add them: `deepsift memo add "task-name" --data "Findings..." --type "finding"`.
+- If a prompt reminds you to save notable findings, do so if there's value!
+
+### Available Memo Commands
+```bash
+# 1. Start a new research task
+deepsift memo open "auth-refactor" --desc "Refactoring the login flow"
+
+# 2. Record findings (Types: finding, code_snippet, api_response, architecture_note, decision, reference, error_solution)
+deepsift memo add "auth-refactor" --data "Auth handler uses JWT tokens in localStorage" --type "finding"
+
+# 3. Search past research across all tags or within a specific tag
+deepsift memo query --all "jwt tokens"
+deepsift memo query "auth-refactor" "jwt tokens" --topk 5
+
+# 4. Show summary & relations
+deepsift memo show "auth-refactor"
+deepsift memo graph "auth-refactor"
+
+# 5. Finish a task (Locks it from further additions but keeps it queryable)
+deepsift memo close "auth-refactor"
+```
