@@ -10,3 +10,14 @@ ai
 .node-portable
 .npm-cache/
 .zig-cache/
+ 
+# Build Artifacts
+Output/
+release/
+bin/
+native/core-zig/.zig-cache/
+native/core-zig/bin/
+native/core-zig/zig-out/
+*.exe
+*.pdb
+*.obj
