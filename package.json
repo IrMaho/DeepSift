@@ -8,13 +8,13 @@
     "deepsift": "dist/cli/cli-entry.js"
   },
   "scripts": {
-    "build": "tsc && node scripts/build-zig.js && node scripts/build-directive.js",
-    "build:release": "node scripts/build-release.js",
-    "dev": "tsx src/server.ts",
-    "dev:cli": "tsx src/cli/cli-entry.ts",
-    "start": "node dist/server.js",
-    "start:cli": "node dist/cli/cli-entry.js",
-    "test": "vitest run"
+    "build": ".\\node.exe .\\node_modules\\typescript\\bin\\tsc && .\\node.exe scripts/build-zig.js && .\\node.exe scripts/build-directive.js",
+    "build:release": ".\\node.exe scripts/build-release.js",
+    "dev": ".\\node.exe .\\node_modules\\tsx\\dist\\cli.mjs src/server.ts",
+    "dev:cli": ".\\node.exe .\\node_modules\\tsx\\dist\\cli.mjs src/cli/cli-entry.ts",
+    "start": ".\\node.exe dist/server.js",
+    "start:cli": ".\\node.exe dist/cli/cli-entry.js",
+    "test": ".\\node.exe .\\node_modules\\vitest\\vitest.mjs run"
   },
   "keywords": [
     "mcp",
