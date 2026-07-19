@@ -69,8 +69,8 @@ const HELP_TEXT = `
   deps "target"                 Trace dependencies for a file/module
   feature "path"                Feature outline (classes, functions)
                                    Options:
-                                     --limit <number>      Limit the number of lines returned
-                                     --offset <number>      Start line index for pagination
+                                     --limit <number>      Limit the number of files returned
+                                     --offset <number>      Start file index for pagination
   read-feature, rf "path"       Read and extract all code from a feature directory
   history                       Show past search results
   clean                         Clear search history logs and index

@@ -1,4 +1,5 @@
 import { RealmRouter } from '../../core/realm-router.js';
+import readline from 'readline';
 import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-output.js';
 import { DEFAULT_REALM } from '../cli-paths.js';
 
@@ -54,8 +55,14 @@ export async function indexCommand(projectPath: string, options: IndexOptions) {
                     
                     const shortFile = file.length > 35 ? '...' + file.substring(file.length - 35) : file;
                     
-                    process.stdout.write(`\r[${realmId}] ⏳ ${percent}% | ${current}/${total} files | Elapsed: ${formatTime(elapsedSec)} | ETA: ${formatTime(etaSec)} | ${shortFile}`);
-                    process.stdout.write('\x1b[K');
+                    const msg = `[${realmId}] ⏳ ${percent}% | ${current}/${total} files | Elapsed: ${formatTime(elapsedSec)} | ETA: ${formatTime(etaSec)} | ${shortFile}`;
+                    
+                    const termWidth = process.stdout.columns || 80;
+                    const displayMsg = msg.length > termWidth ? msg.substring(0, termWidth - 1) : msg;
+                    
+                    readline.clearLine(process.stdout, 0);
+                    readline.cursorTo(process.stdout, 0);
+                    process.stdout.write(displayMsg);
                 }
             });
 

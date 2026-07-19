@@ -16,15 +16,15 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 
 | Command | Description |
 |---|---|
-| `deepsift search "query"` | Semantic search. Options: `--include <path>`, `--no-sync`, `--context-lines N`, `--realm <id>`, `--all-realms`. Multi-query: `deepsift search "q1" "q2"` |
-| `deepsift read "file"` | **MANDATORY FOR READING FILES.** Outputs compressed tokens. Supports lines: `deepsift read "src/file.ts:10-50"`. Use `--no-compress` for raw text. |
+| `deepsift search "query"` | Semantic search. Options: `--include <path>`, `--sync`, `--context-lines N`, `--realm <id>`, `--all-realms`. Multi-query: `deepsift search "q1" "q2"` |
+| `deepsift read "file"` | **MANDATORY FOR READING FILES.** Outputs raw text by default. Supports lines: `deepsift read "src/file.ts:10-50"`. Use `--compress` to enable visual pxpipe tokens. |
 | `deepsift diag "problems.json"`| Read IDE diagnostics with context snippets. |
 | `deepsift index [--force]` | Re-index project incrementally (or full with `--force`). |
 | `deepsift realm list/add/remove`| Manage knowledge realms. Ex: `deepsift realm add my_docs --type docs --source ./docs` |
 | `deepsift compare r1 r2 -q "k"` | **VECTOR DIFF:** Compare realms (e.g. `code` vs `flutter_docs`) to find Gaps/Similarities. |
-| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. |
+| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. Automatically ignores large data/log files (`.csv`, `.db`, etc.) to prevent bloat. |
 | `deepsift deps "filename"` | Find imports/dependencies for a target. |
-| `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) without full bodies. |
+| `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) without full bodies. Supports `--limit` and `--offset` for pagination. |
 | `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
 | `deepsift plan "request"` | **MANDATORY BEFORE IMPLEMENTATION:** Generate Smart Plan from DNA and architecture. |
 | `deepsift memo <action>`  | **DRM ENGINE:** Dynamic Research Memory tag management, notes, queries, and relations. |
@@ -43,21 +43,21 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
 
 | Command | Description |
 |---|---|
-| `deepsift search "query"` | Semantic search. Options: `--include <path>`, `--no-sync`, `--context-lines N`, `--realm <id>`, `--all-realms`. Multi-query: `deepsift search "q1" "q2"` |
-| `deepsift read "file"` | **MANDATORY FOR READING FILES.** Outputs compressed tokens. Supports lines: `deepsift read "src/file.ts:10-50"`. Use `--no-compress` for raw text. |
+| `deepsift search "query"` | Semantic search. Options: `--include <path>`, `--sync`, `--context-lines N`, `--realm <id>`, `--all-realms`. Multi-query: `deepsift search "q1" "q2"` |
+| `deepsift read "file"` | **MANDATORY FOR READING FILES.** Outputs raw text by default. Supports lines: `deepsift read "src/file.ts:10-50"`. Use `--compress` to enable visual pxpipe tokens. |
 | `deepsift diag "problems.json"`| Read IDE diagnostics with context snippets. |
 | `deepsift index [--force]` | Re-index project incrementally (or full with `--force`). |
 | `deepsift realm list/add/remove`| Manage knowledge realms. Ex: `deepsift realm add my_docs --type docs --source ./docs` |
 | `deepsift compare r1 r2 -q "k"` | **VECTOR DIFF:** Compare realms (e.g. `code` vs `flutter_docs`) to find Gaps/Similarities. |
-| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. |
+| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. Automatically ignores large data/log files (`.csv`, `.db`, etc.) to prevent bloat. |
 | `deepsift deps "filename"` | Find imports/dependencies for a target. |
-| `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) without full bodies. |
+| `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) without full bodies. Supports `--limit` and `--offset` for pagination. |
 | `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
 | `deepsift plan "request"` | **MANDATORY BEFORE IMPLEMENTATION:** Generate Smart Plan from DNA and architecture. |
 | `deepsift heal "file"` | Auto-refactor and fix issues based on DNA. |
 | `deepsift learn "patterns"` | Auto-discover coding patterns from the codebase. |
 | `deepsift dna` | **ANALYSIS.** Generate Project DNA. Options: `--show`, `--section <name>`, `--query <term>`, `--meta`. |
-| `deepsift com "command"` | **TERMINAL.** Run standard commands (e.g., `git diff`) and get compressed DEC_v2 output. |
+| `deepsift com "command"` | **TERMINAL.** Run standard commands (e.g., `git diff`). Use `--compress` for DEC_v2 output. (OS-specific commands like `ls` on Windows are abstracted). |
 | `deepsift history / drill / clean`| Manage search history. `drill "logfile.md" "keyword"` searches within past results. |
 | `deepsift memo <action>`  | **DRM ENGINE:** Dynamic Research Memory tags (open, close, list, add, query, graph, export, prompt). |
 
@@ -69,18 +69,18 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
     - **Use `--include` to narrow scope:** `deepsift search "query" --include "src/features/auth"` is faster and more precise.
     - **Image/screenshot clues:** When the user shows a screenshot with visible text, extract key words and use `grep_search` for exact matches — this is FASTER than semantic search for known text.
 2. **📖 FLEXIBLE READING (CHOOSE YOUR PRECISION):**
-    - **Exploration/overview:** Use `deepsift read "file"` (compressed) for quick scanning and understanding structure.
-    - **Pre-edit reading (MANDATORY):** Before editing ANY file, MUST read with `deepsift read "file" --no-compress` or `view_file` to get exact, character-perfect code.
-    - **Large files:** Read in segments: `deepsift read "file:1-100" --no-compress`, then `file:100-200`, etc.
-    - **If DEC_v2 compressed output is unreadable:** Immediately re-read with `--no-compress`. Never guess or write code based on compressed tokens you can't fully decode.
+    - **Exploration/overview:** Use `deepsift read "file" --compress` (visual cache) for quick scanning and understanding structure.
+    - **Pre-edit reading (MANDATORY):** Before editing ANY file, MUST read with `deepsift read "file"` or `view_file` to get exact, character-perfect code.
+    - **Large files:** Read in segments: `deepsift read "file:1-100"`, then `file:100-200`, etc.
+    - **If DEC_v2 compressed output is unreadable:** Immediately re-read without `--compress`. Never guess or write code based on compressed tokens you can't fully decode.
 3. **✏️ EDITING MANDATE (USE NATIVE TOOLS):**
     - You **MUST EXCLUSIVELY** use native IDE tools (`replace_file_content`, `multi_replace_file_content`, `write_to_file`) for all file modifications.
 4. **🖼️ VISUAL OUTPUT CONTROL (FONT & IMAGE TUNING):**
     - **Default font:** `spleen-5x8` (small, high-density). Good for most cases.
     - **Larger font for readability:** When the visual cache PNG is unreadable (too small, blurry, or dense), the pxpipe renderer supports `jetbrains-mono-10` which is ~2x larger.
-    - **Disable visual compression entirely:** Use `--no-compress` on any DeepSift command to get plain text output instead of image-cached DEC_v2 tokens. Use `--plain` for even simpler output.
-    - **When to disable visual cache:** If you've tried reading the INDEX.md visual output twice and still can't parse it, STOP and re-run the command with `--no-compress` to get raw text.
-    - **`deepsift com` output:** By default compressed. Use `deepsift com "command" --no-compress` when you need exact command output (e.g., `git diff`, `git log`, build errors).
+    - **Visual compression entirely:** DeepSift now outputs plain text by default. Use `--compress` on any DeepSift command to get image-cached DEC_v2 tokens instead of plain text. Use `--plain` for pure text formatting.
+    - **When to disable visual cache:** If you've tried reading the INDEX.md visual output twice and still can't parse it, STOP and re-run the command without `--compress` to get raw text.
+    - **`deepsift com` output:** By default raw text. Use `deepsift com "command" --compress` when you need compressed visual output.
 5. **🏗️ PRE-GENERATION CONTEXT (MANDATORY):** You **MUST** run `deepsift context "target_path"` **BEFORE** creating any new file or component. This gives you project conventions, required design tokens, i18n rules, and similar existing components to prevent code duplication and style drift.
 6. **🧠 ARCHITECTURAL ANALYSIS FIRST:** Do not blindly traverse directories. Use `deepsift arch` to understand the codebase skeleton, `deepsift feature` to analyze a specific feature folder, and `deepsift deps` to find dependencies.
 7. **👁️ VISUAL CACHE FIRST:** Always read the `INDEX.md` file after running a search or read command. **CRITICAL:** ALWAYS use the exact absolute `file:///.../INDEX.md` path printed in the terminal output of the command. Do NOT guess the path and do NOT hardcode it to the DeepSift installation folder, as you might be operating in a different user project. Open the file and visually parse the embedded PNG images containing `pxpipe` tokens.
@@ -131,10 +131,10 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
     - If the build fails, you MUST fix the errors **immediately** before proceeding to the next file.
     - You are **FORBIDDEN** from editing multiple files in sequence without verifying the build between each edit.
     - **WHY:** The agent previously edited 4 files in a row without building once, causing cascading interface mismatches that were impossible to untangle.
-21. **📖 ACCURATE READ BEFORE EDIT (MANDATORY --no-compress):**
-    - Before editing ANY file, you MUST read it with `deepsift read "filepath" --no-compress`.
+21. **📖 ACCURATE READ BEFORE EDIT (MANDATORY):**
+    - Before editing ANY file, you MUST read it with `deepsift read "filepath"`.
     - You are **FORBIDDEN** from writing replacement code based on compressed/tokenized output.
-    - For large files (>200 lines), read in segments: `deepsift read "file:1-100" --no-compress`, then `file:100-200`, etc.
+    - For large files (>200 lines), read in segments: `deepsift read "file:1-100"`, then `file:100-200`, etc.
     - **WHY:** Compressed reads lose critical details (imports, exact prop names, utility usage patterns), causing the agent to write incorrect replacement code.
 22. **🔄 INTERFACE BACKWARD COMPATIBILITY (EXTEND, DON'T BREAK):**
     - When modifying a component's interface/props/type definition:

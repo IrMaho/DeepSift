@@ -27,16 +27,8 @@ export async function featureCommand(
         }
     }
 
-    const outlineText = getFeatureOutline(targetPath);
+    const outlineText = getFeatureOutline(targetPath, limit, offset);
     let finalOutput = outlineText;
-    
-    if (limit !== undefined || offset !== undefined) {
-        const lines = outlineText.split('\n');
-        const start = offset || 0;
-        const end = limit ? start + limit : lines.length;
-        finalOutput = lines.slice(start, end).join('\n');
-        finalOutput = `(Showing lines ${start + 1} to ${Math.min(end, lines.length)} of ${lines.length})\n\n` + finalOutput;
-    }
     
     if (compress && format !== 'json') {
         const optimizer = new TokenOptimizerService();

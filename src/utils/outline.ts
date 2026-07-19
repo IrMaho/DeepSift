@@ -1,39 +1,63 @@
 import fs from 'fs';
 import path from 'path';
 
-function extractSignatures(content: string): string[] {
+function extractStructure(content: string): { dependencies: string[], elements: string[] } {
     const lines = content.split('\n');
-    const signatures: string[] = [];
-    let captureMode = false;
-    let braceCount = 0;
+    const dependencies: string[] = [];
+    const elements: string[] = [];
+    
+    let currentClass = '';
 
     for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
+        let line = lines[i].trim();
+        if (!line || line.startsWith('//')) continue;
         
-        // Match class or function definitions broadly
-        if (line.match(/^(class|interface|enum|mixin|extension|struct)\s+\w+/) || 
-            line.match(/^(public|private|protected|static|async|Future|void|int|String|bool|Widget)\s+.*\(.*\)/) ||
-            line.match(/^(export|function|const|let|var)\s+\w+/) ||
-            line.startsWith('import ')) {
-            
-            // Only take the signature line, not the body
-            let signature = line.replace(/\{.*$/, '').trim();
-            if (signature.endsWith('{')) signature = signature.substring(0, signature.length - 1).trim();
-            signatures.push(signature);
+        // Match imports
+        if (line.match(/^(?:import|export\s+.*\s+from|require)/)) {
+            const match = line.match(/(?:from|require\s*\()\s*['"]([^'"]+)['"]/);
+            if (match) dependencies.push(match[1]);
+            continue;
+        }
+        
+        // Match classes / interfaces
+        let classMatch = line.match(/^(?:export\s+|public\s+|abstract\s+|default\s+)*(class|interface|enum|struct|type)\s+([\w_]+)/);
+        if (classMatch) {
+            currentClass = classMatch[2];
+            elements.push(`[${classMatch[1].toUpperCase()}] ${currentClass}`);
+            continue;
+        }
+        
+        // Match functions / constants
+        let funcMatch = line.match(/^(?:export\s+|public\s+|private\s+|protected\s+|static\s+|async\s+|default\s+)*(function|const|let|var)\s+([\w_]+)/);
+        if (funcMatch) {
+            elements.push(`[${funcMatch[1].toUpperCase()}] ${funcMatch[2]}`);
+            continue;
+        }
+
+        // Methods (heuristic: starts with word, has parens, has brace, inside a class usually)
+        let methodMatch = line.match(/^(?:public\s+|private\s+|protected\s+|static\s+|async\s+)*([\w_]+)\s*\([^)]*\)\s*(?::\s*[\w_<>[\]]+)?\s*\{/);
+        if (methodMatch) {
+            const name = methodMatch[1];
+            if (!['if', 'for', 'while', 'switch', 'catch', 'return'].includes(name)) {
+                elements.push(`  ↳ [Method] ${name}()`);
+            }
+            continue;
         }
     }
     
-    // Remove duplicate imports
-    return [...new Set(signatures)];
+    return {
+        dependencies: [...new Set(dependencies)],
+        elements: elements
+    };
 }
 
-export function getFeatureOutline(featurePath: string): string {
+export function getFeatureOutline(featurePath: string, limit: number = 15, offset: number = 0): string {
     if (!fs.existsSync(featurePath)) return `Path not found: ${featurePath}`;
     
-    let result = `### Feature Outline: ${path.basename(featurePath)}\n\n`;
+    let result = `### Feature Outline: ${path.basename(featurePath)}\n`;
+    result += `(Showing up to ${limit} files, starting from offset ${offset})\n\n`;
     let fileCount = 0;
     let skippedCount = 0;
-    const MAX_FILES = 15;
 
     function walk(dir: string) {
         const items = fs.readdirSync(dir, { withFileTypes: true });
@@ -46,19 +70,28 @@ export function getFeatureOutline(featurePath: string): string {
             } else {
                 const ext = path.extname(item.name);
                 if (['.ts', '.js', '.dart', '.py', '.java', '.cpp', '.go', '.tsx', '.jsx'].includes(ext)) {
-                    if (fileCount >= MAX_FILES) {
+                    if (fileCount < offset) {
+                        fileCount++;
+                        continue;
+                    }
+                    if (fileCount - offset >= limit) {
                         skippedCount++;
                         continue;
                     }
                     fileCount++;
                     const content = fs.readFileSync(fullPath, 'utf8');
-                    const sigs = extractSignatures(content);
-                    if (sigs.length > 0) {
+                    const struct = extractStructure(content);
+                    if (struct.dependencies.length > 0 || struct.elements.length > 0) {
                         const relPath = path.relative(featurePath, fullPath) || item.name;
                         result += `#### 📄 ${relPath}\n`;
-                        result += sigs.slice(0, 30).map(s => `  - \`${s}\``).join('\n');
-                        if (sigs.length > 30) result += `\n  - ... (+${sigs.length - 30} more)`;
-                        result += '\n\n';
+                        if (struct.dependencies.length > 0) {
+                            result += `  - 🔗 **Dependencies**: ${struct.dependencies.slice(0, 8).join(', ')}${struct.dependencies.length > 8 ? ', ...' : ''}\n`;
+                        }
+                        if (struct.elements.length > 0) {
+                            result += struct.elements.slice(0, 30).map(s => `  - \`${s}\``).join('\n') + '\n';
+                            if (struct.elements.length > 30) result += `  - ... (+${struct.elements.length - 30} more)\n`;
+                        }
+                        result += '\n';
                     }
                 }
             }
@@ -70,9 +103,14 @@ export function getFeatureOutline(featurePath: string): string {
     } else {
         // Single file
         const content = fs.readFileSync(featurePath, 'utf8');
-        const sigs = extractSignatures(content);
+        const struct = extractStructure(content);
         result += `#### 📄 ${path.basename(featurePath)}\n`;
-        result += sigs.map(s => `  - \`${s}\``).join('\n');
+        if (struct.dependencies.length > 0) {
+            result += `  - 🔗 **Dependencies**: ${struct.dependencies.slice(0, 8).join(', ')}${struct.dependencies.length > 8 ? ', ...' : ''}\n`;
+        }
+        if (struct.elements.length > 0) {
+            result += struct.elements.map(s => `  - \`${s}\``).join('\n') + '\n';
+        }
         fileCount = 1;
     }
 
