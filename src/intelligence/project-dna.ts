@@ -428,7 +428,22 @@ export function formatDNASummary(dna: ProjectDNA): string {
     lines.push('## 📐 Architecture');
     lines.push(`- **Topology:** ${dna.architecture.topology}`);
     if (dna.architecture.coreFiles.length > 0) {
-        lines.push(`- **Core Files:** ${dna.architecture.coreFiles.slice(0, 5).join(', ')}`);
+        const byWorkspace = new Map<string, string[]>();
+        for (const file of dna.architecture.coreFiles.slice(0, 15)) {
+            const parts = file.split('/');
+            const ws = parts.length > 1 ? parts[0] : 'root';
+            if (!byWorkspace.has(ws)) byWorkspace.set(ws, []);
+            byWorkspace.get(ws)!.push(file);
+        }
+        
+        if (byWorkspace.size > 1) {
+            lines.push(`- **God Nodes (by Workspace):**`);
+            for (const [ws, files] of byWorkspace.entries()) {
+                lines.push(`  - **${ws}**: ${files.slice(0, 3).join(', ')}`);
+            }
+        } else {
+            lines.push(`- **God Nodes:** ${dna.architecture.coreFiles.slice(0, 5).join(', ')}`);
+        }
     }
     if (dna.architecture.templatePatterns.length > 0) {
         lines.push(`- **Template Patterns:** ${dna.architecture.templatePatterns.length} detected`);
