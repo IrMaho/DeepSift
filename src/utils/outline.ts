@@ -28,18 +28,24 @@ function extractStructure(content: string): { dependencies: string[], elements: 
         }
         
         // Match functions / constants
-        let funcMatch = line.match(/^(?:export\s+|public\s+|private\s+|protected\s+|static\s+|async\s+|default\s+)*(function|const|let|var)\s+([\w_]+)/);
+        let funcMatch = line.match(/^(?:export\s+|public\s+|private\s+|protected\s+|static\s+|async\s+|default\s+)*(function|const|let|var)\s+([\w_]+)(.*)/);
         if (funcMatch) {
-            elements.push(`[${funcMatch[1].toUpperCase()}] ${funcMatch[2]}`);
+            let signature = funcMatch[3].split('{')[0].trim();
+            if (signature.endsWith('=>')) signature = signature.slice(0, -2).trim();
+            if (signature.endsWith('=')) signature = signature.slice(0, -1).trim();
+            if (signature.length > 50) signature = signature.substring(0, 47) + '...';
+            elements.push(`[${funcMatch[1].toUpperCase()}] ${funcMatch[2]} ${signature}`.trim());
             continue;
         }
 
         // Methods (heuristic: starts with word, has parens, has brace, inside a class usually)
-        let methodMatch = line.match(/^(?:public\s+|private\s+|protected\s+|static\s+|async\s+)*([\w_]+)\s*\([^)]*\)\s*(?::\s*[\w_<>[\]]+)?\s*\{/);
+        let methodMatch = line.match(/^(?:public\s+|private\s+|protected\s+|static\s+|async\s+)*([\w_]+)\s*(\([^)]*\)\s*(?::\s*[\w_<>[\]]+)?)/);
         if (methodMatch) {
             const name = methodMatch[1];
+            let signature = methodMatch[2].trim();
+            if (signature.length > 50) signature = signature.substring(0, 47) + '...';
             if (!['if', 'for', 'while', 'switch', 'catch', 'return'].includes(name)) {
-                elements.push(`  ↳ [Method] ${name}()`);
+                elements.push(`  ↳ [Method] ${name}${signature}`);
             }
             continue;
         }
@@ -57,7 +63,7 @@ export function getFeatureOutline(featurePath: string, limit: number = 15, offse
     let result = `### Feature Outline: ${path.basename(featurePath)}\n`;
     result += `(Showing up to ${limit} files, starting from offset ${offset})\n\n`;
     let fileCount = 0;
-    let skippedCount = 0;
+    let skippedFiles: string[] = [];
 
     function walk(dir: string) {
         const items = fs.readdirSync(dir, { withFileTypes: true });
@@ -75,7 +81,7 @@ export function getFeatureOutline(featurePath: string, limit: number = 15, offse
                         continue;
                     }
                     if (fileCount - offset >= limit) {
-                        skippedCount++;
+                        skippedFiles.push(path.relative(featurePath, fullPath) || item.name);
                         continue;
                     }
                     fileCount++;
@@ -116,8 +122,10 @@ export function getFeatureOutline(featurePath: string, limit: number = 15, offse
 
     if (fileCount === 0) return `No source files found in ${featurePath}`;
     
-    if (skippedCount > 0) {
-        result += `\n⚠️  [AI NOTE]: ${skippedCount} files were omitted to prevent context explosion. Please run \`deepsift feature\` on a more specific subfolder to see them.\n`;
+    if (skippedFiles.length > 0) {
+        result += `\n⚠️  [AI NOTE]: ${skippedFiles.length} files were omitted to prevent context explosion.\n`;
+        result += `**Omitted Files Summary (use --offset to view details):**\n`;
+        result += skippedFiles.map(f => `  - 📁 \`${f}\``).join('\n') + '\n';
     }
     
     return result;

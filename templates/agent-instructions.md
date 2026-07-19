@@ -23,9 +23,9 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift realm list/add/remove`| Manage knowledge realms. Ex: `deepsift realm add my_docs --type docs --source ./docs` |
 | `deepsift compare r1 r2 -q "k"` | **VECTOR DIFF:** Compare realms (e.g. `code` vs `flutter_docs`) to find Gaps/Similarities. |
 | `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. Automatically ignores large data/log files (`.csv`, `.db`, etc.) to prevent bloat. |
-| `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Combines `feature` outline (AST-based classes/methods) and matching `dna` intelligence for a specific folder/file in one unified, safe, and heavily compressed markdown report. Use this instead of running feature and dna separately! |
+| `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Combines `feature` outline (AST-based classes/methods with inline signatures) and matching `dna` intelligence for a specific folder/file in one unified, safe, and heavily compressed markdown report. Use this instead of running feature and dna separately! |
 | `deepsift deps "filename"` | Find imports/dependencies for a target. |
-| `deepsift feature "src/path"` | Get AST-based feature outline (classes, methods, dependencies). Supports `--limit` and `--offset` for paginating files in large directories to prevent truncation. |
+| `deepsift feature "src/path"` | Get AST-based feature outline with **inline logic signatures** (classes, methods, dependencies). Auto-generates a **smart summary** of omitted files when hitting limits. Supports `--limit` and `--offset`. |
 | `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
 | `deepsift plan "request"` | **MANDATORY BEFORE IMPLEMENTATION:** Generate Smart Plan from DNA and architecture. |
 | `deepsift memo <action>`  | **DRM ENGINE:** Dynamic Research Memory tag management, notes, queries, and relations. |
@@ -51,14 +51,14 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
 | `deepsift realm list/add/remove`| Manage knowledge realms. Ex: `deepsift realm add my_docs --type docs --source ./docs` |
 | `deepsift compare r1 r2 -q "k"` | **VECTOR DIFF:** Compare realms (e.g. `code` vs `flutter_docs`) to find Gaps/Similarities. |
 | `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. Automatically ignores large data/log files (`.csv`, `.db`, etc.) to prevent bloat. |
-| `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Combines `feature` outline (AST-based classes/methods) and matching `dna` intelligence for a specific folder/file in one unified, safe, and heavily compressed markdown report. Use this instead of running feature and dna separately! |
+| `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Combines `feature` outline (AST-based classes/methods with inline signatures) and matching `dna` intelligence for a specific folder/file in one unified, safe, and heavily compressed markdown report. Use this instead of running feature and dna separately! |
 | `deepsift deps "filename"` | Find imports/dependencies for a target. |
-| `deepsift feature "src/path"` | Get AST-based feature outline (classes, methods, dependencies). Supports `--limit` and `--offset` for paginating files in large directories to prevent truncation. |
+| `deepsift feature "src/path"` | Get AST-based feature outline with **inline logic signatures** (classes, methods, dependencies). Auto-generates a **smart summary** of omitted files when hitting limits. Supports `--limit` and `--offset`. |
 | `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
 | `deepsift plan "request"` | **MANDATORY BEFORE IMPLEMENTATION:** Generate Smart Plan from DNA and architecture. |
 | `deepsift heal "file"` | Auto-refactor and fix issues based on DNA. |
 | `deepsift learn "patterns"` | Auto-discover coding patterns from the codebase. |
-| `deepsift dna` | **ANALYSIS.** Generate Project DNA. Options: `--show` (safely prunes huge graph edges to prevent context explosion), `--section <name>`, `--query <term>`, `--meta`. |
+| `deepsift dna` | **ANALYSIS.** Generate Project DNA. Options: `--show` (safely prunes huge graphs and shows **token format samples**), `--section <name>`, `--query <term>`, `--meta`. |
 | `deepsift com "command"` | **TERMINAL.** Run standard commands (e.g., `git diff`). Use `--compress` for DEC_v2 output. (OS-specific commands like `ls` on Windows are abstracted). |
 | `deepsift history / drill / clean`| Manage search history. `drill "logfile.md" "keyword"` searches within past results. |
 | `deepsift memo <action>`  | **DRM ENGINE:** Dynamic Research Memory tags (open, close, list, add, query, graph, export, prompt). |
