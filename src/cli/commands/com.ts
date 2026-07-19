@@ -13,6 +13,12 @@ export async function comCommand(
         throw new Error('No command provided for com command.');
     }
 
+    if (process.platform === 'win32') {
+        if (commandStr.trim() === 'ls' || commandStr.match(/^ls\s+/)) {
+            commandStr = commandStr.replace(/^ls\b/, 'dir');
+        }
+    }
+
     let output = '';
     let success = true;
 

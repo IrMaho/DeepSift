@@ -11,29 +11,29 @@ This skill provides advanced technical documentation for the DeepSift engine. Us
 DeepSift has three output layers you can control independently:
 
 ### Text Compression (DEC_v2)
-- **Default:** Enabled. Compresses text output using dictionary-encoded tokens.
-- **Disable:** `--no-compress` on ANY command → raw, exact text output.
-- **When to disable:** Before editing files, when debugging build errors, when exact syntax matters.
+- **Default:** Disabled. Outputs raw exact text.
+- **Enable:** `--compress` on ANY command → compressed, visual dictionary-encoded tokens.
+- **When to enable:** For quick architectural overviews, exploration, or if token context gets too large.
 
 ```bash
-deepsift read "src/modal.tsx" --no-compress
-deepsift com "npm run build" --no-compress
-deepsift search "modal component" --no-compress
+deepsift read "src/modal.tsx"
+deepsift com "npm run build"
+deepsift search "modal component"
 ```
 
 ### Visual Image Cache (pxpipe PNG)
-- **Default:** Enabled. Renders text into PNG images for vision-model consumption.
+- **Default:** Disabled. Renders text into PNG images for vision-model consumption ONLY when `--compress` is passed.
 - **Font options:** `spleen-5x8` (default, dense) or `jetbrains-mono-10` (2x larger, more readable).
 - **Disable image output:** Use `--plain` for pure text with no markdown formatting.
-- **When to switch fonts:** If the INDEX.md visual cache is too small/blurry to read, re-run with `--no-compress` to bypass pxpipe entirely.
+- **When to switch fonts:** If the INDEX.md visual cache is too small/blurry to read, re-run without `--compress` to bypass pxpipe entirely.
 
 ### Practical Decision Tree
 ```
-Need to understand structure? → deepsift read "file" (compressed, fast)
-Need to EDIT the file?        → deepsift read "file" --no-compress (exact text)
-Can't read PNG cache?         → deepsift read "file" --no-compress (bypass pxpipe)
-Need exact build errors?      → deepsift com "npm run build" --no-compress
-Need git diff details?        → deepsift com "git diff" --no-compress
+Need to understand structure? → deepsift read "file" --compress (fast, visual)
+Need to EDIT the file?        → deepsift read "file" (exact text)
+Can't read PNG cache?         → deepsift read "file" (bypass pxpipe)
+Need exact build errors?      → deepsift com "npm run build"
+Need git diff details?        → deepsift com "git diff"
 ```
 
 ## 0.5 Hybrid Search Strategy
@@ -167,14 +167,14 @@ Always use `--dry-run` on `sed` or `pipe` if you are unsure of the result.
 
 Before editing ANY file, follow this exact checklist:
 
-### Step 1: Read with --no-compress
+### Step 1: Read exactly (No visual cache)
 ```bash
-deepsift read "src/components/modal.tsx" --no-compress
+deepsift read "src/components/modal.tsx"
 ```
 For large files (>200 lines), read in segments:
 ```bash
-deepsift read "src/components/modal.tsx:1-100" --no-compress
-deepsift read "src/components/modal.tsx:100-200" --no-compress
+deepsift read "src/components/modal.tsx:1-100"
+deepsift read "src/components/modal.tsx:100-200"
 ```
 
 ### Step 2: Identify Existing Capabilities
@@ -207,7 +207,7 @@ FORBIDDEN: `L1-L{totalLines}:<<<<` (full file replacement)
 ### Step 4: Apply and Verify
 ```bash
 deepsift edit "patch.toon"
-deepsift read "src/components/modal.tsx:42-48" --no-compress
+deepsift read "src/components/modal.tsx:42-48"
 ```
 
 ### Step 5: Build Check

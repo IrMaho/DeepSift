@@ -68,6 +68,9 @@ const HELP_TEXT = `
   arch [--depth N]              Project architecture blueprint utilizing Graphify communities.
   deps "target"                 Trace dependencies for a file/module
   feature "path"                Feature outline (classes, functions)
+                                   Options:
+                                     --limit <number>      Limit the number of lines returned
+                                     --offset <number>      Start line index for pagination
   read-feature, rf "path"       Read and extract all code from a feature directory
   history                       Show past search results
   clean                         Clear search history logs and index
@@ -386,7 +389,21 @@ async function main() {
                 if (commandArgs.length === 0) {
                     throw new Error('Please provide a feature path.\nUsage: deepsift feature "src/path"');
                 }
-                await featureCommand(projectPath, commandArgs[0], format, compress);
+                let featLimit: number | undefined;
+                const featLimitIdx = commandArgs.indexOf('--limit');
+                if (featLimitIdx !== -1 && commandArgs[featLimitIdx + 1]) {
+                    featLimit = parseInt(commandArgs[featLimitIdx + 1], 10);
+                }
+
+                let featOffset: number | undefined;
+                const featOffsetIdx = commandArgs.indexOf('--offset');
+                if (featOffsetIdx !== -1 && commandArgs[featOffsetIdx + 1]) {
+                    featOffset = parseInt(commandArgs[featOffsetIdx + 1], 10);
+                }
+                
+                const targetFeaturePath = commandArgs.filter(a => !a.startsWith('-') && commandArgs[commandArgs.indexOf(a) - 1] !== '--limit' && commandArgs[commandArgs.indexOf(a) - 1] !== '--offset')[0];
+
+                await featureCommand(projectPath, targetFeaturePath || commandArgs[0], format, compress, featLimit, featOffset);
                 break;
 
             case 'history':
