@@ -409,10 +409,15 @@ export function formatDNASummary(dna: ProjectDNA): string {
 
     lines.push('## 🎨 Design System');
     const tokenCounts = Object.entries(dna.designSystem.tokens)
-        .map(([cat, tokens]) => ({ cat, count: (tokens as unknown[]).length }))
+        .map(([cat, tokens]) => ({ cat, count: (tokens as unknown[]).length, samples: tokens as DiscoveredToken[] }))
         .filter(t => t.count > 0);
     if (tokenCounts.length > 0) {
         lines.push(`- **Tokens:** ${tokenCounts.map(t => `${t.cat}: ${t.count}`).join(' | ')}`);
+        lines.push(`- **Format Samples:**`);
+        tokenCounts.forEach(t => {
+            const sampleStrs = t.samples.slice(0, 3).map(s => `\`${s.name}: ${s.value}\``).join(', ');
+            lines.push(`  - *${t.cat}*: ${sampleStrs}${t.count > 3 ? '...' : ''}`);
+        });
         lines.push(`- **Sources:** ${dna.designSystem.tokenSources.join(', ')}`);
         lines.push(`- **Confidence:** ${(dna.designSystem.confidence * 100).toFixed(0)}%`);
     } else {

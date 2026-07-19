@@ -40,6 +40,10 @@ export function getProjectArchitecture(projectPath: string, maxDepth: number = 5
             if (ignored.has(item.name)) continue;
             if (item.name.startsWith('.') && item.name !== '.env.example') continue; // skip hidden files
 
+            const ext = path.extname(item.name).toLowerCase();
+            const dataExts = ['.csv', '.tsv', '.xlsx', '.parquet', '.sqlite', '.db', '.log', '.lock', '.zip', '.tar', '.gz'];
+            if (!item.isDirectory() && dataExts.includes(ext)) continue; // skip data/log files in arch view
+
             const isLast = i === items.length - 1;
             const marker = isLast ? '└── ' : '├── ';
             const fullPath = path.join(dir, item.name);

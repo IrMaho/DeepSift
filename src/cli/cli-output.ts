@@ -41,7 +41,7 @@ export function printInfo(message: string) {
 
 export function parseGlobalFlags(args: string[]): { format: OutputFormat; compress: boolean; cleanArgs: string[]; projectPathOverride?: string } {
     let format: OutputFormat = 'markdown';
-    let compress = true;
+    let compress = false;
     let projectPathOverride: string | undefined = undefined;
     const cleanArgs: string[] = [];
 
@@ -53,6 +53,8 @@ export function parseGlobalFlags(args: string[]): { format: OutputFormat; compre
             format = 'plain';
         } else if (arg === '--no-compress') {
             compress = false;
+        } else if (arg === '--compress') {
+            compress = true;
         } else if (arg === '--project' || arg === '-p') {
             if (i + 1 < args.length) {
                 projectPathOverride = args[i + 1];

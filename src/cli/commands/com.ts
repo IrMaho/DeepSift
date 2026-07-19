@@ -13,6 +13,13 @@ export async function comCommand(
         throw new Error('No command provided for com command.');
     }
 
+    if (process.platform === 'win32') {
+        if (commandStr.trim() === 'ls' || commandStr.match(/^ls\s+/)) {
+            commandStr = commandStr.replace(/^ls\b/, 'dir').replace(/\s+-[a-zA-Z]+\b/g, '');
+            commandStr = commandStr.replace(/\//g, '\\');
+        }
+    }
+
     let output = '';
     let success = true;
 
@@ -40,15 +47,23 @@ export async function comCommand(
         finalOutput = payload.toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, [`Command: ${commandStr}`], finalOutput);
-    printResult(finalOutput, format);
-    
-    if (format !== 'json') {
-        const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
-        if (success) {
-            printSuccess(`Command output cached in: ${link}`);
-        } else {
-            printError(`Command failed. Output cached in: ${link}`);
+    const isShortError = !success && output.trim().length < 500;
+
+    if (isShortError) {
+        printResult(finalOutput, format);
+        if (format !== 'json') {
+            printError(`Command failed: ${commandStr}`);
+        }
+    } else {
+        const logInfo = await saveSearchLog(projectPath, [`Command: ${commandStr}`], finalOutput, { skipVisuals: true });
+        printResult(finalOutput, format);
+        if (format !== 'json') {
+            const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
+            if (success) {
+                printSuccess(`Command output cached in: ${link}`);
+            } else {
+                printError(`Command failed. Full output cached in: ${link}`);
+            }
         }
     }
 }

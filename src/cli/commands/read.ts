@@ -3,6 +3,7 @@ import path from 'path';
 import { printResult, printInfo, printSuccess, printError, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 import { saveSearchLog } from '../../utils/history.js';
+import { promptForResearchFindings } from './memo-prompt.js';
 
 export async function readCommand(
     projectPath: string,
@@ -97,4 +98,6 @@ export async function readCommand(
             printSuccess(`File read results cached in: ${link}`);
         }
     }
+
+    await promptForResearchFindings(projectPath, format);
 }

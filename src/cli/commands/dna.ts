@@ -106,11 +106,19 @@ function outputDNAFiltered(
         if (!section && !query && !pathFilter && !showMetaOnly && limit === undefined && offset === undefined) {
             outputText = formatDNASummary(resultObj);
         } else {
-            outputText = `### DNA Query Results (section: ${section || 'all'}, limit: ${limit ?? 'none'}, offset: ${offset ?? 0}, pathFilter: ${pathFilter || 'none'}, metaOnly: ${showMetaOnly})\n` + JSON.stringify(resultObj, null, 2);
+            // Prune huge graph data if it's there to prevent context explosion
+            if (resultObj && resultObj.graph && Array.isArray(resultObj.graph.nodes)) {
+                resultObj = { ...resultObj, graph: '[Graph Nodes/Edges hidden for CLI brevity. Use --json to see them]' };
+            }
+            if (resultObj && resultObj.architecture && resultObj.architecture.graph) {
+                resultObj.architecture = { ...resultObj.architecture, graph: '[Graph Nodes/Edges hidden for CLI brevity]' };
+            }
+
+            outputText = `### DNA Query Results (section: ${section || 'all'}, limit: ${limit ?? 'none'}, offset: ${offset ?? 0}, pathFilter: ${pathFilter || 'none'}, metaOnly: ${showMetaOnly})\n\n\`\`\`json\n` + JSON.stringify(resultObj, null, 2) + `\n\`\`\``;
         }
     }
 
-    if (compress) {
+    if (compress && format !== 'json') {
         const optimizer = new TokenOptimizerService();
         outputText = optimizer.optimize(outputText).toUnifiedString();
     }

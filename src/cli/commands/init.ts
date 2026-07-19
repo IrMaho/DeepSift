@@ -1,4 +1,5 @@
 import fs from 'fs';
+import readline from 'readline';
 import path from 'path';
 import { NativeStore } from '../../storage/native-store.js';
 import { Indexer } from '../../core/indexer.js';
@@ -127,8 +128,13 @@ export async function initCommand(projectPath: string) {
         const store = new NativeStore(getDbPath(projectPath));
         const indexer = new Indexer(store);
         const stats = await indexer.indexProject(projectPath, false, (current, total, file) => {
-            process.stdout.write(`\rIndexing: ${current}/${total} files (Processing: ${file})`);
-            process.stdout.write('\x1b[K');
+            const msg = `Indexing: ${current}/${total} files (Processing: ${file})`;
+            const termWidth = process.stdout.columns || 80;
+            const displayMsg = msg.length > termWidth ? msg.substring(0, termWidth - 4) + '...)' : msg;
+            
+            readline.clearLine(process.stdout, 0);
+            readline.cursorTo(process.stdout, 0);
+            process.stdout.write(displayMsg);
         });
         process.stdout.write('\n'); // newline after progress
         printSuccess(`Index complete: ${stats.files} files processed, ${stats.chunks} chunks.`);

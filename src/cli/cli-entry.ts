@@ -13,6 +13,7 @@ import { initCommand } from './commands/init.js';
 import { watchCommand } from './commands/watch.js';
 import { configCommand } from './commands/config.js';
 import { dnaCommand } from './commands/dna.js';
+import { analyzeCommand } from './commands/analyze.js';
 import { realmCommand } from './commands/realm-cmd.js';
 import { compareCommand } from './commands/compare-cmd.js';
 import { scanCommand } from './commands/scan.js';
@@ -26,6 +27,7 @@ import { planCommand } from './commands/plan.js';
 import { healCommand } from './commands/heal.js';
 import { startCommand } from './commands/start.js';
 import { diagCommand } from './commands/diag.js';
+import { memoCommand } from './commands/memo.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
@@ -48,13 +50,14 @@ const HELP_TEXT = `
                                     --offset <number>      Start index for pagination of array items
                                     --path-filter <path>  Filter DNA records by file path prefix
                                     --meta                Only return metadata and record counts (no content)
+  analyze, an <path>            Super-command! Combines Feature Outline and DNA Intelligence for a specific folder/file.
   scan <target>                 Run a specific analyzer (tokens|i18n|duplicates|conventions|assets)
   context "path"                Generate a pre-creation checklist for a new component/feature
   search "query" ["query2" ...]  Semantic search (single or multi-query) enhanced with Graphify PageRank.
                                   Results are automatically boosted based on architectural importance (God Nodes) and community detection.
                                   Options:
                                     --include, -i <path>  Only search within path
-                                    --no-sync, -n         Skip index synchronization
+                                    --sync                Synchronize index before searching (skipped by default)
                                     --verbose, -v         Show file indexing progress
   index [--force]               Index/re-index the project
                                   Options:
@@ -67,17 +70,31 @@ const HELP_TEXT = `
   arch [--depth N]              Project architecture blueprint utilizing Graphify communities.
   deps "target"                 Trace dependencies for a file/module
   feature "path"                Feature outline (classes, functions)
+                                   Options:
+                                     --limit <number>      Limit the number of files returned
+                                     --offset <number>      Start file index for pagination
   read-feature, rf "path"       Read and extract all code from a feature directory
   history                       Show past search results
   clean                         Clear search history logs and index
   drill "logfile" "keyword"     Deep-search within a previous result
   resolve "token"               Decode a compressed token from the last search result
   read "file1" ["file2"...]     Read file contents and output compressed tokens (Supports line ranges: file:10-50)
-  edit "patch.json"             Apply a batch of string replacements across multiple files
   diag "problems.json"          Read IDE problem diagnostics and output precise code snippets
   com "command"                 Execute any shell command and return compressed output
   plan "request"                Generate a Smart Plan by analyzing DNA, skills, realms, and architecture
   heal "file"                   Attempt to fix issues in a file using the project DNA and context
+  memo <action>                 Dynamic Research Memory (DRM) — Persistent research note-taking
+                                  open "name"         Create a new research tag
+                                  close "name"        Close a tag (no more entries)
+                                  archive "name"      Archive a closed tag
+                                  purge "name"        Delete tag and all data
+                                  list [--open]       List all tags
+                                  add "name" --data   Record a finding
+                                  query "name" "q"    Search within a tag
+                                  show "name"         Tag summary and stats
+                                  graph "name"        Show insight graph
+                                  export "name"       Export as readable MD
+                                  prompt              Check open tags & ask for notes
 
 \x1b[33mGlobal Flags:\x1b[0m
   --json                        Output in JSON format
@@ -90,9 +107,11 @@ const HELP_TEXT = `
   deepsift init
   deepsift config
   deepsift search "authentication logic" --include "lib/controllers"
-  deepsift search "db setup" --no-sync
+  deepsift search "db setup"
+  deepsift search "db setup" --sync
   deepsift index --force --verbose
   deepsift arch --depth 3
+  deepsift analyze "src/features/auth"
 `;
 
 function logError(projectPath: string, command: string, args: string[], err: any) {
@@ -241,9 +260,10 @@ async function main() {
 
             case 'search':
             case 's':
-                const skipSync = commandArgs.includes('--no-sync') || commandArgs.includes('-n');
+                const skipSync = !commandArgs.includes('--sync');
                 const verboseSearch = commandArgs.includes('--verbose') || commandArgs.includes('-v');
                 const allRealmsSearch = commandArgs.includes('--all-realms');
+                const noVisual = commandArgs.includes('--no-visual') || commandArgs.includes('--plain') || format === 'plain';
                 
                 let filterPath: string | undefined;
                 const includeIdx = commandArgs.findIndex(arg => arg === '--include' || arg === '-i');
@@ -282,7 +302,8 @@ async function main() {
                     compress,
                     contextLines,
                     realm: searchRealm,
-                    allRealms: allRealmsSearch
+                    allRealms: allRealmsSearch,
+                    noVisual
                 });
                 break;
 
@@ -303,60 +324,16 @@ async function main() {
                 break;
 
             case 'sed': {
-                const { sedCommand } = await import('./commands/sed.js');
-                const all = commandArgs.includes('--all');
-                const dryRun = commandArgs.includes('--dry-run');
-                
-                const filesIdx = commandArgs.indexOf('--files');
-                const files = filesIdx !== -1 && filesIdx + 1 < commandArgs.length 
-                    ? [commandArgs[filesIdx + 1]] 
-                    : [];
-
-                const otherArgs = commandArgs.filter((arg, i) => {
-                    if (arg === '--all' || arg === '--dry-run') return false;
-                    if (arg === '--files' || (i > 0 && commandArgs[i - 1] === '--files')) return false;
-                    return true;
-                });
-
-                if (otherArgs.length < 2) {
-                    throw new Error('Please provide pattern and replacement.\nUsage: deepsift sed "old" "new" --files "src/**/*.ts"');
-                }
-
-                await sedCommand(otherArgs[0], otherArgs[1], files, { all, dryRun });
-                break;
+                throw new Error('This feature is temporarily disabled by user request.');
             }
 
             case 'pipe': {
-                const { pipeCommand } = await import('./commands/pipe.js');
-                const all = commandArgs.includes('--all');
-                const dryRun = commandArgs.includes('--dry-run');
-                
-                const filesIdx = commandArgs.indexOf('--files');
-                const files = filesIdx !== -1 && filesIdx + 1 < commandArgs.length 
-                    ? [commandArgs[filesIdx + 1]] 
-                    : [];
-
-                const operations: { pattern: string, replacement: string }[] = [];
-                for (let i = 0; i < commandArgs.length; i++) {
-                    if (commandArgs[i] === '--sed' && i + 2 < commandArgs.length) {
-                        operations.push({
-                            pattern: commandArgs[i + 1],
-                            replacement: commandArgs[i + 2]
-                        });
-                        i += 2;
-                    }
-                }
-
-                await pipeCommand(files, operations, { all, dryRun });
-                break;
+                throw new Error('This feature is temporarily disabled by user request.');
             }
 
             case 'edit':
             case 'e':
-                if (commandArgs.length === 0) {
-                    throw new Error('Please provide a patch JSON file.\nUsage: deepsift edit "patch.json"');
-                }
-                await editCommand(projectPath, commandArgs[0], format);
+                throw new Error('This feature is temporarily disabled by user request.');
                 break;
 
             case 'index':
@@ -394,12 +371,19 @@ async function main() {
 
             case 'arch':
             case 'a': {
-                let maxDepth = 5;
+                let maxDepth = 3;
                 const depthIdx = commandArgs.indexOf('--depth');
                 if (depthIdx !== -1 && commandArgs[depthIdx + 1]) {
-                    maxDepth = parseInt(commandArgs[depthIdx + 1], 10) || 5;
+                    maxDepth = parseInt(commandArgs[depthIdx + 1], 10) || 3;
                 }
                 await archCommand(projectPath, maxDepth, format, compress);
+                break;
+            }
+
+            case 'analyze':
+            case 'an': {
+                if (commandArgs.length === 0) throw new Error('You must specify a target path for analyze');
+                await analyzeCommand(projectPath, commandArgs[0], format, compress);
                 break;
             }
 
@@ -416,7 +400,21 @@ async function main() {
                 if (commandArgs.length === 0) {
                     throw new Error('Please provide a feature path.\nUsage: deepsift feature "src/path"');
                 }
-                await featureCommand(projectPath, commandArgs[0], format, compress);
+                let featLimit: number | undefined;
+                const featLimitIdx = commandArgs.indexOf('--limit');
+                if (featLimitIdx !== -1 && commandArgs[featLimitIdx + 1]) {
+                    featLimit = parseInt(commandArgs[featLimitIdx + 1], 10);
+                }
+
+                let featOffset: number | undefined;
+                const featOffsetIdx = commandArgs.indexOf('--offset');
+                if (featOffsetIdx !== -1 && commandArgs[featOffsetIdx + 1]) {
+                    featOffset = parseInt(commandArgs[featOffsetIdx + 1], 10);
+                }
+                
+                const targetFeaturePath = commandArgs.filter(a => !a.startsWith('-') && commandArgs[commandArgs.indexOf(a) - 1] !== '--limit' && commandArgs[commandArgs.indexOf(a) - 1] !== '--offset')[0];
+
+                await featureCommand(projectPath, targetFeaturePath || commandArgs[0], format, compress, featLimit, featOffset);
                 break;
 
             case 'history':
@@ -476,6 +474,17 @@ async function main() {
                 await healCommand(commandArgs[0], format, compress);
                 break;
 
+            case 'memo':
+            case 'm': {
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide an action.\nUsage: deepsift memo open "tag-name"\nActions: open, close, archive, purge, list, add, query, show, graph, export, prompt');
+                }
+                const memoAction = commandArgs[0];
+                const memoTarget = commandArgs[1];
+                await memoCommand(projectPath, memoAction, memoTarget, commandArgs.slice(2), format);
+                break;
+            }
+
             default:
                 throw new Error(`Unknown command: "${command}"\nRun 'deepsift --help' for available commands.`);
         }
@@ -485,6 +494,20 @@ async function main() {
         process.exit(1);
     } finally {
         terminateWorkers();
+        if (command !== 'memo' && command !== 'm' && format !== 'json') {
+            try {
+                const { MemoEngine } = await import('../memo/memo-engine.js');
+                const engine = new MemoEngine(projectPath);
+                const openTags = engine.getOpenTags();
+                if (openTags.length > 0) {
+                    const tagNames = openTags.map(t => t.name).join(', ');
+                    printInfo(`\n\x1b[33m⚠️  [DRM REMINDER] You still have open research tags: [${tagNames}]\x1b[0m`);
+                    printInfo(`\x1b[36m👉 Close them when task is done: deepsift memo close "<tag>"\x1b[0m`);
+                }
+            } catch {
+                // Safe ignore
+            }
+        }
     }
 }
 

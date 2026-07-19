@@ -5,6 +5,7 @@ import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-outpu
 import { saveSearchLog } from '../../utils/history.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 import { ContextInjector } from '../../core/context-injector.js';
+import { promptForResearchFindings } from './memo-prompt.js';
 
 export interface SearchOptions {
     skipSync?: boolean;
@@ -14,6 +15,7 @@ export interface SearchOptions {
     contextLines?: number;
     realm?: string;
     allRealms?: boolean;
+    noVisual?: boolean;
 }
 
 export async function searchCommand(
@@ -65,10 +67,18 @@ export async function searchCommand(
 }
 
 async function executeSingleSearch(router: RealmRouter, projectPath: string, query: string, format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
-    const results = await router.searchAllRealms({ query, topK: 10, filterPath: options.filterPath }, targetRealms);
+    const rawResults = await router.searchAllRealms({ query, topK: 5, filterPath: options.filterPath }, targetRealms);
+    const results = rawResults.filter(r => r.score >= 0.15);
 
     if (results.length === 0) {
-        printResult('No relevant code found.', format);
+        const hint = `No relevant code found for: "${query}"
+
+💡 **Search Tips:**
+- Try shorter, more specific keywords (e.g. "auth handler" instead of "what are the main features")
+- Use \`deepsift arch\` for high-level project structure
+- Use \`deepsift analyze "src/path"\` for deep dives into specific folders
+- Use \`grep_search\` for exact text/variable name matches`;
+        printResult(hint, format);
         return;
     }
 
@@ -107,7 +117,7 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
         finalOutput = payload.toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, [query], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [query], finalOutput, { skipVisuals: options.noVisual });
     printResult(finalOutput, format);
     if (format !== 'json') {
         if (logInfo.images && logInfo.images.length > 0) {
@@ -120,6 +130,8 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
             printSuccess(`Results cached in: ${link}`);
         }
     }
+
+    await promptForResearchFindings(projectPath, format);
 }
 
 async function executeMultiSearch(router: RealmRouter, projectPath: string, queries: string[], format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
@@ -127,7 +139,8 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
     let totalHits = 0;
 
     for (let i = 0; i < queries.length; i++) {
-        const results = await router.searchAllRealms({ query: queries[i], topK: 5, filterPath: options.filterPath }, targetRealms);
+        const rawResults = await router.searchAllRealms({ query: queries[i], topK: 4, filterPath: options.filterPath }, targetRealms);
+        const results = rawResults.filter(r => r.score >= 0.15);
         totalHits += results.length;
 
         const formattedResults = results.map((res: CrossRealmResult, j: number) => {
@@ -168,7 +181,7 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
         finalOutput = payload.toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, queries, finalOutput);
+    const logInfo = await saveSearchLog(projectPath, queries, finalOutput, { skipVisuals: options.noVisual });
     printResult(finalOutput, format);
     if (format !== 'json') {
         if (logInfo.images && logInfo.images.length > 0) {
@@ -181,4 +194,6 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
             printSuccess(`Results cached in: ${link}`);
         }
     }
+
+    await promptForResearchFindings(projectPath, format);
 }

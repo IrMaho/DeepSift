@@ -23,7 +23,11 @@ export interface SearchLogResult {
     images?: string[];
 }
 
-export async function saveSearchLog(projectPath: string, queries: string[], resultText: string): Promise<SearchLogResult> {
+export interface SaveLogOptions {
+    skipVisuals?: boolean;
+}
+
+export async function saveSearchLog(projectPath: string, queries: string[], resultText: string, options?: SaveLogOptions): Promise<SearchLogResult> {
     const outputsDir = resolveOutputsDir(projectPath);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -53,33 +57,38 @@ export async function saveSearchLog(projectPath: string, queries: string[], resu
     const cleanedResultText = cleanedLines.join('\n');
 
     const fileContent = `# Search Queries\n${queriesTitle}\n\n## Results\n${cleanedResultText}`;
+    fs.writeFileSync(filePath, fileContent, 'utf8');
     
     let indexEntry = `\n---\n## Search: ${queriesTitle}\n*Date: ${new Date().toLocaleString()}*\n\n`;
     const generatedImages: string[] = [];
 
-    try {
-        // @ts-ignore
-        const pxpipe = await import('pxpipe-proxy');
-        if (pxpipe && pxpipe.renderTextToImages) {
-            // Use pxpipe-main's native defaults exactly to achieve the intended dense layout
-            // with native anti-aliasing for the token-saving "blur" effect.
-            const { pages } = await pxpipe.renderTextToImages(fileContent, {
-                reflow: true
-            });
-            
-            pages.forEach((page: any, idx: number) => {
-                const imgName = `search_${timestamp}_${hash}_page_${idx}.png`;
-                const imgPath = path.join(outputsDir, imgName);
-                fs.writeFileSync(imgPath, page.png);
-                indexEntry += `![${imgName}](${imgName})\n\n`;
-                generatedImages.push(imgPath);
-            });
-        } else {
-            throw new Error('pxpipe not found');
+    if (options?.skipVisuals) {
+        indexEntry += `*Result saved to text file: \`${filename}\` (Visuals skipped to save tokens)*\n\n`;
+    } else {
+        try {
+            // @ts-ignore
+            const pxpipe = await import('pxpipe-proxy');
+            if (pxpipe && pxpipe.renderTextToImages) {
+                // Use pxpipe-main's native defaults exactly to achieve the intended dense layout
+                // with native anti-aliasing for the token-saving "blur" effect.
+                const { pages } = await pxpipe.renderTextToImages(fileContent, {
+                    reflow: true
+                });
+                
+                pages.forEach((page: any, idx: number) => {
+                    const imgName = `search_${timestamp}_${hash}_page_${idx}.png`;
+                    const imgPath = path.join(outputsDir, imgName);
+                    fs.writeFileSync(imgPath, page.png);
+                    indexEntry += `![${imgName}](${imgName})\n\n`;
+                    generatedImages.push(imgPath);
+                });
+            } else {
+                throw new Error('pxpipe not found');
+            }
+        } catch (e: any) {
+            console.error('Pxpipe rendering failed, fallback to text reference:', e.message);
+            indexEntry += `*Rendering failed. Result saved to text file: \`${filename}\`*\n\n`;
         }
-    } catch (e: any) {
-        console.error('Pxpipe rendering failed, falling back to raw text index:', e.message);
-        indexEntry += `\`\`\`json\n${fileContent}\n\`\`\`\n\n`;
     }
 
     const indexPath = path.join(outputsDir, 'INDEX.md');
