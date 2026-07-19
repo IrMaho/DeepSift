@@ -74,7 +74,6 @@ const HELP_TEXT = `
   drill "logfile" "keyword"     Deep-search within a previous result
   resolve "token"               Decode a compressed token from the last search result
   read "file1" ["file2"...]     Read file contents and output compressed tokens (Supports line ranges: file:10-50)
-  edit "patch.json"             Apply a batch of string replacements across multiple files
   diag "problems.json"          Read IDE problem diagnostics and output precise code snippets
   com "command"                 Execute any shell command and return compressed output
   plan "request"                Generate a Smart Plan by analyzing DNA, skills, realms, and architecture
@@ -257,6 +256,7 @@ async function main() {
                 const skipSync = commandArgs.includes('--no-sync') || commandArgs.includes('-n');
                 const verboseSearch = commandArgs.includes('--verbose') || commandArgs.includes('-v');
                 const allRealmsSearch = commandArgs.includes('--all-realms');
+                const noVisual = commandArgs.includes('--no-visual') || commandArgs.includes('--plain') || format === 'plain';
                 
                 let filterPath: string | undefined;
                 const includeIdx = commandArgs.findIndex(arg => arg === '--include' || arg === '-i');
@@ -295,7 +295,8 @@ async function main() {
                     compress,
                     contextLines,
                     realm: searchRealm,
-                    allRealms: allRealmsSearch
+                    allRealms: allRealmsSearch,
+                    noVisual
                 });
                 break;
 
@@ -316,60 +317,16 @@ async function main() {
                 break;
 
             case 'sed': {
-                const { sedCommand } = await import('./commands/sed.js');
-                const all = commandArgs.includes('--all');
-                const dryRun = commandArgs.includes('--dry-run');
-                
-                const filesIdx = commandArgs.indexOf('--files');
-                const files = filesIdx !== -1 && filesIdx + 1 < commandArgs.length 
-                    ? [commandArgs[filesIdx + 1]] 
-                    : [];
-
-                const otherArgs = commandArgs.filter((arg, i) => {
-                    if (arg === '--all' || arg === '--dry-run') return false;
-                    if (arg === '--files' || (i > 0 && commandArgs[i - 1] === '--files')) return false;
-                    return true;
-                });
-
-                if (otherArgs.length < 2) {
-                    throw new Error('Please provide pattern and replacement.\nUsage: deepsift sed "old" "new" --files "src/**/*.ts"');
-                }
-
-                await sedCommand(otherArgs[0], otherArgs[1], files, { all, dryRun });
-                break;
+                throw new Error('This feature is temporarily disabled by user request.');
             }
 
             case 'pipe': {
-                const { pipeCommand } = await import('./commands/pipe.js');
-                const all = commandArgs.includes('--all');
-                const dryRun = commandArgs.includes('--dry-run');
-                
-                const filesIdx = commandArgs.indexOf('--files');
-                const files = filesIdx !== -1 && filesIdx + 1 < commandArgs.length 
-                    ? [commandArgs[filesIdx + 1]] 
-                    : [];
-
-                const operations: { pattern: string, replacement: string }[] = [];
-                for (let i = 0; i < commandArgs.length; i++) {
-                    if (commandArgs[i] === '--sed' && i + 2 < commandArgs.length) {
-                        operations.push({
-                            pattern: commandArgs[i + 1],
-                            replacement: commandArgs[i + 2]
-                        });
-                        i += 2;
-                    }
-                }
-
-                await pipeCommand(files, operations, { all, dryRun });
-                break;
+                throw new Error('This feature is temporarily disabled by user request.');
             }
 
             case 'edit':
             case 'e':
-                if (commandArgs.length === 0) {
-                    throw new Error('Please provide a patch JSON file.\nUsage: deepsift edit "patch.json"');
-                }
-                await editCommand(projectPath, commandArgs[0], format);
+                throw new Error('This feature is temporarily disabled by user request.');
                 break;
 
             case 'index':

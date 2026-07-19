@@ -67,7 +67,10 @@ export async function searchCommand(
 }
 
 async function executeSingleSearch(router: RealmRouter, projectPath: string, query: string, format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
-    const results = await router.searchAllRealms({ query, topK: 10, filterPath: options.filterPath }, targetRealms);
+    // Aggressively limit topK to prevent token burn
+    const rawResults = await router.searchAllRealms({ query, topK: 3, filterPath: options.filterPath }, targetRealms);
+    // Filter out low-confidence results (score < 0.25)
+    const results = rawResults.filter(r => r.score >= 0.25);
 
     if (results.length === 0) {
         printResult('No relevant code found.', format);
@@ -131,7 +134,10 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
     let totalHits = 0;
 
     for (let i = 0; i < queries.length; i++) {
-        const results = await router.searchAllRealms({ query: queries[i], topK: 5, filterPath: options.filterPath }, targetRealms);
+        // Aggressively limit topK to prevent token burn
+        const rawResults = await router.searchAllRealms({ query: queries[i], topK: 2, filterPath: options.filterPath }, targetRealms);
+        // Filter out low-confidence results (score < 0.25)
+        const results = rawResults.filter(r => r.score >= 0.25);
         totalHits += results.length;
 
         const formattedResults = results.map((res: CrossRealmResult, j: number) => {
