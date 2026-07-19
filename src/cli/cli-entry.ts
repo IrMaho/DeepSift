@@ -55,7 +55,7 @@ const HELP_TEXT = `
                                   Results are automatically boosted based on architectural importance (God Nodes) and community detection.
                                   Options:
                                     --include, -i <path>  Only search within path
-                                    --no-sync, -n         Skip index synchronization
+                                    --sync                Synchronize index before searching (skipped by default)
                                     --verbose, -v         Show file indexing progress
   index [--force]               Index/re-index the project
                                   Options:
@@ -105,7 +105,8 @@ const HELP_TEXT = `
   deepsift init
   deepsift config
   deepsift search "authentication logic" --include "lib/controllers"
-  deepsift search "db setup" --no-sync
+  deepsift search "db setup"
+  deepsift search "db setup" --sync
   deepsift index --force --verbose
   deepsift arch --depth 3
 `;
@@ -256,7 +257,7 @@ async function main() {
 
             case 'search':
             case 's':
-                const skipSync = commandArgs.includes('--no-sync') || commandArgs.includes('-n');
+                const skipSync = !commandArgs.includes('--sync');
                 const verboseSearch = commandArgs.includes('--verbose') || commandArgs.includes('-v');
                 const allRealmsSearch = commandArgs.includes('--all-realms');
                 const noVisual = commandArgs.includes('--no-visual') || commandArgs.includes('--plain') || format === 'plain';

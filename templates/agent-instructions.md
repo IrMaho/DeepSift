@@ -16,7 +16,7 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 
 | Command | Description |
 |---|---|
-| `deepsift search "query"` | Semantic search. Options: `--include <path>`, `--no-sync`, `--context-lines N`, `--realm <id>`, `--all-realms`. Multi-query: `deepsift search "q1" "q2"` |
+| `deepsift search "query"` | Semantic search. Options: `--include <path>`, `--sync`, `--context-lines N`, `--realm <id>`, `--all-realms`. Multi-query: `deepsift search "q1" "q2"` |
 | `deepsift read "file"` | **MANDATORY FOR READING FILES.** Outputs raw text by default. Supports lines: `deepsift read "src/file.ts:10-50"`. Use `--compress` to enable visual pxpipe tokens. |
 | `deepsift diag "problems.json"`| Read IDE diagnostics with context snippets. |
 | `deepsift index [--force]` | Re-index project incrementally (or full with `--force`). |
@@ -43,7 +43,7 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
 
 | Command | Description |
 |---|---|
-| `deepsift search "query"` | Semantic search. Options: `--include <path>`, `--no-sync`, `--context-lines N`, `--realm <id>`, `--all-realms`. Multi-query: `deepsift search "q1" "q2"` |
+| `deepsift search "query"` | Semantic search. Options: `--include <path>`, `--sync`, `--context-lines N`, `--realm <id>`, `--all-realms`. Multi-query: `deepsift search "q1" "q2"` |
 | `deepsift read "file"` | **MANDATORY FOR READING FILES.** Outputs raw text by default. Supports lines: `deepsift read "src/file.ts:10-50"`. Use `--compress` to enable visual pxpipe tokens. |
 | `deepsift diag "problems.json"`| Read IDE diagnostics with context snippets. |
 | `deepsift index [--force]` | Re-index project incrementally (or full with `--force`). |
