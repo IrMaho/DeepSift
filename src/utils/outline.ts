@@ -1,7 +1,34 @@
 import fs from 'fs';
 import path from 'path';
 
-function extractStructure(content: string): { dependencies: string[], elements: string[] } {
+function extractPurpose(content: string, fileName: string): string {
+    const lines = content.split('\n');
+    for (let i = 0; i < Math.min(lines.length, 30); i++) {
+        const line = lines[i].trim();
+        const jsdocMatch = line.match(/^\*\s+(.{10,80})/);
+        if (jsdocMatch && !jsdocMatch[1].startsWith('@')) return jsdocMatch[1].trim();
+        const commentMatch = line.match(/^\/\/\s+(.{10,80})/);
+        if (commentMatch) return commentMatch[1].trim();
+    }
+
+    const classCount = (content.match(/\bclass\s+/g) || []).length;
+    const hookCount = (content.match(/\buse[A-Z]\w+/g) || []).length;
+    const testCount = (content.match(/\b(describe|it|test)\s*\(/g) || []).length;
+    const routeCount = (content.match(/\b(router|route|app\.(get|post|put|delete))/gi) || []).length;
+    const exportCount = (content.match(/\bexport\s+(default\s+)?(function|const|class)/g) || []).length;
+
+    if (testCount > 2) return `Test suite (${testCount} test cases)`;
+    if (hookCount > 2) return `React hooks module (${hookCount} hooks)`;
+    if (routeCount > 1) return `Route/API handler (${routeCount} routes)`;
+    if (classCount > 1) return `Multi-class module (${classCount} classes)`;
+    if (exportCount > 5) return `Utility/helper barrel (${exportCount} exports)`;
+
+    const baseName = path.basename(fileName, path.extname(fileName));
+    const words = baseName.replace(/[-_]/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+    return `${words} module`;
+}
+
+function extractStructure(content: string): { dependencies: string[], elements: string[], purpose: string } {
     const lines = content.split('\n');
     const dependencies: string[] = [];
     const elements: string[] = [];
@@ -53,7 +80,8 @@ function extractStructure(content: string): { dependencies: string[], elements: 
     
     return {
         dependencies: [...new Set(dependencies)],
-        elements: elements
+        elements: elements,
+        purpose: ''
     };
 }
 
@@ -87,9 +115,11 @@ export function getFeatureOutline(featurePath: string, limit: number = 15, offse
                     fileCount++;
                     const content = fs.readFileSync(fullPath, 'utf8');
                     const struct = extractStructure(content);
+                    struct.purpose = extractPurpose(content, item.name);
                     if (struct.dependencies.length > 0 || struct.elements.length > 0) {
                         const relPath = path.relative(featurePath, fullPath) || item.name;
                         result += `#### 📄 ${relPath}\n`;
+                        result += `  - 🎯 **Purpose**: ${struct.purpose}\n`;
                         if (struct.dependencies.length > 0) {
                             result += `  - 🔗 **Dependencies**: ${struct.dependencies.slice(0, 8).join(', ')}${struct.dependencies.length > 8 ? ', ...' : ''}\n`;
                         }
@@ -110,7 +140,9 @@ export function getFeatureOutline(featurePath: string, limit: number = 15, offse
         // Single file
         const content = fs.readFileSync(featurePath, 'utf8');
         const struct = extractStructure(content);
+        struct.purpose = extractPurpose(content, path.basename(featurePath));
         result += `#### 📄 ${path.basename(featurePath)}\n`;
+        result += `  - 🎯 **Purpose**: ${struct.purpose}\n`;
         if (struct.dependencies.length > 0) {
             result += `  - 🔗 **Dependencies**: ${struct.dependencies.slice(0, 8).join(', ')}${struct.dependencies.length > 8 ? ', ...' : ''}\n`;
         }

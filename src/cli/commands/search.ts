@@ -67,13 +67,18 @@ export async function searchCommand(
 }
 
 async function executeSingleSearch(router: RealmRouter, projectPath: string, query: string, format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
-    // Aggressively limit topK to prevent token burn
-    const rawResults = await router.searchAllRealms({ query, topK: 3, filterPath: options.filterPath }, targetRealms);
-    // Filter out low-confidence results (score < 0.25)
-    const results = rawResults.filter(r => r.score >= 0.25);
+    const rawResults = await router.searchAllRealms({ query, topK: 5, filterPath: options.filterPath }, targetRealms);
+    const results = rawResults.filter(r => r.score >= 0.15);
 
     if (results.length === 0) {
-        printResult('No relevant code found.', format);
+        const hint = `No relevant code found for: "${query}"
+
+💡 **Search Tips:**
+- Try shorter, more specific keywords (e.g. "auth handler" instead of "what are the main features")
+- Use \`deepsift arch\` for high-level project structure
+- Use \`deepsift analyze "src/path"\` for deep dives into specific folders
+- Use \`grep_search\` for exact text/variable name matches`;
+        printResult(hint, format);
         return;
     }
 
@@ -134,10 +139,8 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
     let totalHits = 0;
 
     for (let i = 0; i < queries.length; i++) {
-        // Aggressively limit topK to prevent token burn
-        const rawResults = await router.searchAllRealms({ query: queries[i], topK: 2, filterPath: options.filterPath }, targetRealms);
-        // Filter out low-confidence results (score < 0.25)
-        const results = rawResults.filter(r => r.score >= 0.25);
+        const rawResults = await router.searchAllRealms({ query: queries[i], topK: 4, filterPath: options.filterPath }, targetRealms);
+        const results = rawResults.filter(r => r.score >= 0.15);
         totalHits += results.length;
 
         const formattedResults = results.map((res: CrossRealmResult, j: number) => {
