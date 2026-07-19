@@ -20,10 +20,10 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift index [--force]` | Re-index project incrementally (or full with `--force`). |
 | `deepsift realm list/add/remove`| Manage knowledge realms. Ex: `deepsift realm add my_docs --type docs --source ./docs` |
 | `deepsift compare r1 r2 -q "k"` | **VECTOR DIFF:** Compare realms (e.g. `code` vs `flutter_docs`) to find Gaps/Similarities. |
-| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. Automatically ignores large data/log files (`.csv`, `.db`, etc.) to prevent bloat. |
-| `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Combines `feature` outline (AST-based classes/methods, inline signatures, and **purpose summary**) and matching `dna` intelligence for a specific folder/file in one unified, safe, and heavily compressed markdown report. |
+| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. Automatically truncates giant trees and ignores large data/log files to prevent console bloat. Use `--depth N` or run `feature` for deeper inspection. |
+| `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Uses the same inline 🎯 **Purpose Summaries** and **AST logic signatures** as `feature`, combined with matching `dna` intelligence in one unified, heavily compressed markdown report. |
 | `deepsift deps "filename"` | Find imports/dependencies for a target. |
-| `deepsift feature "src/path"` | Get AST-based feature outline with inline logic signatures and **purpose summaries** (🎯). Auto-generates a smart summary of omitted files when hitting limits. Supports `--limit` and `--offset`. |
+| `deepsift feature "src/path"` | Get AST-based feature outline. **RELY ON THIS:** It automatically includes an inline 🎯 **Purpose Summary** and full **AST logic signatures** (classes/functions) right in the console. You do NOT need to open the file to know what it does! |
 | `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
 | `deepsift plan "request"` | **MANDATORY BEFORE IMPLEMENTATION:** Generate Smart Plan from DNA and architecture. |
 | `deepsift memo <action>`  | **DRM ENGINE:** Dynamic Research Memory tag management, notes, queries, and relations. |
@@ -48,15 +48,15 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
 | `deepsift index [--force]` | Re-index project incrementally (or full with `--force`). |
 | `deepsift realm list/add/remove`| Manage knowledge realms. Ex: `deepsift realm add my_docs --type docs --source ./docs` |
 | `deepsift compare r1 r2 -q "k"` | **VECTOR DIFF:** Compare realms (e.g. `code` vs `flutter_docs`) to find Gaps/Similarities. |
-| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. Automatically ignores large data/log files (`.csv`, `.db`, etc.) to prevent bloat. |
-| `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Combines `feature` outline (AST-based classes/methods, inline signatures, and **purpose summary**) and matching `dna` intelligence for a specific folder/file in one unified, safe, and heavily compressed markdown report. |
+| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. Automatically truncates giant trees and ignores large data/log files to prevent console bloat. Use `--depth N` or run `feature` for deeper inspection. |
+| `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Uses the same inline 🎯 **Purpose Summaries** and **AST logic signatures** as `feature`, combined with matching `dna` intelligence in one unified, heavily compressed markdown report. |
 | `deepsift deps "filename"` | Find imports/dependencies for a target. |
-| `deepsift feature "src/path"` | Get AST-based feature outline with inline logic signatures and **purpose summaries** (🎯). Auto-generates a smart summary of omitted files when hitting limits. Supports `--limit` and `--offset`. |
+| `deepsift feature "src/path"` | Get AST-based feature outline. **RELY ON THIS:** It automatically includes an inline 🎯 **Purpose Summary** and full **AST logic signatures** (classes/functions) right in the console. You do NOT need to open the file to know what it does! |
 | `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
 | `deepsift plan "request"` | **MANDATORY BEFORE IMPLEMENTATION:** Generate Smart Plan from DNA and architecture. |
 | `deepsift heal "file"` | Auto-refactor and fix issues based on DNA. |
 | `deepsift learn "patterns"` | Auto-discover coding patterns from the codebase. |
-| `deepsift dna` | **ANALYSIS.** Generate Project DNA. Options: `--show` (safely prunes huge graphs and shows **token format samples**), `--section <name>`, `--query <term>`, `--meta`. |
+| `deepsift dna` | **ANALYSIS.** Generate Project DNA. **God Nodes are automatically grouped by Workspace** (e.g., separating Dart from TS in monorepos). Options: `--show` (prints a clean **Summary Mode** with safely pruned graphs to prevent terminal bloat. Use `--json` to bypass), `--section <name>`, `--query <term>`, `--meta`. |
 | `deepsift com "command"` | **TERMINAL.** Run standard commands. Use `--compress` for DEC_v2 output. Short errors are printed directly to terminal (no visual cache). |
 | `deepsift history / drill / clean`| Manage search history. `drill "logfile.md" "keyword"` searches within past results. |
 | `deepsift memo <action>`  | **DRM ENGINE:** Dynamic Research Memory tags (open, close, list, add, query, graph, export, prompt). |
