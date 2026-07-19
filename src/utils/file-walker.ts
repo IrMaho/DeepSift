@@ -66,7 +66,11 @@ const DEFAULT_IGNORES = [
     '**/*.wasm',
     '**/*.pb.go',
     '**/*.pb.cc',
-    '**/*.pb.h'
+    '**/*.pb.h',
+    '**/*.csv',
+    '**/*.tsv',
+    '**/*.xlsx',
+    '**/*.parquet'
 ];
 
 /**

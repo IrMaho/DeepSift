@@ -22,7 +22,7 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift index [--force]` | Re-index project incrementally (or full with `--force`). |
 | `deepsift realm list/add/remove`| Manage knowledge realms. Ex: `deepsift realm add my_docs --type docs --source ./docs` |
 | `deepsift compare r1 r2 -q "k"` | **VECTOR DIFF:** Compare realms (e.g. `code` vs `flutter_docs`) to find Gaps/Similarities. |
-| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. |
+| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. Automatically ignores large data/log files (`.csv`, `.db`, etc.) to prevent bloat. |
 | `deepsift deps "filename"` | Find imports/dependencies for a target. |
 | `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) without full bodies. Supports `--limit` and `--offset` for pagination. |
 | `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
@@ -49,7 +49,7 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
 | `deepsift index [--force]` | Re-index project incrementally (or full with `--force`). |
 | `deepsift realm list/add/remove`| Manage knowledge realms. Ex: `deepsift realm add my_docs --type docs --source ./docs` |
 | `deepsift compare r1 r2 -q "k"` | **VECTOR DIFF:** Compare realms (e.g. `code` vs `flutter_docs`) to find Gaps/Similarities. |
-| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. |
+| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. Automatically ignores large data/log files (`.csv`, `.db`, etc.) to prevent bloat. |
 | `deepsift deps "filename"` | Find imports/dependencies for a target. |
 | `deepsift feature "src/path"` | Get feature outline (classes, functions, imports) without full bodies. Supports `--limit` and `--offset` for pagination. |
 | `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
