@@ -13,6 +13,7 @@ import { initCommand } from './commands/init.js';
 import { watchCommand } from './commands/watch.js';
 import { configCommand } from './commands/config.js';
 import { dnaCommand } from './commands/dna.js';
+import { analyzeCommand } from './commands/analyze.js';
 import { realmCommand } from './commands/realm-cmd.js';
 import { compareCommand } from './commands/compare-cmd.js';
 import { scanCommand } from './commands/scan.js';
@@ -49,6 +50,7 @@ const HELP_TEXT = `
                                     --offset <number>      Start index for pagination of array items
                                     --path-filter <path>  Filter DNA records by file path prefix
                                     --meta                Only return metadata and record counts (no content)
+  analyze, an <path>            Super-command! Combines Feature Outline and DNA Intelligence for a specific folder/file.
   scan <target>                 Run a specific analyzer (tokens|i18n|duplicates|conventions|assets)
   context "path"                Generate a pre-creation checklist for a new component/feature
   search "query" ["query2" ...]  Semantic search (single or multi-query) enhanced with Graphify PageRank.
@@ -109,6 +111,7 @@ const HELP_TEXT = `
   deepsift search "db setup" --sync
   deepsift index --force --verbose
   deepsift arch --depth 3
+  deepsift analyze "src/features/auth"
 `;
 
 function logError(projectPath: string, command: string, args: string[], err: any) {
@@ -374,6 +377,13 @@ async function main() {
                     maxDepth = parseInt(commandArgs[depthIdx + 1], 10) || 3;
                 }
                 await archCommand(projectPath, maxDepth, format, compress);
+                break;
+            }
+
+            case 'analyze':
+            case 'an': {
+                if (commandArgs.length === 0) throw new Error('You must specify a target path for analyze');
+                await analyzeCommand(projectPath, commandArgs[0], format, compress);
                 break;
             }
 
