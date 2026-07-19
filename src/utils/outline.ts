@@ -32,6 +32,8 @@ export function getFeatureOutline(featurePath: string): string {
     
     let result = `### Feature Outline: ${path.basename(featurePath)}\n\n`;
     let fileCount = 0;
+    let skippedCount = 0;
+    const MAX_FILES = 15;
 
     function walk(dir: string) {
         const items = fs.readdirSync(dir, { withFileTypes: true });
@@ -43,7 +45,11 @@ export function getFeatureOutline(featurePath: string): string {
                 walk(fullPath);
             } else {
                 const ext = path.extname(item.name);
-                if (['.ts', '.js', '.dart', '.py', '.java', '.cpp', '.go'].includes(ext)) {
+                if (['.ts', '.js', '.dart', '.py', '.java', '.cpp', '.go', '.tsx', '.jsx'].includes(ext)) {
+                    if (fileCount >= MAX_FILES) {
+                        skippedCount++;
+                        continue;
+                    }
                     fileCount++;
                     const content = fs.readFileSync(fullPath, 'utf8');
                     const sigs = extractSignatures(content);
@@ -71,5 +77,10 @@ export function getFeatureOutline(featurePath: string): string {
     }
 
     if (fileCount === 0) return `No source files found in ${featurePath}`;
+    
+    if (skippedCount > 0) {
+        result += `\n⚠️  [AI NOTE]: ${skippedCount} files were omitted to prevent context explosion. Please run \`deepsift feature\` on a more specific subfolder to see them.\n`;
+    }
+    
     return result;
 }

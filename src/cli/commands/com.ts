@@ -16,6 +16,7 @@ export async function comCommand(
     if (process.platform === 'win32') {
         if (commandStr.trim() === 'ls' || commandStr.match(/^ls\s+/)) {
             commandStr = commandStr.replace(/^ls\b/, 'dir').replace(/\s+-[a-zA-Z]+\b/g, '');
+            commandStr = commandStr.replace(/\//g, '\\');
         }
     }
 

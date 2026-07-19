@@ -11,6 +11,10 @@ export async function archCommand(projectPath: string, maxDepth: number, format:
     const architectureText = getProjectArchitecture(projectPath, maxDepth);
     let finalOutput = architectureText;
     
+    if (finalOutput.split('\n').length > 50) {
+        finalOutput += '\n\n⚠️  [AI NOTE]: If this output appears truncated in your context window, please use `--depth` to reduce scope, or run `deepsift feature "path"` to analyze specific folders.';
+    }
+
     if (compress && format !== 'json') {
         const optimizer = new TokenOptimizerService();
         finalOutput = optimizer.optimize(architectureText).toUnifiedString();

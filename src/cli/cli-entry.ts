@@ -368,10 +368,10 @@ async function main() {
 
             case 'arch':
             case 'a': {
-                let maxDepth = 5;
+                let maxDepth = 3;
                 const depthIdx = commandArgs.indexOf('--depth');
                 if (depthIdx !== -1 && commandArgs[depthIdx + 1]) {
-                    maxDepth = parseInt(commandArgs[depthIdx + 1], 10) || 5;
+                    maxDepth = parseInt(commandArgs[depthIdx + 1], 10) || 3;
                 }
                 await archCommand(projectPath, maxDepth, format, compress);
                 break;
