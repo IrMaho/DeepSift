@@ -14,6 +14,16 @@ export async function memoCommand(
     switch (action) {
         case 'open': {
             if (!target) throw new Error('Tag name is required. Usage: deepsift memo open "my-research"');
+            
+            // Auto-close any previously open tags
+            const openTags = engine.getOpenTags();
+            for (const tag of openTags) {
+                if (tag.name !== target) {
+                    engine.closeTag(tag.name);
+                    printInfo(`⚠️ Auto-closed previously open tag: '${tag.name}'`);
+                }
+            }
+
             const desc = extractFlag(extraArgs, '--desc');
             const tag = engine.openTag(target, desc);
             if (format === 'json') {

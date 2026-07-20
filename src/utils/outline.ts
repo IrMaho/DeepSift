@@ -85,18 +85,25 @@ function extractStructure(content: string): { dependencies: string[], elements: 
     };
 }
 
-export function getFeatureOutline(featurePath: string, limit: number = 15, offset: number = 0): string {
-    if (!fs.existsSync(featurePath)) return `Path not found: ${featurePath}`;
+export function getFeatureOutline(featurePath: string, limit: number = 20, offset: number = 0, summarizeOnly: boolean = false): string {
+    let result = '';
+    const baseDir = path.basename(featurePath);
+    result += `### Feature Outline: ${baseDir}\n`;
     
-    let result = `### Feature Outline: ${path.basename(featurePath)}\n`;
-    result += `(Showing up to ${limit} files, starting from offset ${offset})\n\n`;
+    if (limit !== undefined && offset !== undefined) {
+        result += `*(Showing up to ${limit} files, starting from offset ${offset})*\n\n`;
+    } else {
+        result += '\n';
+    }
+
     let fileCount = 0;
-    let skippedFiles: string[] = [];
+    const skippedFiles: string[] = [];
 
     function walk(dir: string) {
+        if (!fs.existsSync(dir)) return;
         const items = fs.readdirSync(dir, { withFileTypes: true });
         for (const item of items) {
-            if (item.name.startsWith('.') || item.name === 'node_modules') continue;
+            if (item.name.startsWith('.') || item.name === 'node_modules' || item.name === 'dist' || item.name === 'build') continue;
             
             const fullPath = path.join(dir, item.name);
             if (item.isDirectory()) {
@@ -116,16 +123,22 @@ export function getFeatureOutline(featurePath: string, limit: number = 15, offse
                     const content = fs.readFileSync(fullPath, 'utf8');
                     const struct = extractStructure(content);
                     struct.purpose = extractPurpose(content, item.name);
-                    if (struct.dependencies.length > 0 || struct.elements.length > 0) {
+                    
+                    let elementsToPrint = struct.elements;
+                    if (summarizeOnly) {
+                        elementsToPrint = struct.elements.filter(e => e.startsWith('[CLASS]') || e.startsWith('[INTERFACE]'));
+                    }
+
+                    if (struct.dependencies.length > 0 || elementsToPrint.length > 0 || summarizeOnly) {
                         const relPath = path.relative(featurePath, fullPath) || item.name;
                         result += `#### 📄 ${relPath}\n`;
                         result += `  - 🎯 **Purpose**: ${struct.purpose}\n`;
                         if (struct.dependencies.length > 0) {
                             result += `  - 🔗 **Dependencies**: ${struct.dependencies.slice(0, 8).join(', ')}${struct.dependencies.length > 8 ? ', ...' : ''}\n`;
                         }
-                        if (struct.elements.length > 0) {
-                            result += struct.elements.slice(0, 30).map(s => `  - \`${s}\``).join('\n') + '\n';
-                            if (struct.elements.length > 30) result += `  - ... (+${struct.elements.length - 30} more)\n`;
+                        if (elementsToPrint.length > 0) {
+                            result += elementsToPrint.slice(0, 30).map(s => `  - \`${s}\``).join('\n') + '\n';
+                            if (elementsToPrint.length > 30) result += `  - ... (+${elementsToPrint.length - 30} more)\n`;
                         }
                         result += '\n';
                     }

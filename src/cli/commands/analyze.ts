@@ -14,9 +14,10 @@ export async function analyzeCommand(
     projectPath: string,
     targetDir: string,
     format: OutputFormat,
-    compress: boolean = true,
+    compress: boolean = false,
     limit?: number,
-    offset?: number
+    offset?: number,
+    summarizeOnly: boolean = false
 ) {
     let targetPath = targetDir;
     if (!path.isAbsolute(targetDir)) {
@@ -34,7 +35,7 @@ export async function analyzeCommand(
     }
 
     // 1. Get Feature Outline
-    const outlineText = getFeatureOutline(targetPath, limit ?? 20, offset ?? 0);
+    const outlineText = getFeatureOutline(targetPath, limit ?? 20, offset ?? 0, summarizeOnly);
 
     // 2. Get DNA for this specific path
     const dna = loadDNA(projectPath);

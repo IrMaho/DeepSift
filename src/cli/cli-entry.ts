@@ -401,9 +401,11 @@ async function main() {
                     offset = parseInt(commandArgs[offsetIdx + 1], 10);
                 }
                 
+                const summarizeOnly = commandArgs.includes('--summarize-only');
+                
                 const targetPath = commandArgs.filter(a => !a.startsWith('-') && commandArgs[commandArgs.indexOf(a) - 1] !== '--limit' && commandArgs[commandArgs.indexOf(a) - 1] !== '--offset')[0];
                 
-                await analyzeCommand(projectPath, targetPath || commandArgs[0], format, compress, limit, offset);
+                await analyzeCommand(projectPath, targetPath || commandArgs[0], format, compress, limit, offset, summarizeOnly);
                 break;
             }
 
@@ -432,9 +434,11 @@ async function main() {
                     featOffset = parseInt(commandArgs[featOffsetIdx + 1], 10);
                 }
                 
+                const featSummarizeOnly = commandArgs.includes('--summarize-only');
+                
                 const targetFeaturePath = commandArgs.filter(a => !a.startsWith('-') && commandArgs[commandArgs.indexOf(a) - 1] !== '--limit' && commandArgs[commandArgs.indexOf(a) - 1] !== '--offset')[0];
 
-                await featureCommand(projectPath, targetFeaturePath || commandArgs[0], format, compress, featLimit, featOffset);
+                await featureCommand(projectPath, targetFeaturePath || commandArgs[0], format, compress, featLimit, featOffset, featSummarizeOnly);
                 break;
 
             case 'history':
