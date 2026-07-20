@@ -1,20 +1,100 @@
 import readline from 'readline';
+import fs from 'fs';
 import { MemoEngine } from '../../memo/memo-engine.js';
 import { printInfo, printSuccess, printError } from '../cli-output.js';
 
-export async function promptForResearchFindings(projectPath: string, format: string): Promise<void> {
+export interface AutoSaveContext {
+    query?: string;
+    resultCount?: number;
+    topFiles?: string[];
+    contentSummary?: string;
+    logFilePath?: string;
+}
+
+export async function promptForResearchFindings(
+    projectPath: string,
+    format: string,
+    context?: AutoSaveContext
+): Promise<void> {
     if (format === 'json') return;
 
     let engine: MemoEngine;
     try {
         engine = new MemoEngine(projectPath);
     } catch {
-        return; // Safe fallback if no project/memo config
+        return;
     }
 
     const openTags = engine.getOpenTags();
     if (openTags.length === 0) return;
 
+    const isInteractive = process.stdin.isTTY === true;
+
+    if (!isInteractive) {
+        await autoSaveFindings(engine, openTags, context);
+        return;
+    }
+
+    await interactivePrompt(engine, openTags);
+}
+
+async function autoSaveFindings(
+    engine: MemoEngine,
+    openTags: ReturnType<MemoEngine['getOpenTags']>,
+    context?: AutoSaveContext
+): Promise<void> {
+    const selectedTag = openTags[0];
+
+    if (!context) {
+        printInfo(`\n\x1b[33m⚠️  [DRM] Active tag: [${selectedTag.name}] — no context to auto-save.\x1b[0m`);
+        return;
+    }
+
+    const parts: string[] = [];
+
+    if (context.query) {
+        parts.push(`Query: "${context.query}"`);
+    }
+
+    if (context.resultCount !== undefined) {
+        parts.push(`Results: ${context.resultCount} matches`);
+    }
+
+    if (context.topFiles && context.topFiles.length > 0) {
+        parts.push(`Key Files:\n${context.topFiles.map(f => `  - ${f}`).join('\n')}`);
+    }
+
+    if (context.contentSummary) {
+        parts.push(`Content:\n${context.contentSummary}`);
+    }
+
+    if (context.logFilePath) {
+        const fileUrl = context.logFilePath.startsWith('file://')
+            ? context.logFilePath
+            : `file:///${context.logFilePath.replace(/\\/g, '/')}`;
+        parts.push(`Full Log: ${fileUrl}`);
+    }
+
+    if (parts.length === 0) {
+        printInfo(`\n\x1b[33m⚠️  [DRM] Active tag: [${selectedTag.name}] — empty context, skipping.\x1b[0m`);
+        return;
+    }
+
+    const content = parts.join('\n');
+
+    try {
+        const entryType = context.contentSummary ? 'code_snippet' as const : 'finding' as const;
+        const entry = await engine.addEntry(selectedTag.name, content, { type: entryType });
+        printSuccess(`\n[DRM Auto-Save] Recorded to '${selectedTag.name}' (id: ${entry.id}, type: ${entryType})`);
+    } catch (err: any) {
+        printError(`\n[DRM Auto-Save] Failed: ${err.message || err}`);
+    }
+}
+
+async function interactivePrompt(
+    engine: MemoEngine,
+    openTags: ReturnType<MemoEngine['getOpenTags']>
+): Promise<void> {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
@@ -57,7 +137,7 @@ export async function promptForResearchFindings(projectPath: string, format: str
                 openTags.forEach((t, idx) => {
                     printInfo(`  [${idx + 1}] ${t.name} (${t.entryCount} entries)`);
                 });
-                
+
                 while (true) {
                     const tagSelectText = `Select tag number (1-${openTags.length}, default 1): `;
                     const tagAns = (await askQuestion(tagSelectText)).trim();
@@ -83,7 +163,6 @@ export async function promptForResearchFindings(projectPath: string, format: str
             break;
         }
     } catch (e) {
-        // Safe catch for any readline errors
     } finally {
         rl.close();
     }

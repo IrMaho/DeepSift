@@ -508,6 +508,7 @@ async function main() {
                 // Safe ignore
             }
         }
+        process.exit(0);
     }
 }
 

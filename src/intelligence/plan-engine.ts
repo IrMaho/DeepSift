@@ -4,6 +4,7 @@ import { SmartPlan, PlanMilestone, PlanRisk } from '../types/dna-types.js';
 import { loadDNA } from './project-dna.js';
 import { RealmRouter } from '../core/realm-router.js';
 import { ContextInjector } from '../core/context-injector.js';
+import { MemoEngine } from '../memo/memo-engine.js';
 import crypto from 'crypto';
 
 interface ParsedRequest {
@@ -23,6 +24,7 @@ interface ContextData {
     temporalWarnings: string[];
     timeBombs?: any[];
     learnedPatterns?: any[];
+    drmInsights: string[];
 }
 
 interface SkillMatch {
@@ -43,9 +45,16 @@ const API_KEYWORDS = ['api', 'endpoint', 'rest', 'graphql', 'fetch', 'request', 
 
 export class PlannerEngine {
     private projectPath: string;
+    private memoEngine: MemoEngine;
 
     constructor(projectPath: string) {
         this.projectPath = projectPath;
+        try {
+            this.memoEngine = new MemoEngine(projectPath);
+        } catch {
+            // fallback if DRM is missing
+            this.memoEngine = null as any;
+        }
     }
 
     public async generatePlan(
@@ -55,7 +64,7 @@ export class PlannerEngine {
         if (onProgress) onProgress('parse', 'Parsing request...');
         const parsed = this.parseRequest(request);
 
-        if (onProgress) onProgress('context', 'Gathering project context...');
+        if (onProgress) onProgress('context', 'Gathering project context and DRM insights...');
         const context = this.gatherContext();
 
         if (onProgress) onProgress('skills', 'Searching skills database...');
@@ -103,7 +112,20 @@ export class PlannerEngine {
             designTokensSample: '',
             temporalWarnings: [],
             timeBombs: [],
+            drmInsights: []
         };
+
+        if (this.memoEngine) {
+            const openTags = this.memoEngine.getOpenTags();
+            for (const tag of openTags) {
+                const entries = this.memoEngine.getEntries(tag.name);
+                for (const entry of entries) {
+                    if (entry.type !== 'code_snippet' && entry.type !== 'api_response') {
+                        data.drmInsights.push(`[DRM: ${tag.name}] ${entry.type.toUpperCase()}: ${entry.content}`);
+                    }
+                }
+            }
+        }
 
         if (!dna) return data;
 
@@ -311,6 +333,7 @@ export class PlannerEngine {
             skillsUsed,
             dnaConstraints,
             realmInsights,
+            drmInsights: context.drmInsights,
         };
 
         if (parsed.type === 'ui' && context.designTokensSample) {
@@ -350,6 +373,14 @@ export class PlannerEngine {
             lines.push('## 🧬 DNA Constraints & Rules');
             for (const c of plan.dnaConstraints) {
                 lines.push(`- ${c}`);
+            }
+            lines.push('');
+        }
+
+        if (plan.drmInsights && plan.drmInsights.length > 0) {
+            lines.push('## 🧠 DRM Memory Constraints (Critical)');
+            for (const di of plan.drmInsights) {
+                lines.push(`- 💡 ${di}`);
             }
             lines.push('');
         }
