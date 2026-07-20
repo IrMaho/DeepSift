@@ -200,9 +200,9 @@ export function processDnaFilters(
 }
 
 export function recursiveQueryDna(obj: any, term: string): any {
-    const t = term.toLowerCase();
+    const t = term.toLowerCase().replace(/\\/g, '/');
     if (typeof obj === 'string') {
-        return obj.toLowerCase().includes(t) ? obj : null;
+        return obj.toLowerCase().replace(/\\/g, '/').includes(t) ? obj : null;
     }
     if (typeof obj === 'number' || typeof obj === 'boolean') {
         return String(obj).toLowerCase().includes(t) ? obj : null;

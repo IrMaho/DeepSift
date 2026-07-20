@@ -48,6 +48,10 @@ export async function analyzeCommand(
         
         let filteredDna = processDnaFilters(dna, relPath, undefined, limit, offset ?? 0, false);
         
+        // Deep prune using recursive query to avoid context bloat from irrelevant DNA branches
+        const { recursiveQueryDna } = await import('./dna.js');
+        filteredDna = recursiveQueryDna(filteredDna, relPath);
+        
         if (filteredDna && typeof filteredDna === 'object') {
             // Prune graph data
             if (filteredDna.graph) delete filteredDna.graph;
