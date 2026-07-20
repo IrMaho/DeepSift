@@ -294,7 +294,7 @@ export async function editCommand(
                     const searchStr = expandText(edit.search || '');
                     const chunk = fileLines.slice(startIdx, endIdx + 1).join('\n');
                     if (chunk.includes(searchStr)) {
-                        const newChunk = chunk.replace(searchStr, replaceStr);
+                        const newChunk = chunk.split(searchStr).join(replaceStr);
                         const newChunkLines = newChunk.split('\n');
                         fileLines.splice(startIdx, endIdx - startIdx + 1, ...newChunkLines);
                         modified = true;
@@ -320,7 +320,7 @@ export async function editCommand(
                 const replaceStr = expandText(edit.replace);
 
                 if (fileContent.includes(searchStr)) {
-                    fileContent = fileContent.replace(searchStr, replaceStr);
+                    fileContent = fileContent.split(searchStr).join(replaceStr);
                     modified = true;
                     totalReplacements++;
                 } else {
