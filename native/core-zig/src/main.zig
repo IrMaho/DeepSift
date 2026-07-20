@@ -97,31 +97,54 @@ const SearchResponse = struct {
     data: []const SearchMatch,
 };
 
-fn countKeywordMatches(content: []const u8, query: []const u8) f32 {
-    if (query.len == 0 or content.len == 0) return 0.0;
+fn countKeywordMatches(content: []const u8, file_path: []const u8, query: []const u8) f32 {
+    if (query.len == 0) return 0.0;
 
-    var matches: u32 = 0;
-    var i: usize = 0;
-    while (i + query.len <= content.len) {
-        var match = true;
-        for (0..query.len) |j| {
-            if (std.ascii.toLower(content[i + j]) != std.ascii.toLower(query[j])) {
-                match = false;
+    var k_score: f32 = 0.0;
+
+    if (file_path.len > 0) {
+        var i: usize = 0;
+        while (i + query.len <= file_path.len) {
+            var match = true;
+            for (0..query.len) |j| {
+                if (std.ascii.toLower(file_path[i + j]) != std.ascii.toLower(query[j])) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
+                k_score += 2.0;
                 break;
             }
-        }
-        if (match) {
-            matches += 1;
-            i += query.len;
-        } else {
             i += 1;
         }
     }
 
-    if (matches > 0) {
-        return @as(f32, @floatFromInt(matches)) * 0.1;
+    if (content.len > 0) {
+        var matches: u32 = 0;
+        var i: usize = 0;
+        while (i + query.len <= content.len) {
+            var match = true;
+            for (0..query.len) |j| {
+                if (std.ascii.toLower(content[i + j]) != std.ascii.toLower(query[j])) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
+                matches += 1;
+                i += query.len;
+            } else {
+                i += 1;
+            }
+        }
+
+        if (matches > 0) {
+            k_score += @as(f32, @floatFromInt(matches)) * 0.1;
+        }
     }
-    return 0.0;
+
+    return k_score;
 }
 
 const RankedChunk = struct {
@@ -371,7 +394,7 @@ pub fn main() !void {
         for (database.chunks.items, 0..) |chunk, i| {
             var k_score: f32 = 0.0;
             if (req.query) |q| {
-                k_score = countKeywordMatches(chunk.content, q);
+                k_score = countKeywordMatches(chunk.content, chunk.file_path, q);
             }
 
             if (k_score > 0.0) {

@@ -54,7 +54,7 @@ export async function planCommand(
         finalOutput = optimizer.optimize(finalOutput).toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, [`[SmartPlan] ${request}`], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [`[SmartPlan] ${request}`], finalOutput, { skipVisuals: !compress });
     printResult(finalOutput, format);
 
     if (format !== 'json') {

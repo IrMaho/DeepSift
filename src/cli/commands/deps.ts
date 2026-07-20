@@ -38,7 +38,7 @@ export async function depsCommand(projectPath: string, targetName: string, forma
         finalOutput = optimizer.optimize(output).toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, [`[Dependencies] ${targetName}`], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [`[Dependencies] ${targetName}`], finalOutput, { skipVisuals: !compress });
     printResult(finalOutput, format);
     if (format !== 'json') {
         if (logInfo.images && logInfo.images.length > 0) {

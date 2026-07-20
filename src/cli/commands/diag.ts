@@ -96,7 +96,7 @@ export async function diagCommand(
         finalOutput = payload.toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, [`Diag: ${jsonPath}`], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [`Diag: ${jsonPath}`], finalOutput, { skipVisuals: !compress });
     printResult(finalOutput, format);
     
     if (format !== 'json') {

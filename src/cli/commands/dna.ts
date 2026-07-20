@@ -39,7 +39,7 @@ export async function dnaCommand(
     outputDNAFiltered(dna, format, undefined, undefined, compress, undefined, undefined, undefined, false);
 
     const summary = formatDNASummary(dna);
-    await saveSearchLog(projectPath, ['[DNA Generation]'], summary);
+    await saveSearchLog(projectPath, ['[DNA Generation]'], summary, { skipVisuals: !compress });
 
     process.stdout.write('\x1b[32m✓ DNA saved and compressed to .deepsift/project-dna.toon\x1b[0m\n');
 }

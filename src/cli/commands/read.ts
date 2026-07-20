@@ -85,7 +85,7 @@ export async function readCommand(
         finalOutput = payload.toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, [`Read: ${targets.join(', ')}`], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [`Read: ${targets.join(', ')}`], finalOutput, { skipVisuals: !compress });
     printResult(finalOutput, format);
     
     if (format !== 'json') {

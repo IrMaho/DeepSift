@@ -35,7 +35,7 @@ export async function featureCommand(
         finalOutput = optimizer.optimize(finalOutput).toUnifiedString();
     }
     
-    const logInfo = await saveSearchLog(projectPath, [`[Feature Outline] ${featureDir}`], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [`[Feature Outline] ${featureDir}`], finalOutput, { skipVisuals: !compress });
     printResult(finalOutput, format);
     if (format !== 'json') {
         if (logInfo.images && logInfo.images.length > 0) {

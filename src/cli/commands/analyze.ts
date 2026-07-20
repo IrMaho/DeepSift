@@ -14,7 +14,9 @@ export async function analyzeCommand(
     projectPath: string,
     targetDir: string,
     format: OutputFormat,
-    compress: boolean = true
+    compress: boolean = true,
+    limit?: number,
+    offset?: number
 ) {
     let targetPath = targetDir;
     if (!path.isAbsolute(targetDir)) {
@@ -32,7 +34,7 @@ export async function analyzeCommand(
     }
 
     // 1. Get Feature Outline
-    const outlineText = getFeatureOutline(targetPath, 20, 0);
+    const outlineText = getFeatureOutline(targetPath, limit ?? 20, offset ?? 0);
 
     // 2. Get DNA for this specific path
     const dna = loadDNA(projectPath);
@@ -43,7 +45,7 @@ export async function analyzeCommand(
         // We use the relative path for matching inside DNA
         const relPath = path.relative(projectPath, targetPath).replace(/\\/g, '/');
         
-        let filteredDna = processDnaFilters(dna, relPath, undefined, undefined, 0, false);
+        let filteredDna = processDnaFilters(dna, relPath, undefined, limit, offset ?? 0, false);
         
         if (filteredDna && typeof filteredDna === 'object') {
             // Prune graph data
@@ -65,7 +67,7 @@ export async function analyzeCommand(
         finalOutput = optimizer.optimize(finalOutput).toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, [`[Analyze] ${targetDir}`], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [`[Analyze] ${targetDir}`], finalOutput, { skipVisuals: !compress });
     printResult(finalOutput, format);
     
     if (format !== 'json') {

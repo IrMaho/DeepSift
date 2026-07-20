@@ -264,7 +264,7 @@ async function main() {
                 const skipSync = !commandArgs.includes('--sync');
                 const verboseSearch = commandArgs.includes('--verbose') || commandArgs.includes('-v');
                 const allRealmsSearch = commandArgs.includes('--all-realms');
-                const noVisual = commandArgs.includes('--no-visual') || commandArgs.includes('--plain') || format === 'plain';
+                const noVisual = commandArgs.includes('--no-visual') || commandArgs.includes('--plain') || format === 'plain' || !compress;
                 
                 let filterPath: string | undefined;
                 const includeIdx = commandArgs.findIndex(arg => arg === '--include' || arg === '-i');
@@ -388,7 +388,22 @@ async function main() {
             case 'analyze':
             case 'an': {
                 if (commandArgs.length === 0) throw new Error('You must specify a target path for analyze');
-                await analyzeCommand(projectPath, commandArgs[0], format, compress);
+                
+                let limit: number | undefined;
+                const limitIdx = commandArgs.indexOf('--limit');
+                if (limitIdx !== -1 && commandArgs[limitIdx + 1]) {
+                    limit = parseInt(commandArgs[limitIdx + 1], 10);
+                }
+
+                let offset: number | undefined;
+                const offsetIdx = commandArgs.indexOf('--offset');
+                if (offsetIdx !== -1 && commandArgs[offsetIdx + 1]) {
+                    offset = parseInt(commandArgs[offsetIdx + 1], 10);
+                }
+                
+                const targetPath = commandArgs.filter(a => !a.startsWith('-') && commandArgs[commandArgs.indexOf(a) - 1] !== '--limit' && commandArgs[commandArgs.indexOf(a) - 1] !== '--offset')[0];
+                
+                await analyzeCommand(projectPath, targetPath || commandArgs[0], format, compress, limit, offset);
                 break;
             }
 
