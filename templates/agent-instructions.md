@@ -280,5 +280,10 @@ deepsift memo export "feature-analysis"
 deepsift memo close "feature-analysis"
 ```
 
+## 📚 DeepSift Documentation & Manuals (MANDATORY INITIAL READING)
+For comprehensive, detailed manuals of DeepSift's capabilities, you **MUST** read the documentation injected into the `.deepsift/docs/` directory at the start of any conversation to learn exactly how to use DeepSift.
+
+**MANDATORY FIRST STEP:** Run `view_file` on `.deepsift/docs/00-deepsift-index.md` to see the full list of available manuals, and read the relevant sections (e.g., search, DNA, DRM, planning, patching) before attempting complex operations.
+
 For deep technical details on patches and workflows, check your skills: `view_file` on `.agents/skills/deepsift-mastery/SKILL.md`.
 

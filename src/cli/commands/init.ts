@@ -23,6 +23,33 @@ function getTemplateContent(filename: string): string {
     return '';
 }
 
+function getTemplateDirFiles(dirPath: string): { name: string, content: string }[] {
+    const templateDirPath = path.resolve(__dirname, `../../templates/${dirPath}`);
+    const fallbackDirPath = path.resolve(__dirname, `../../../templates/${dirPath}`);
+    
+    let activePath = '';
+    if (fs.existsSync(templateDirPath)) {
+        activePath = templateDirPath;
+    } else if (fs.existsSync(fallbackDirPath)) {
+        activePath = fallbackDirPath;
+    }
+    
+    if (!activePath) return [];
+    
+    const results = [];
+    const files = fs.readdirSync(activePath);
+    for (const file of files) {
+        const fullPath = path.join(activePath, file);
+        if (fs.statSync(fullPath).isFile()) {
+            results.push({
+                name: file,
+                content: fs.readFileSync(fullPath, 'utf-8')
+            });
+        }
+    }
+    return results;
+}
+
 function compileZigOnDemand() {
     const ext = process.platform === 'win32' ? '.exe' : '';
     // Resolving bin/ relative to dist/cli/commands/init.js
@@ -120,6 +147,20 @@ export async function initCommand(projectPath: string) {
     if (workflowTemplate && (!fs.existsSync(workflowFilePath) || fs.readFileSync(workflowFilePath, 'utf-8') !== workflowTemplate)) {
         fs.writeFileSync(workflowFilePath, workflowTemplate, 'utf-8');
         printSuccess('Injected DeepSift workflow → .agents/workflows/deepsift.md');
+    }
+
+    // Inject Documentation
+    const docsDir = path.join(projectPath, '.deepsift', 'docs');
+    if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
+
+    // Inject comprehensive manuals from templates/doc/
+    const docFiles = getTemplateDirFiles('doc');
+    for (const file of docFiles) {
+        const destPath = path.join(docsDir, file.name);
+        if (!fs.existsSync(destPath) || fs.readFileSync(destPath, 'utf-8') !== file.content) {
+            fs.writeFileSync(destPath, file.content, 'utf-8');
+            printSuccess(`Injected DeepSift Manual → .deepsift/docs/${file.name}`);
+        }
     }
 
     printInfo('Running index...');
