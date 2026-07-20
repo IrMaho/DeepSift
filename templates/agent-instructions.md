@@ -73,8 +73,9 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
     - **Pre-edit reading (MANDATORY):** Before editing ANY file, MUST read with `deepsift read "file"` or `view_file` to get exact, character-perfect code.
     - **Large files:** Read in segments: `deepsift read "file:1-100"`, then `file:100-200`, etc.
     - **If DEC_v2 compressed output is unreadable:** Immediately re-read without `--compress`. Never guess or write code based on compressed tokens you can't fully decode.
-3. **✏️ EDITING MANDATE (USE NATIVE TOOLS):**
-    - You **MUST EXCLUSIVELY** use native IDE tools (`replace_file_content`, `multi_replace_file_content`, `write_to_file`) for all file modifications.
+3. **✏️ EDITING MANDATE (USE DEEPSIFT PATCH OR NATIVE TOOLS):**
+    - You **MUST EXCLUSIVELY** use `deepsift patch "patch.json"` or native IDE tools (`replace_file_content`, `multi_replace_file_content`, `write_to_file`) for all file modifications.
+    - **DeepSift Patch (`deepsift patch`) is the highly preferred method** for applying complex code injections directly to the project with high confidence using the TOON-Patch format.
 4. **🖼️ VISUAL OUTPUT CONTROL (FONT & IMAGE TUNING):**
     - **Default font:** `spleen-5x8` (small, high-density). Good for most cases.
     - **Larger font for readability:** When the visual cache PNG is unreadable (too small, blurry, or dense), the pxpipe renderer supports `jetbrains-mono-10` which is ~2x larger.

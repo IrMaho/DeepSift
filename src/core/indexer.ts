@@ -163,38 +163,40 @@ export class Indexer {
             }
             
             // Phase 4: Graph Building
-            if (onProgress) {
-                onProgress(totalFilesToProcess, totalFilesToProcess, "Building dependency graph...");
-            }
-            try {
-                const extractor = new GraphExtractor();
-                const builder = new GraphBuilder();
-                
-                for (const file of allFiles) {
-                    if (await isBinaryFile(file)) continue;
-                    try {
-                        const result = extractor.extractFromFile(file);
-                        builder.addExtraction(result);
-                    } catch (err) {
-                        // ignore unparseable for graph
+            if (filesProcessed > 0 || deletedCount > 0 || forceReindex) {
+                if (onProgress) {
+                    onProgress(totalFilesToProcess, totalFilesToProcess, "Building dependency graph...");
+                }
+                try {
+                    const extractor = new GraphExtractor();
+                    const builder = new GraphBuilder();
+                    
+                    for (const file of allFiles) {
+                        if (await isBinaryFile(file)) continue;
+                        try {
+                            const result = extractor.extractFromFile(file);
+                            builder.addExtraction(result);
+                        } catch (err) {
+                            // ignore unparseable for graph
+                        }
                     }
+                    
+                    const { nodes, edges } = builder.build();
+                    
+                    if (onProgress) {
+                        onProgress(totalFilesToProcess, totalFilesToProcess, "Detecting communities...");
+                    }
+                    const clusterer = new GraphClusterer(nodes, edges);
+                    clusterer.detectCommunities(10, 1.0);
+                    
+                    if (onProgress) {
+                        onProgress(totalFilesToProcess, totalFilesToProcess, "Saving graph database...");
+                    }
+                    await this.store.saveGraph(nodes, edges);
+                    
+                } catch (err) {
+                    console.error("Failed to build graph:", err);
                 }
-                
-                const { nodes, edges } = builder.build();
-                
-                if (onProgress) {
-                    onProgress(totalFilesToProcess, totalFilesToProcess, "Detecting communities...");
-                }
-                const clusterer = new GraphClusterer(nodes, edges);
-                clusterer.detectCommunities(10, 1.0);
-                
-                if (onProgress) {
-                    onProgress(totalFilesToProcess, totalFilesToProcess, "Saving graph database...");
-                }
-                await this.store.saveGraph(nodes, edges);
-                
-            } catch (err) {
-                console.error("Failed to build graph:", err);
             }
 
         } finally {

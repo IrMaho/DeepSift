@@ -83,6 +83,7 @@ const HELP_TEXT = `
   com "command"                 Execute any shell command and return compressed output
   plan "request"                Generate a Smart Plan by analyzing DNA, skills, realms, and architecture
   heal "file"                   Attempt to fix issues in a file using the project DNA and context
+  patch "patch.json"            Apply code injections directly to the codebase with high confidence (TOON-Patch format)
   memo <action>                 Dynamic Research Memory (DRM) — Persistent research note-taking
                                   open "name"         Create a new research tag
                                   close "name"        Close a tag (no more entries)
@@ -333,7 +334,11 @@ async function main() {
 
             case 'edit':
             case 'e':
-                throw new Error('This feature is temporarily disabled by user request.');
+            case 'patch':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a path to a patch file.\nUsage: deepsift patch "patch.json"');
+                }
+                await editCommand(projectPath, commandArgs[0], format);
                 break;
 
             case 'index':
