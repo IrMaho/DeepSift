@@ -38,7 +38,7 @@ function parseToonPatch(content: string): PatchPayload {
         if (line.trim().startsWith('[') && line.trim().endsWith(']') && Object.keys(dictionary).length === 0 && files.length === 0) {
             const dictStr = line.trim().slice(1, -1);
             if (dictStr) {
-                const pairs = dictStr.split(',');
+                const pairs = dictStr.split(/,\s*(?=[^,\s]+:)/);
                 for (const pair of pairs) {
                     const colonIdx = pair.indexOf(':');
                     if (colonIdx !== -1) {
@@ -84,10 +84,13 @@ function parseToonPatch(content: string): PatchPayload {
         }
 
         if (line.startsWith('>>>>')) {
+            if (inSearch) {
+                throw new Error("Syntax Error: Missing '====' before '>>>>' in patch block.");
+            }
             inSearch = false;
             inReplace = false;
             if (currentFile) {
-                if (currentType === 'line' && currentStartLine) {
+                if (currentType === 'line' && currentStartLine !== undefined) {
                     if (currentSearch.length > 0) {
                         // Targeted search L10:<<<< ... ==== ... >>>>
                         currentFile.edits.push({
@@ -143,7 +146,7 @@ export async function editCommand(
             let data = '';
             process.stdin.setEncoding('utf-8');
             process.stdin.on('data', chunk => data += chunk);
-            process.stdin.on('end', () => resolve(data));
+            process.stdin.on('end', () => resolve(data.replace(/\r\n/g, '\n')));
             process.stdin.on('error', reject);
         });
         if (!content.trim()) {
@@ -158,7 +161,7 @@ export async function editCommand(
         if (!fs.existsSync(fullPatchPath)) {
             throw new Error(`Patch file not found: ${fullPatchPath}`);
         }
-        content = fs.readFileSync(fullPatchPath, 'utf-8');
+        content = fs.readFileSync(fullPatchPath, 'utf-8').replace(/\r\n/g, '\n');
     }
 
     let patchData: FileEdit[] = [];
@@ -240,11 +243,9 @@ export async function editCommand(
 
         // 3. Apply Dictionary
         if (dictionary && dictKeys.length > 0) {
-            for (const key of dictKeys) {
-                const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(escapedKey, 'g');
-                expanded = expanded.replace(regex, dictionary[key]);
-            }
+            const escapedKeys = dictKeys.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            const regex = new RegExp(`(?:${escapedKeys.join('|')})`, 'g');
+            expanded = expanded.replace(regex, (match) => dictionary![match]);
         }
         
         return expanded;
@@ -266,7 +267,7 @@ export async function editCommand(
         }
 
         try {
-            let fileContent = fs.readFileSync(fullFilePath, 'utf-8');
+            let fileContent = fs.readFileSync(fullFilePath, 'utf-8').replace(/\r\n/g, '\n');
             let modified = false;
 
             const editsWithLines = filePatch.edits.filter(e => e.startLine !== undefined);
@@ -315,7 +316,10 @@ export async function editCommand(
 
             for (let i = 0; i < globalSearches.length; i++) {
                 const edit = globalSearches[i];
-                if (!edit.search) continue;
+                if (!edit.search) {
+                    errors.push(`[Warning] Empty search block ignored in ${filePatch.file}`);
+                    continue;
+                }
                 const searchStr = expandText(edit.search);
                 const replaceStr = expandText(edit.replace);
 
