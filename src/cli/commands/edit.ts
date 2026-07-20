@@ -38,7 +38,7 @@ function parseToonPatch(content: string): PatchPayload {
         if (line.trim().startsWith('[') && line.trim().endsWith(']') && Object.keys(dictionary).length === 0 && files.length === 0) {
             const dictStr = line.trim().slice(1, -1);
             if (dictStr) {
-                const pairs = dictStr.split(',');
+                const pairs = dictStr.split(/,\s*(?=[^,\s]+:)/);
                 for (const pair of pairs) {
                     const colonIdx = pair.indexOf(':');
                     if (colonIdx !== -1) {
@@ -84,10 +84,13 @@ function parseToonPatch(content: string): PatchPayload {
         }
 
         if (line.startsWith('>>>>')) {
+            if (inSearch) {
+                throw new Error("Syntax Error: Missing '====' before '>>>>' in patch block.");
+            }
             inSearch = false;
             inReplace = false;
             if (currentFile) {
-                if (currentType === 'line' && currentStartLine) {
+                if (currentType === 'line' && currentStartLine !== undefined) {
                     if (currentSearch.length > 0) {
                         // Targeted search L10:<<<< ... ==== ... >>>>
                         currentFile.edits.push({
@@ -143,7 +146,7 @@ export async function editCommand(
             let data = '';
             process.stdin.setEncoding('utf-8');
             process.stdin.on('data', chunk => data += chunk);
-            process.stdin.on('end', () => resolve(data));
+            process.stdin.on('end', () => resolve(data.replace(/\r\n/g, '\n')));
             process.stdin.on('error', reject);
         });
         if (!content.trim()) {
@@ -158,7 +161,7 @@ export async function editCommand(
         if (!fs.existsSync(fullPatchPath)) {
             throw new Error(`Patch file not found: ${fullPatchPath}`);
         }
-        content = fs.readFileSync(fullPatchPath, 'utf-8');
+        content = fs.readFileSync(fullPatchPath, 'utf-8').replace(/\r\n/g, '\n');
     }
 
     let patchData: FileEdit[] = [];
@@ -191,22 +194,39 @@ export async function editCommand(
     // Sort dictionary keys by length descending to safely expand longer tokens first
     const dictKeys = dictionary ? Object.keys(dictionary).sort((a, b) => b.length - a.length) : [];
 
-    function expandText(text: string): string {
+    const originalFilesCache = new Map<string, string>();
+    for (const filePatch of patchData) {
+        let fullFilePath = path.resolve(process.cwd(), filePatch.file);
+        const altPath = path.resolve(projectPath, filePatch.file);
+        if (!fs.existsSync(fullFilePath) && fs.existsSync(altPath)) {
+            fullFilePath = altPath;
+        }
+        if (fs.existsSync(fullFilePath)) {
+            originalFilesCache.set(fullFilePath, fs.readFileSync(fullFilePath, 'utf-8').replace(/\r\n/g, '\n'));
+        }
+    }
+
+    function expandText(text: string, applyDictionary: boolean = true): string {
         let expanded = text;
 
         // 1. Resolve Block-Level Clipboard (captures indentation)
         // Matches: ^<indentation>📋<filepath>:L<start>-L<end>
         expanded = expanded.replace(/^([ \t]*)📋\s*([^:\s]+):L(\d+)(?:-L?(\d+))?\s*$/gm, (match, indent, filepath, start, end) => {
             let fullPath = path.resolve(process.cwd(), filepath.trim());
-            if (!fs.existsSync(fullPath)) {
-                fullPath = path.resolve(projectPath, filepath.trim());
+            const altPath = path.resolve(projectPath, filepath.trim());
+            if (!fs.existsSync(fullPath) && fs.existsSync(altPath)) {
+                fullPath = altPath;
             }
             if (!fs.existsSync(fullPath)) return match;
             
             const startLine = parseInt(start, 10);
             const endLine = end ? parseInt(end, 10) : startLine;
             
-            const fileContent = fs.readFileSync(fullPath, 'utf-8');
+            let fileContent = originalFilesCache.get(fullPath);
+            if (fileContent === undefined) {
+                fileContent = fs.readFileSync(fullPath, 'utf-8').replace(/\r\n/g, '\n');
+                originalFilesCache.set(fullPath, fileContent);
+            }
             const lines = fileContent.split('\n');
             const startIdx = startLine - 1;
             const endIdx = endLine - 1;
@@ -220,15 +240,20 @@ export async function editCommand(
         // 2. Resolve Inline Clipboard
         expanded = expanded.replace(/📋\s*([^:\s]+):L(\d+)(?:-L?(\d+))?/g, (match, filepath, start, end) => {
             let fullPath = path.resolve(process.cwd(), filepath.trim());
-            if (!fs.existsSync(fullPath)) {
-                fullPath = path.resolve(projectPath, filepath.trim());
+            const altPath = path.resolve(projectPath, filepath.trim());
+            if (!fs.existsSync(fullPath) && fs.existsSync(altPath)) {
+                fullPath = altPath;
             }
             if (!fs.existsSync(fullPath)) return match;
             
             const startLine = parseInt(start, 10);
             const endLine = end ? parseInt(end, 10) : startLine;
             
-            const fileContent = fs.readFileSync(fullPath, 'utf-8');
+            let fileContent = originalFilesCache.get(fullPath);
+            if (fileContent === undefined) {
+                fileContent = fs.readFileSync(fullPath, 'utf-8').replace(/\r\n/g, '\n');
+                originalFilesCache.set(fullPath, fileContent);
+            }
             const lines = fileContent.split('\n');
             const startIdx = startLine - 1;
             const endIdx = endLine - 1;
@@ -239,12 +264,10 @@ export async function editCommand(
         });
 
         // 3. Apply Dictionary
-        if (dictionary && dictKeys.length > 0) {
-            for (const key of dictKeys) {
-                const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(escapedKey, 'g');
-                expanded = expanded.replace(regex, dictionary[key]);
-            }
+        if (applyDictionary && dictionary && dictKeys.length > 0) {
+            const escapedKeys = dictKeys.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            const regex = new RegExp(`(?:${escapedKeys.join('|')})`, 'g');
+            expanded = expanded.replace(regex, (match) => dictionary![match]);
         }
         
         return expanded;
@@ -253,21 +276,32 @@ export async function editCommand(
     let totalFilesEdited = 0;
     let totalReplacements = 0;
     const errors: string[] = [];
+    const detailedReport: string[] = [];
 
     for (const filePatch of patchData) {
         let fullFilePath = path.resolve(process.cwd(), filePatch.file);
-        if (!fs.existsSync(fullFilePath)) {
-            fullFilePath = path.resolve(projectPath, filePatch.file);
+        const altPath = path.resolve(projectPath, filePatch.file);
+        if (!fs.existsSync(fullFilePath) && fs.existsSync(altPath)) {
+            fullFilePath = altPath;
         }
         
+        let isNewFile = false;
+        let fileContent = '';
         if (!fs.existsSync(fullFilePath)) {
-            errors.push(`[Skipped] File not found: ${filePatch.file}`);
-            continue;
+            const hasEmptySearch = filePatch.edits.some(e => e.startLine === undefined && !e.search);
+            if (hasEmptySearch) {
+                isNewFile = true;
+            } else {
+                errors.push(`[Skipped] File not found and no empty search block to initialize it: ${filePatch.file}`);
+                continue;
+            }
+        } else {
+            fileContent = fs.readFileSync(fullFilePath, 'utf-8').replace(/\r\n/g, '\n');
         }
 
         try {
-            let fileContent = fs.readFileSync(fullFilePath, 'utf-8');
             let modified = false;
+            const fileActions: string[] = [];
 
             const editsWithLines = filePatch.edits.filter(e => e.startLine !== undefined);
             const globalSearches = filePatch.edits.filter(e => e.startLine === undefined);
@@ -291,14 +325,15 @@ export async function editCommand(
                 }
 
                 if (edit.type === 'search' || edit.search) {
-                    const searchStr = expandText(edit.search || '');
+                    const searchStr = expandText(edit.search || '', false);
                     const chunk = fileLines.slice(startIdx, endIdx + 1).join('\n');
                     if (chunk.includes(searchStr)) {
-                        const newChunk = chunk.replace(searchStr, replaceStr);
+                        const newChunk = chunk.split(searchStr).join(replaceStr);
                         const newChunkLines = newChunk.split('\n');
                         fileLines.splice(startIdx, endIdx - startIdx + 1, ...newChunkLines);
                         modified = true;
                         totalReplacements++;
+                        fileActions.push(`  - Replaced targeted search block at lines ${startLine}-${endLine}`);
                     } else {
                         errors.push(`[Warning] Targeted search not found at lines ${startLine}-${endLine} in ${filePatch.file}`);
                     }
@@ -308,6 +343,7 @@ export async function editCommand(
                     fileLines.splice(startIdx, endIdx - startIdx + 1, ...newChunkLines);
                     modified = true;
                     totalReplacements++;
+                    fileActions.push(`  - Replaced lines ${startLine}-${endLine}`);
                 }
             }
 
@@ -315,22 +351,38 @@ export async function editCommand(
 
             for (let i = 0; i < globalSearches.length; i++) {
                 const edit = globalSearches[i];
-                if (!edit.search) continue;
-                const searchStr = expandText(edit.search);
+                if (!edit.search) {
+                    if (fileContent.trim() === '') {
+                        fileContent = expandText(edit.replace);
+                        modified = true;
+                        totalReplacements++;
+                        fileActions.push(`  - Initialized/Populated empty file`);
+                    } else {
+                        errors.push(`[Warning] Empty search block ignored in ${filePatch.file} (file is not empty)`);
+                    }
+                    continue;
+                }
+                const searchStr = expandText(edit.search, false);
                 const replaceStr = expandText(edit.replace);
 
                 if (fileContent.includes(searchStr)) {
-                    fileContent = fileContent.replace(searchStr, replaceStr);
+                    fileContent = fileContent.split(searchStr).join(replaceStr);
                     modified = true;
                     totalReplacements++;
+                    fileActions.push(`  - Replaced global search block`);
                 } else {
                     errors.push(`[Warning] Exact match not found in ${filePatch.file}`);
                 }
             }
 
             if (modified) {
+                if (isNewFile) {
+                    fs.mkdirSync(path.dirname(fullFilePath), { recursive: true });
+                }
                 fs.writeFileSync(fullFilePath, fileContent, 'utf-8');
                 totalFilesEdited++;
+                detailedReport.push(`📄 ${filePatch.file}:`);
+                detailedReport.push(...fileActions);
             }
         } catch (e: any) {
             errors.push(`[Error] Failed to process ${filePatch.file}: ${e.message}`);
@@ -343,6 +395,11 @@ export async function editCommand(
         `Total replacements applied: ${totalReplacements}`,
     ];
 
+    if (detailedReport.length > 0) {
+        report.push(`\nDetailed Actions:`);
+        report.push(detailedReport.join('\n'));
+    }
+
     if (errors.length > 0) {
         report.push(`\nIssues Encountered:\n${errors.join('\n')}`);
     }
@@ -352,7 +409,8 @@ export async function editCommand(
             success: true, 
             filesModified: totalFilesEdited, 
             replacements: totalReplacements, 
-            errors 
+            errors,
+            detailedReport
         }));
     } else {
         if (errors.length > 0) {

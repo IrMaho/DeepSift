@@ -20,7 +20,7 @@ export async function archCommand(projectPath: string, maxDepth: number, format:
         finalOutput = optimizer.optimize(architectureText).toUnifiedString();
     }
     
-    const logInfo = await saveSearchLog(projectPath, ['[Architecture Scan]'], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, ['[Architecture Scan]'], finalOutput, { skipVisuals: !compress });
     printResult(finalOutput, format);
     if (format !== 'json') {
         if (logInfo.images && logInfo.images.length > 0) {

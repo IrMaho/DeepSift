@@ -15,7 +15,8 @@ export async function featureCommand(
     format: OutputFormat, 
     compress: boolean = false, 
     limit?: number, 
-    offset?: number
+    offset?: number,
+    summarizeOnly: boolean = false
 ) {
     let targetPath = featureDir;
     if (!path.isAbsolute(featureDir)) {
@@ -27,7 +28,7 @@ export async function featureCommand(
         }
     }
 
-    const outlineText = getFeatureOutline(targetPath, limit, offset);
+    const outlineText = getFeatureOutline(targetPath, limit, offset, summarizeOnly);
     let finalOutput = outlineText;
     
     if (compress && format !== 'json') {
@@ -35,7 +36,7 @@ export async function featureCommand(
         finalOutput = optimizer.optimize(finalOutput).toUnifiedString();
     }
     
-    const logInfo = await saveSearchLog(projectPath, [`[Feature Outline] ${featureDir}`], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [`[Feature Outline] ${featureDir}`], finalOutput, { skipVisuals: !compress });
     printResult(finalOutput, format);
     if (format !== 'json') {
         if (logInfo.images && logInfo.images.length > 0) {

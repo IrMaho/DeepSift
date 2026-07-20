@@ -29,9 +29,19 @@ export function getContextText(projectPath: string, targetPath: string, compress
     const baseName = path.basename(targetPath, path.extname(targetPath));
     if (dna.components && dna.components.similarityGroups) {
         for (const group of dna.components.similarityGroups) {
-            for (const member of group.members) {
-                if (member.name.toLowerCase().includes(baseName.toLowerCase()) || member.filePath.toLowerCase().includes(baseName.toLowerCase())) {
-                    context.similarExisting.push(member);
+            let membersArr = [];
+            if (Array.isArray(group.members)) membersArr = group.members;
+            else if (typeof group.members === 'string') {
+                try { membersArr = JSON.parse(group.members); } catch (e) {}
+            }
+            if (Array.isArray(membersArr)) {
+                for (const member of membersArr) {
+                    const mName = member?.name || member;
+                    const mPath = member?.filePath || '';
+                    if ((typeof mName === 'string' && mName.toLowerCase().includes(baseName.toLowerCase())) || 
+                        (typeof mPath === 'string' && mPath.toLowerCase().includes(baseName.toLowerCase()))) {
+                        context.similarExisting.push(member);
+                    }
                 }
             }
         }
@@ -46,10 +56,17 @@ export function getContextText(projectPath: string, targetPath: string, compress
     }
 
     // Template Structure
-    if (isFeature && dna.architecture && dna.architecture.templatePatterns) {
+    if (isFeature && dna.architecture && Array.isArray(dna.architecture.templatePatterns)) {
         const bestPattern = dna.architecture.templatePatterns[0];
-        if (bestPattern) {
+        if (bestPattern && Array.isArray(bestPattern.commonSubfolders)) {
             context.templateStructure = bestPattern.commonSubfolders;
+        } else if (typeof dna.architecture.templatePatterns === 'string') {
+            try { 
+                const patterns = JSON.parse(dna.architecture.templatePatterns); 
+                if (patterns && patterns[0] && Array.isArray(patterns[0].commonSubfolders)) {
+                    context.templateStructure = patterns[0].commonSubfolders;
+                }
+            } catch (e) {}
         }
     }
 
@@ -58,26 +75,27 @@ export function getContextText(projectPath: string, targetPath: string, compress
     rawOutput += `### 📛 Naming & Rules\n`;
     rawOutput += `- File Naming: ${context.namingSuggestion}\n`;
     if (context.i18nRequired) rawOutput += `- 🌍 i18n Required: DO NOT hardcode strings.\n`;
-    for (const rule of context.conventionReminders) {
+    const rules = Array.isArray(context.conventionReminders) ? context.conventionReminders : (typeof context.conventionReminders === 'string' ? JSON.parse(context.conventionReminders || '[]') : []);
+    for (const rule of rules) {
         rawOutput += `- 📜 Rule: ${rule}\n`;
     }
 
-    if (context.similarExisting.length > 0) {
+    if (context.similarExisting && context.similarExisting.length > 0) {
         rawOutput += `\n### ⚠️ Similar Existing Components\n`;
         rawOutput += `Before creating, check if you can reuse these:\n`;
         for (const sim of context.similarExisting.slice(0, 5)) {
-            rawOutput += `- ${sim.name} at ${sim.filePath}:${sim.startLine}\n`;
+            rawOutput += `- ${sim.name || sim} at ${sim.filePath || 'unknown'}:${sim.startLine || 0}\n`;
         }
     }
 
-    if (context.requiredTokens.length > 0) {
+    if (context.requiredTokens && context.requiredTokens.length > 0) {
         rawOutput += `\n### 🎨 Design Tokens (Allowed Values)\n`;
         for (const t of context.requiredTokens) {
             rawOutput += `- ${t.name} = ${t.value}\n`;
         }
     }
 
-    if (context.templateStructure.length > 0) {
+    if (context.templateStructure && context.templateStructure.length > 0) {
         rawOutput += `\n### 📁 Recommended Structure\n`;
         rawOutput += `Based on feature templates, consider creating:\n`;
         for (const folder of context.templateStructure) {

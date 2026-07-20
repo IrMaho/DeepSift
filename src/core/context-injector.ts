@@ -49,7 +49,15 @@ export class ContextInjector {
                 }
                 if (Array.isArray(groups) && groups.length > 0) {
                     const topGroups = groups.slice(0, 3);
-                    const recommendations = topGroups.map((g: any) => `- ${g.recommendation} (e.g. ${g.members?.map((m: any) => m.name).join(', ')})`).join('\n');
+                    const recommendations = topGroups.map((g: any) => {
+                        let membersArr = [];
+                        if (Array.isArray(g.members)) membersArr = g.members;
+                        else if (typeof g.members === 'string') {
+                            try { membersArr = JSON.parse(g.members); } catch (e) {}
+                        }
+                        const names = Array.isArray(membersArr) ? membersArr.map((m: any) => m.name || m).join(', ') : '';
+                        return `- ${g.recommendation} (e.g. ${names})`;
+                    }).join('\n');
                     blocks.push({
                         category: 'Pre-Generation Checklist',
                         relevance: 1.0,

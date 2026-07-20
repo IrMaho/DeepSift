@@ -243,6 +243,7 @@ export interface SmartPlan {
     skillsUsed: string[];
     dnaConstraints: string[];
     realmInsights: string[];
+    drmInsights?: string[];
 }
 
 export interface ProjectDNA {

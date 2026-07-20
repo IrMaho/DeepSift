@@ -5,7 +5,7 @@ import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-outpu
 import { saveSearchLog } from '../../utils/history.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 import { ContextInjector } from '../../core/context-injector.js';
-import { promptForResearchFindings } from './memo-prompt.js';
+import { promptForResearchFindings, AutoSaveContext } from './memo-prompt.js';
 
 export interface SearchOptions {
     skipSync?: boolean;
@@ -98,7 +98,6 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
                 
                 contentToDisplay = lines.slice(displayStartLine - 1, displayEndLine).join('\n');
             } catch (err) {
-                // Ignore and use original chunk content
             }
         }
         
@@ -131,17 +130,45 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
         }
     }
 
-    await promptForResearchFindings(projectPath, format);
+    const topFiles = results.slice(0, 5).map(r =>
+        `[${r.realmId}] ${r.chunk.filePath}:${r.chunk.startLine}-${r.chunk.endLine} (score: ${r.score.toFixed(3)})`
+    );
+    const snippetParts = results.slice(0, 3).map(r => {
+        const truncated = r.chunk.content.length > 300
+            ? r.chunk.content.substring(0, 300) + '...'
+            : r.chunk.content;
+        return `--- ${r.chunk.filePath}:${r.chunk.startLine} ---\n${truncated}`;
+    });
+
+    const autoSaveCtx: AutoSaveContext = {
+        query,
+        resultCount: results.length,
+        topFiles,
+        contentSummary: snippetParts.join('\n\n'),
+        logFilePath: logInfo.filePath
+    };
+
+    await promptForResearchFindings(projectPath, format, autoSaveCtx);
 }
 
 async function executeMultiSearch(router: RealmRouter, projectPath: string, queries: string[], format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
     const allResults: string[] = [];
     let totalHits = 0;
+    const allTopFiles: string[] = [];
+    const allSnippets: string[] = [];
 
     for (let i = 0; i < queries.length; i++) {
         const rawResults = await router.searchAllRealms({ query: queries[i], topK: 4, filterPath: options.filterPath }, targetRealms);
         const results = rawResults.filter(r => r.score >= 0.15);
         totalHits += results.length;
+
+        results.slice(0, 3).forEach(r => {
+            allTopFiles.push(`[${r.realmId}] ${r.chunk.filePath}:${r.chunk.startLine}-${r.chunk.endLine} (score: ${r.score.toFixed(3)})`);
+            const truncated = r.chunk.content.length > 200
+                ? r.chunk.content.substring(0, 200) + '...'
+                : r.chunk.content;
+            allSnippets.push(`--- [Q: "${queries[i]}"] ${r.chunk.filePath}:${r.chunk.startLine} ---\n${truncated}`);
+        });
 
         const formattedResults = results.map((res: CrossRealmResult, j: number) => {
             let contentToDisplay = res.chunk.content;
@@ -159,7 +186,6 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
                     
                     contentToDisplay = lines.slice(displayStartLine - 1, displayEndLine).join('\n');
                 } catch (err) {
-                    // Ignore and use original chunk content
                 }
             }
 
@@ -195,5 +221,13 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
         }
     }
 
-    await promptForResearchFindings(projectPath, format);
+    const autoSaveCtx: AutoSaveContext = {
+        query: queries.join(' | '),
+        resultCount: totalHits,
+        topFiles: allTopFiles.slice(0, 8),
+        contentSummary: allSnippets.slice(0, 5).join('\n\n'),
+        logFilePath: logInfo.filePath
+    };
+
+    await promptForResearchFindings(projectPath, format, autoSaveCtx);
 }

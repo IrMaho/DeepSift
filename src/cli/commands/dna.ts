@@ -39,7 +39,7 @@ export async function dnaCommand(
     outputDNAFiltered(dna, format, undefined, undefined, compress, undefined, undefined, undefined, false);
 
     const summary = formatDNASummary(dna);
-    await saveSearchLog(projectPath, ['[DNA Generation]'], summary);
+    await saveSearchLog(projectPath, ['[DNA Generation]'], summary, { skipVisuals: !compress });
 
     process.stdout.write('\x1b[32m✓ DNA saved and compressed to .deepsift/project-dna.toon\x1b[0m\n');
 }
@@ -200,9 +200,9 @@ export function processDnaFilters(
 }
 
 export function recursiveQueryDna(obj: any, term: string): any {
-    const t = term.toLowerCase();
+    const t = term.toLowerCase().replace(/\\/g, '/');
     if (typeof obj === 'string') {
-        return obj.toLowerCase().includes(t) ? obj : null;
+        return obj.toLowerCase().replace(/\\/g, '/').includes(t) ? obj : null;
     }
     if (typeof obj === 'number' || typeof obj === 'boolean') {
         return String(obj).toLowerCase().includes(t) ? obj : null;

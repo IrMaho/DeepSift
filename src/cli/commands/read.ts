@@ -3,7 +3,7 @@ import path from 'path';
 import { printResult, printInfo, printSuccess, printError, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 import { saveSearchLog } from '../../utils/history.js';
-import { promptForResearchFindings } from './memo-prompt.js';
+import { promptForResearchFindings, AutoSaveContext } from './memo-prompt.js';
 
 export async function readCommand(
     projectPath: string,
@@ -16,13 +16,13 @@ export async function readCommand(
     }
 
     const allResults: string[] = [];
+    const readFiles: string[] = [];
 
     for (const target of targets) {
         let filePath = target;
         let startLine = 1;
         let endLine = -1;
 
-        // Parse optional line ranges, e.g. "file.ts:10-50"
         const colonIdx = target.lastIndexOf(':');
         if (colonIdx !== -1) {
             const rangeStr = target.substring(colonIdx + 1);
@@ -70,6 +70,7 @@ export async function readCommand(
             const ext = path.extname(filePath).replace('.', '');
             
             allResults.push(`--- File: ${filePath} (Lines: ${actualStart}-${actualEnd}) ---\n\`\`\`${ext}\n${snippet}\n\`\`\``);
+            readFiles.push(`${filePath}:${actualStart}-${actualEnd} (${actualEnd - actualStart + 1} lines)`);
         } catch (err: any) {
             allResults.push(`--- File: ${filePath} ---\n[Error reading file: ${err.message}]`);
         }
@@ -84,7 +85,7 @@ export async function readCommand(
         finalOutput = payload.toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, [`Read: ${targets.join(', ')}`], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [`Read: ${targets.join(', ')}`], finalOutput, { skipVisuals: !compress });
     printResult(finalOutput, format);
     
     if (format !== 'json') {
@@ -99,5 +100,17 @@ export async function readCommand(
         }
     }
 
-    await promptForResearchFindings(projectPath, format);
+    const contentPreview = rawOutput.length > 800
+        ? rawOutput.substring(0, 800) + '\n... [truncated]'
+        : rawOutput;
+
+    const autoSaveCtx: AutoSaveContext = {
+        query: `Read: ${targets.join(', ')}`,
+        resultCount: readFiles.length,
+        topFiles: readFiles,
+        contentSummary: contentPreview,
+        logFilePath: logInfo.filePath
+    };
+
+    await promptForResearchFindings(projectPath, format, autoSaveCtx);
 }

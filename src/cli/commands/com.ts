@@ -55,7 +55,7 @@ export async function comCommand(
             printError(`Command failed: ${commandStr}`);
         }
     } else {
-        const logInfo = await saveSearchLog(projectPath, [`Command: ${commandStr}`], finalOutput, { skipVisuals: true });
+        const logInfo = await saveSearchLog(projectPath, [`Command: ${commandStr}`], finalOutput, { skipVisuals: !compress });
         printResult(finalOutput, format);
         if (format !== 'json') {
             const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;

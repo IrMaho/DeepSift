@@ -66,7 +66,7 @@ export async function readFeatureCommand(projectPath: string, featureDir: string
         finalOutput = payload.toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, [`[Read Feature] ${featureDir}`], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [`[Read Feature] ${featureDir}`], finalOutput, { skipVisuals: !compress });
     printResult(finalOutput, format);
     
     if (format !== 'json') {

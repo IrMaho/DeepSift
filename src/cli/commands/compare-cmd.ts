@@ -60,7 +60,7 @@ export async function compareCommand(
         finalOutput = payload.toUnifiedString();
     }
 
-    const logInfo = await saveSearchLog(projectPath, [`COMPARE: ${query} (${realm1} vs ${realm2})`], finalOutput);
+    const logInfo = await saveSearchLog(projectPath, [`COMPARE: ${query} (${realm1} vs ${realm2})`], finalOutput, { skipVisuals: !compress });
     printResult(finalOutput, format);
     if (format !== 'json') {
         if (logInfo.images && logInfo.images.length > 0) {

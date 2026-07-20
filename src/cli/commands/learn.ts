@@ -40,7 +40,7 @@ export async function learnCommand(projectPath: string, target: string): Promise
         process.stdout.write(`\n\x1b[36m[DRAFT PREVIEW ONLY]\x1b[0m\n`);
         process.stdout.write(`Agent: Please review these patterns with the user. If approved, add them to \`.deepsift/learned-patterns.json\`.\n`);
 
-        await saveSearchLog(projectPath, ['[Pattern Auto-Discovery]'], JSON.stringify(patterns, null, 2));
+        await saveSearchLog(projectPath, ['[Pattern Auto-Discovery]'], JSON.stringify(patterns, null, 2), { skipVisuals: true });
 
     } catch (e) {
         printError(`Failed to scan patterns: ${e}`);
