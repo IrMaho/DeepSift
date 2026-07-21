@@ -1,5 +1,0 @@
-📄 test.txt
-L2
-====
-this is a patched super file via stdin
->>>>

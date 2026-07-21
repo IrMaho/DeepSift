@@ -1,3 +1,0 @@
-export function shutdown() {
-    console.log("system going down!");
-}

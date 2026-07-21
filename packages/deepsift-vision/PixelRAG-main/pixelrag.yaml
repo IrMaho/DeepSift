@@ -1,0 +1,9 @@
+source:
+  type: web
+  urls_file: ./urls.txt
+
+embed:
+  model: C:/Users/ASUS/Downloads/Qwen3-VL-Embedding-2B
+  device: auto
+
+output: ./web_index

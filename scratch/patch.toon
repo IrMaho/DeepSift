@@ -1,6 +1,0 @@
-📄 src/cli/commands/search.ts
-L110-L115:<<<<
-    const logInfo = await saveSearchLog(projectPath, [query], finalOutput);
-====
-    const logInfo = await saveSearchLog(projectPath, [query], finalOutput, { skipVisuals: options.noVisual });
->>>>

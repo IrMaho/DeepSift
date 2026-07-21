@@ -1,53 +1,8 @@
 {
-  "name": "deepsift",
-  "version": "1.0.3",
-  "description": "Semantic Codebase Search — MCP Server + CLI Bridge for any IDE",
-  "type": "module",
-  "main": "dist/server.js",
-  "bin": {
-    "deepsift": "dist/cli/cli-entry.js"
-  },
-  "scripts": {
-    "build": ".\\node.exe .\\node_modules\\typescript\\bin\\tsc && .\\node.exe scripts/build-zig.js && .\\node.exe scripts/build-directive.js",
-    "build:release": ".\\node.exe scripts/build-release.js",
-    "dev": ".\\node.exe .\\node_modules\\tsx\\dist\\cli.mjs src/server.ts",
-    "dev:cli": ".\\node.exe .\\node_modules\\tsx\\dist\\cli.mjs src/cli/cli-entry.ts",
-    "start": ".\\node.exe dist/server.js",
-    "start:cli": ".\\node.exe dist/cli/cli-entry.js",
-    "test": ".\\node.exe .\\node_modules\\vitest\\vitest.mjs run"
-  },
-  "keywords": [
-    "mcp",
-    "semantic-search",
-    "ternlight"
-  ],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^26.1.1",
-    "tsx": "^4.23.1",
-    "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
-  },
-  "dependencies": {
-    "@inquirer/prompts": "^8.5.2",
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "@ternlight/base": "^0.1.0",
-    "ignore": "^7.0.6",
-    "pxpipe-proxy": "file:pxpipe-main",
-    "tree-sitter": "^0.25.0",
-    "tree-sitter-python": "^0.25.0",
-    "tree-sitter-typescript": "^0.23.2",
-    "zod": "^4.4.3"
-  },
-  "files": [
-    "dist",
-    "templates",
-    "native/core-zig/build.zig",
-    "native/core-zig/src",
-    "bin",
-    "pxpipe-main/dist",
-    "pxpipe-main/bin",
-    "pxpipe-main/package.json"
-  ]
+    "private":  true,
+    "name":  "deepsift-monorepo",
+    "version":  "1.0.0",
+    "scripts":  {
+                    "dev:core":  "pnpm --filter deepsift dev"
+                }
 }

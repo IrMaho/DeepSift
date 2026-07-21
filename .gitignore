@@ -1,23 +1,55 @@
+# Node
 node_modules/
 dist/
-.env
-*.db
-*.db-journal
-temp
-# DeepSift local cache
-.deepsift/
-ai
-.node-portable
 .npm-cache/
-.zig-cache/
- 
-# Build Artifacts
+.npmrc
+
+# DeepSift core & output
+.deepsift/
+.agents.zip
+temp/
 Output/
 release/
 bin/
-native/core-zig/.zig-cache/
-native/core-zig/bin/
-native/core-zig/zig-out/
+ai/
+
+# Python & PixelRAG (deepsift-vision)
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+web_index/
+paper_index/
+*.faiss
+*.npz
+
+# Models & Heavy Assets (DO NOT COMMIT)
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.onnx
+
+# Tools & Local Environment
+.tools/
+.node-portable
+.env
+
+# Native / Zig Build Artifacts
+.zig-cache/
+zig-out/
 *.exe
 *.pdb
 *.obj
+*.dll
+*.so
+*.dylib
+
+# Databases
+*.db
+*.db-journal
+*.sqlite3
