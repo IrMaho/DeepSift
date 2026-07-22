@@ -36,12 +36,21 @@ interface RawAssignment {
     line: number;
 }
 
+const NON_UI_EXTENSIONS = new Set([
+    '.py', '.sh', '.bash', '.go', '.rs', '.php', '.rb', '.c', '.cpp', '.cs', '.h', '.hpp'
+]);
+
 export function mineTokens(projectPath: string, tokenFiles: string[], onProgress?: (current: number, total: number) => void): { tokens: DiscoveredToken[]; clusters: TokenCluster[] } {
     const rawAssignments: RawAssignment[] = [];
 
-    for (let i = 0; i < tokenFiles.length; i++) {
-        if (onProgress) onProgress(i + 1, tokenFiles.length);
-        const assignments = extractAssignments(tokenFiles[i]);
+    const validFiles = tokenFiles.filter(file => {
+        const ext = path.extname(file).toLowerCase();
+        return TOKEN_FILE_EXTENSIONS.has(ext) && !NON_UI_EXTENSIONS.has(ext);
+    });
+
+    for (let i = 0; i < validFiles.length; i++) {
+        if (onProgress) onProgress(i + 1, validFiles.length);
+        const assignments = extractAssignments(validFiles[i]);
         rawAssignments.push(...assignments);
     }
 
@@ -119,6 +128,12 @@ function extractFromCode(content: string, filePath: string): RawAssignment[] {
             if (match && match[1] && match[2]) {
                 const name = match[1].trim();
                 const value = match[2].trim().replace(/['"`;,]$/g, '').trim();
+
+                // Skip method calls like .get('color') or dict.get(...)
+                if (name.includes('.get') || name.includes('get(') || value.startsWith('.get(')) {
+                    continue;
+                }
+
                 if (name.length > 1 && name.length < 100 && value.length > 0 && value.length < 300) {
                     assignments.push({ name, value, filePath, line: i + 1 });
                 }

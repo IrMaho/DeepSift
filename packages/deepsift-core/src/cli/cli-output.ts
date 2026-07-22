@@ -44,9 +44,10 @@ export function printInfo(message: string) {
     process.stderr.write(`\x1b[36mℹ\x1b[0m ${message}\n`);
 }
 
-export function parseGlobalFlags(args: string[]): { format: OutputFormat; compress: boolean; cleanArgs: string[]; projectPathOverride?: string; maxTokens?: number } {
+export function parseGlobalFlags(args: string[]): { format: OutputFormat; compress: boolean; cleanArgs: string[]; projectPathOverride?: string; maxTokens?: number; quietCache: boolean } {
     let format: OutputFormat = 'markdown';
     let compress = false;
+    let quietCache = process.env.DEEPSIFT_QUIET_CACHE === '1';
     let projectPathOverride: string | undefined = undefined;
     let maxTokens: number | undefined = undefined;
     const cleanArgs: string[] = [];
@@ -61,6 +62,8 @@ export function parseGlobalFlags(args: string[]): { format: OutputFormat; compre
             compress = false;
         } else if (arg === '--compress') {
             compress = true;
+        } else if (arg === '--quiet-cache' || arg === '--no-cache-msg') {
+            quietCache = true;
         } else if (arg === '--max-tokens') {
             if (i + 1 < args.length) {
                 maxTokens = parseInt(args[i + 1], 10);
@@ -76,5 +79,5 @@ export function parseGlobalFlags(args: string[]): { format: OutputFormat; compre
         }
     }
 
-    return { format, compress, cleanArgs, projectPathOverride, maxTokens };
+    return { format, compress, cleanArgs, projectPathOverride, maxTokens, quietCache };
 }

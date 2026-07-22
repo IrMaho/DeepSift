@@ -209,7 +209,8 @@ export function getFeatureOutline(
     summarizeOnly: boolean = false, 
     maxDepth: number = 6,
     groupByFeature: boolean = false,
-    format: string = 'markdown'
+    format: string = 'markdown',
+    compact: boolean = false
 ): string {
     if (!fs.existsSync(featurePath)) {
         return format === 'json'
@@ -353,8 +354,10 @@ export function getFeatureOutline(
         });
     } else {
         pageFiles.forEach(f => {
-            let elementsToPrint = f.elements;
-            if (summarizeOnly) {
+            let elementsToPrint = compact ? [] : f.elements;
+            if (compact) {
+                elementsToPrint = [];
+            } else if (summarizeOnly) {
                 elementsToPrint = f.elements.filter(e => 
                     e.startsWith('[CLASS]') || 
                     e.startsWith('[INTERFACE]') || 

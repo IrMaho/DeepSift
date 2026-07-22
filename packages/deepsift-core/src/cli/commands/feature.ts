@@ -18,7 +18,9 @@ export async function featureCommand(
     offset?: number,
     summarizeOnly: boolean = false,
     maxDepth?: number,
-    groupByFeature: boolean = false
+    groupByFeature: boolean = false,
+    compact: boolean = false,
+    quietCache: boolean = false
 ) {
     let targetPath = featureDir;
     if (!path.isAbsolute(featureDir)) {
@@ -30,7 +32,7 @@ export async function featureCommand(
         }
     }
 
-    const outlineText = getFeatureOutline(targetPath, limit, offset, summarizeOnly, maxDepth, groupByFeature, format);
+    const outlineText = getFeatureOutline(targetPath, limit, offset, summarizeOnly, maxDepth, groupByFeature, format, compact);
     let finalOutput = outlineText;
     
     if (compress && format !== 'json') {
@@ -40,13 +42,13 @@ export async function featureCommand(
     
     const logInfo = await saveSearchLog(projectPath, [`[Feature Outline] ${featureDir}`], finalOutput, { skipVisuals: !compress });
     printResult(finalOutput, format);
-    if (format !== 'json') {
+    if (format !== 'json' && !quietCache) {
         if (logInfo.images && logInfo.images.length > 0) {
             logInfo.images.forEach((img: string, idx: number) => {
                 const link = `file:///${img.replace(/\\/g, '/')}`;
                 printSuccess(`Results cached in (Page ${idx + 1}): ${link}`);
             });
-        } else {
+        } else if (compress) {
             const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
             printSuccess(`Results cached in: ${link}`);
         }

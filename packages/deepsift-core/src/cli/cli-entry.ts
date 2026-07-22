@@ -85,6 +85,7 @@ const HELP_TEXT = `
   deps "target"                 Trace dependencies for a file/module
   feature, f "path"             Feature outline (classes, functions)
                                    Options:
+                                     --compact, -c        High-density overview (file path, purpose, dependencies only)
                                      --summary, -s        High-level summary (omit internal methods/vars to prevent truncation)
                                      --group-by-feature, -g Group files by top-level feature subfolder instead of flat list
                                      --depth <number>      Max directory traversal depth
@@ -173,7 +174,7 @@ async function main() {
         process.exit(0);
     }
 
-    const { format, compress, cleanArgs, projectPathOverride } = parseGlobalFlags(rawArgs);
+    const { format, compress, cleanArgs, projectPathOverride, quietCache } = parseGlobalFlags(rawArgs);
     const command = cleanArgs[0];
     const commandArgs = cleanArgs.slice(1);
     const projectPath = resolveProjectPath(projectPathOverride, commandArgs);
@@ -483,10 +484,11 @@ async function main() {
                 
                 const featSummarizeOnly = commandArgs.includes('--summarize-only') || commandArgs.includes('--summary') || commandArgs.includes('-s');
                 const featGroupByFeature = commandArgs.includes('--group-by-feature') || commandArgs.includes('--group') || commandArgs.includes('-g');
+                const featCompact = commandArgs.includes('--compact') || commandArgs.includes('-c');
                 
                 const targetFeaturePath = commandArgs.filter(a => !a.startsWith('-') && !['--limit', '--offset', '--depth'].includes(commandArgs[commandArgs.indexOf(a) - 1]))[0];
 
-                await featureCommand(projectPath, targetFeaturePath || commandArgs[0], format, compress, featLimit, featOffset, featSummarizeOnly, featDepth, featGroupByFeature);
+                await featureCommand(projectPath, targetFeaturePath || commandArgs[0], format, compress, featLimit, featOffset, featSummarizeOnly, featDepth, featGroupByFeature, featCompact, quietCache);
                 break;
 
             case 'history':
