@@ -102,11 +102,23 @@ export function classifyByName(name: string): PropertyType | null {
 }
 
 export function classifyToken(name: string, value: string): PropertyType {
+    // Reject JSX component props like duration={200} or onClick or className
+    const n = name.trim();
+    if (n.startsWith('on') && /[A-Z]/.test(n[2] || '')) return 'unknown';
+    if (['className', 'style', 'key', 'ref', 'children', 'props', 'state', 'value'].includes(n)) return 'unknown';
+
     const byValue = classifyValue(value);
     if (byValue) return byValue;
 
-    const byName = classifyByName(name);
-    if (byName) return byName;
+    // Only classify by name if name clearly indicates a design system token variable
+    const isTokenPattern = n.startsWith('--') || n.startsWith('$') || n.startsWith('@') ||
+        n.includes('theme') || n.includes('Token') || n.includes('token') ||
+        n.includes('Palette') || n.includes('palette') || n.toUpperCase() === n;
+
+    if (isTokenPattern) {
+        const byName = classifyByName(name);
+        if (byName) return byName;
+    }
 
     return 'unknown';
 }

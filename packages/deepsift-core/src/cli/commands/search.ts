@@ -16,6 +16,7 @@ export interface SearchOptions {
     realm?: string;
     allRealms?: boolean;
     noVisual?: boolean;
+    limit?: number;
 }
 
 export async function searchCommand(
@@ -82,7 +83,10 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
         return;
     }
 
-    const formattedResults = results.map((res: CrossRealmResult, i: number) => {
+    const displayLimit = options.limit || 8;
+    const cappedResults = results.slice(0, displayLimit);
+
+    const formattedResults = cappedResults.map((res: CrossRealmResult, i: number) => {
         let contentToDisplay = res.chunk.content;
         let displayStartLine = res.chunk.startLine;
         let displayEndLine = res.chunk.endLine;
@@ -107,7 +111,10 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
     const injector = new ContextInjector(projectPath);
     const contextStr = injector.formatForOutput(await injector.inject([query]));
 
-    const rawOutput = `${contextStr}Found ${results.length} relevant code sections:\n\n${formattedResults}`;
+    let rawOutput = `${contextStr}Found ${results.length} relevant code sections${results.length > displayLimit ? ` (Showing top ${displayLimit}, pass --limit ${results.length} to view all)` : ''}:\n\n${formattedResults}`;
+    if (results.length > displayLimit) {
+        rawOutput += `\n\n💡 **Pagination Notice**: Showing top ${displayLimit} of ${results.length} results. Pass \`--limit ${results.length}\` to expand full list.`;
+    }
     let finalOutput = rawOutput;
     
     if (options.compress !== false && format !== 'json') {

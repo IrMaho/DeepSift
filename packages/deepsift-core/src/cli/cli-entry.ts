@@ -609,9 +609,15 @@ async function main() {
                 decodeCommand(commandArgs[0], format);
                 break;
 
-            case 'testmap':
-                await testmapCommand(projectPath, format);
+            case 'testmap': {
+                let langFilter: string | undefined;
+                const langIdx = commandArgs.findIndex(a => a === '--lang' || a === '--language' || a === '-l');
+                if (langIdx !== -1 && commandArgs[langIdx + 1]) {
+                    langFilter = commandArgs[langIdx + 1];
+                }
+                await testmapCommand(projectPath, format, langFilter);
                 break;
+            }
 
             case 'refactor':
                 if (commandArgs[0] === 'rename') {

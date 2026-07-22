@@ -30,7 +30,7 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift cfg "file:func"` | **CONTROL FLOW GRAPH:** Extract conditional branches (if/switch/try-catch) into Mermaid & ASCII CFG. |
 | `deepsift clones` | **CODE CLONE DETECTOR:** Block-level duplicate aggregation (DRY Audit). Merges overlapping windows into continuous duplicate blocks. |
 | `deepsift doctor` | **AGENT DIAGNOSTICS:** Run system checks, index health audit, and onboarding workflow report for AI agents. |
-| `deepsift testmap` | **TEST COVERAGE MAPPING:** Map source files to test files (`.test.ts`, `_test.go`) and audit untested modules. |
+| `deepsift testmap` | **TEST COVERAGE MAPPING:** Map source files to test files (`.test.ts`, `_test.go`) and audit untested modules. Options: `--lang <ts\|dart\|py\|go>`. |
 | `deepsift refactor rename` | **AST SYMBOL RENAME:** AST-safe symbol renaming across the entire codebase (`deepsift refactor rename <old> <new>`). |
 | `deepsift refactor extract` | **FUNCTION EXTRACTION:** Extract code lines into a new function (`deepsift refactor extract <file:lines> --name <func>`). |
 | `deepsift check-schema-drift` | **SCHEMA DRIFT AUDIT:** Audit schema and DOM config synchronization between client and backend definitions. |
