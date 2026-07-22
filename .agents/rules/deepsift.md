@@ -21,12 +21,12 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift overview [path]` | **SUPER-COMMAND (Blueprint):** Single-step Project Blueprint combining Architecture Tree + Central God Nodes + Feature Summaries. Options: `--depth N`. |
 | `deepsift search "query"` | **HYBRID SEMANTIC SEARCH:** Semantic & BM25 auto-switch search enhanced with Graphify PageRank. Options: `--include <path>`, `--sync`, `--layer ui\|domain\|data`, `--realms r1,r2`, `--history`. |
 | `deepsift read "file"` | **MANDATORY FOR READING FILES:** Outputs raw exact text by default. Supports line ranges: `file:10-50`. Use `--compress` to enable visual DEC_v2 tokens. |
-| `deepsift feature "path"` | **AST FEATURE OUTLINE:** AST-based feature summary. Options: `--summary` / `-s`, `--group-by-feature` / `-g`, `--depth N`, `--limit N`, `--offset N`. |
+| `deepsift feature "path"` | **AST FEATURE OUTLINE:** AST-based feature summary. Options: `--summary` / `-s` (top-level exports only), `--group-by-feature` / `-g`, `--depth N`, `--limit N`, `--offset N`. |
 | `deepsift analyze "path"` | **SUPER-COMMAND (Deep Dive):** Combines Feature Outline and DNA Intelligence for a specific folder or file. |
 | `deepsift arch [--depth N]` | **FOLDER EXPLORATION:** Project architecture blueprint utilizing Graphify communities. Automatically prunes large data files. |
 | `deepsift deps "target"` | **DEPENDENCY TRACER:** Trace imports and dependencies for a target file or module. |
 | `deepsift dna` | **PROJECT DNA & GOD NODES:** Generate or view DNA topology. Options: `--show`, `--section <name>`, `--query <term>`, `--meta`, `--path-filter <path>`. |
-| `deepsift calltree "symbol"` | **CALL GRAPH TRAVERSAL:** Trace upstream callers and downstream callee definitions for a symbol. |
+| `deepsift calltree "symbol"` | **CALL GRAPH & EVENT TRACER:** Trace upstream callers, downstream callee scope, and Event-Driven message links (`postMessage`, `onmessage`, Redux `dispatch`). Options: `--path` / `--include` / `-i` to filter by subdirectory. |
 | `deepsift cfg "file:func"` | **CONTROL FLOW GRAPH:** Extract conditional branches (if/switch/try-catch) into Mermaid & ASCII CFG. |
 | `deepsift clones` | **CODE CLONE DETECTOR:** Detect structural code duplicates and copy-paste clusters for DRY compliance. |
 | `deepsift doctor` | **AGENT DIAGNOSTICS:** Run system checks, index health audit, and onboarding workflow report for AI agents. |

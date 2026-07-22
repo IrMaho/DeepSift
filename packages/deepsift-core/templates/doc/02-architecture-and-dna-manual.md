@@ -31,13 +31,15 @@ The most powerful command for understanding a module without reading its code.
 **Usage:**
 ```bash
 deepsift feature "src/features/auth"
-deepsift feature "src/core/indexer.ts"
+deepsift feature "src/features/auth" --summary
+deepsift feature "src/features/auth" --depth 2 --limit 15
 ```
 
 ### 💡 Agent Rules for Feature Analysis:
-- **RELY ON THIS HEAVILY:** It parses the AST (Abstract Syntax Tree) and automatically generates an inline **Purpose Summary** and full **Logic Signatures** (Classes, Functions, Interfaces, Exports) directly in the console.
-- You do **NOT** need to open the file to know what it does.
-- Use this when you are investigating how a system works. For example, `deepsift feature` will tell you `class AuthController { login(req): Promise<User>; logout(): void; }` without you having to read the 500-line implementation details.
+- **RELY ON THIS HEAVILY:** It parses the AST (Abstract Syntax Tree) and automatically generates an inline **Purpose Summary** (smart-weighted from exported symbols, React JSX, and path context) and full **Logic Signatures** (Classes, Functions, Interfaces, Exports).
+- **Prevent Terminal Truncation:** Use `--summary` / `-s` when scanning large folders to show top-level exports only without internal method clutter.
+- **Smart Directory Limits:** Directory feature scans automatically cap internal method lines to keep console output clean and prevent token truncation.
+- You do **NOT** need to open the file to know what it does. `deepsift feature` tells you `class AuthController { login(req): Promise<User>; logout(): void; }` without reading 500 lines of implementation details.
 
 ---
 

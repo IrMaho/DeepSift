@@ -5,55 +5,104 @@ export function normalizePath(p: string): string {
     return p.replace(/\\/g, '/');
 }
 
+function isTrivialComment(text: string): boolean {
+    const lower = text.toLowerCase().trim();
+    if (!lower) return true;
+    if (lower.startsWith('eslint') || lower.startsWith('ts-ignore') || lower.startsWith('prettier') || lower.startsWith('@ts-nocheck')) return true;
+    if (lower.includes('copyright') || lower.includes('license') || lower.includes('spdx')) return true;
+    if (/^(svg|image|png|jpeg|jpg|css|style|asset|icon|font)s?\s+(import|file|path|asset|resource)s?/i.test(lower)) return true;
+    if (/^(import|require|helper|utility|interface|type|constant|variable|local)s?\s*(section|block|import|definition|declare|file)?$/i.test(lower)) return true;
+    if (lower.startsWith('todo') || lower.startsWith('fixme') || lower.startsWith('note:')) return true;
+    return false;
+}
+
+function pascalToWords(str: string): string {
+    return str.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[-_]/g, ' ').trim();
+}
+
 function extractPurpose(content: string, fileName: string): string {
     const lines = content.split('\n');
-    for (let i = 0; i < Math.min(lines.length, 30); i++) {
+
+    // 1. Explicit JSDoc annotations (@purpose, @description, @component, @file)
+    for (let i = 0; i < Math.min(lines.length, 35); i++) {
         const line = lines[i].trim();
-        const jsdocMatch = line.match(/^\*\s+(.{10,80})/);
-        if (jsdocMatch && !jsdocMatch[1].startsWith('@')) return jsdocMatch[1].trim();
-        const commentMatch = line.match(/^\/\/\s+(.{10,80})/);
-        if (commentMatch && !commentMatch[1].startsWith('ts-ignore') && !commentMatch[1].startsWith('eslint')) return commentMatch[1].trim();
+        const tagMatch = line.match(/@(?:purpose|description|component|file)\s+(.{5,100})/i);
+        if (tagMatch) return tagMatch[1].trim();
     }
 
+    // 2. High-value top JSDoc or non-trivial comment block
+    for (let i = 0; i < Math.min(lines.length, 25); i++) {
+        const line = lines[i].trim();
+        const jsdocMatch = line.match(/^\*\s+(.{12,100})/);
+        if (jsdocMatch && !jsdocMatch[1].startsWith('@') && !isTrivialComment(jsdocMatch[1])) {
+            return jsdocMatch[1].trim();
+        }
+        const commentMatch = line.match(/^\/\/\s+(.{12,100})/);
+        if (commentMatch && !isTrivialComment(commentMatch[1])) {
+            return commentMatch[1].trim();
+        }
+    }
+
+    // 3. Primary Export Symbol Analysis
+    const ext = path.extname(fileName).toLowerCase();
+    const isJsxTsx = ext === '.tsx' || ext === '.jsx';
+
+    const defaultExportMatch = content.match(/\bexport\s+default\s+(?:function|class|const)?\s*([\w_]+)/);
     const mainClassMatch = content.match(/\bexport\s+(?:default\s+)?class\s+([\w_]+)/);
-    if (mainClassMatch) {
-        return `${mainClassMatch[1]} core class implementation`;
+    const mainFuncMatch = content.match(/\bexport\s+(?:default\s+)?(?:async\s+)?function\s+([\w_]+)/);
+    const mainConstFuncMatch = content.match(/\bexport\s+(?:default\s+)?const\s+([\w_]+)\s*=\s*(?:React\.(?:memo|forwardRef)\s*\()?\(?/);
+    
+    const primarySymbol = (defaultExportMatch && defaultExportMatch[1] !== 'function') ? defaultExportMatch[1] :
+                          (mainClassMatch ? mainClassMatch[1] : 
+                          (mainFuncMatch ? mainFuncMatch[1] : 
+                          (mainConstFuncMatch ? mainConstFuncMatch[1] : '')));
+
+    if (primarySymbol && primarySymbol.length > 2) {
+        const words = pascalToWords(primarySymbol);
+        
+        if (primarySymbol.startsWith('use') && primarySymbol.length > 3 && /[A-Z]/.test(primarySymbol[3])) {
+            return `${words} custom React hook`;
+        }
+        if (primarySymbol.endsWith('Store') || primarySymbol.endsWith('State') || primarySymbol.endsWith('Slice')) {
+            return `${words} state management store`;
+        }
+        if (primarySymbol.endsWith('Handler') || primarySymbol.endsWith('Controller')) {
+            return `${words} event & message handler`;
+        }
+        if (primarySymbol.endsWith('Repository') || primarySymbol.endsWith('Service')) {
+            return `${words} business logic & data service`;
+        }
+        if (isJsxTsx || /<[A-Z][\w.]*/.test(content) || /return\s*\(\s*</.test(content)) {
+            return `${words} UI component`;
+        }
+        return `${words} module implementation`;
     }
 
-    const dartClassMatch = content.match(/\bclass\s+([\w_]+)/);
-    const isDart = fileName.endsWith('.dart');
-    if (isDart && dartClassMatch) {
-        return `${dartClassMatch[1]} Dart logic`;
-    }
-
-    const mainFuncMatch = content.match(/\bexport\s+(?:default\s+)?function\s+([\w_]+)/);
-    if (mainFuncMatch) {
-        return `${mainFuncMatch[1]} main function export`;
-    }
-
+    // 4. Content Signature Heuristics
     const testCount = (content.match(/\b(describe|it|test)\s*\(/g) || []).length;
     const hookCount = (content.match(/\buse[A-Z]\w+/g) || []).length;
     const routeCount = (content.match(/\b(router|route|app\.(get|post|put|delete))/gi) || []).length;
-    const exportCount = (content.match(/\bexport\s+(default\s+)?(function|const|class)/g) || []).length;
+    const typeCount = (content.match(/\b(interface|type)\s+[\w_]+/g) || []).length;
+    const exportCount = (content.match(/\bexport\s+/g) || []).length;
 
-    if (testCount > 2) return `Test suite (${testCount} test cases)`;
-    if (hookCount > 2) return `React hooks module (${hookCount} hooks)`;
+    if (testCount > 1) return `Test suite (${testCount} test cases)`;
+    if (hookCount > 2) return `React hooks module (${hookCount} hooks used)`;
     if (routeCount > 1) return `Route/API handler (${routeCount} routes)`;
-    if (exportCount > 5) return `Utility/helper barrel (${exportCount} exports)`;
+    if (typeCount > 3 && exportCount > 3) return `TypeScript types and interface definitions`;
 
-    // Clean numeric prefixes (e.g. "1.optimized" -> "optimized")
+    // 5. Clean File Path Fallback
     let baseName = path.basename(fileName, path.extname(fileName));
     baseName = baseName.replace(/^\d+[\._-]?/, ''); 
-    const words = baseName.replace(/[-_]/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().trim();
+    const words = pascalToWords(baseName.replace(/[-_]/g, ' ')).toLowerCase();
 
-    if (fileName.includes('deploy')) return 'Deployment and automation script';
+    if (fileName.includes('deploy')) return 'Deployment and build automation script';
     if (fileName.includes('handler')) return 'Message & event handler module';
     if (fileName.includes('asset')) return 'Static assets & resource mapping';
     if (fileName.includes('optimiz')) return 'Performance optimization module';
     if (fileName.includes('config')) return 'Configuration management module';
 
-    const ext = path.extname(fileName).slice(1).toUpperCase();
-    return `${words ? words : 'Core'} module (${ext || 'code'})`;
+    const extName = ext.slice(1).toUpperCase();
+    return `${words ? words : 'Core'} ${isJsxTsx ? 'UI component' : 'module'} (${extName || 'code'})`;
 }
 
 function extractStructure(content: string): { dependencies: string[], elements: string[], purpose: string } {
@@ -160,11 +209,25 @@ export function getFeatureOutline(
                     
                     let elementsToPrint = struct.elements;
                     if (summarizeOnly) {
-                        elementsToPrint = struct.elements.filter(e => e.startsWith('[CLASS]') || e.startsWith('[INTERFACE]') || e.startsWith('[TYPE]') || e.startsWith('[STRUCT]'));
+                        elementsToPrint = struct.elements.filter(e => 
+                            e.startsWith('[CLASS]') || 
+                            e.startsWith('[INTERFACE]') || 
+                            e.startsWith('[TYPE]') || 
+                            e.startsWith('[STRUCT]') || 
+                            e.startsWith('[FUNCTION]') || 
+                            (e.startsWith('[CONST]') && !e.includes('↳'))
+                        );
                         if (elementsToPrint.length === 0) {
-                            elementsToPrint = struct.elements.slice(0, 2);
+                            elementsToPrint = struct.elements.slice(0, 3);
                         } else {
-                            elementsToPrint = elementsToPrint.slice(0, 5);
+                            elementsToPrint = elementsToPrint.slice(0, 6);
+                        }
+                    } else if (fs.existsSync(featurePath) && fs.statSync(featurePath).isDirectory()) {
+                        // Directory listing mode: Cap internal method lines per file to prevent terminal truncation
+                        const nonMethods = elementsToPrint.filter(e => !e.includes('↳ [Method]'));
+                        const methods = elementsToPrint.filter(e => e.includes('↳ [Method]'));
+                        if (methods.length > 6) {
+                            elementsToPrint = [...nonMethods, ...methods.slice(0, 6), `  ↳ [Method] ... (+${methods.length - 6} more internal methods)`];
                         }
                     }
 
@@ -189,7 +252,7 @@ export function getFeatureOutline(
                             result += `  - 🔗 **Dependencies**: ${struct.dependencies.slice(0, 8).join(', ')}${struct.dependencies.length > 8 ? ', ...' : ''}\n`;
                         }
                         if (elementsToPrint.length > 0) {
-                            const maxItems = summarizeOnly ? 5 : 30;
+                            const maxItems = summarizeOnly ? 6 : 15;
                             result += elementsToPrint.slice(0, maxItems).map(s => `  - \`${s}\``).join('\n') + '\n';
                             if (elementsToPrint.length > maxItems) result += `  - ... (+${elementsToPrint.length - maxItems} more)\n`;
                         }

@@ -565,12 +565,19 @@ async function main() {
                 break;
 
             case 'calltree':
-            case 'ct':
+            case 'ct': {
                 if (commandArgs.length === 0) {
-                    throw new Error('Please provide a symbol name.\nUsage: deepsift calltree "myFunction"');
+                    throw new Error('Please provide a symbol name.\nUsage: deepsift calltree "myFunction" [--path "src/features"]');
                 }
-                await calltreeCommand(projectPath, commandArgs[0], format, compress);
+                let ctFilterPath: string | undefined;
+                const ctPathIdx = commandArgs.findIndex(arg => arg === '--path' || arg === '--include' || arg === '-i' || arg === '-p');
+                if (ctPathIdx !== -1 && commandArgs[ctPathIdx + 1]) {
+                    ctFilterPath = commandArgs[ctPathIdx + 1];
+                }
+                const ctSymbol = commandArgs.find(arg => !arg.startsWith('-') && !['--path', '--include', '-i', '-p'].includes(commandArgs[commandArgs.indexOf(arg) - 1])) || commandArgs[0];
+                await calltreeCommand(projectPath, ctSymbol, format, compress, ctFilterPath);
                 break;
+            }
 
             case 'clones':
                 await clonesCommand(projectPath, format);

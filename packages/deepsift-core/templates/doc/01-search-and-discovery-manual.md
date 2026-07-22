@@ -46,18 +46,26 @@ deepsift read "src/ui/button.tsx" --compress
 
 ---
 
-## 3. 🕸️ `deepsift deps "filename"` (Dependency Tracing)
+## 3. 🕸️ `deepsift deps "filename"` & `deepsift calltree "symbol"` (Dependency & Call Graph / Event Tracing)
 
-Dependency mapping is critical before modifying any exported function or component interface.
+Dependency mapping and call graph traversal are critical before modifying any exported function, component interface, or inter-environment event message.
 
 **Usage:**
 ```bash
 deepsift deps "src/components/Button.tsx"
+deepsift calltree "sync-variables"
+deepsift calltree "postMessage"
 ```
 
-### 💡 Agent Rules for Dependencies:
-- **Before Modifying Interfaces:** If you change a prop from `icon` to `iconName`, you MUST run `deepsift deps` to find all components that import `Button.tsx`, and update them in the same session.
-- **Breaking Changes:** DeepSift prevents breaking changes by allowing you to map the full dependency tree. 
+### 💡 Agent Rules for Dependencies & Call Tree:
+- **Before Modifying Interfaces:** If you change a prop or method signature, run `deepsift deps` to find all components that import it and update them.
+- **Event-Driven / postMessage Link Tracing:** When analyzing cross-environment communication (e.g. Figma plugin UI iframe sending `postMessage({ type: 'sync-variables' })` and core sandbox handling `msg.type === 'sync-variables'`), run `deepsift calltree "sync-variables"`.
+- **Sender & Handler Auto-Linking:** `calltree` automatically categorizes matching lines into:
+  - 📤 **Event Senders / Producers (UI Environment)**
+  - 📥 **Event Handlers / Listeners (Core Sandbox)**
+  - ⬆️ **Upstream Callers**
+  - ⬇️ **Downstream Definitions & Scope**
+- **Breaking Changes:** DeepSift prevents breaking changes by allowing you to trace events and call chains across isolated runtimes. 
 
 ---
 
