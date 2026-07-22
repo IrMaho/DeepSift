@@ -44,15 +44,16 @@ export function printInfo(message: string) {
     process.stderr.write(`\x1b[36mℹ\x1b[0m ${message}\n`);
 }
 
-export function parseGlobalFlags(args: string[]): { format: OutputFormat; compress: boolean; cleanArgs: string[]; projectPathOverride?: string } {
+export function parseGlobalFlags(args: string[]): { format: OutputFormat; compress: boolean; cleanArgs: string[]; projectPathOverride?: string; maxTokens?: number } {
     let format: OutputFormat = 'markdown';
     let compress = false;
     let projectPathOverride: string | undefined = undefined;
+    let maxTokens: number | undefined = undefined;
     const cleanArgs: string[] = [];
 
     for (let i = 0; i < args.length; i++) {
         const arg = args[i];
-        if (arg === '--json') {
+        if (arg === '--json' || arg === '--json-schema') {
             format = 'json';
         } else if (arg === '--plain') {
             format = 'plain';
@@ -60,6 +61,11 @@ export function parseGlobalFlags(args: string[]): { format: OutputFormat; compre
             compress = false;
         } else if (arg === '--compress') {
             compress = true;
+        } else if (arg === '--max-tokens') {
+            if (i + 1 < args.length) {
+                maxTokens = parseInt(args[i + 1], 10);
+                i++;
+            }
         } else if (arg === '--project' || arg === '-p') {
             if (i + 1 < args.length) {
                 projectPathOverride = args[i + 1];
@@ -70,5 +76,5 @@ export function parseGlobalFlags(args: string[]): { format: OutputFormat; compre
         }
     }
 
-    return { format, compress, cleanArgs, projectPathOverride };
+    return { format, compress, cleanArgs, projectPathOverride, maxTokens };
 }

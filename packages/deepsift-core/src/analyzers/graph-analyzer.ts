@@ -7,6 +7,15 @@ const IGNORED_DIRS = new Set([
     '.dart_tool', '__pycache__', 'target', 'vendor', '.next', '.nuxt',
 ]);
 
+const GENERATED_FILE_PATTERNS = [
+    /\.g\.dart$/, /\.freezed\.dart$/, /\.pb\.go$/, /\.generated\./,
+    /\.min\.js$/, /\.bundle\.js$/, /\.map$/
+];
+
+function isGeneratedFile(fileName: string): boolean {
+    return GENERATED_FILE_PATTERNS.some(pat => pat.test(fileName));
+}
+
 const SOURCE_EXTENSIONS = new Set([
     '.ts', '.tsx', '.js', '.jsx', '.dart', '.py', '.go', '.rs',
     '.java', '.kt', '.swift', '.php', '.rb', '.vue', '.svelte',
@@ -86,7 +95,7 @@ function findSourceFiles(projectPath: string): string[] {
                 walk(full, depth + 1);
             } else {
                 const ext = path.extname(item.name).toLowerCase();
-                if (SOURCE_EXTENSIONS.has(ext)) files.push(full);
+                if (SOURCE_EXTENSIONS.has(ext) && !isGeneratedFile(item.name)) files.push(full);
             }
         }
     }

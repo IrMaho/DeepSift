@@ -38,6 +38,7 @@ import { refactorRenameCommand, refactorExtractCommand } from './commands/refact
 import { schemaDriftCommand } from './commands/schema-drift.js';
 import { deadCodeCommand } from './commands/dead-code.js';
 import { autoHealCommand } from './commands/auto-heal.js';
+import { cfgCommand } from './commands/cfg.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
@@ -603,6 +604,13 @@ async function main() {
             case 'schema-drift':
             case 'check-schema-drift':
                 await schemaDriftCommand(projectPath, format);
+                break;
+
+            case 'cfg':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a file and scope.\nUsage: deepsift cfg "src/utils.ts:myFunction"');
+                }
+                await cfgCommand(projectPath, commandArgs[0], format);
                 break;
 
             case 'dead-code':

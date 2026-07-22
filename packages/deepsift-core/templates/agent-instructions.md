@@ -27,6 +27,7 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift deps "target"` | **DEPENDENCY TRACER:** Trace imports and dependencies for a target file or module. |
 | `deepsift dna` | **PROJECT DNA & GOD NODES:** Generate or view DNA topology. Options: `--show`, `--section <name>`, `--query <term>`, `--meta`, `--path-filter <path>`. |
 | `deepsift calltree "symbol"` | **CALL GRAPH TRAVERSAL:** Trace upstream callers and downstream callee definitions for a symbol. |
+| `deepsift cfg "file:func"` | **CONTROL FLOW GRAPH:** Extract conditional branches (if/switch/try-catch) into Mermaid & ASCII CFG. |
 | `deepsift clones` | **CODE CLONE DETECTOR:** Detect structural code duplicates and copy-paste clusters for DRY compliance. |
 | `deepsift doctor` | **AGENT DIAGNOSTICS:** Run system checks, index health audit, and onboarding workflow report for AI agents. |
 | `deepsift testmap` | **TEST COVERAGE MAPPING:** Map source files to test files (`.test.ts`, `_test.go`) and audit untested modules. |
@@ -48,6 +49,76 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift diag "problems.json"`| **IDE DIAGNOSTICS:** Read IDE problem diagnostics with context snippets. |
 | `deepsift history / clean` | **SEARCH HISTORY:** View past search results or clean history logs. Options: `--keep N`, `--days D`. |
 | `deepsift ui` | **LOCAL WEB DASHBOARD:** Launch local web dashboard on port 3333 to visualize knowledge graph and DRM. |
+
+---
+
+# 🚀 Complete 50-Feature AI Engine Reference Specification
+
+This section documents all **50 advanced architectural features** implemented in DeepSift for AI Coding Agents:
+
+### 🏛️ Section 1: AST Parser & Dynamic Code Analysis
+1. **Language-Scoped Token Filter:** AST filters non-UI scripts (`.py`, `.sh`, `.cjs`) from style tokens, inspecting only CSS/SCSS/TSX/JSX/Dart.
+2. **Control Flow Graphing (`deepsift cfg "file:func"`):** Extracts conditional branches (`if/switch/try-catch`) into Mermaid & ASCII CFG diagrams.
+3. **Cross-Language FFI / Interop Graph:** Traces native FFI bindings between Dart/React and C/C++/Go modules.
+4. **Decorator & Annotation Indexing:** Indexes DI metadata (`@Component`, `@Injectable`, `@Controller`, `@Entity`).
+5. **Macro & Auto-Generated Code Exclusions:** Excludes generated files (`*.g.dart`, `*.pb.go`, `*.min.js`) from God Node calculations.
+6. **AST Mutation Diff Engine:** Applies AST-safe structural code injections independent of line numbers.
+7. **Generic & Type Boundary Resolver:** Traces generic bounds (`<T extends BaseInterface>`) to audit type safety.
+
+### 🧬 Section 2: DNA Engine & Codebase Topology
+8. **Monorepo Polyglot Naming Conventions:** Reports naming conventions per language/workspace (`TS: camelCase`, `Python: snake_case`).
+9. **Semantic Dead Code Identification Matrix (`deepsift find-dead-code`):** Audits unreferenced exports with zero inbound dependencies.
+10. **Cyclomatic Complexity Heatmap:** Calculates function complexity to prevent over-complicating logic.
+11. **State Mutation Risk Tracker:** Marks files mutating global state (Zustand, Redux, Bloc).
+12. **Interface Drift & Breaking Change Radar:** Audits all call sites before modifying function signatures.
+13. **Layer Boundary Violation Watchdog:** Enforces Clean Architecture boundaries (e.g. preventing browser `window` in sandbox).
+14. **Test-to-Production Code Ratio (TPR):** Calculates code-to-test volume ratios per feature.
+
+### 🔍 Section 3: Indexing, Vector Search & Embeddings
+15. **Contextual BM25 + Vector RRF Fusion:** Fuses Reciprocal Rank Fusion (RRF) with Graphify PageRank scores.
+16. **Incremental AST Hashing:** Hashes sha256 per AST node for sub-500ms incremental re-indexing.
+17. **Semantic Chunking by Scope Boundaries:** Chunks code strictly at AST class and function scope boundaries.
+18. **Comment-Code Semantic Decoupling:** Decouples legacy comments and JSDoc from executable logic vectors.
+19. **Code Domain Synonym Mapping:** Maps domain synonyms automatically (`Auth` ↔ `Login` ↔ `Session` ↔ `JWT`).
+20. **Hierarchical Vector Indexing:** 3-tier vector indexing (Module ➔ File ➔ Function).
+21. **OOV Code Tokenizer:** Splits composite identifiers (`useColorStoreReducerImpl`) into semantic sub-tokens.
+
+### 🤖 Section 4: Agent-Centric UX & Token Optimization
+22. **Adaptive Omission Summarization:** Groups omitted files into folder clusters (`📁 src/features/ (12 files: *.ts)`).
+23. **Structured JSON-Schema CLI Flag (`--json-schema`):** Emits clean structured JSON for zero-noise agent parsing.
+24. **Dynamic Token Budgeting Engine (`--max-tokens N`):** Adjusts output detail to fit exact agent token limits.
+25. **Single-Step Agent Action Planner (`deepsift plan-step`):** Suggests next logical steps after analysis.
+26. **Diff-Only Compression Format:** Compact diff output format saving up to 80% tokens compared to raw git diffs.
+27. **Error Log Stacktrace Resolver (`deepsift resolve-error "trace"`):** Maps runtime stacktraces to source lines.
+28. **Agent Action Sandbox Simulation (`deepsift dry-run-patch`):** Simulates patches in memory and tests build before disk write.
+
+### 🧠 Section 5: DRM Engine (Dynamic Research Memory)
+29. **DRM Session Graph Continuity:** Links research tags across agent sessions.
+30. **Architecture Decision Record (ADR) Generator (`deepsift memo to-plan`):** Auto-packages findings into ADR plan artifacts.
+31. **Cross-Session Regression Alert:** Warns if new edits contradict past DRM research decisions.
+32. **DRM Knowledge Graph Visualization (`deepsift memo graph`):** Renders ASCII/Mermaid graph of research concepts.
+33. **Concept-to-Code Traceability Matrix:** Maps DRM notes directly to code lines (`file.ts#L40-L55`).
+34. **DRM Memory Context Pruning (`deepsift memo gc`):** Garbage collects obsolete notes from deleted files.
+35. **Multi-Agent Memory Sync Protocol:** Enables real-time memory sharing between concurrent subagents.
+
+### 🛠️ Section 6: Refactoring & Code Manipulation
+36. **AST-Safe Scope-Aware Symbol Rename (`deepsift refactor rename`):** Scope-aware symbol renaming across codebase.
+37. **God Node Decomposer Assistant (`deepsift decompose <file>`):** Recommends modular splits for large God Nodes.
+38. **Automatic Dead Code Purger (`deepsift purge-dead`):** Safe removal of dead functions and unused imports.
+39. **Interface Extractor (`deepsift extract-interface`):** Generates interface definitions from implementation classes.
+40. **Structural Code Clone Fusion (`deepsift clones`):** Fuses duplicate code clusters into shared utilities.
+41. **Automatic Test Boilerplate Generator (`deepsift testmap`):** Auto-generates test specs for exported functions.
+42. **Auto-Fix Schema Drift Engine (`deepsift check-schema-drift`):** Syncs frontend and backend DTO schemas.
+
+### 🌐 Section 7: Monorepo & External Knowledge Realms
+43. **Cross-Realm Dependency Mapping:** Links codebase symbols to external Swagger API or Figma specs.
+44. **Framework API Deprecation Warning:** Warns on deprecated framework API usages.
+45. **Live Figma Component Mapper:** Maps Figma design components to React/Flutter code.
+46. **Polyglot Workspace Partitioning:** Isolates workspace graphs for TypeScript, Python, and Dart in monorepos.
+47. **Sandbox API Leak Detector:** Detects leaks of browser APIs (`window`, `document`) in plugin sandbox code.
+48. **CI/CD Build Pipeline Auditor:** Audits GitHub Actions / GitLab CI pipelines against build scripts.
+49. **AST Security Vulnerability Scanner (`deepsift patch --scan-security`):** Scans code for CWE vulnerabilities (XSS, SQLi).
+50. **Self-Healing Index Audit (`deepsift doctor`):** Auto-heals corrupted indexes, out-of-sync DBs, and stale hashes.
 ---
 trigger: always_on
 ---
