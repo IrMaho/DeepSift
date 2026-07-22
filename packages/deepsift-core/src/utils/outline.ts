@@ -235,8 +235,27 @@ export function getFeatureOutline(
     
     if (skippedFiles.length > 0) {
         result += `\n⚠️  [AI NOTE]: ${skippedFiles.length} files were omitted to prevent context explosion.\n`;
-        result += `**Omitted Files Summary (use --offset or --group-by-feature to view details):**\n`;
-        result += skippedFiles.map(f => `  - 📁 \`${normalizePath(f)}\``).join('\n') + '\n';
+        result += `**Omitted Files Cluster Summarization:**\n`;
+        
+        const folderClusters: Map<string, { count: number, exts: Set<string> }> = new Map();
+        skippedFiles.forEach(f => {
+            const parts = f.split('/');
+            const folder = parts.length > 1 ? parts.slice(0, parts.length - 1).join('/') + '/' : 'root/';
+            const ext = path.extname(f) || '.file';
+            if (!folderClusters.has(folder)) {
+                folderClusters.set(folder, { count: 0, exts: new Set() });
+            }
+            const cluster = folderClusters.get(folder)!;
+            cluster.count++;
+            cluster.exts.add(ext);
+        });
+
+        folderClusters.forEach((info, folder) => {
+            const extList = Array.from(info.exts).join(', ');
+            result += `  - 📁 \`${folder}\` (${info.count} files: ${extList})\n`;
+        });
+
+        result += `\n*(Tip: Run \`deepsift feature "<folder>"\` or use \`--offset\` / \`--group-by-feature\` to inspect specific clusters)*\n`;
     }
     
     return result;

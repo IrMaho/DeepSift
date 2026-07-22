@@ -18,9 +18,9 @@ const IGNORED_DIRS = new Set([
 ]);
 
 const TOKEN_FILE_EXTENSIONS = new Set([
-    '.ts', '.tsx', '.js', '.jsx', '.dart', '.py', '.go', '.rs',
-    '.java', '.kt', '.swift', '.css', '.scss', '.sass', '.less',
-    '.json', '.yaml', '.yml', '.toml', '.xml',
+    '.ts', '.tsx', '.js', '.jsx', '.dart',
+    '.css', '.scss', '.sass', '.less',
+    '.json', '.yaml', '.yml',
 ]);
 
 const TOKEN_FILE_HINTS = [

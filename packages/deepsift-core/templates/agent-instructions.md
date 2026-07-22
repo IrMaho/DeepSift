@@ -10,6 +10,8 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 - **Search & Discovery:** DeepSift is your **PRIMARY** tool for semantic search (`deepsift search`), architecture analysis (`deepsift arch`), dependency tracing (`deepsift deps`), and file reading (`deepsift read`). Use it FIRST.
 - **Literal/Keyword Search:** When semantic search fails to find something (e.g., exact variable names, CSS class names, error messages), you MAY use `grep_search` or `deepsift com "grep ..."` for exact pattern matching. Sometimes a screenshot or partial text from the user is best found with literal search, not semantic.
 - **File Reading:** `deepsift read` is preferred for initial exploration. For files you plan to EDIT, always use `deepsift read "file" --no-compress` or `view_file` to get exact, uncompressed code.
+- **Cluster Summarization for Omitted Files:** Large file listings automatically group omitted files into folder clusters (`📁 src/features/ (12 files: *.ts)`).
+- **Language-Aware DNA & Clean Tokens:** DNA automatically filters non-UI scripts (`.py`, `.sh`) from color tokens and splits naming conventions by language in polyglot repos.
 
 
 ## 🛠 Available DeepSift Commands (Comprehensive 50-Feature Engine)

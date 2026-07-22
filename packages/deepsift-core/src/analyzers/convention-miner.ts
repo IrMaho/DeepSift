@@ -57,6 +57,12 @@ export function mineConventions(projectPath: string, allFiles: string[]): Conven
         constants: analyzeNaming(identifiers.constants),
     };
 
+    // Add multi-language naming summary hint
+    const langDistribution: Record<string, string> = {};
+    if (fileNames.some(f => f.includes('_'))) langDistribution['Python/C/Go'] = 'snake_case';
+    if (fileNames.some(f => /[a-z][A-Z]/.test(f))) langDistribution['TS/JS/Dart'] = 'camelCase';
+    (naming as any).byLanguageHint = langDistribution;
+
     const structureTemplate = detectStructureTemplate(projectPath);
 
     return { naming, structureTemplate };
