@@ -106,15 +106,7 @@ function outputDNAFiltered(
         if (!section && !query && !pathFilter && !showMetaOnly && limit === undefined && offset === undefined) {
             outputText = formatDNASummary(resultObj);
         } else {
-            // Prune huge graph data if it's there to prevent context explosion
-            if (resultObj && resultObj.graph && Array.isArray(resultObj.graph.nodes)) {
-                resultObj = { ...resultObj, graph: '[Graph Nodes/Edges hidden for CLI brevity. Use --json to see them]' };
-            }
-            if (resultObj && resultObj.architecture && resultObj.architecture.graph) {
-                resultObj.architecture = { ...resultObj.architecture, graph: '[Graph Nodes/Edges hidden for CLI brevity]' };
-            }
-
-            outputText = `### DNA Query Results (section: ${section || 'all'}, limit: ${limit ?? 'none'}, offset: ${offset ?? 0}, pathFilter: ${pathFilter || 'none'}, metaOnly: ${showMetaOnly})\n\n\`\`\`json\n` + JSON.stringify(resultObj, null, 2) + `\n\`\`\``;
+            outputText = formatCleanMarkdownDNA(resultObj, section || 'custom');
         }
     }
 
@@ -229,4 +221,56 @@ export function recursiveQueryDna(obj: any, term: string): any {
         return hasMatch ? res : null;
     }
     return null;
+}
+
+export function formatCleanMarkdownDNA(data: any, sectionName: string): string {
+    const lines: string[] = [];
+    lines.push(`### 🧬 DNA Section: ${sectionName.toUpperCase()}`);
+    lines.push('');
+
+    function renderNode(val: any, depth: number = 0): void {
+        const indent = '  '.repeat(depth);
+        if (val === null || val === undefined) return;
+
+        if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+            lines.push(`${indent}- ${String(val)}`);
+            return;
+        }
+
+        if (Array.isArray(val)) {
+            val.forEach(item => {
+                if (typeof item === 'object' && item !== null) {
+                    const title = item.name || item.filePath || item.id || item.pattern || item.category || 'Item';
+                    lines.push(`${indent}- **${title}**`);
+                    for (const [k, v] of Object.entries(item)) {
+                        if (['name', 'id'].includes(k)) continue;
+                        if (typeof v === 'object' && v !== null) {
+                            lines.push(`${indent}  - **${k}**:`);
+                            renderNode(v, depth + 2);
+                        } else {
+                            lines.push(`${indent}  - **${k}**: ${String(v)}`);
+                        }
+                    }
+                } else {
+                    lines.push(`${indent}- ${String(item)}`);
+                }
+            });
+            return;
+        }
+
+        if (typeof val === 'object') {
+            for (const [k, v] of Object.entries(val)) {
+                if (k === 'graph' || k === 'raw') continue; // Hide raw node graphs in MD summary
+                if (typeof v === 'object' && v !== null) {
+                    lines.push(`${indent}- **${k}**:`);
+                    renderNode(v, depth + 1);
+                } else {
+                    lines.push(`${indent}- **${k}**: ${String(v)}`);
+                }
+            }
+        }
+    }
+
+    renderNode(data, 0);
+    return lines.join('\n');
 }

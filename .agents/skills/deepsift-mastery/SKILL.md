@@ -29,6 +29,7 @@ deepsift search "modal component"
 
 ### Practical Decision Tree
 ```
+Need single-step blueprint?  → deepsift overview "." (combines arch + god nodes + feature summary)
 Need to understand structure? → deepsift read "file" --compress (fast, visual)
 Need to deep dive a folder?   → deepsift analyze "src/folder" (combines feature + DNA)
 Need to EDIT the file?        → deepsift read "file" (exact text)

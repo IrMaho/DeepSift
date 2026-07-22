@@ -21,9 +21,10 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift realm list/add/remove`| Manage knowledge realms. Ex: `deepsift realm add my_docs --type docs --source ./docs` |
 | `deepsift compare r1 r2 -q "k"` | **VECTOR DIFF:** Compare realms (e.g. `code` vs `flutter_docs`) to find Gaps/Similarities. |
 | `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. Automatically truncates giant trees and ignores large data/log files to prevent console bloat. Use `--depth N` or run `feature` for deeper inspection. |
-| `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Uses the same inline 🎯 **Purpose Summaries** and **AST logic signatures** as `feature`, combined with matching `dna` intelligence in one unified, heavily compressed markdown report. |
+| `deepsift overview [path]` | **SUPER-COMMAND FOR SINGLE-STEP BLUEPRINT:** Combines Architecture Tree + Central God Nodes + Feature Summaries in 1 single call to save latency and tokens. Options: `--depth N`. |
+| `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Uses the same inline 🎯 **Purpose Summaries** and **AST logic signatures** as `feature`, combined with matching `dna` intelligence in one unified markdown report. |
 | `deepsift deps "filename"` | Find imports/dependencies for a target. |
-| `deepsift feature "src/path"` | Get AST-based feature outline. **RELY ON THIS:** It automatically includes an inline 🎯 **Purpose Summary** and full **AST logic signatures** (classes/functions) right in the console. You do NOT need to open the file to know what it does! |
+| `deepsift feature "src/path"` | Get AST-based feature outline. Options: `--summary` / `-s` (omit internal methods/variables to prevent truncation), `--depth N`, `--limit N`, `--offset N`. |
 | `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
 | `deepsift plan "request"` | **MANDATORY BEFORE IMPLEMENTATION:** Generate Smart Plan from DNA and architecture. |
 | `deepsift memo <action>`  | **DRM ENGINE:** Dynamic Research Memory tag management, notes, queries, and relations. |

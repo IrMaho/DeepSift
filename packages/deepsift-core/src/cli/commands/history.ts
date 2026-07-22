@@ -1,4 +1,4 @@
-import { getSearchHistory, getSearchLog } from '../../utils/history.js';
+import { getSearchHistory, getSearchLog, cleanupOldOutputs } from '../../utils/history.js';
 import { printResult, printSuccess, OutputFormat } from '../cli-output.js';
 import fs from 'fs';
 import path from 'path';
@@ -8,7 +8,17 @@ export function historyCommand(projectPath: string, format: OutputFormat) {
     printResult(historyText, format);
 }
 
-export function cleanHistoryCommand(projectPath: string, format: OutputFormat) {
+export function cleanHistoryCommand(projectPath: string, format: OutputFormat, keepFiles?: number, keepDays?: number) {
+    if (keepFiles !== undefined || keepDays !== undefined) {
+        const deleted = cleanupOldOutputs(projectPath, keepFiles ?? 30, keepDays ?? 7);
+        if (format === 'json') {
+            printResult(JSON.stringify({ status: 'success', clearedCount: deleted }), format);
+        } else {
+            printSuccess(`Retention cleanup completed. Removed ${deleted} old log files.`);
+        }
+        return;
+    }
+
     const targets = ['.deepsift/outputs', '.mcp_search_outputs'];
     let count = 0;
 

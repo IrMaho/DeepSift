@@ -21,7 +21,7 @@ fs.mkdirSync(tempDir, { recursive: true });
 
 try {
     // Run pxpipe to generate the PNG
-    execSync(`.\\node.exe pxpipe-main/bin/cli.js export "${targetFile}" --out "${tempDir}"`, { 
+    execSync(`node pxpipe-main/bin/cli.js export "${targetFile}" --out "${tempDir}"`, { 
         cwd: projectRoot, 
         stdio: 'inherit' 
     });
@@ -49,7 +49,9 @@ try {
     process.exit(1);
 } finally {
     // Cleanup temp dir
-    if (fs.existsSync(tempDir)) {
-        fs.rmSync(tempDir, { recursive: true, force: true });
-    }
+    try {
+        if (fs.existsSync(tempDir)) {
+            fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 });
+        }
+    } catch {}
 }

@@ -85,13 +85,13 @@ function extractStructure(content: string): { dependencies: string[], elements: 
     };
 }
 
-export function getFeatureOutline(featurePath: string, limit: number = 20, offset: number = 0, summarizeOnly: boolean = false): string {
+export function getFeatureOutline(featurePath: string, limit: number = 20, offset: number = 0, summarizeOnly: boolean = false, maxDepth?: number): string {
     let result = '';
     const baseDir = path.basename(featurePath);
     result += `### Feature Outline: ${baseDir}\n`;
     
     if (limit !== undefined && offset !== undefined) {
-        result += `*(Showing up to ${limit} files, starting from offset ${offset})*\n\n`;
+        result += `*(Showing up to ${limit} files, starting from offset ${offset}${maxDepth !== undefined ? `, maxDepth ${maxDepth}` : ''}${summarizeOnly ? ', summary-only' : ''})*\n\n`;
     } else {
         result += '\n';
     }
@@ -99,15 +99,17 @@ export function getFeatureOutline(featurePath: string, limit: number = 20, offse
     let fileCount = 0;
     const skippedFiles: string[] = [];
 
-    function walk(dir: string) {
+    function walk(dir: string, currentDepth: number = 0) {
         if (!fs.existsSync(dir)) return;
+        if (maxDepth !== undefined && currentDepth > maxDepth) return;
+
         const items = fs.readdirSync(dir, { withFileTypes: true });
         for (const item of items) {
             if (item.name.startsWith('.') || item.name === 'node_modules' || item.name === 'dist' || item.name === 'build') continue;
             
             const fullPath = path.join(dir, item.name);
             if (item.isDirectory()) {
-                walk(fullPath);
+                walk(fullPath, currentDepth + 1);
             } else {
                 const ext = path.extname(item.name);
                 if (['.ts', '.js', '.dart', '.py', '.java', '.cpp', '.go', '.tsx', '.jsx'].includes(ext)) {
@@ -126,7 +128,12 @@ export function getFeatureOutline(featurePath: string, limit: number = 20, offse
                     
                     let elementsToPrint = struct.elements;
                     if (summarizeOnly) {
-                        elementsToPrint = struct.elements.filter(e => e.startsWith('[CLASS]') || e.startsWith('[INTERFACE]'));
+                        elementsToPrint = struct.elements.filter(e => e.startsWith('[CLASS]') || e.startsWith('[INTERFACE]') || e.startsWith('[TYPE]') || e.startsWith('[STRUCT]'));
+                        if (elementsToPrint.length === 0) {
+                            elementsToPrint = struct.elements.slice(0, 2);
+                        } else {
+                            elementsToPrint = elementsToPrint.slice(0, 5);
+                        }
                     }
 
                     if (struct.dependencies.length > 0 || elementsToPrint.length > 0 || summarizeOnly) {
@@ -137,8 +144,9 @@ export function getFeatureOutline(featurePath: string, limit: number = 20, offse
                             result += `  - 🔗 **Dependencies**: ${struct.dependencies.slice(0, 8).join(', ')}${struct.dependencies.length > 8 ? ', ...' : ''}\n`;
                         }
                         if (elementsToPrint.length > 0) {
-                            result += elementsToPrint.slice(0, 30).map(s => `  - \`${s}\``).join('\n') + '\n';
-                            if (elementsToPrint.length > 30) result += `  - ... (+${elementsToPrint.length - 30} more)\n`;
+                            const maxItems = summarizeOnly ? 5 : 30;
+                            result += elementsToPrint.slice(0, maxItems).map(s => `  - \`${s}\``).join('\n') + '\n';
+                            if (elementsToPrint.length > maxItems) result += `  - ... (+${elementsToPrint.length - maxItems} more)\n`;
                         }
                         result += '\n';
                     }
@@ -148,7 +156,7 @@ export function getFeatureOutline(featurePath: string, limit: number = 20, offse
     }
 
     if (fs.statSync(featurePath).isDirectory()) {
-        walk(featurePath);
+        walk(featurePath, 0);
     } else {
         // Single file
         const content = fs.readFileSync(featurePath, 'utf8');

@@ -99,8 +99,56 @@ export async function saveSearchLog(projectPath: string, queries: string[], resu
         fs.appendFileSync(indexPath, indexEntry, 'utf8');
     }
 
+    // Auto-cleanup old log outputs to prevent output folder bloat
+    try {
+        cleanupOldOutputs(projectPath, 30, 7);
+    } catch {
+        // Safe ignore
+    }
+
     // Return INDEX.md as the main reference point for CLI or other callers
     return { filename: 'INDEX.md', filePath: indexPath, images: generatedImages };
+}
+
+export function cleanupOldOutputs(projectPath: string, maxFiles: number = 30, maxAgeDays: number = 7): number {
+    const outputsDir = resolveOutputsDir(projectPath);
+    if (!fs.existsSync(outputsDir)) return 0;
+
+    const files = fs.readdirSync(outputsDir);
+    const logFiles = files.filter(f => f.startsWith('search_') && f.endsWith('.md'));
+    
+    const now = Date.now();
+    const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
+    let deletedCount = 0;
+
+    const fileStats = logFiles.map(f => {
+        const fullPath = path.join(outputsDir, f);
+        const stat = fs.statSync(fullPath);
+        return { filename: f, fullPath, mtime: stat.mtimeMs };
+    });
+
+    // Sort by mtime descending (newest first)
+    fileStats.sort((a, b) => b.mtime - a.mtime);
+
+    fileStats.forEach((file, idx) => {
+        const age = now - file.mtime;
+        const isExceedingCount = idx >= maxFiles;
+        const isTooOld = age > maxAgeMs;
+
+        if (isExceedingCount || isTooOld) {
+            try {
+                fs.unlinkSync(file.fullPath);
+                deletedCount++;
+                // Also remove associated PNG images if any
+                const basePrefix = file.filename.replace('.md', '');
+                files.filter(img => img.startsWith(basePrefix) && img.endsWith('.png')).forEach(img => {
+                    try { fs.unlinkSync(path.join(outputsDir, img)); } catch {}
+                });
+            } catch {}
+        }
+    });
+
+    return deletedCount;
 }
 
 export function getSearchHistory(projectPath: string): string {

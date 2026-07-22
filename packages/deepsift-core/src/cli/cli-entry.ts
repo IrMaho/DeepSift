@@ -28,6 +28,7 @@ import { healCommand } from './commands/heal.js';
 import { startCommand } from './commands/start.js';
 import { diagCommand } from './commands/diag.js';
 import { memoCommand } from './commands/memo.js';
+import { overviewCommand } from './commands/overview.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
@@ -51,6 +52,9 @@ const HELP_TEXT = `
                                     --path-filter <path>  Filter DNA records by file path prefix
                                     --meta                Only return metadata and record counts (no content)
   analyze, an <path>            Super-command! Combines Feature Outline and DNA Intelligence for a specific folder/file.
+  overview, ov [path]           SUPER COMMAND! Single-step Project Blueprint combining Arch Tree + Central God Nodes + Feature Summary.
+                                   Options:
+                                     --depth <number>      Max folder depth (default: 2)
   scan <target>                 Run a specific analyzer (tokens|i18n|duplicates|conventions|assets)
   context "path"                Generate a pre-creation checklist for a new component/feature
   search "query" ["query2" ...]  Semantic search (single or multi-query) enhanced with Graphify PageRank.
@@ -69,13 +73,18 @@ const HELP_TEXT = `
   watch, w                      Start background watcher for real-time indexing
   arch [--depth N]              Project architecture blueprint utilizing Graphify communities.
   deps "target"                 Trace dependencies for a file/module
-  feature "path"                Feature outline (classes, functions)
+  feature, f "path"             Feature outline (classes, functions)
                                    Options:
+                                     --summary, -s        High-level summary (omit internal methods/vars to prevent truncation)
+                                     --depth <number>      Max directory traversal depth
                                      --limit <number>      Limit the number of files returned
                                      --offset <number>      Start file index for pagination
   read-feature, rf "path"       Read and extract all code from a feature directory
   history                       Show past search results
   clean                         Clear search history logs and index
+                                   Options:
+                                     --keep <number>      Keep newest N log files (default auto: 30)
+                                     --days <number>      Keep logs within last D days (default auto: 7)
   drill "logfile" "keyword"     Deep-search within a previous result
   resolve "token"               Decode a compressed token from the last search result
   read "file1" ["file2"...]     Read file contents and output compressed tokens (Supports line ranges: file:10-50)
@@ -417,6 +426,18 @@ async function main() {
                 await depsCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
+            case 'overview':
+            case 'ov': {
+                let ovDepth: number = 2;
+                const ovDepthIdx = commandArgs.indexOf('--depth');
+                if (ovDepthIdx !== -1 && commandArgs[ovDepthIdx + 1]) {
+                    ovDepth = parseInt(commandArgs[ovDepthIdx + 1], 10);
+                }
+                const targetOverviewPath = commandArgs.find(a => !a.startsWith('-') && commandArgs[commandArgs.indexOf(a) - 1] !== '--depth');
+                await overviewCommand(projectPath, targetOverviewPath, format, compress, ovDepth);
+                break;
+            }
+
             case 'feature':
             case 'f':
                 if (commandArgs.length === 0) {
@@ -433,12 +454,18 @@ async function main() {
                 if (featOffsetIdx !== -1 && commandArgs[featOffsetIdx + 1]) {
                     featOffset = parseInt(commandArgs[featOffsetIdx + 1], 10);
                 }
-                
-                const featSummarizeOnly = commandArgs.includes('--summarize-only');
-                
-                const targetFeaturePath = commandArgs.filter(a => !a.startsWith('-') && commandArgs[commandArgs.indexOf(a) - 1] !== '--limit' && commandArgs[commandArgs.indexOf(a) - 1] !== '--offset')[0];
 
-                await featureCommand(projectPath, targetFeaturePath || commandArgs[0], format, compress, featLimit, featOffset, featSummarizeOnly);
+                let featDepth: number | undefined;
+                const featDepthIdx = commandArgs.indexOf('--depth');
+                if (featDepthIdx !== -1 && commandArgs[featDepthIdx + 1]) {
+                    featDepth = parseInt(commandArgs[featDepthIdx + 1], 10);
+                }
+                
+                const featSummarizeOnly = commandArgs.includes('--summarize-only') || commandArgs.includes('--summary') || commandArgs.includes('-s');
+                
+                const targetFeaturePath = commandArgs.filter(a => !a.startsWith('-') && !['--limit', '--offset', '--depth'].includes(commandArgs[commandArgs.indexOf(a) - 1]))[0];
+
+                await featureCommand(projectPath, targetFeaturePath || commandArgs[0], format, compress, featLimit, featOffset, featSummarizeOnly, featDepth);
                 break;
 
             case 'history':
@@ -447,9 +474,20 @@ async function main() {
                 break;
 
             case 'clean':
-            case 'c':
-                cleanHistoryCommand(projectPath, format);
+            case 'c': {
+                let keepFiles: number | undefined;
+                const keepIdx = commandArgs.indexOf('--keep');
+                if (keepIdx !== -1 && commandArgs[keepIdx + 1]) {
+                    keepFiles = parseInt(commandArgs[keepIdx + 1], 10);
+                }
+                let keepDays: number | undefined;
+                const daysIdx = commandArgs.indexOf('--days');
+                if (daysIdx !== -1 && commandArgs[daysIdx + 1]) {
+                    keepDays = parseInt(commandArgs[daysIdx + 1], 10);
+                }
+                cleanHistoryCommand(projectPath, format, keepFiles, keepDays);
                 break;
+            }
 
             case 'drill':
             case 'dr':
