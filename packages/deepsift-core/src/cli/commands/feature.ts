@@ -17,7 +17,8 @@ export async function featureCommand(
     limit?: number, 
     offset?: number,
     summarizeOnly: boolean = false,
-    maxDepth?: number
+    maxDepth?: number,
+    groupByFeature: boolean = false
 ) {
     let targetPath = featureDir;
     if (!path.isAbsolute(featureDir)) {
@@ -29,7 +30,7 @@ export async function featureCommand(
         }
     }
 
-    const outlineText = getFeatureOutline(targetPath, limit, offset, summarizeOnly, maxDepth);
+    const outlineText = getFeatureOutline(targetPath, limit, offset, summarizeOnly, maxDepth, groupByFeature);
     let finalOutput = outlineText;
     
     if (compress && format !== 'json') {

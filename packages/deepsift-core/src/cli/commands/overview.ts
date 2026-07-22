@@ -23,9 +23,10 @@ export async function overviewCommand(
         focusDir = projectPath;
     }
 
+    const relFocusPath = path.relative(projectPath, focusDir).replace(/\\/g, '/');
     const lines: string[] = [];
     lines.push(`# 🌐 DeepSift Project Overview`);
-    lines.push(`Path: \`${path.relative(projectPath, focusDir) || '.'}\` | Target Depth: ${depth}\n`);
+    lines.push(`Path: \`${relFocusPath || '.'}\` | Target Depth: ${depth}\n`);
 
     // 1. Core Files / God Nodes from DNA
     lines.push(`## 🎯 Central / God Nodes`);
@@ -35,7 +36,7 @@ export async function overviewCommand(
         const topGods = coreFiles.slice(0, 5);
         if (topGods.length > 0) {
             topGods.forEach((file: string) => {
-                lines.push(`- **📄 ${file}**`);
+                lines.push(`- **📄 ${file.replace(/\\/g, '/')}**`);
             });
         } else {
             lines.push(`- No central God Nodes detected yet.`);

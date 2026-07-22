@@ -65,9 +65,9 @@ export function getProjectArchitecture(projectPath: string, maxDepth: number = 5
                         const content = fs.readFileSync(fullPath, 'utf8');
                         const importCount = (content.match(/import /g) || []).length + (content.match(/require\(/g) || []).length;
                         const exportCount = (content.match(/export /g) || []).length + (content.match(/module\.exports/g) || []).length;
-                        // Score based on connectivity (imports/exports) and size
                         const score = importCount + (exportCount * 2) + sizeKb;
-                        sourceFiles.push({ relativePath: path.relative(projectPath, fullPath), sizeKb, score });
+                        const relPath = path.relative(projectPath, fullPath).replace(/\\/g, '/');
+                        sourceFiles.push({ relativePath: relPath, sizeKb, score });
                     }
                 } catch (err) {
                     // ignore unreadable files

@@ -24,7 +24,7 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift overview [path]` | **SUPER-COMMAND FOR SINGLE-STEP BLUEPRINT:** Combines Architecture Tree + Central God Nodes + Feature Summaries in 1 single call to save latency and tokens. Options: `--depth N`. |
 | `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Uses the same inline 🎯 **Purpose Summaries** and **AST logic signatures** as `feature`, combined with matching `dna` intelligence in one unified markdown report. |
 | `deepsift deps "filename"` | Find imports/dependencies for a target. |
-| `deepsift feature "src/path"` | Get AST-based feature outline. Options: `--summary` / `-s` (omit internal methods/variables to prevent truncation), `--depth N`, `--limit N`, `--offset N`. |
+| `deepsift feature "src/path"` | Get AST-based feature outline. Options: `--summary` / `-s`, `--group-by-feature` / `-g` (group deep folder files by subfolder), `--depth N`, `--limit N`, `--offset N`. |
 | `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
 | `deepsift plan "request"` | **MANDATORY BEFORE IMPLEMENTATION:** Generate Smart Plan from DNA and architecture. |
 | `deepsift memo <action>`  | **DRM ENGINE:** Dynamic Research Memory tag management, notes, queries, and relations. |

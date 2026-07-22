@@ -1,6 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 
+export function normalizePath(p: string): string {
+    return p.replace(/\\/g, '/');
+}
+
 function extractPurpose(content: string, fileName: string): string {
     const lines = content.split('\n');
     for (let i = 0; i < Math.min(lines.length, 30); i++) {
@@ -8,32 +12,54 @@ function extractPurpose(content: string, fileName: string): string {
         const jsdocMatch = line.match(/^\*\s+(.{10,80})/);
         if (jsdocMatch && !jsdocMatch[1].startsWith('@')) return jsdocMatch[1].trim();
         const commentMatch = line.match(/^\/\/\s+(.{10,80})/);
-        if (commentMatch) return commentMatch[1].trim();
+        if (commentMatch && !commentMatch[1].startsWith('ts-ignore') && !commentMatch[1].startsWith('eslint')) return commentMatch[1].trim();
     }
 
-    const classCount = (content.match(/\bclass\s+/g) || []).length;
-    const hookCount = (content.match(/\buse[A-Z]\w+/g) || []).length;
+    const mainClassMatch = content.match(/\bexport\s+(?:default\s+)?class\s+([\w_]+)/);
+    if (mainClassMatch) {
+        return `${mainClassMatch[1]} core class implementation`;
+    }
+
+    const dartClassMatch = content.match(/\bclass\s+([\w_]+)/);
+    const isDart = fileName.endsWith('.dart');
+    if (isDart && dartClassMatch) {
+        return `${dartClassMatch[1]} Dart logic`;
+    }
+
+    const mainFuncMatch = content.match(/\bexport\s+(?:default\s+)?function\s+([\w_]+)/);
+    if (mainFuncMatch) {
+        return `${mainFuncMatch[1]} main function export`;
+    }
+
     const testCount = (content.match(/\b(describe|it|test)\s*\(/g) || []).length;
+    const hookCount = (content.match(/\buse[A-Z]\w+/g) || []).length;
     const routeCount = (content.match(/\b(router|route|app\.(get|post|put|delete))/gi) || []).length;
     const exportCount = (content.match(/\bexport\s+(default\s+)?(function|const|class)/g) || []).length;
 
     if (testCount > 2) return `Test suite (${testCount} test cases)`;
     if (hookCount > 2) return `React hooks module (${hookCount} hooks)`;
     if (routeCount > 1) return `Route/API handler (${routeCount} routes)`;
-    if (classCount > 1) return `Multi-class module (${classCount} classes)`;
     if (exportCount > 5) return `Utility/helper barrel (${exportCount} exports)`;
 
-    const baseName = path.basename(fileName, path.extname(fileName));
-    const words = baseName.replace(/[-_]/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
-    return `${words} module`;
+    // Clean numeric prefixes (e.g. "1.optimized" -> "optimized")
+    let baseName = path.basename(fileName, path.extname(fileName));
+    baseName = baseName.replace(/^\d+[\._-]?/, ''); 
+    const words = baseName.replace(/[-_]/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().trim();
+
+    if (fileName.includes('deploy')) return 'Deployment and automation script';
+    if (fileName.includes('handler')) return 'Message & event handler module';
+    if (fileName.includes('asset')) return 'Static assets & resource mapping';
+    if (fileName.includes('optimiz')) return 'Performance optimization module';
+    if (fileName.includes('config')) return 'Configuration management module';
+
+    const ext = path.extname(fileName).slice(1).toUpperCase();
+    return `${words ? words : 'Core'} module (${ext || 'code'})`;
 }
 
 function extractStructure(content: string): { dependencies: string[], elements: string[], purpose: string } {
     const lines = content.split('\n');
     const dependencies: string[] = [];
     const elements: string[] = [];
-    
-    let currentClass = '';
 
     for (let i = 0; i < lines.length; i++) {
         let line = lines[i].trim();
@@ -49,8 +75,7 @@ function extractStructure(content: string): { dependencies: string[], elements: 
         // Match classes / interfaces
         let classMatch = line.match(/^(?:export\s+|public\s+|abstract\s+|default\s+)*(class|interface|enum|struct|type)\s+([\w_]+)/);
         if (classMatch) {
-            currentClass = classMatch[2];
-            elements.push(`[${classMatch[1].toUpperCase()}] ${currentClass}`);
+            elements.push(`[${classMatch[1].toUpperCase()}] ${classMatch[2]}`);
             continue;
         }
         
@@ -65,7 +90,6 @@ function extractStructure(content: string): { dependencies: string[], elements: 
             continue;
         }
 
-        // Methods (heuristic: starts with word, has parens, has brace, inside a class usually)
         let methodMatch = line.match(/^(?:public\s+|private\s+|protected\s+|static\s+|async\s+)*([\w_]+)\s*(\([^)]*\)\s*(?::\s*[\w_<>[\]]+)?)/);
         if (methodMatch) {
             const name = methodMatch[1];
@@ -85,19 +109,27 @@ function extractStructure(content: string): { dependencies: string[], elements: 
     };
 }
 
-export function getFeatureOutline(featurePath: string, limit: number = 20, offset: number = 0, summarizeOnly: boolean = false, maxDepth?: number): string {
+export function getFeatureOutline(
+    featurePath: string, 
+    limit: number = 20, 
+    offset: number = 0, 
+    summarizeOnly: boolean = false, 
+    maxDepth?: number,
+    groupByFeature: boolean = false
+): string {
     let result = '';
     const baseDir = path.basename(featurePath);
     result += `### Feature Outline: ${baseDir}\n`;
     
     if (limit !== undefined && offset !== undefined) {
-        result += `*(Showing up to ${limit} files, starting from offset ${offset}${maxDepth !== undefined ? `, maxDepth ${maxDepth}` : ''}${summarizeOnly ? ', summary-only' : ''})*\n\n`;
+        result += `*(Showing up to ${limit} files, starting from offset ${offset}${maxDepth !== undefined ? `, maxDepth ${maxDepth}` : ''}${summarizeOnly ? ', summary-only' : ''}${groupByFeature ? ', grouped-by-feature' : ''})*\n\n`;
     } else {
         result += '\n';
     }
 
     let fileCount = 0;
     const skippedFiles: string[] = [];
+    const featureGroups: Map<string, Array<{ relPath: string, purpose: string, deps: string[], elements: string[] }>> = new Map();
 
     function walk(dir: string, currentDepth: number = 0) {
         if (!fs.existsSync(dir)) return;
@@ -118,7 +150,7 @@ export function getFeatureOutline(featurePath: string, limit: number = 20, offse
                         continue;
                     }
                     if (fileCount - offset >= limit) {
-                        skippedFiles.push(path.relative(featurePath, fullPath) || item.name);
+                        skippedFiles.push(normalizePath(path.relative(featurePath, fullPath)) || item.name);
                         continue;
                     }
                     fileCount++;
@@ -136,8 +168,21 @@ export function getFeatureOutline(featurePath: string, limit: number = 20, offse
                         }
                     }
 
-                    if (struct.dependencies.length > 0 || elementsToPrint.length > 0 || summarizeOnly) {
-                        const relPath = path.relative(featurePath, fullPath) || item.name;
+                    const relPath = normalizePath(path.relative(featurePath, fullPath)) || item.name;
+
+                    if (groupByFeature) {
+                        const parts = relPath.split('/');
+                        const groupKey = parts.length > 1 ? parts[0] : 'root';
+                        if (!featureGroups.has(groupKey)) {
+                            featureGroups.set(groupKey, []);
+                        }
+                        featureGroups.get(groupKey)!.push({
+                            relPath,
+                            purpose: struct.purpose,
+                            deps: struct.dependencies,
+                            elements: elementsToPrint
+                        });
+                    } else if (struct.dependencies.length > 0 || elementsToPrint.length > 0 || summarizeOnly) {
                         result += `#### 📄 ${relPath}\n`;
                         result += `  - 🎯 **Purpose**: ${struct.purpose}\n`;
                         if (struct.dependencies.length > 0) {
@@ -157,12 +202,25 @@ export function getFeatureOutline(featurePath: string, limit: number = 20, offse
 
     if (fs.statSync(featurePath).isDirectory()) {
         walk(featurePath, 0);
+        if (groupByFeature && featureGroups.size > 0) {
+            featureGroups.forEach((files, group) => {
+                result += `### 📂 Feature Group: \`${group}\` (${files.length} files)\n`;
+                files.forEach(f => {
+                    result += `  - 📄 **${f.relPath}**: ${f.purpose}\n`;
+                    if (f.elements.length > 0) {
+                        result += `    ↳ ${f.elements.slice(0, 3).map(e => `\`${e}\``).join(', ')}\n`;
+                    }
+                });
+                result += '\n';
+            });
+        }
     } else {
         // Single file
         const content = fs.readFileSync(featurePath, 'utf8');
         const struct = extractStructure(content);
         struct.purpose = extractPurpose(content, path.basename(featurePath));
-        result += `#### 📄 ${path.basename(featurePath)}\n`;
+        const relPath = normalizePath(path.basename(featurePath));
+        result += `#### 📄 ${relPath}\n`;
         result += `  - 🎯 **Purpose**: ${struct.purpose}\n`;
         if (struct.dependencies.length > 0) {
             result += `  - 🔗 **Dependencies**: ${struct.dependencies.slice(0, 8).join(', ')}${struct.dependencies.length > 8 ? ', ...' : ''}\n`;
@@ -177,8 +235,8 @@ export function getFeatureOutline(featurePath: string, limit: number = 20, offse
     
     if (skippedFiles.length > 0) {
         result += `\n⚠️  [AI NOTE]: ${skippedFiles.length} files were omitted to prevent context explosion.\n`;
-        result += `**Omitted Files Summary (use --offset to view details):**\n`;
-        result += skippedFiles.map(f => `  - 📁 \`${f}\``).join('\n') + '\n';
+        result += `**Omitted Files Summary (use --offset or --group-by-feature to view details):**\n`;
+        result += skippedFiles.map(f => `  - 📁 \`${normalizePath(f)}\``).join('\n') + '\n';
     }
     
     return result;

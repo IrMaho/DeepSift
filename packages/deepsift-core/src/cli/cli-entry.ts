@@ -76,6 +76,7 @@ const HELP_TEXT = `
   feature, f "path"             Feature outline (classes, functions)
                                    Options:
                                      --summary, -s        High-level summary (omit internal methods/vars to prevent truncation)
+                                     --group-by-feature, -g Group files by top-level feature subfolder instead of flat list
                                      --depth <number>      Max directory traversal depth
                                      --limit <number>      Limit the number of files returned
                                      --offset <number>      Start file index for pagination
@@ -462,10 +463,11 @@ async function main() {
                 }
                 
                 const featSummarizeOnly = commandArgs.includes('--summarize-only') || commandArgs.includes('--summary') || commandArgs.includes('-s');
+                const featGroupByFeature = commandArgs.includes('--group-by-feature') || commandArgs.includes('--group') || commandArgs.includes('-g');
                 
                 const targetFeaturePath = commandArgs.filter(a => !a.startsWith('-') && !['--limit', '--offset', '--depth'].includes(commandArgs[commandArgs.indexOf(a) - 1]))[0];
 
-                await featureCommand(projectPath, targetFeaturePath || commandArgs[0], format, compress, featLimit, featOffset, featSummarizeOnly, featDepth);
+                await featureCommand(projectPath, targetFeaturePath || commandArgs[0], format, compress, featLimit, featOffset, featSummarizeOnly, featDepth, featGroupByFeature);
                 break;
 
             case 'history':
