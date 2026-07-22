@@ -22,6 +22,13 @@ interface MergedBlock {
     snippet: string;
 }
 
+const IGNORED_DIRS = new Set([
+    'node_modules', '.git', 'dist', 'build', '.deepsift', 'coverage',
+    '.dart_tool', '__pycache__', 'target', 'vendor', '.next',
+    '.npm-cache', '.tools', 'pxpipe-main', 'temp_directive', 'bin', 'models', 'docs',
+    'venv', '.venv', 'site-packages', 'assets'
+]);
+
 export async function clonesCommand(projectPath: string, format: OutputFormat = 'markdown', minLines: number = 6, limit: number = 20): Promise<void> {
     const lines: string[] = [];
     lines.push(`# 👯 Code Clone Detection (DRY Compliance)\n`);
@@ -30,9 +37,13 @@ export async function clonesCommand(projectPath: string, format: OutputFormat = 
 
     function scanDir(dir: string) {
         if (!fs.existsSync(dir)) return;
-        const items = fs.readdirSync(dir, { withFileTypes: true });
+        let items: fs.Dirent[];
+        try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+
         for (const item of items) {
-            if (item.name.startsWith('.') || ['node_modules', 'dist', 'build', '.deepsift', 'coverage', '.dart_tool'].includes(item.name)) continue;
+            const nameLower = item.name.toLowerCase();
+            if (item.name.startsWith('.') || IGNORED_DIRS.has(nameLower)) continue;
+            
             const fullPath = path.join(dir, item.name);
             if (item.isDirectory()) {
                 scanDir(fullPath);
@@ -40,17 +51,25 @@ export async function clonesCommand(projectPath: string, format: OutputFormat = 
                 const ext = path.extname(item.name).toLowerCase();
                 if (['.ts', '.tsx', '.js', '.jsx', '.dart', '.py', '.java', '.go', '.vue', '.svelte'].includes(ext)) {
                     try {
+                        const stats = fs.statSync(fullPath);
+                        if (stats.size > 150_000) continue; // Skip huge generated files
+
                         const content = fs.readFileSync(fullPath, 'utf8');
                         const fileLines = content.split('\n');
-                        for (let i = 0; i <= fileLines.length - minLines; i++) {
-                            const window = fileLines.slice(i, i + minLines).map(l => l.trim()).filter(l => l && !l.startsWith('//') && !l.startsWith('#'));
+                        if (fileLines.length > 2500) continue; // Skip massive files
+
+                        for (let i = 0; i <= fileLines.length - minLines; i += 2) {
+                            const window = fileLines.slice(i, i + minLines)
+                                .map(l => l.trim())
+                                .filter(l => l && !l.startsWith('//') && !l.startsWith('#') && !l.startsWith('import ') && !l.startsWith('require(') && l !== '}' && l !== '{');
+                            
                             const chunkText = window.join('\n');
-                            if (chunkText.length > 80) {
+                            if (chunkText.length > 100) {
                                 const hash = crypto.createHash('md5').update(chunkText).digest('hex');
                                 const rel = normalizePath(path.relative(projectPath, fullPath));
                                 if (!chunkHashes.has(hash)) chunkHashes.set(hash, []);
                                 const list = chunkHashes.get(hash)!;
-                                if (!list.some(x => x.file === rel && Math.abs(x.line - (i + 1)) < 2)) {
+                                if (list.length < 20 && !list.some(x => x.file === rel && Math.abs(x.line - (i + 1)) < 2)) {
                                     list.push({ file: rel, line: i + 1, snippet: fileLines[i].trim() });
                                 }
                             }
@@ -63,12 +82,14 @@ export async function clonesCommand(projectPath: string, format: OutputFormat = 
 
     scanDir(projectPath);
 
-    // Block-Level Aggregation across matching pairs
+    // Block-Level Aggregation across matching pairs with memory safety limits
     const mergedBlocks: MergedBlock[] = [];
     const pairMap: Map<string, Array<{ lineA: number; lineB: number; snippet: string }>> = new Map();
 
     for (const hits of chunkHashes.values()) {
-        if (hits.length < 2) continue;
+        // Skip boilerplate chunks occurring in too many files (>20) to prevent OOM
+        if (hits.length < 2 || hits.length > 20) continue;
+
         for (let i = 0; i < hits.length; i++) {
             for (let j = i + 1; j < hits.length; j++) {
                 const a = hits[i];
@@ -77,10 +98,16 @@ export async function clonesCommand(projectPath: string, format: OutputFormat = 
                 
                 const pairKey = `${a.file}:::${b.file}`;
                 if (!pairMap.has(pairKey)) pairMap.set(pairKey, []);
-                pairMap.get(pairKey)!.push({ lineA: a.line, lineB: b.line, snippet: a.snippet });
+                const matchArr = pairMap.get(pairKey)!;
+                if (matchArr.length < 200) {
+                    matchArr.push({ lineA: a.line, lineB: b.line, snippet: a.snippet });
+                }
             }
         }
     }
+
+    // Clear chunkHashes to free memory
+    chunkHashes.clear();
 
     for (const [pairKey, matches] of pairMap.entries()) {
         const [fileA, fileB] = pairKey.split(':::');
@@ -102,7 +129,7 @@ export async function clonesCommand(projectPath: string, format: OutputFormat = 
                 };
             } else {
                 // If this match continues the current block in both files
-                if (m.lineA <= currentBlock.endA + 2 && Math.abs((m.lineB - currentBlock.startB) - (m.lineA - currentBlock.startA)) <= 2) {
+                if (m.lineA <= currentBlock.endA + 3 && Math.abs((m.lineB - currentBlock.startB) - (m.lineA - currentBlock.startA)) <= 3) {
                     currentBlock.endA = Math.max(currentBlock.endA, m.lineA + minLines - 1);
                     currentBlock.endB = Math.max(currentBlock.endB, m.lineB + minLines - 1);
                     currentBlock.lines = currentBlock.endA - currentBlock.startA + 1;
@@ -125,6 +152,9 @@ export async function clonesCommand(projectPath: string, format: OutputFormat = 
             mergedBlocks.push(currentBlock);
         }
     }
+
+    // Clear pairMap to free memory
+    pairMap.clear();
 
     // Sort by largest duplicated blocks
     mergedBlocks.sort((b1, b2) => b2.lines - b1.lines);

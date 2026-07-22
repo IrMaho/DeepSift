@@ -39,6 +39,7 @@ import { schemaDriftCommand } from './commands/schema-drift.js';
 import { deadCodeCommand } from './commands/dead-code.js';
 import { autoHealCommand } from './commands/auto-heal.js';
 import { cfgCommand } from './commands/cfg.js';
+import { checkLayersCommand } from './commands/check-layers.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
@@ -583,6 +584,18 @@ async function main() {
 
             case 'clones':
                 await clonesCommand(projectPath, format);
+                break;
+
+            case 'cfg':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a file:symbol target.\nUsage: deepsift cfg "file.ts:myFunction"');
+                }
+                await cfgCommand(projectPath, commandArgs[0], format);
+                break;
+
+            case 'check-layers':
+            case 'check-architecture':
+                await checkLayersCommand(projectPath, format);
                 break;
 
             case 'doctor':

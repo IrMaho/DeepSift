@@ -2,61 +2,138 @@ import path from 'path';
 import fs from 'fs';
 import { printResult, OutputFormat } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';
-import { normalizePath } from '../../utils/outline.js';
 
-export async function cfgCommand(
-    projectPath: string, 
-    target: string, 
-    format: OutputFormat = 'markdown'
-): Promise<void> {
-    const parts = target.split(':');
-    const relFile = parts[0];
-    const funcName = parts[1] || 'all';
-    const fullPath = path.resolve(projectPath, relFile);
+interface CFGNode {
+    id: string;
+    label: string;
+    type: 'start' | 'decision' | 'action' | 'error' | 'end';
+}
+
+interface CFGEdge {
+    from: string;
+    to: string;
+    label?: string;
+}
+
+export async function cfgCommand(projectPath: string, targetSpec: string, format: OutputFormat = 'markdown'): Promise<void> {
+    const lines: string[] = [];
+    lines.push(`# 🔀 Control Flow Graph (CFG Analyzer)\n`);
+
+    if (!targetSpec || !targetSpec.includes(':')) {
+        lines.push(`❌ Error: Please specify target in format \`file.ts:functionName\` or \`path/to/file.ts:symbolName\`.`);
+        printResult(lines.join('\n'), format);
+        return;
+    }
+
+    const [filePart, funcName] = targetSpec.split(':');
+    let fullPath = filePart;
+    if (!path.isAbsolute(filePart)) {
+        fullPath = path.resolve(projectPath, filePart);
+    }
 
     if (!fs.existsSync(fullPath)) {
-        printResult(`File not found: ${relFile}`, format);
+        lines.push(`❌ Error: File not found: \`${filePart}\``);
+        printResult(lines.join('\n'), format);
         return;
     }
 
     const content = fs.readFileSync(fullPath, 'utf8');
-    const lines = content.split('\n');
+    const fileLines = content.split('\n');
 
-    const cfgNodes: Array<{ line: number, type: string, code: string }> = [];
+    // Find function boundaries
+    let funcStart = -1;
+    let funcEnd = -1;
+    let braceCount = 0;
+    let insideFunc = false;
 
-    lines.forEach((l, idx) => {
-        const trimmed = l.trim();
-        if (/\b(if|else if|else|switch|case|try|catch|finally|for|while|do)\b/.test(trimmed)) {
-            cfgNodes.push({
-                line: idx + 1,
-                type: trimmed.split(' ')[0] || 'branch',
-                code: trimmed.substring(0, 80)
-            });
+    for (let i = 0; i < fileLines.length; i++) {
+        const line = fileLines[i];
+        if (!insideFunc && (line.includes(`function ${funcName}`) || line.includes(`${funcName}(`) || line.includes(`${funcName} =`))) {
+            funcStart = i;
+            insideFunc = true;
+        }
+        if (insideFunc) {
+            braceCount += (line.match(/\{/g) || []).length;
+            braceCount -= (line.match(/\}/g) || []).length;
+            if (braceCount === 0 && i > funcStart) {
+                funcEnd = i;
+                break;
+            }
+        }
+    }
+
+    if (funcStart === -1) {
+        lines.push(`⚠️ Symbol \`${funcName}\` not found in \`${path.basename(fullPath)}\`. Displaying top-level file structure CFG.\n`);
+        funcStart = 0;
+        funcEnd = fileLines.length - 1;
+    }
+
+    const funcBody = fileLines.slice(funcStart, funcEnd + 1);
+
+    // Extract branches
+    const nodes: CFGNode[] = [{ id: 'N0', label: `Start: ${funcName}`, type: 'start' }];
+    const edges: CFGEdge[] = [];
+    let nodeIdx = 1;
+    let lastNodeId = 'N0';
+
+    funcBody.forEach((line, idx) => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('if') || trimmed.startsWith('else if')) {
+            const match = trimmed.match(/\((.*)\)/);
+            const cond = match ? match[1].substring(0, 40) : 'condition';
+            const decisionId = `N${nodeIdx++}`;
+            const actionId = `N${nodeIdx++}`;
+            nodes.push({ id: decisionId, label: `If: ${cond}`, type: 'decision' });
+            nodes.push({ id: actionId, label: `Then Block (L${funcStart + idx + 1})`, type: 'action' });
+            edges.push({ from: lastNodeId, to: decisionId });
+            edges.push({ from: decisionId, to: actionId, label: 'true' });
+            lastNodeId = decisionId;
+        } else if (trimmed.startsWith('switch')) {
+            const switchId = `N${nodeIdx++}`;
+            nodes.push({ id: switchId, label: `Switch Statement (L${funcStart + idx + 1})`, type: 'decision' });
+            edges.push({ from: lastNodeId, to: switchId });
+            lastNodeId = switchId;
+        } else if (trimmed.startsWith('try')) {
+            const tryId = `N${nodeIdx++}`;
+            nodes.push({ id: tryId, label: `Try Block (L${funcStart + idx + 1})`, type: 'action' });
+            edges.push({ from: lastNodeId, to: tryId });
+            lastNodeId = tryId;
+        } else if (trimmed.startsWith('catch')) {
+            const catchId = `N${nodeIdx++}`;
+            nodes.push({ id: catchId, label: `Catch Exception (L${funcStart + idx + 1})`, type: 'error' });
+            edges.push({ from: lastNodeId, to: catchId, label: 'exception' });
+            lastNodeId = catchId;
+        } else if (trimmed.startsWith('return')) {
+            const retId = `N${nodeIdx++}`;
+            nodes.push({ id: retId, label: `Return: ${trimmed.substring(0, 30)}`, type: 'end' });
+            edges.push({ from: lastNodeId, to: retId });
         }
     });
 
-    const output: string[] = [];
-    output.push(`# 🔀 Control Flow Graph (CFG) Analysis: \`${normalizePath(relFile)}\`\n`);
-    output.push(`Target Symbol Scope: \`${funcName}\` | Discovered Branches: **${cfgNodes.length}**\n`);
+    const endId = `N${nodeIdx++}`;
+    nodes.push({ id: endId, label: `End: ${funcName}`, type: 'end' });
+    edges.push({ from: lastNodeId, to: endId });
 
-    output.push(`\`\`\`mermaid`);
-    output.push(`graph TD`);
-    output.push(`  Start(["Entry: ${funcName}"]) --> B1`);
-    cfgNodes.forEach((node, i) => {
-        output.push(`  B${i + 1}["Line ${node.line}: ${node.type} (${node.code.replace(/"/g, "'")})"]`);
-        if (i < cfgNodes.length - 1) {
-            output.push(`  B${i + 1} --> B${i + 2}`);
-        }
+    lines.push(`### 📄 Symbol Scope: \`${funcName}\` in \`${path.basename(fullPath)}:${funcStart + 1}-${funcEnd + 1}\`\n`);
+
+    lines.push(`#### 🧜‍♂️ Mermaid Control Flow Diagram:`);
+    lines.push('```mermaid');
+    lines.push('flowchart TD');
+    nodes.forEach(n => {
+        lines.push(`    ${n.id}["${n.label}"]`);
     });
-    output.push(`  B${cfgNodes.length} --> End(["Exit Scope"])`);
-    output.push(`\`\`\`\n`);
-
-    output.push(`### 📋 Branch Control Flow Nodes:`);
-    cfgNodes.forEach(n => {
-        output.push(`  - 🌿 **L${n.line}** [\`${n.type}\`]: \`${n.code}\``);
+    edges.forEach(e => {
+        const edgeLabel = e.label ? ` -- "${e.label}" --> ` : ' --> ';
+        lines.push(`    ${e.from}${edgeLabel}${e.to}`);
     });
+    lines.push('```\n');
 
-    const text = output.join('\n');
-    await saveSearchLog(projectPath, ['[CFG]'], text, { skipVisuals: true });
-    printResult(text, format);
+    lines.push(`#### 🌲 Branch Summary:`);
+    lines.push(`  - **Total Branching Points**: ${nodes.filter(n => n.type === 'decision').length}`);
+    lines.push(`  - **Exception Handlers**: ${nodes.filter(n => n.type === 'error').length}`);
+    lines.push(`  - **Return Points**: ${nodes.filter(n => n.label.startsWith('Return')).length}`);
+
+    const outputText = lines.join('\n');
+    await saveSearchLog(projectPath, [`[CFG] ${targetSpec}`], outputText, { skipVisuals: true });
+    printResult(outputText, format);
 }
