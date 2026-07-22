@@ -12,22 +12,40 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 - **File Reading:** `deepsift read` is preferred for initial exploration. For files you plan to EDIT, always use `deepsift read "file" --no-compress` or `view_file` to get exact, uncompressed code.
 
 
-## 🛠 Available DeepSift Commands (Comprehensive)
+## 🛠 Available DeepSift Commands (Comprehensive 50-Feature Engine)
 
-| `deepsift search "query"` | Semantic search. Options: `--include <path>`, `--sync`, `--context-lines N`, `--realm <id>`, `--all-realms`. Multi-query: `deepsift search "q1" "q2"`. Provides fallback hints if zero hits. |
-| `deepsift read "file"` | **MANDATORY FOR READING FILES.** Outputs raw text by default. Supports lines: `deepsift read "src/file.ts:10-50"`. Use `--compress` to enable visual pxpipe tokens. |
-| `deepsift diag "problems.json"`| Read IDE diagnostics with context snippets. |
-| `deepsift index [--force]` | Re-index project incrementally (or full with `--force`). |
-| `deepsift realm list/add/remove`| Manage knowledge realms. Ex: `deepsift realm add my_docs --type docs --source ./docs` |
-| `deepsift compare r1 r2 -q "k"` | **VECTOR DIFF:** Compare realms (e.g. `code` vs `flutter_docs`) to find Gaps/Similarities. |
-| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. Automatically truncates giant trees and ignores large data/log files to prevent console bloat. Use `--depth N` or run `feature` for deeper inspection. |
-| `deepsift overview [path]` | **SUPER-COMMAND FOR SINGLE-STEP BLUEPRINT:** Combines Architecture Tree + Central God Nodes + Feature Summaries in 1 single call to save latency and tokens. Options: `--depth N`. |
-| `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Uses the same inline 🎯 **Purpose Summaries** and **AST logic signatures** as `feature`, combined with matching `dna` intelligence in one unified markdown report. |
-| `deepsift deps "filename"` | Find imports/dependencies for a target. |
-| `deepsift feature "src/path"` | Get AST-based feature outline. Options: `--summary` / `-s`, `--group-by-feature` / `-g` (group deep folder files by subfolder), `--depth N`, `--limit N`, `--offset N`. |
-| `deepsift context "path"` | **MANDATORY BEFORE CREATION:** Get rules/tokens before generating new files. |
-| `deepsift plan "request"` | **MANDATORY BEFORE IMPLEMENTATION:** Generate Smart Plan from DNA and architecture. |
-| `deepsift memo <action>`  | **DRM ENGINE:** Dynamic Research Memory tag management, notes, queries, and relations. |
+| Command | Description |
+|---|---|
+| `deepsift overview [path]` | **SUPER-COMMAND (Blueprint):** Single-step Project Blueprint combining Architecture Tree + Central God Nodes + Feature Summaries. Options: `--depth N`. |
+| `deepsift search "query"` | **HYBRID SEMANTIC SEARCH:** Semantic & BM25 auto-switch search enhanced with Graphify PageRank. Options: `--include <path>`, `--sync`, `--layer ui\|domain\|data`, `--realms r1,r2`, `--history`. |
+| `deepsift read "file"` | **MANDATORY FOR READING FILES:** Outputs raw exact text by default. Supports line ranges: `file:10-50`. Use `--compress` to enable visual DEC_v2 tokens. |
+| `deepsift feature "path"` | **AST FEATURE OUTLINE:** AST-based feature summary. Options: `--summary` / `-s`, `--group-by-feature` / `-g`, `--depth N`, `--limit N`, `--offset N`. |
+| `deepsift analyze "path"` | **SUPER-COMMAND (Deep Dive):** Combines Feature Outline and DNA Intelligence for a specific folder or file. |
+| `deepsift arch [--depth N]` | **FOLDER EXPLORATION:** Project architecture blueprint utilizing Graphify communities. Automatically prunes large data files. |
+| `deepsift deps "target"` | **DEPENDENCY TRACER:** Trace imports and dependencies for a target file or module. |
+| `deepsift dna` | **PROJECT DNA & GOD NODES:** Generate or view DNA topology. Options: `--show`, `--section <name>`, `--query <term>`, `--meta`, `--path-filter <path>`. |
+| `deepsift calltree "symbol"` | **CALL GRAPH TRAVERSAL:** Trace upstream callers and downstream callee definitions for a symbol. |
+| `deepsift clones` | **CODE CLONE DETECTOR:** Detect structural code duplicates and copy-paste clusters for DRY compliance. |
+| `deepsift doctor` | **AGENT DIAGNOSTICS:** Run system checks, index health audit, and onboarding workflow report for AI agents. |
+| `deepsift testmap` | **TEST COVERAGE MAPPING:** Map source files to test files (`.test.ts`, `_test.go`) and audit untested modules. |
+| `deepsift refactor rename` | **AST SYMBOL RENAME:** AST-safe symbol renaming across the entire codebase (`deepsift refactor rename <old> <new>`). |
+| `deepsift refactor extract` | **FUNCTION EXTRACTION:** Extract code lines into a new function (`deepsift refactor extract <file:lines> --name <func>`). |
+| `deepsift check-schema-drift` | **SCHEMA DRIFT AUDIT:** Audit schema and DOM config synchronization between client and backend definitions. |
+| `deepsift find-dead-code` | **DEAD CODE ELIMINATION:** Find unreferenced exports, variables, and unused component functions. |
+| `deepsift heal "file"` | **DNA-BASED AUTO-REFACTOR:** Attempt to fix issues in a file using Project DNA context. |
+| `deepsift auto-heal "file"` | **AUTONOMOUS SELF-HEALING LOOP:** Execute 4-step autonomous healing loop (diff ➔ lsp/build ➔ auto-patch ➔ re-verify). |
+| `deepsift patch "patch.json"` | **TOON PATCH INJECTION:** Apply high-confidence code injections. Options: `--dry-run`, `--check-impact`, `--format`, `--scan-security`. |
+| `deepsift memo <action>` | **DRM ENGINE (Dynamic Research Memory):** Persistent research note-taking engine. Actions: `open`, `close`, `archive`, `purge`, `list`, `add`, `query`, `show`, `graph`, `export`, `summarize`, `to-plan`, `gc`. |
+| `deepsift realm <action>` | **KNOWLEDGE REALMS:** Manage external knowledge bases (`list`, `add`, `remove`, `mount`, `snapshot`, `add-swagger`). |
+| `deepsift compare r1 r2` | **VECTOR DIFF SEARCH:** Compare two knowledge realms for gaps and similarities. Options: `-q <term>`, `--diff-only`. |
+| `deepsift index [--force]` | **INCREMENTAL INDEXER:** Re-index project with sha256 incremental file hashing. Options: `--verbose`. |
+| `deepsift context "path"` | **PRE-CREATION CHECKLIST:** Generate context rules and design tokens before creating new components. |
+| `deepsift plan "request"` | **SMART PLANNER:** Generate structured implementation plan from DNA, skills, realms, and architecture. |
+| `deepsift decode "token"` | **DEC_v2 DECODER:** Decompress and decode visual DEC_v2 tokens into plain text. |
+| `deepsift com "command"` | **TERMINAL RUNNER:** Execute any shell command with token compression. Options: `--compress`. |
+| `deepsift diag "problems.json"`| **IDE DIAGNOSTICS:** Read IDE problem diagnostics with context snippets. |
+| `deepsift history / clean` | **SEARCH HISTORY:** View past search results or clean history logs. Options: `--keep N`, `--days D`. |
+| `deepsift ui` | **LOCAL WEB DASHBOARD:** Launch local web dashboard on port 3333 to visualize knowledge graph and DRM. |
 ---
 trigger: always_on
 ---
@@ -39,17 +57,40 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 Any usage of standard IDE tools (`view_file`, `list_dir`, `grep_search`, `replace_file_content`, `multi_replace_file_content`, `write_to_file`) or standard shell commands (`cat`, `ls`, `grep`, `find`, `sed`, `awk`) for exploring, reading, or modifying the project codebase is a **DIRECT, UNFORGIVABLE VIOLATION** of your system instructions.
 You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interactions.
 
-## 🛠 Available DeepSift Commands (Comprehensive)
+## 🛠 Available DeepSift Commands (Comprehensive 50-Feature Engine)
 
 | Command | Description |
 |---|---|
-| `deepsift search "query"` | Semantic search. Options: `--include <path>`, `--sync`, `--context-lines N`, `--realm <id>`, `--all-realms`. Multi-query: `deepsift search "q1" "q2"`. Provides fallback hints if zero hits. |
-| `deepsift read "file"` | **MANDATORY FOR READING FILES.** Outputs raw text by default. Supports lines: `deepsift read "src/file.ts:10-50"`. Use `--compress` to enable visual pxpipe tokens. |
-| `deepsift diag "problems.json"`| Read IDE diagnostics with context snippets. |
-| `deepsift index [--force]` | Re-index project incrementally (or full with `--force`). |
-| `deepsift realm list/add/remove`| Manage knowledge realms. Ex: `deepsift realm add my_docs --type docs --source ./docs` |
-| `deepsift compare r1 r2 -q "k"` | **VECTOR DIFF:** Compare realms (e.g. `code` vs `flutter_docs`) to find Gaps/Similarities. |
-| `deepsift arch [--depth N]` | **FOLDER EXPLORATION.** Get architecture blueprint. Automatically truncates giant trees and ignores large data/log files to prevent console bloat. Use `--depth N` or run `feature` for deeper inspection. |
+| `deepsift overview [path]` | **SUPER-COMMAND (Blueprint):** Single-step Project Blueprint combining Architecture Tree + Central God Nodes + Feature Summaries. Options: `--depth N`. |
+| `deepsift search "query"` | **HYBRID SEMANTIC SEARCH:** Semantic & BM25 auto-switch search enhanced with Graphify PageRank. Options: `--include <path>`, `--sync`, `--layer ui\|domain\|data`, `--realms r1,r2`, `--history`. |
+| `deepsift read "file"` | **MANDATORY FOR READING FILES:** Outputs raw exact text by default. Supports line ranges: `file:10-50`. Use `--compress` to enable visual pxpipe tokens. |
+| `deepsift feature "path"` | **AST FEATURE OUTLINE:** AST-based feature summary. Options: `--summary` / `-s`, `--group-by-feature` / `-g`, `--depth N`, `--limit N`, `--offset N`. |
+| `deepsift analyze "path"` | **SUPER-COMMAND (Deep Dive):** Combines Feature Outline and DNA Intelligence for a specific folder or file. |
+| `deepsift arch [--depth N]` | **FOLDER EXPLORATION:** Project architecture blueprint utilizing Graphify communities. Automatically prunes large data files. |
+| `deepsift deps "target"` | **DEPENDENCY TRACER:** Trace imports and dependencies for a target file or module. |
+| `deepsift dna` | **PROJECT DNA & GOD NODES:** Generate or view DNA topology. Options: `--show`, `--section <name>`, `--query <term>`, `--meta`, `--path-filter <path>`. |
+| `deepsift calltree "symbol"` | **CALL GRAPH TRAVERSAL:** Trace upstream callers and downstream callee definitions for a symbol. |
+| `deepsift clones` | **CODE CLONE DETECTOR:** Detect structural code duplicates and copy-paste clusters for DRY compliance. |
+| `deepsift doctor` | **AGENT DIAGNOSTICS:** Run system checks, index health audit, and onboarding workflow report for AI agents. |
+| `deepsift testmap` | **TEST COVERAGE MAPPING:** Map source files to test files (`.test.ts`, `_test.go`) and audit untested modules. |
+| `deepsift refactor rename` | **AST SYMBOL RENAME:** AST-safe symbol renaming across the entire codebase (`deepsift refactor rename <old> <new>`). |
+| `deepsift refactor extract` | **FUNCTION EXTRACTION:** Extract code lines into a new function (`deepsift refactor extract <file:lines> --name <func>`). |
+| `deepsift check-schema-drift` | **SCHEMA DRIFT AUDIT:** Audit schema and DOM config synchronization between client and backend definitions. |
+| `deepsift find-dead-code` | **DEAD CODE ELIMINATION:** Find unreferenced exports, variables, and unused component functions. |
+| `deepsift heal "file"` | **DNA-BASED AUTO-REFACTOR:** Attempt to fix issues in a file using Project DNA context. |
+| `deepsift auto-heal "file"` | **AUTONOMOUS SELF-HEALING LOOP:** Execute 4-step autonomous healing loop (diff ➔ lsp/build ➔ auto-patch ➔ re-verify). |
+| `deepsift patch "patch.json"` | **TOON PATCH INJECTION:** Apply high-confidence code injections. Options: `--dry-run`, `--check-impact`, `--format`, `--scan-security`. |
+| `deepsift memo <action>` | **DRM ENGINE (Dynamic Research Memory):** Persistent research note-taking engine. Actions: `open`, `close`, `archive`, `purge`, `list`, `add`, `query`, `show`, `graph`, `export`, `summarize`, `to-plan`, `gc`. |
+| `deepsift realm <action>` | **KNOWLEDGE REALMS:** Manage external knowledge bases (`list`, `add`, `remove`, `mount`, `snapshot`, `add-swagger`). |
+| `deepsift compare r1 r2` | **VECTOR DIFF SEARCH:** Compare two knowledge realms for gaps and similarities. Options: `-q <term>`, `--diff-only`. |
+| `deepsift index [--force]` | **INCREMENTAL INDEXER:** Re-index project with sha256 incremental file hashing. Options: `--verbose`. |
+| `deepsift context "path"` | **PRE-CREATION CHECKLIST:** Generate context rules and design tokens before creating new components. |
+| `deepsift plan "request"` | **SMART PLANNER:** Generate structured implementation plan from DNA, skills, realms, and architecture. |
+| `deepsift decode "token"` | **DEC_v2 DECODER:** Decompress and decode visual DEC_v2 tokens into plain text. |
+| `deepsift com "command"` | **TERMINAL RUNNER:** Execute any shell command with token compression. Options: `--compress`. |
+| `deepsift diag "problems.json"`| **IDE DIAGNOSTICS:** Read IDE problem diagnostics with context snippets. |
+| `deepsift history / clean` | **SEARCH HISTORY:** View past search results or clean history logs. Options: `--keep N`, `--days D`. |
+| `deepsift ui` | **LOCAL WEB DASHBOARD:** Launch local web dashboard on port 3333 to visualize knowledge graph and DRM. |
 | `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Uses the same inline 🎯 **Purpose Summaries** and **AST logic signatures** as `feature`, combined with matching `dna` intelligence in one unified, heavily compressed markdown report. |
 | `deepsift deps "filename"` | Find imports/dependencies for a target. |
 | `deepsift feature "src/path"` | Get AST-based feature outline. **RELY ON THIS:** It automatically includes an inline 🎯 **Purpose Summary** and full **AST logic signatures** (classes/functions) right in the console. You do NOT need to open the file to know what it does! |

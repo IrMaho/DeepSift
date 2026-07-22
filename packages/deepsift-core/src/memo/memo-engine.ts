@@ -105,4 +105,10 @@ export class MemoEngine {
     getOpenTagNames(): string[] {
         return this.manifest.getOpenTags().map(t => t.name);
     }
+
+    exportMarkdown(tagName: string): string {
+        const entries = this.getEntries(tagName);
+        if (entries.length === 0) return `No entries recorded in DRM tag '${tagName}'.`;
+        return entries.map(e => `### [${e.type || 'note'}] ${e.createdAt}\n${e.content}`).join('\n\n');
+    }
 }

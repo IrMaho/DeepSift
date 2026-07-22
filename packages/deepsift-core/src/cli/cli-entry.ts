@@ -29,6 +29,15 @@ import { startCommand } from './commands/start.js';
 import { diagCommand } from './commands/diag.js';
 import { memoCommand } from './commands/memo.js';
 import { overviewCommand } from './commands/overview.js';
+import { calltreeCommand } from './commands/calltree.js';
+import { clonesCommand } from './commands/clones.js';
+import { doctorCommand } from './commands/doctor.js';
+import { decodeCommand } from './commands/decode.js';
+import { testmapCommand } from './commands/testmap.js';
+import { refactorRenameCommand, refactorExtractCommand } from './commands/refactor.js';
+import { schemaDriftCommand } from './commands/schema-drift.js';
+import { deadCodeCommand } from './commands/dead-code.js';
+import { autoHealCommand } from './commands/auto-heal.js';
 import { terminateWorkers } from '../core/embedder.js';
 import fs from 'fs';
 
@@ -93,6 +102,15 @@ const HELP_TEXT = `
   com "command"                 Execute any shell command and return compressed output
   plan "request"                Generate a Smart Plan by analyzing DNA, skills, realms, and architecture
   heal "file"                   Attempt to fix issues in a file using the project DNA and context
+  auto-heal "file"              Autonomous self-healing loop (diff ➔ lsp/build ➔ auto-patch ➔ re-verify)
+  calltree, ct "symbol"         Traverse upstream callers and downstream definition scope for a symbol
+  clones                        Detect code duplicates and structural clone clusters (DRY Audit)
+  doctor                        Diagnostics and onboarding status report for AI agents
+  decode "token"                Decompress and decode a DEC_v2 visual token
+  testmap                       Source-to-test mapping report and untested module audit
+  refactor <rename|extract>     AST-safe symbol renaming or function extraction
+  check-schema-drift            Audit schema & DOM config synchronization between frontend/backend
+  find-dead-code                Detect unreferenced and dead code exports across codebase
   patch "patch.json"            Apply code injections directly to the codebase with high confidence (TOON-Patch format)
   memo <action>                 Dynamic Research Memory (DRM) — Persistent research note-taking
                                   open "name"         Create a new research tag
@@ -536,6 +554,60 @@ async function main() {
                     throw new Error('Please provide a file to heal.\nUsage: deepsift heal "src/utils.ts"');
                 }
                 await healCommand(commandArgs[0], format, compress);
+                break;
+
+            case 'auto-heal':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a file for auto-healing.\nUsage: deepsift auto-heal "src/utils.ts"');
+                }
+                await autoHealCommand(projectPath, commandArgs[0], format, compress);
+                break;
+
+            case 'calltree':
+            case 'ct':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a symbol name.\nUsage: deepsift calltree "myFunction"');
+                }
+                await calltreeCommand(projectPath, commandArgs[0], format, compress);
+                break;
+
+            case 'clones':
+                await clonesCommand(projectPath, format);
+                break;
+
+            case 'doctor':
+                await doctorCommand(projectPath, format);
+                break;
+
+            case 'decode':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a compressed token.\nUsage: deepsift decode "<token>"');
+                }
+                decodeCommand(commandArgs[0], format);
+                break;
+
+            case 'testmap':
+                await testmapCommand(projectPath, format);
+                break;
+
+            case 'refactor':
+                if (commandArgs[0] === 'rename') {
+                    refactorRenameCommand(projectPath, commandArgs[1], commandArgs[2], format);
+                } else if (commandArgs[0] === 'extract') {
+                    refactorExtractCommand(projectPath, commandArgs[1], commandArgs[3] || 'extractedFunction', format);
+                } else {
+                    throw new Error('Usage: deepsift refactor rename <old> <new> OR deepsift refactor extract <file:lines> --name <func>');
+                }
+                break;
+
+            case 'schema-drift':
+            case 'check-schema-drift':
+                await schemaDriftCommand(projectPath, format);
+                break;
+
+            case 'dead-code':
+            case 'find-dead-code':
+                await deadCodeCommand(projectPath, format);
                 break;
 
             case 'memo':

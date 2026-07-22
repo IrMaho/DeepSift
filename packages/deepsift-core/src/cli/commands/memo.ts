@@ -1,6 +1,8 @@
 import { MemoEngine } from '../../memo/memo-engine.js';
 import { printResult, printSuccess, printInfo, printError, OutputFormat } from '../cli-output.js';
 import { MemoEntryType } from '../../types/memo-types.js';
+import fs from 'fs';
+import path from 'path';
 
 export async function memoCommand(
     projectPath: string,
@@ -65,6 +67,30 @@ export async function memoCommand(
             } else {
                 printSuccess(`Tag '${tagName}' purged. All data deleted.`);
             }
+            break;
+        }
+
+        case 'summarize': {
+            if (!target) throw new Error('Tag name is required. Usage: deepsift memo summarize "my-research"');
+            const exported = engine.exportMarkdown(target);
+            const summaryText = `### 📝 DRM Summary for Tag: ${target}\n\n${exported.slice(0, 500)}...\n\n*(Truncated for efficiency)*`;
+            printResult(summaryText, format);
+            break;
+        }
+
+        case 'to-plan': {
+            if (!target) throw new Error('Tag name is required. Usage: deepsift memo to-plan "my-research"');
+            const exported = engine.exportMarkdown(target);
+            const planText = `# 📋 Implementation Plan (Generated from DRM Tag: ${target})\n\n${exported}`;
+            fs.writeFileSync(path.join(projectPath, 'implementation_plan.md'), planText, 'utf8');
+            printSuccess(`Generated implementation_plan.md from DRM tag '${target}'`);
+            break;
+        }
+
+        case 'gc': {
+            const openTags = engine.getOpenTags();
+            openTags.forEach(t => engine.closeTag(t.name));
+            printSuccess(`Garbage collected ${openTags.length} open DRM tags.`);
             break;
         }
 

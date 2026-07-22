@@ -24,7 +24,12 @@ function stripMarkdown(text: string): string {
 }
 
 export function printResult(text: string, format: OutputFormat) {
-    process.stdout.write(formatOutput(text, format) + '\n');
+    const formatted = formatOutput(text, format);
+    process.stdout.write(formatted + '\n');
+    if (format !== 'json' && typeof text === 'string' && text.length > 50) {
+        const estTokens = Math.ceil(text.length / 4);
+        process.stderr.write(`\x1b[90m[Tokens: ~${estTokens} | Output: ${text.length} chars]\x1b[0m\n`);
+    }
 }
 
 export function printError(message: string) {
