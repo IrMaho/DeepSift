@@ -10,22 +10,34 @@ interface FileMeta {
     score: number;
 }
 
-export function getProjectArchitecture(projectPath: string, maxDepth: number = 5): string {
+export interface ArchTreeNode {
+    name: string;
+    type: 'dir' | 'file';
+    sizeKb?: number;
+    children?: ArchTreeNode[];
+}
+
+export function getProjectArchitecture(projectPath: string, maxDepth: number = 5, format: string = 'markdown'): string {
     const config = loadConfig(projectPath);
     const excludeDirs = config.indexer?.excludeDirs || [];
     const ignored = new Set([...IGNORED_DIRS, ...excludeDirs, '.deepsift']);
 
     let tree = '';
-    let fileCount = 0;
     const sourceFiles: FileMeta[] = [];
-    
-    function walk(dir: string, depth: number, prefix: string) {
+
+    const jsonTree: ArchTreeNode = {
+        name: path.basename(projectPath),
+        type: 'dir',
+        children: []
+    };
+
+    function walk(dir: string, depth: number, prefix: string, parentJsonNode?: ArchTreeNode) {
         if (depth > maxDepth) return;
         
         let items;
         try {
             items = fs.readdirSync(dir, { withFileTypes: true });
-        } catch (err) {
+        } catch {
             return;
         }
 
@@ -38,11 +50,11 @@ export function getProjectArchitecture(projectPath: string, maxDepth: number = 5
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
             if (ignored.has(item.name)) continue;
-            if (item.name.startsWith('.') && item.name !== '.env.example') continue; // skip hidden files
+            if (item.name.startsWith('.') && item.name !== '.env.example') continue;
 
             const ext = path.extname(item.name).toLowerCase();
-            const dataExts = ['.csv', '.tsv', '.xlsx', '.parquet', '.sqlite', '.db', '.log', '.lock', '.zip', '.tar', '.gz'];
-            if (!item.isDirectory() && dataExts.includes(ext)) continue; // skip data/log files in arch view
+            const dataExts = ['.csv', '.tsv', '.xlsx', '.parquet', '.sqlite', '.db', '.log', '.lock', '.zip', '.tar', '.gz', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.woff', '.woff2', '.ttf', '.eot', '.min.js', '.map', '.wasm'];
+            if (!item.isDirectory() && dataExts.includes(ext)) continue;
 
             const isLast = i === items.length - 1;
             const marker = isLast ? '└── ' : '├── ';
@@ -50,18 +62,23 @@ export function getProjectArchitecture(projectPath: string, maxDepth: number = 5
             
             if (item.isDirectory()) {
                 tree += `${prefix}${marker}📂 ${item.name}/\n`;
-                walk(fullPath, depth + 1, prefix + (isLast ? '    ' : '│   '));
+                const dirJsonNode: ArchTreeNode = { name: item.name, type: 'dir', children: [] };
+                if (parentJsonNode && parentJsonNode.children) {
+                    parentJsonNode.children.push(dirJsonNode);
+                }
+                walk(fullPath, depth + 1, prefix + (isLast ? '    ' : '│   '), dirJsonNode);
             } else {
-                fileCount++;
                 try {
                     const stats = fs.statSync(fullPath);
                     const sizeKb = stats.size / 1024;
                     tree += `${prefix}${marker}📄 ${item.name} (${sizeKb.toFixed(1)} KB)\n`;
 
-                    // Simple heuristic scoring for core files
-                    const ext = path.extname(item.name);
+                    if (parentJsonNode && parentJsonNode.children) {
+                        parentJsonNode.children.push({ name: item.name, type: 'file', sizeKb: parseFloat(sizeKb.toFixed(1)) });
+                    }
+
                     const validExts = ['.ts', '.js', '.tsx', '.jsx', '.py', '.go', '.rs', '.java', '.dart', '.cpp', '.h'];
-                    if (validExts.includes(ext) && sizeKb < 1000) { // skip massive generated files
+                    if (validExts.includes(ext) && sizeKb < 1000) {
                         const content = fs.readFileSync(fullPath, 'utf8');
                         const importCount = (content.match(/import /g) || []).length + (content.match(/require\(/g) || []).length;
                         const exportCount = (content.match(/export /g) || []).length + (content.match(/module\.exports/g) || []).length;
@@ -69,19 +86,27 @@ export function getProjectArchitecture(projectPath: string, maxDepth: number = 5
                         const relPath = path.relative(projectPath, fullPath).replace(/\\/g, '/');
                         sourceFiles.push({ relativePath: relPath, sizeKb, score });
                     }
-                } catch (err) {
-                    // ignore unreadable files
+                } catch {
                 }
             }
         }
     }
 
     tree += `📦 Project Root (${path.basename(projectPath)})\n`;
-    walk(projectPath, 1, '');
+    walk(projectPath, 1, '', jsonTree);
     
-    // Determine Top 5 core files
     sourceFiles.sort((a, b) => b.score - a.score);
-    const coreFiles = sourceFiles.slice(0, 5).map(f => `  - **${f.relativePath}** (Connectivity Score: ${f.score.toFixed(1)})`);
+    const topFiles = sourceFiles.slice(0, 5);
 
+    if (format === 'json') {
+        return JSON.stringify({
+            root: path.basename(projectPath),
+            maxDepth,
+            topCoreFiles: topFiles,
+            tree: jsonTree
+        }, null, 2);
+    }
+
+    const coreFiles = topFiles.map(f => `  - **${f.relativePath}** (Connectivity Score: ${f.score.toFixed(1)})`);
     return `# Project Architecture Blueprint\n\n## 🌳 Directory Tree\n\`\`\`\n${tree}\n\`\`\`\n\n## 🎯 Top 5 Central/Core Files\n*These files contain the most imports, exports, and logic volume. Start analyzing here if you want to understand the core functionality.*\n${coreFiles.join('\n')}`;
 }

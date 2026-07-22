@@ -8,7 +8,7 @@ import { TokenOptimizerService } from '../../utils/token-compressor.js';
  * Outputs are token-compressed by default.
  */
 export async function archCommand(projectPath: string, maxDepth: number, format: OutputFormat, compress: boolean = true) {
-    const architectureText = getProjectArchitecture(projectPath, maxDepth);
+    const architectureText = getProjectArchitecture(projectPath, maxDepth, format);
     let finalOutput = architectureText;
     
     if (finalOutput.split('\n').length > 50) {

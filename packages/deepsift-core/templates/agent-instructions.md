@@ -85,9 +85,10 @@ This section documents all **50 advanced architectural features** implemented in
 
 ### 🤖 Section 4: Agent-Centric UX & Token Optimization
 22. **Adaptive Omission Summarization:** Groups omitted files into folder clusters (`📁 src/features/ (12 files: *.ts)`).
-23. **Structured JSON-Schema CLI Flag (`--json-schema`):** Emits clean structured JSON for zero-noise agent parsing.
-24. **Dynamic Token Budgeting Engine (`--max-tokens N`):** Adjusts output detail to fit exact agent token limits.
-25. **Single-Step Agent Action Planner (`deepsift plan-step`):** Suggests next logical steps after analysis.
+23. **Structured JSON / AI Agent Format Flag (`--agent-format` / `--json`):** Emits clean structured JSON for zero-noise agent parsing, saving 30-50% tokens and eliminating terminal decoration characters.
+24. **Smart File Weighting & Core Logic Tagging:** Automatically ranks files by logical weight, prioritizing State Stores (`⭐ State Store`), Handlers (`⚡ Handler / Controller`), and Services (`🏛️ Domain Service`) at the top of scans.
+25. **Auto-Pagination Hints for AI Agents:** When result sets exceed page limits, output explicitly includes `nextCommand` so agents can auto-paginate without manual offset calculation.
+26. **Default Deep Scan Depth (Depth = 6):** Scans deep nested feature architectures (`src/features/module/components/sub/...`) up to depth 6 automatically.
 26. **Diff-Only Compression Format:** Compact diff output format saving up to 80% tokens compared to raw git diffs.
 27. **Error Log Stacktrace Resolver (`deepsift resolve-error "trace"`):** Maps runtime stacktraces to source lines.
 28. **Agent Action Sandbox Simulation (`deepsift dry-run-patch`):** Simulates patches in memory and tests build before disk write.

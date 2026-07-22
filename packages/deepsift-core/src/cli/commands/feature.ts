@@ -30,7 +30,7 @@ export async function featureCommand(
         }
     }
 
-    const outlineText = getFeatureOutline(targetPath, limit, offset, summarizeOnly, maxDepth, groupByFeature);
+    const outlineText = getFeatureOutline(targetPath, limit, offset, summarizeOnly, maxDepth, groupByFeature, format);
     let finalOutput = outlineText;
     
     if (compress && format !== 'json') {

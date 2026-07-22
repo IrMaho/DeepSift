@@ -53,7 +53,7 @@ export function parseGlobalFlags(args: string[]): { format: OutputFormat; compre
 
     for (let i = 0; i < args.length; i++) {
         const arg = args[i];
-        if (arg === '--json' || arg === '--json-schema') {
+        if (arg === '--json' || arg === '--json-schema' || arg === '--agent-format' || arg === '-j') {
             format = 'json';
         } else if (arg === '--plain') {
             format = 'plain';

@@ -17,10 +17,12 @@ Use this workflow as your step-by-step execution guide when tasked with large mo
 
 ## Phase 2: Targeted Exploration (Auto-Save Active)
 With your DRM tag open, every `search` and `read` command will automatically save results to the active tag.
-1. Run `deepsift search "topic" --context-lines 10` for semantic searches — results auto-saved.
-2. Run `deepsift feature "src/features/folder"` to see all classes and methods without bodies.
-3. Run `deepsift deps "target.ts"` to trace where a file is used.
-4. Run `deepsift read "file.ts"` to read exact file contents — content auto-saved.
+1. Use `--agent-format` or `--json` when you need zero-token-waste structured JSON for pure machine parsing.
+2. Run `deepsift feature "src/features/folder"` to inspect feature structure. Focus on `⭐ Core Logic` tags (`⭐ State Store`, `⚡ Handler / Controller`) at the top of the output.
+3. If output shows `💡 Pagination` with `nextCommand`, execute `nextCommand` directly to retrieve subsequent file pages.
+4. Run `deepsift search "topic" --context-lines 10` for semantic searches — results auto-saved.
+5. Run `deepsift deps "target.ts"` to trace where a file is used.
+6. Run `deepsift read "file.ts"` to read exact file contents — content auto-saved.
 5. **Manually add high-value insights you interpret from the results:**
    ```bash
    deepsift memo add "tag" --data "Auth handler uses JWT with 24h expiry" --type "architecture_note"
