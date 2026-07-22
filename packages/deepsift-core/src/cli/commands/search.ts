@@ -29,7 +29,6 @@ export async function searchCommand(
     const targetRealms = options.allRealms ? undefined : (options.realm ? options.realm.split(',').map(r => r.trim()) : undefined);
 
     if (!options.skipSync) {
-        printInfo('Syncing index before search...');
         const realmsToSync = targetRealms || ['code'];
         const realmsConfig = router.listRealms();
         for (const rid of realmsToSync) {
@@ -39,7 +38,7 @@ export async function searchCommand(
                 continue;
             }
             try {
-                await router.indexRealm(rid, undefined, false, (current, total, file) => {
+                const stats = await router.indexRealm(rid, undefined, false, (current, total, file) => {
                     if (options.verbose && format !== 'json') {
                         process.stdout.write(`\r[${rid}] Indexing: ${current}/${total} files (Processing: ${file})`);
                         process.stdout.write('\x1b[K');
@@ -47,6 +46,9 @@ export async function searchCommand(
                 });
                 if (options.verbose && format !== 'json') {
                     process.stdout.write('\n');
+                }
+                if (stats.newOrUpdated > 0 || stats.deleted > 0) {
+                    printInfo(`[${rid}] Auto-synced ${stats.newOrUpdated} modified files.`);
                 }
             } catch (e: any) {
                 if (e.message.includes('locked')) {
@@ -57,7 +59,19 @@ export async function searchCommand(
             }
         }
     } else {
-        printInfo('Skipping index sync (--no-sync provided). Searching current index...');
+        // Recovery check if index is empty
+        try {
+            const store = router.getStore('code');
+            const metaMap = await store.getAllMetadata();
+            if (metaMap.size === 0) {
+                printInfo('ℹ Initial index is empty. Auto-indexing repository...');
+                await router.indexRealm('code', undefined, false);
+            } else {
+                printInfo('Skipping index sync (--no-sync provided). Searching current index...');
+            }
+        } catch {
+            printInfo('Skipping index sync (--no-sync provided). Searching current index...');
+        }
     }
 
     if (queries.length === 1) {
@@ -67,11 +81,103 @@ export async function searchCommand(
     return executeMultiSearch(router, projectPath, queries, format, options, targetRealms);
 }
 
+function astSymbolFallback(projectPath: string, rawQuery: string): Array<{ file: string; line: number; snippet: string; score: number }> {
+    const matches: Array<{ file: string; line: number; snippet: string; score: number }> = [];
+    const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.deepsift', 'coverage', '.dart_tool', 'venv', '.venv', 'site-packages']);
+
+    const queryClean = rawQuery.trim();
+    const queryLower = queryClean.toLowerCase();
+    const tokens = queryClean.includes(' ') 
+        ? queryClean.split(/\s+/).map(t => t.toLowerCase()).filter(t => t.length >= 2)
+        : [queryLower];
+
+    function scan(dir: string) {
+        if (!fs.existsSync(dir) || matches.length > 50) return;
+        let items: fs.Dirent[];
+        try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+
+        for (const item of items) {
+            if (item.name.startsWith('.') || IGNORED_DIRS.has(item.name.toLowerCase())) continue;
+            const fullPath = path.join(dir, item.name);
+            if (item.isDirectory()) {
+                scan(fullPath);
+            } else {
+                const ext = path.extname(item.name).toLowerCase();
+                if (['.ts', '.tsx', '.js', '.jsx', '.dart', '.py', '.go'].includes(ext)) {
+                    try {
+                        const rel = path.relative(projectPath, fullPath).replace(/\\/g, '/');
+                        const relLower = rel.toLowerCase();
+                        
+                        // Check if file path matches query tokens
+                        let pathMatchCount = 0;
+                        for (const t of tokens) {
+                            if (relLower.includes(t)) pathMatchCount++;
+                        }
+
+                        const content = fs.readFileSync(fullPath, 'utf8');
+                        const contentLower = content.toLowerCase();
+
+                        // Exact substring match check
+                        if (content.includes(queryClean)) {
+                            const lines = content.split('\n');
+                            lines.forEach((line, idx) => {
+                                if (line.includes(queryClean) && matches.length < 50) {
+                                    matches.push({ file: rel, line: idx + 1, snippet: line.trim(), score: 10 });
+                                }
+                            });
+                        } else {
+                            // Multi-token match check
+                            let contentMatchCount = 0;
+                            for (const t of tokens) {
+                                if (contentLower.includes(t)) contentMatchCount++;
+                            }
+
+                            if (pathMatchCount > 0 || contentMatchCount >= Math.min(2, tokens.length)) {
+                                const lines = content.split('\n');
+                                const totalMatchScore = (pathMatchCount * 3) + contentMatchCount;
+                                
+                                for (let idx = 0; idx < lines.length; idx++) {
+                                    const lineLower = lines[idx].toLowerCase();
+                                    const hasToken = tokens.some(t => lineLower.includes(t));
+                                    if (hasToken) {
+                                        matches.push({ file: rel, line: idx + 1, snippet: lines[idx].trim(), score: totalMatchScore });
+                                        break; // Pick first matching line per file
+                                    }
+                                }
+                            }
+                        }
+                    } catch {}
+                }
+            }
+        }
+    }
+
+    scan(projectPath);
+    return matches.sort((a, b) => b.score - a.score);
+}
+
 async function executeSingleSearch(router: RealmRouter, projectPath: string, query: string, format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
     const rawResults = await router.searchAllRealms({ query, topK: 5, filterPath: options.filterPath }, targetRealms);
     const results = rawResults.filter(r => r.score >= 0.15);
 
     if (results.length === 0) {
+        const fallbackMatches = astSymbolFallback(projectPath, query.trim());
+        if (fallbackMatches.length > 0) {
+            const fileMap = new Map<string, number>();
+            fallbackMatches.forEach(m => fileMap.set(m.file, (fileMap.get(m.file) || 0) + 1));
+
+            let fallbackText = `ℹ Primary vector search deferred. AST & Path Matcher found **${fallbackMatches.length}** relevant code references for \`${query}\` across **${fileMap.size}** files:\n\n`;
+            fallbackMatches.slice(0, 10).forEach(m => {
+                fallbackText += `  - 📄 **${m.file}:${m.line}**: \`${m.snippet.substring(0, 75)}\`\n`;
+            });
+            if (fallbackMatches.length > 10) {
+                fallbackText += `  - ... (+${fallbackMatches.length - 10} more matches)\n`;
+            }
+            fallbackText += `\n💡 **Tip**: Run \`deepsift search "${query}" --sync\` to force vector index synchronization.`;
+            printResult(fallbackText, format);
+            return;
+        }
+
         const hint = `No relevant code found for: "${query}"
 
 💡 **Search Tips:**

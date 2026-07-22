@@ -41,7 +41,7 @@ export interface MemoManifest {
 export interface MemoQueryResult {
     entry: MemoEntry;
     score: number;
-    matchType: 'semantic' | 'keyword' | 'hybrid';
+    matchType: 'semantic' | 'keyword' | 'hybrid' | 'relaxed_keyword';
     tagName: string;
 }
 

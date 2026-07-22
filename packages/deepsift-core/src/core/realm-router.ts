@@ -86,13 +86,13 @@ export class RealmRouter {
         sourcePath?: string,
         force: boolean = false,
         onProgress?: (current: number, total: number, file: string) => void
-    ): Promise<{ files: number; chunks: number }> {
+    ): Promise<{ files: number; chunks: number; newOrUpdated: number; deleted: number }> {
         const store = this.getStore(realmId);
         const realmConfig = this.config.realms?.[realmId];
         
         if (realmConfig?.isExternalHivemind) {
             // External hiveminds are read-only, do not index locally
-            return { files: 0, chunks: 0 };
+            return { files: 0, chunks: 0, newOrUpdated: 0, deleted: 0 };
         }
 
         const parserProfile = realmConfig?.parserProfile || 'code';

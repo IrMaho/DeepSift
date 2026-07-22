@@ -22,7 +22,7 @@ export interface EmbeddedChunk {
 export interface SearchResult {
     chunk: CodeChunk;
     score: number;
-    matchType: 'semantic' | 'keyword' | 'hybrid';
+    matchType: 'semantic' | 'keyword' | 'hybrid' | 'relaxed_keyword';
 }
 
 export interface IndexMetadata {
