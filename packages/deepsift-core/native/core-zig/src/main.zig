@@ -8,6 +8,12 @@ const walker = @import("walker.zig");
 const similarity = @import("similarity.zig");
 const property_miner = @import("property_miner.zig");
 const test_analyzer = @import("test_analyzer.zig");
+const calltree = @import("calltree.zig");
+const cfg = @import("cfg.zig");
+const outline = @import("outline.zig");
+const memo_graph = @import("memo_graph.zig");
+const l10n = @import("l10n.zig");
+const resource_mapper = @import("resource_mapper.zig");
 
 const BatchOperation = struct {
     action: []const u8,
@@ -29,12 +35,15 @@ const Request = struct {
     ids: ?[][]const u8 = null,
     query: ?[]const u8 = null,
     content: ?[]const u8 = null,
+    symbol: ?[]const u8 = null,
     topK: ?usize = null,
     minLines: ?u32 = null,
     threshold: ?f32 = null,
     queryEmbedding: ?[db.VECTOR_BQ_U32_COUNT]u32 = null,
     batch: ?[]BatchOperation = null,
     
+    notes: ?[]memo_graph.NoteInfo = null,
+
     graphNodes: ?[]db.GraphNode = null,
     graphEdges: ?[]db.GraphEdge = null,
     startNodes: ?[]u32 = null,
@@ -146,6 +155,42 @@ const CoverageResponse = struct {
     id: ?usize = null,
     success: bool = true,
     data: []const test_analyzer.CoverageInfo,
+};
+
+const CallTreeResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const calltree.CallLink,
+};
+
+const CFGResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const cfg.CFGBranch,
+};
+
+const OutlineResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: outline.FileCategoryInfo,
+};
+
+const NoteEdgesResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const memo_graph.NoteEdge,
+};
+
+const L10nKeysResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const l10n.L10nKey,
+};
+
+const ResourcesResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const resource_mapper.ResourceRef,
 };
 
 fn countKeywordMatches(content: []const u8, file_path: []const u8, query: []const u8) f32 {
@@ -562,6 +607,44 @@ pub fn main() !void {
                 const cov_info = try test_analyzer.parseLcovNative(allocator, cnt);
                 defer allocator.free(cov_info);
                 try writeResponse(allocator, &writer.interface, CoverageResponse{ .id = req_id, .data = cov_info });
+            }
+        } else if (std.mem.eql(u8, req.action, "analyzeCallTreeNative")) {
+            if (req.content) |cnt| {
+                const symb = req.symbol orelse "";
+                const links = try calltree.analyzeCallTreeNative(allocator, cnt, symb);
+                defer allocator.free(links);
+                try writeResponse(allocator, &writer.interface, CallTreeResponse{ .id = req_id, .data = links });
+            }
+        } else if (std.mem.eql(u8, req.action, "extractControlFlowNative")) {
+            if (req.content) |cnt| {
+                const branches = try cfg.extractControlFlowNative(allocator, cnt);
+                defer allocator.free(branches);
+                try writeResponse(allocator, &writer.interface, CFGResponse{ .id = req_id, .data = branches });
+            }
+        } else if (std.mem.eql(u8, req.action, "classifyFileNative")) {
+            if (req.filePath) |fp| {
+                const cnt_len = if (req.content) |c| c.len else 0;
+                const info = outline.calculateFileWeightNative(fp, cnt_len);
+                try writeResponse(allocator, &writer.interface, OutlineResponse{ .id = req_id, .data = info });
+            }
+        } else if (std.mem.eql(u8, req.action, "buildInsightGraphNative")) {
+            if (req.notes) |nts| {
+                const min_w = req.threshold orelse 0.30;
+                const edges = try memo_graph.buildInsightGraphNative(allocator, nts, min_w);
+                defer allocator.free(edges);
+                try writeResponse(allocator, &writer.interface, NoteEdgesResponse{ .id = req_id, .data = edges });
+            }
+        } else if (std.mem.eql(u8, req.action, "extractL10nKeysNative")) {
+            if (req.content) |cnt| {
+                const l_keys = try l10n.extractL10nKeysNative(allocator, cnt);
+                defer allocator.free(l_keys);
+                try writeResponse(allocator, &writer.interface, L10nKeysResponse{ .id = req_id, .data = l_keys });
+            }
+        } else if (std.mem.eql(u8, req.action, "mapResourceRefsNative")) {
+            if (req.content) |cnt| {
+                const r_refs = try resource_mapper.mapResourceRefsNative(allocator, cnt);
+                defer allocator.free(r_refs);
+                try writeResponse(allocator, &writer.interface, ResourcesResponse{ .id = req_id, .data = r_refs });
             }
         } else {
             try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Unknown action" });

@@ -287,6 +287,36 @@ export class NativeStore {
         return data || [];
     }
 
+    public async analyzeCallTreeNative(content: string, symbol: string): Promise<any[]> {
+        const data = await this.executeAction('analyzeCallTreeNative', { content, symbol });
+        return data || [];
+    }
+
+    public async extractControlFlowNative(content: string): Promise<any[]> {
+        const data = await this.executeAction('extractControlFlowNative', { content });
+        return data || [];
+    }
+
+    public async classifyFileNative(filePath: string, content?: string): Promise<any> {
+        const data = await this.executeAction('classifyFileNative', { filePath, content });
+        return data || { file_name: filePath, category: 'Core', weight: 1.0 };
+    }
+
+    public async buildInsightGraphNative(notes: any[], minWeight: number = 0.30): Promise<any[]> {
+        const data = await this.executeAction('buildInsightGraphNative', { notes, threshold: minWeight });
+        return data || [];
+    }
+
+    public async extractL10nKeysNative(content: string): Promise<any[]> {
+        const data = await this.executeAction('extractL10nKeysNative', { content });
+        return data || [];
+    }
+
+    public async mapResourceRefsNative(content: string): Promise<any[]> {
+        const data = await this.executeAction('mapResourceRefsNative', { content });
+        return data || [];
+    }
+
     public async getAllChunks(): Promise<EmbeddedChunk[]> {
         const data = await this.executeAction('getAllChunks');
         if (!data) return [];
