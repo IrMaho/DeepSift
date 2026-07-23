@@ -1,22 +1,22 @@
 # [UI UX Pro Max](https://uupm.cc)
 
 <p align="center">
-  <a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/blob/main/README.zh.md">🇨🇳 简体中文</a> | 
-  <a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/blob/main/README.md">🇺🇸 English</a>
+  <a href=" 简体中文</a> | 
+  <a href=" English</a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/releases"><img src="https://img.shields.io/github/v/release/nextlevelbuilder/ui-ux-pro-max-skill?style=for-the-badge&color=blue" alt="GitHub Release"></a>
+  <a href=" src=" alt="GitHub Release"></a>
   <img src="https://img.shields.io/badge/reasoning_rules-161-green?style=for-the-badge" alt="161 条推理规则">
   <img src="https://img.shields.io/badge/UI_styles-67-purple?style=for-the-badge" alt="67 种 UI 风格">
   <img src="https://img.shields.io/badge/python-3.x-yellow?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.x">
-  <a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/blob/main/LICENSE"><img src="https://img.shields.io/github/license/nextlevelbuilder/ui-ux-pro-max-skill?style=for-the-badge&color=green" alt="License"></a>
+  <a href=" src=" alt="License"></a>
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/ui-ux-pro-max-cli"><img src="https://img.shields.io/npm/v/ui-ux-pro-max-cli?style=flat-square&logo=npm&label=CLI" alt="npm"></a>
   <a href="https://www.npmjs.com/package/ui-ux-pro-max-cli"><img src="https://img.shields.io/npm/dm/ui-ux-pro-max-cli?style=flat-square&label=downloads" alt="npm downloads"></a>
-  <a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/stargazers"><img src="https://img.shields.io/github/stars/nextlevelbuilder/ui-ux-pro-max-skill?style=flat-square&logo=github" alt="GitHub stars"></a>
+  <a href=" src=" alt="GitHub stars"></a>
   <a href="https://paypal.me/uiuxpromax"><img src="https://img.shields.io/badge/PayPal-支持开发-00457C?style=flat-square&logo=paypal&logoColor=white" alt="PayPal"></a>
 </p>
 
@@ -496,7 +496,7 @@ uipro init --ai <platform>
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git
+git clone 
 cd ui-ux-pro-max-skill
 
 # 2. 理解结构
@@ -621,4 +621,4 @@ python3 .claude/skills/ui-ux-pro-max/scripts/search.py "SaaS" --domain style --j
 
 本技能可与以下工具配合使用：
 - [Claude Code](https://claude.com/product/claude-code)
-- [AdaL](https://sylph.ai/) - 自进化的 AI 编码智能体（[文档](https://docs.sylph.ai/) | [GitHub](https://github.com/SylphAI-Inc/adal-cli)）
+- [AdaL](https://sylph.ai/) - 自进化的 AI 编码智能体（[文档](https://docs.sylph.ai/) | ）

@@ -1,6 +1,6 @@
 # Logo Generator / Logo 生成器
 
-![Showcase](https://github.com/user-attachments/assets/c36c0e15-370c-4670-906e-36b829f9e7fa)
+![Showcase]()
 
 [English](#english) | [中文](#中文)
 
@@ -41,7 +41,7 @@ The skill leverages Gemini 3.1 Flash Image Preview (Nano Banana) to generate hig
 #### Method 1: Automatic Installation (Recommended)
 
 ```bash
-npx skills add https://github.com/op7418/logo-generator-skill.git
+npx skills add 
 ```
 
 This will automatically install the skill to the correct directory.
@@ -49,7 +49,7 @@ This will automatically install the skill to the correct directory.
 #### Method 2: Git Clone
 
 ```bash
-git clone https://github.com/op7418/logo-generator-skill.git ~/.claude/skills/logo-generator
+
 ```
 
 #### Method 3: Manual Installation
@@ -258,7 +258,7 @@ Contributions welcome! Please feel free to submit issues or pull requests.
 #### 方法 1：自动安装（推荐）
 
 ```bash
-npx skills add https://github.com/op7418/logo-generator-skill.git
+npx skills add 
 ```
 
 这将自动将技能安装到正确的目录。
@@ -266,7 +266,7 @@ npx skills add https://github.com/op7418/logo-generator-skill.git
 #### 方法 2：Git 克隆
 
 ```bash
-git clone https://github.com/op7418/logo-generator-skill.git ~/.claude/skills/logo-generator
+
 ```
 
 #### 方法 3：手动安装
