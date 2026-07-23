@@ -16,6 +16,7 @@ const l10n = @import("l10n.zig");
 const resource_mapper = @import("resource_mapper.zig");
 const dead_code = @import("dead_code.zig");
 const toon = @import("toon.zig");
+const dec_renderer = @import("dec_renderer.zig");
 
 const BatchOperation = struct {
     action: []const u8,
@@ -43,6 +44,8 @@ const Request = struct {
     topK: ?usize = null,
     minLines: ?u32 = null,
     threshold: ?f32 = null,
+    width: ?u32 = null,
+    height: ?u32 = null,
     queryEmbedding: ?[db.VECTOR_BQ_U32_COUNT]u32 = null,
     batch: ?[]BatchOperation = null,
     
@@ -208,6 +211,12 @@ const DeadCodeResponse = struct {
 };
 
 const ToonResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const u8,
+};
+
+const BitmapResponse = struct {
     id: ?usize = null,
     success: bool = true,
     data: []const u8,
@@ -679,6 +688,14 @@ pub fn main() !void {
                 const toon_res = try toon.serializeToonTabularNative(allocator, hdrs, rws);
                 defer allocator.free(toon_res);
                 try writeResponse(allocator, &writer.interface, ToonResponse{ .id = req_id, .data = toon_res });
+            }
+        } else if (std.mem.eql(u8, req.action, "renderTextBitmapNative")) {
+            if (req.content) |cnt| {
+                const w = req.width orelse 640;
+                const h = req.height orelse 480;
+                const bmp = try dec_renderer.renderTextBitmapNative(allocator, cnt, w, h);
+                defer allocator.free(bmp);
+                try writeResponse(allocator, &writer.interface, BitmapResponse{ .id = req_id, .data = bmp });
             }
         } else {
             try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Unknown action" });

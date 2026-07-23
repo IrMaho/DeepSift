@@ -327,6 +327,11 @@ export class NativeStore {
         return data || '';
     }
 
+    public async renderTextBitmapNative(content: string, width: number = 640, height: number = 480): Promise<Buffer> {
+        const data = await this.executeAction('renderTextBitmapNative', { content, width, height });
+        return Buffer.from(data || []);
+    }
+
     public async getAllChunks(): Promise<EmbeddedChunk[]> {
         const data = await this.executeAction('getAllChunks');
         if (!data) return [];
