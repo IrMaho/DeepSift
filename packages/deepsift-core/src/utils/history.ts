@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { renderTextToImages } from './native-renderer.js';
 
 const OUTPUTS_DIR_NAMES = ['.deepsift/outputs', '.mcp_search_outputs'];
 
@@ -66,27 +67,16 @@ export async function saveSearchLog(projectPath: string, queries: string[], resu
         indexEntry += `*Result saved to text file: \`${filename}\` (Visuals skipped to save tokens)*\n\n`;
     } else {
         try {
-            // @ts-ignore
-            const pxpipe = await import('pxpipe-proxy');
-            if (pxpipe && pxpipe.renderTextToImages) {
-                // Use pxpipe-main's native defaults exactly to achieve the intended dense layout
-                // with native anti-aliasing for the token-saving "blur" effect.
-                const { pages } = await pxpipe.renderTextToImages(fileContent, {
-                    reflow: true
-                });
-                
-                pages.forEach((page: any, idx: number) => {
-                    const imgName = `search_${timestamp}_${hash}_page_${idx}.png`;
-                    const imgPath = path.join(outputsDir, imgName);
-                    fs.writeFileSync(imgPath, page.png);
-                    indexEntry += `![${imgName}](${imgName})\n\n`;
-                    generatedImages.push(imgPath);
-                });
-            } else {
-                throw new Error('pxpipe not found');
-            }
+            const { pages } = renderTextToImages(fileContent, { reflow: true });
+            pages.forEach((page: any, idx: number) => {
+                const imgName = `search_${timestamp}_${hash}_page_${idx}.png`;
+                const imgPath = path.join(outputsDir, imgName);
+                fs.writeFileSync(imgPath, page.png);
+                indexEntry += `![${imgName}](${imgName})\n\n`;
+                generatedImages.push(imgPath);
+            });
         } catch (e: any) {
-            console.error('Pxpipe rendering failed, fallback to text reference:', e.message);
+            console.error('DeepSift Native rendering failed, fallback to text reference:', e.message);
             indexEntry += `*Rendering failed. Result saved to text file: \`${filename}\`*\n\n`;
         }
     }

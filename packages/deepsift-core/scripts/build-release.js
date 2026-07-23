@@ -76,28 +76,6 @@ async function main() {
         console.warn('Warning: Native deepsift-math binary not found. JS fallbacks will be used.');
     }
 
-    // 6. Copy pxpipe-main local dependency (pruned)
-    console.log('Step 6: Copying pxpipe-main files (excluding bloat)...');
-    const srcPxpipe = path.join(rootDir, 'pxpipe-main');
-    const destPxpipe = path.join(bundleFolder, 'pxpipe-main');
-    
-    if (fs.existsSync(srcPxpipe)) {
-        fs.mkdirSync(destPxpipe, { recursive: true });
-        // Only copy package.json, dist, and bin
-        fs.copyFileSync(path.join(srcPxpipe, 'package.json'), path.join(destPxpipe, 'package.json'));
-        
-        const pxpipeDist = path.join(srcPxpipe, 'dist');
-        if (fs.existsSync(pxpipeDist)) {
-            copyDirSync(pxpipeDist, path.join(destPxpipe, 'dist'));
-        }
-        const pxpipeBin = path.join(srcPxpipe, 'bin');
-        if (fs.existsSync(pxpipeBin)) {
-            copyDirSync(pxpipeBin, path.join(destPxpipe, 'bin'));
-        }
-    } else {
-        throw new Error('Local dependency pxpipe-main not found at root.');
-    }
-
     // 7. Copy package.json to bundle folder
     console.log('Step 7: Copying package configuration...');
     fs.copyFileSync(path.join(rootDir, 'package.json'), path.join(bundleFolder, 'package.json'));

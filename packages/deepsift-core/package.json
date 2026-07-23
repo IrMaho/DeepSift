@@ -19,7 +19,7 @@
   "keywords": [
     "mcp",
     "semantic-search",
-    "ternlight"
+    "deepsift"
   ],
   "author": "",
   "license": "ISC",
@@ -32,9 +32,9 @@
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@napi-rs/canvas": "^0.1.53",
     "@ternlight/base": "^0.1.0",
     "ignore": "^7.0.6",
-    "pxpipe-proxy": "file:pxpipe-main",
     "tree-sitter": "^0.25.0",
     "tree-sitter-python": "^0.25.0",
     "tree-sitter-typescript": "^0.23.2",
@@ -45,9 +45,6 @@
     "templates",
     "native/core-zig/build.zig",
     "native/core-zig/src",
-    "bin",
-    "pxpipe-main/dist",
-    "pxpipe-main/bin",
-    "pxpipe-main/package.json"
+    "bin"
   ]
 }
