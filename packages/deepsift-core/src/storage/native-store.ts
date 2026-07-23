@@ -232,6 +232,36 @@ export class NativeStore {
         }));
     }
 
+    public async searchHybridNative(query: string, queryEmbeddingF32?: Float32Array, topK: number = 20): Promise<SearchResult[]> {
+        const bqQuery = queryEmbeddingF32 ? this.quantizeF32ToBQ(queryEmbeddingF32) : undefined;
+        const data = await this.executeAction('searchHybridNative', { query, queryEmbedding: bqQuery, topK });
+        if (!data) return [];
+        
+        return data.map((row: any) => ({
+            chunk: {
+                id: row.id,
+                filePath: row.filePath,
+                content: row.content,
+                startLine: row.startLine,
+                endLine: row.endLine,
+                type: row.type,
+                language: row.language
+            },
+            score: row.score,
+            matchType: row.matchType || 'hybrid-native'
+        }));
+    }
+
+    public async extractSymbolsNative(content: string): Promise<any[]> {
+        const data = await this.executeAction('extractSymbolsNative', { content });
+        return data || [];
+    }
+
+    public async computeCloneHashesNative(content: string, minLines: number = 5): Promise<any[]> {
+        const data = await this.executeAction('computeCloneHashesNative', { content, minLines });
+        return data || [];
+    }
+
     public async getAllChunks(): Promise<EmbeddedChunk[]> {
         const data = await this.executeAction('getAllChunks');
         if (!data) return [];

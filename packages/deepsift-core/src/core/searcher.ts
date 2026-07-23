@@ -30,10 +30,18 @@ export class Searcher {
     public async search(searchQuery: SearchQuery): Promise<SearchResult[]> {
         const { query, topK = 10, filterType, filterPath } = searchQuery;
         
+        const queryVectorF32 = await getEmbedding(query);
+        const hybridNativeRaw = await this.store.searchHybridNative(query, queryVectorF32, topK * 2);
+        if (hybridNativeRaw && hybridNativeRaw.length > 0) {
+            const filtered = this.filterResults(hybridNativeRaw, filterType, filterPath);
+            if (filtered.length > 0) {
+                return filtered.slice(0, topK);
+            }
+        }
+
         const keywordResultsRaw = await this.store.searchKeyword(query, topK * 2);
         const keywordResults = this.filterResults(keywordResultsRaw, filterType, filterPath);
 
-        const queryVectorF32 = await getEmbedding(query);
         const semanticResultsRaw = await this.store.searchSemantic(queryVectorF32, topK * 2);
         const semanticResults = this.filterResults(semanticResultsRaw, filterType, filterPath);
 

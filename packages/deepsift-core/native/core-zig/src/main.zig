@@ -2,6 +2,8 @@ const std = @import("std");
 const db = @import("db.zig");
 const graph = @import("graph.zig");
 const realm_mod = @import("realm.zig");
+const search_engine = @import("search_engine.zig");
+const tokenizer = @import("tokenizer.zig");
 
 const BatchOperation = struct {
     action: []const u8,
@@ -22,7 +24,9 @@ const Request = struct {
     chunks: ?[]db.Chunk = null,
     ids: ?[][]const u8 = null,
     query: ?[]const u8 = null,
+    content: ?[]const u8 = null,
     topK: ?usize = null,
+    minLines: ?u32 = null,
     queryEmbedding: ?[db.VECTOR_BQ_U32_COUNT]u32 = null,
     batch: ?[]BatchOperation = null,
     
@@ -95,6 +99,18 @@ const SearchResponse = struct {
     id: ?usize = null,
     success: bool = true,
     data: []const SearchMatch,
+};
+
+const SymbolsResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const tokenizer.SymbolInfo,
+};
+
+const ClonesResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const tokenizer.CloneBlock,
 };
 
 fn countKeywordMatches(content: []const u8, file_path: []const u8, query: []const u8) f32 {
@@ -204,8 +220,6 @@ fn writeResponse(allocator: std.mem.Allocator, writer: *std.Io.Writer, value: an
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
 
-
-
     var threaded_io = std.Io.Threaded.init(allocator, .{});
     defer threaded_io.deinit();
     const io = threaded_io.io();
@@ -231,7 +245,6 @@ pub fn main() !void {
     while (true) {
         _ = req_arena.reset(.retain_capacity);
         var input_array = std.ArrayList(u8).empty;
-        // No defer deinit needed since we use arena
 
         while (true) {
             var byte: [1]u8 = undefined;
@@ -255,217 +268,133 @@ pub fn main() !void {
             try writer.flush();
             continue;
         };
-        // No need to defer parsed.deinit() since we use an arena that gets reset or deinit'd
 
-    const req = parsed.value;
+        const req = parsed.value;
         const req_id = req.id;
 
-    const resolved_db_path: []const u8 = req.dbPath;
-    const resolved_graph_path: ?[]const u8 = req.graphDbPath;
+        const resolved_db_path: []const u8 = req.dbPath;
+        const resolved_graph_path: ?[]const u8 = req.graphDbPath;
 
-    std.debug.print("Loading database...\n", .{});
-    database.loadFromFile(io, resolved_db_path) catch |err| {
-        std.debug.print("Failed to load database: {any}\n", .{err});
-    };
-    std.debug.print("Database loaded.\n", .{});
+        database.loadFromFile(io, resolved_db_path) catch {};
 
-    var graph_modified = false;
-    if (resolved_graph_path) |graphPath| {
-        std.debug.print("Loading graph database...\n", .{});
-        graph_db.loadFromFile(io, graphPath) catch |err| {
-            std.debug.print("Failed to load graph database: {any}\n", .{err});
-        };
-        std.debug.print("Graph database loaded.\n", .{});
-    }
-
-    var modified = false;
-
-    if (std.mem.eql(u8, req.action, "saveGraph")) {
-        std.debug.print("Processing saveGraph...\n", .{});
-        if (req.graphNodes) |nodes| {
-            std.debug.print("Appending {d} nodes...\n", .{nodes.len});
-            graph_db.reset();
-            try graph_db.nodes.appendSlice(allocator, nodes);
-        }
-        if (req.graphEdges) |edges| {
-            std.debug.print("Appending {d} edges...\n", .{edges.len});
-            try graph_db.edges.appendSlice(allocator, edges);
-        }
-        graph_modified = true;
-        std.debug.print("Sending ResponseOk...\n", .{});
-        try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
-    } else if (std.mem.eql(u8, req.action, "graphBFS")) {
-        if (req.startNodes) |sn| {
-            var algos = graph.GraphAlgorithms.init(allocator, &graph_db);
-            defer algos.deinit();
-            
-            const depth = req.depth orelse 3;
-            const threshold = req.hubThreshold orelse 50;
-            
-            var result = try algos.bfs(sn, depth, threshold);
-            defer result.deinit(allocator);
-            
-            // For now just return the OK, we should ideally return the nodes
-            try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
-        }
-    } else if (std.mem.eql(u8, req.action, "saveMetadata")) {
-        std.debug.print("Processing saveMetadata...\n", .{});
-        if (req.metadata) |m| {
-            try database.addMetadata(m);
-            modified = true;
-            try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
+        var graph_modified = false;
+        if (resolved_graph_path) |graphPath| {
+            graph_db.loadFromFile(io, graphPath) catch {};
         }
 
-    } else if (std.mem.eql(u8, req.action, "getMetadata")) {
-        std.debug.print("Processing getMetadata...\n", .{});
-        var found: ?db.FileMetadata = null;
-        if (req.filePath) |fp| {
-            std.debug.print("Looking up: {s}\n", .{fp});
-            if (database.metadata.get(fp)) |m| found = m;
-        }
-        try writeResponse(allocator, &writer.interface, MetadataResponse{ .data = found });
+        var modified = false;
 
-    } else if (std.mem.eql(u8, req.action, "getAllMetadata")) {
-        std.debug.print("Processing getAllMetadata...\n", .{});
-        var results = std.ArrayList(db.FileMetadata).empty;
-        defer results.deinit(allocator);
-        var it = database.metadata.iterator();
-        while (it.next()) |entry| {
-            try results.append(allocator, entry.value_ptr.*);
-        }
-        try writeResponse(allocator, &writer.interface, AllMetadataResponse{ .id = req_id, .data = results.items });
-
-    } else if (std.mem.eql(u8, req.action, "deleteFileChunks")) {
-        if (req.filePath) |fp| {
-            database.deleteFileChunks(fp);
-            modified = true;
-            try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
-        }
-    } else if (std.mem.eql(u8, req.action, "saveChunks")) {
-        if (req.chunks) |chunks| {
-            for (chunks) |c| {
-                try database.addChunk(c);
+        if (std.mem.eql(u8, req.action, "saveGraph")) {
+            if (req.graphNodes) |nodes| {
+                graph_db.reset();
+                try graph_db.nodes.appendSlice(allocator, nodes);
             }
-            modified = true;
+            if (req.graphEdges) |edges| {
+                try graph_db.edges.appendSlice(allocator, edges);
+            }
+            graph_modified = true;
             try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
-        }
-    } else if (std.mem.eql(u8, req.action, "batchExecute")) {
-        std.debug.print("Processing batchExecute...\n", .{});
-        if (req.batch) |batch| {
-            for (batch) |op| {
-                if (std.mem.eql(u8, op.action, "saveMetadata")) {
-                    if (op.metadata) |m| {
-                        try database.addMetadata(m);
-                        modified = true;
-                    }
-                } else if (std.mem.eql(u8, op.action, "deleteFileChunks")) {
-                    if (op.filePath) |fp| {
-                        database.deleteFileChunks(fp);
-                        modified = true;
-                    }
-                } else if (std.mem.eql(u8, op.action, "saveChunks")) {
-                    if (op.chunks) |chunks| {
-                        for (chunks) |c| {
-                            try database.addChunk(c);
+        } else if (std.mem.eql(u8, req.action, "saveMetadata")) {
+            if (req.metadata) |m| {
+                try database.addMetadata(m);
+                modified = true;
+                try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
+            }
+        } else if (std.mem.eql(u8, req.action, "getMetadata")) {
+            var found: ?db.FileMetadata = null;
+            if (req.filePath) |fp| {
+                if (database.metadata.get(fp)) |m| found = m;
+            }
+            try writeResponse(allocator, &writer.interface, MetadataResponse{ .data = found });
+        } else if (std.mem.eql(u8, req.action, "getAllMetadata")) {
+            var results = std.ArrayList(db.FileMetadata).empty;
+            defer results.deinit(allocator);
+            var it = database.metadata.iterator();
+            while (it.next()) |entry| {
+                try results.append(allocator, entry.value_ptr.*);
+            }
+            try writeResponse(allocator, &writer.interface, AllMetadataResponse{ .id = req_id, .data = results.items });
+        } else if (std.mem.eql(u8, req.action, "deleteFileChunks")) {
+            if (req.filePath) |fp| {
+                database.deleteFileChunks(fp);
+                modified = true;
+                try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
+            }
+        } else if (std.mem.eql(u8, req.action, "saveChunks")) {
+            if (req.chunks) |chunks| {
+                for (chunks) |c| {
+                    try database.addChunk(c);
+                }
+                modified = true;
+                try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
+            }
+        } else if (std.mem.eql(u8, req.action, "batchExecute")) {
+            if (req.batch) |batch| {
+                for (batch) |op| {
+                    if (std.mem.eql(u8, op.action, "saveMetadata")) {
+                        if (op.metadata) |m| {
+                            try database.addMetadata(m);
+                            modified = true;
                         }
-                        modified = true;
+                    } else if (std.mem.eql(u8, op.action, "deleteFileChunks")) {
+                        if (op.filePath) |fp| {
+                            database.deleteFileChunks(fp);
+                            modified = true;
+                        }
+                    } else if (std.mem.eql(u8, op.action, "saveChunks")) {
+                        if (op.chunks) |chunks| {
+                            for (chunks) |c| {
+                                try database.addChunk(c);
+                            }
+                            modified = true;
+                        }
                     }
                 }
+                try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
+            } else {
+                try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Missing batch operations array" });
             }
-            try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
-        } else {
-            try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Missing batch operations array" });
-        }
-    } else if (std.mem.eql(u8, req.action, "getAllChunks")) {
-        try writeResponse(allocator, &writer.interface, ChunksResponse{ .id = req_id, .data = database.chunks.items });
-    } else if (std.mem.eql(u8, req.action, "getChunkEmbeddings")) {
-        var results = std.ArrayList(ChunkEmbedding).empty;
-        defer results.deinit(allocator);
-        for (database.chunks.items) |c| {
-            try results.append(allocator, .{ .id = c.id, .embedding = c.embedding });
-        }
-        try writeResponse(allocator, &writer.interface, ChunkEmbeddingsResponse{ .id = req_id, .data = results.items });
-    } else if (std.mem.eql(u8, req.action, "getChunksByIds")) {
-        var results = std.ArrayList(db.Chunk).empty;
-        defer results.deinit(allocator);
-        if (req.ids) |ids| {
+        } else if (std.mem.eql(u8, req.action, "getAllChunks")) {
+            try writeResponse(allocator, &writer.interface, ChunksResponse{ .id = req_id, .data = database.chunks.items });
+        } else if (std.mem.eql(u8, req.action, "getChunkEmbeddings")) {
+            var results = std.ArrayList(ChunkEmbedding).empty;
+            defer results.deinit(allocator);
             for (database.chunks.items) |c| {
-                for (ids) |id| {
-                    if (std.mem.eql(u8, c.id, id)) {
-                        try results.append(allocator, c);
-                        break;
-                    }
+                try results.append(allocator, .{ .id = c.id, .embedding = c.embedding });
+            }
+            try writeResponse(allocator, &writer.interface, ChunkEmbeddingsResponse{ .id = req_id, .data = results.items });
+        } else if (std.mem.eql(u8, req.action, "getStatus")) {
+            var last_updated: i64 = 0;
+            var it = database.metadata.iterator();
+            while (it.next()) |entry| {
+                if (entry.value_ptr.last_indexed > last_updated) {
+                    last_updated = entry.value_ptr.last_indexed;
                 }
             }
-        }
-        try writeResponse(allocator, &writer.interface, ChunksResponse{ .id = req_id, .data = results.items });
-    } else if (std.mem.eql(u8, req.action, "getStatus")) {
-        std.debug.print("Processing getStatus...\n", .{});
-        var last_updated: i64 = 0;
-        var it = database.metadata.iterator();
-        while (it.next()) |entry| {
-            if (entry.value_ptr.last_indexed > last_updated) {
-                last_updated = entry.value_ptr.last_indexed;
-            }
-        }
-        try writeResponse(allocator, &writer.interface, StatusResponse{ .id = req_id, .data = .{
-                .totalFiles = @intCast(database.metadata.count()),
-                .totalChunks = @intCast(database.chunks.items.len),
-                .lastUpdated = last_updated,
-                .isIndexing = false,
-            }
-        });
-
-    } else if (std.mem.eql(u8, req.action, "searchKeyword")) {
-        const top_k = req.topK orelse 20;
-        var results = std.ArrayList(RankedChunk).empty;
-        defer results.deinit(allocator);
-
-        for (database.chunks.items, 0..) |chunk, i| {
-            var k_score: f32 = 0.0;
-            if (req.query) |q| {
-                k_score = countKeywordMatches(chunk.content, chunk.file_path, q);
-            }
-
-            if (k_score > 0.0) {
-                try results.append(allocator, .{
-                    .chunk_index = i,
-                    .keyword_score = k_score,
-                });
-            }
-        }
-
-        std.sort.pdq(RankedChunk, results.items, {}, compareRankedChunks);
-
-        const count = @min(top_k, results.items.len);
-        var final_matches = try allocator.alloc(SearchMatch, count);
-        defer allocator.free(final_matches);
-
-        for (0..count) |i| {
-            const rc = results.items[i];
-            const c = database.chunks.items[rc.chunk_index];
-            final_matches[i] = .{
-                .id = c.id,
-                .filePath = c.file_path,
-                .content = c.content,
-                .startLine = c.start_line,
-                .endLine = c.end_line,
-                .type = c.chunk_type,
-                .language = c.language,
-                .score = rc.keyword_score,
-                .matchType = "keyword",
-            };
-        }
-        try writeResponse(allocator, &writer.interface, SearchResponse{ .id = req_id, .data = final_matches });
-    } else if (std.mem.eql(u8, req.action, "searchSemantic")) {
-        const top_k = req.topK orelse 20;
-        if (req.queryEmbedding) |qe| {
+            try writeResponse(allocator, &writer.interface, StatusResponse{ .id = req_id, .data = .{
+                    .totalFiles = @intCast(database.metadata.count()),
+                    .totalChunks = @intCast(database.chunks.items.len),
+                    .lastUpdated = last_updated,
+                    .isIndexing = false,
+                }
+            });
+        } else if (std.mem.eql(u8, req.action, "searchKeyword")) {
+            const top_k = req.topK orelse 20;
             var results = std.ArrayList(RankedChunk).empty;
             defer results.deinit(allocator);
 
-            for (database.chunks.items, 0..) |chunk, ci| {
-                const score = hammingSimilarity(qe, chunk.embedding);
-                try results.append(allocator, .{ .chunk_index = ci, .keyword_score = score });
+            for (database.chunks.items, 0..) |chunk, i| {
+                var k_score: f32 = 0.0;
+                if (req.query) |q| {
+                    k_score = countKeywordMatches(chunk.content, chunk.file_path, q);
+                }
+
+                if (k_score > 0.0) {
+                    try results.append(allocator, .{
+                        .chunk_index = i,
+                        .keyword_score = k_score,
+                    });
+                }
             }
 
             std.sort.pdq(RankedChunk, results.items, {}, compareRankedChunks);
@@ -474,10 +403,10 @@ pub fn main() !void {
             var final_matches = try allocator.alloc(SearchMatch, count);
             defer allocator.free(final_matches);
 
-            for (0..count) |si| {
-                const rc = results.items[si];
+            for (0..count) |i| {
+                const rc = results.items[i];
                 const c = database.chunks.items[rc.chunk_index];
-                final_matches[si] = .{
+                final_matches[i] = .{
                     .id = c.id,
                     .filePath = c.file_path,
                     .content = c.content,
@@ -486,29 +415,104 @@ pub fn main() !void {
                     .type = c.chunk_type,
                     .language = c.language,
                     .score = rc.keyword_score,
-                    .matchType = "semantic",
+                    .matchType = "keyword",
                 };
             }
             try writeResponse(allocator, &writer.interface, SearchResponse{ .id = req_id, .data = final_matches });
-        }
-    } else {
-        try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Unknown action" });
-    }
+        } else if (std.mem.eql(u8, req.action, "searchSemantic")) {
+            const top_k = req.topK orelse 20;
+            if (req.queryEmbedding) |qe| {
+                var results = std.ArrayList(RankedChunk).empty;
+                defer results.deinit(allocator);
 
-    try writer.flush();
+                for (database.chunks.items, 0..) |chunk, ci| {
+                    const score = hammingSimilarity(qe, chunk.embedding);
+                    try results.append(allocator, .{ .chunk_index = ci, .keyword_score = score });
+                }
 
-    if (modified) {
-        database.saveToFile(io, resolved_db_path) catch |err| {
-            std.debug.print("Failed to save database: {any}\n", .{err});
-        };
-    }
-    
-    if (graph_modified) {
-        if (resolved_graph_path) |graphPath| {
-            graph_db.saveToFile(io, graphPath) catch |err| {
-                std.debug.print("Failed to save graph database: {any}\n", .{err});
-            };
+                std.sort.pdq(RankedChunk, results.items, {}, compareRankedChunks);
+
+                const count = @min(top_k, results.items.len);
+                var final_matches = try allocator.alloc(SearchMatch, count);
+                defer allocator.free(final_matches);
+
+                for (0..count) |si| {
+                    const rc = results.items[si];
+                    const c = database.chunks.items[rc.chunk_index];
+                    final_matches[si] = .{
+                        .id = c.id,
+                        .filePath = c.file_path,
+                        .content = c.content,
+                        .startLine = c.start_line,
+                        .endLine = c.end_line,
+                        .type = c.chunk_type,
+                        .language = c.language,
+                        .score = rc.keyword_score,
+                        .matchType = "semantic",
+                    };
+                }
+                try writeResponse(allocator, &writer.interface, SearchResponse{ .id = req_id, .data = final_matches });
+            }
+        } else if (std.mem.eql(u8, req.action, "searchHybridNative")) {
+            const top_k = req.topK orelse 20;
+            if (req.query) |q| {
+                const native_matches = try search_engine.searchHybridNative(
+                    allocator,
+                    database.chunks.items,
+                    q,
+                    req.queryEmbedding,
+                    top_k,
+                    .{},
+                    .{},
+                );
+                defer allocator.free(native_matches);
+
+                var final_matches = try allocator.alloc(SearchMatch, native_matches.len);
+                defer allocator.free(final_matches);
+
+                for (native_matches, 0..) |m, i| {
+                    const c = database.chunks.items[m.chunk_index];
+                    final_matches[i] = .{
+                        .id = c.id,
+                        .filePath = c.file_path,
+                        .content = c.content,
+                        .startLine = c.start_line,
+                        .endLine = c.end_line,
+                        .type = c.chunk_type,
+                        .language = c.language,
+                        .score = m.rrf_score,
+                        .matchType = "hybrid-native",
+                    };
+                }
+                try writeResponse(allocator, &writer.interface, SearchResponse{ .id = req_id, .data = final_matches });
+            }
+        } else if (std.mem.eql(u8, req.action, "extractSymbolsNative")) {
+            if (req.content) |cnt| {
+                const syms = try tokenizer.extractSymbolsNative(allocator, cnt);
+                defer allocator.free(syms);
+                try writeResponse(allocator, &writer.interface, SymbolsResponse{ .id = req_id, .data = syms });
+            }
+        } else if (std.mem.eql(u8, req.action, "computeCloneHashesNative")) {
+            if (req.content) |cnt| {
+                const min_l = req.minLines orelse 5;
+                const clones = try tokenizer.computeCloneHashesNative(allocator, cnt, min_l);
+                defer allocator.free(clones);
+                try writeResponse(allocator, &writer.interface, ClonesResponse{ .id = req_id, .data = clones });
+            }
+        } else {
+            try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Unknown action" });
+        }
+
+        try writer.flush();
+
+        if (modified) {
+            database.saveToFile(io, resolved_db_path) catch {};
+        }
+        
+        if (graph_modified) {
+            if (resolved_graph_path) |graphPath| {
+                graph_db.saveToFile(io, graphPath) catch {};
+            }
         }
     }
-    } // End of while(true) loop
 }
