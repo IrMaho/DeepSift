@@ -40,7 +40,6 @@ import { deadCodeCommand } from './commands/dead-code.js';
 import { autoHealCommand } from './commands/auto-heal.js';
 import { cfgCommand } from './commands/cfg.js';
 import { checkLayersCommand } from './commands/check-layers.js';
-import { visionCommand } from './commands/vision.js';
 import { terminateWorkers } from '../core/embedder.js';
 
 import fs from 'fs';
@@ -658,11 +657,6 @@ async function main() {
                 await memoCommand(projectPath, memoAction, memoTarget, commandArgs.slice(2), format);
                 break;
             }
-
-            case 'vision':
-            case 'v':
-                await visionCommand(projectPath, commandArgs);
-                break;
 
             default:
 

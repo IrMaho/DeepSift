@@ -1,7 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { VisionConfig } from '../types/vision-types.js';
-
 
 export interface RealmDefinition {
     displayName: string;
@@ -27,7 +25,6 @@ export interface DeepSiftConfig {
     format?: {
         outputTheme?: string;
     };
-    vision?: VisionConfig;
     realms?: Record<string, RealmDefinition>;
 }
 
@@ -60,14 +57,6 @@ export const DEFAULT_CONFIG: DeepSiftConfig = {
     },
     format: {
         outputTheme: "default"
-    },
-    vision: {
-        enabled: false,
-        autoRender: false,
-        daemonPort: 8264,
-        maxTileResolution: 1024,
-        tokenCompression: "dec_v2",
-        cacheDir: ".deepsift/vision_cache"
     },
     realms: {
 

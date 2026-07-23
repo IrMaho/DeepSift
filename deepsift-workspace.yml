@@ -2,8 +2,4 @@ deepsift:
   core:
     enabled: true
     mode: "text-semantic"
-  vision:
-    enabled: true  # Set to false for weaker systems
-    mode: "pixelrag"
-    model_path: "./models/Qwen3-VL-Embedding-2B"
-    backend: "faiss"
+
