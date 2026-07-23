@@ -317,6 +317,16 @@ export class NativeStore {
         return data || [];
     }
 
+    public async findDeadCodeNative(symbols: any[], contents: string[]): Promise<any[]> {
+        const data = await this.executeAction('findDeadCodeNative', { symbols, contents });
+        return data || [];
+    }
+
+    public async serializeToonTabularNative(headers: string[], rows: string[][]): Promise<string> {
+        const data = await this.executeAction('serializeToonTabularNative', { headers, rows });
+        return data || '';
+    }
+
     public async getAllChunks(): Promise<EmbeddedChunk[]> {
         const data = await this.executeAction('getAllChunks');
         if (!data) return [];

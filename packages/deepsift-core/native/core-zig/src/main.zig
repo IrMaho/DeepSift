@@ -14,6 +14,8 @@ const outline = @import("outline.zig");
 const memo_graph = @import("memo_graph.zig");
 const l10n = @import("l10n.zig");
 const resource_mapper = @import("resource_mapper.zig");
+const dead_code = @import("dead_code.zig");
+const toon = @import("toon.zig");
 
 const BatchOperation = struct {
     action: []const u8,
@@ -36,6 +38,8 @@ const Request = struct {
     query: ?[]const u8 = null,
     content: ?[]const u8 = null,
     symbol: ?[]const u8 = null,
+    key: ?[]const u8 = null,
+    value: ?[]const u8 = null,
     topK: ?usize = null,
     minLines: ?u32 = null,
     threshold: ?f32 = null,
@@ -43,6 +47,10 @@ const Request = struct {
     batch: ?[]BatchOperation = null,
     
     notes: ?[]memo_graph.NoteInfo = null,
+    symbols: ?[]dead_code.SymbolUsage = null,
+    contents: ?[][]const u8 = null,
+    headers: ?[][]const u8 = null,
+    rows: ?[][][]const u8 = null,
 
     graphNodes: ?[]db.GraphNode = null,
     graphEdges: ?[]db.GraphEdge = null,
@@ -191,6 +199,18 @@ const ResourcesResponse = struct {
     id: ?usize = null,
     success: bool = true,
     data: []const resource_mapper.ResourceRef,
+};
+
+const DeadCodeResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const dead_code.DeadSymbol,
+};
+
+const ToonResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const u8,
 };
 
 fn countKeywordMatches(content: []const u8, file_path: []const u8, query: []const u8) f32 {
@@ -645,6 +665,20 @@ pub fn main() !void {
                 const r_refs = try resource_mapper.mapResourceRefsNative(allocator, cnt);
                 defer allocator.free(r_refs);
                 try writeResponse(allocator, &writer.interface, ResourcesResponse{ .id = req_id, .data = r_refs });
+            }
+        } else if (std.mem.eql(u8, req.action, "findDeadCodeNative")) {
+            if (req.symbols) |syms| {
+                const cnts = req.contents orelse &[_][]const u8{};
+                const dead_syms = try dead_code.findDeadCodeNative(allocator, syms, cnts);
+                defer allocator.free(dead_syms);
+                try writeResponse(allocator, &writer.interface, DeadCodeResponse{ .id = req_id, .data = dead_syms });
+            }
+        } else if (std.mem.eql(u8, req.action, "serializeToonTabularNative")) {
+            if (req.headers) |hdrs| {
+                const rws = req.rows orelse &[_][][]const u8{};
+                const toon_res = try toon.serializeToonTabularNative(allocator, hdrs, rws);
+                defer allocator.free(toon_res);
+                try writeResponse(allocator, &writer.interface, ToonResponse{ .id = req_id, .data = toon_res });
             }
         } else {
             try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Unknown action" });

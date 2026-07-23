@@ -6,7 +6,7 @@ import fs from 'fs';
 describe('Native Store Zig Engine Integration', () => {
     const testDbPath = path.resolve(process.cwd(), '.deepsift/test-native.db');
 
-    it('should invoke native hybrid search, symbol extraction, clone hashing, walker, similarity matrix, property miner, LCOV parser, CallTree, CFG, outline classifier, memo graph, l10n, and resource mapper', async () => {
+    it('should invoke native hybrid search, symbol extraction, clone hashing, walker, similarity matrix, property miner, LCOV parser, CallTree, CFG, outline classifier, memo graph, l10n, resource mapper, dead code detector, and TOON serializer', async () => {
         const store = new NativeStore(testDbPath);
 
         // Test native symbol extraction
@@ -81,6 +81,18 @@ describe('Native Store Zig Engine Integration', () => {
         // Test native resource ref mapper
         const resourceRefs = await store.mapResourceRefsNative(`import logo from "./assets/logo.png"; const font = "inter.woff2";`);
         expect(Array.isArray(resourceRefs)).toBe(true);
+
+        // Test native dead code detector
+        const deadSymbols = await store.findDeadCodeNative(
+            [{ name: "unusedFunc", file_path: "src/old.ts", line: 1, usage_count: 1 }],
+            ["function unusedFunc() {}"]
+        );
+        expect(Array.isArray(deadSymbols)).toBe(true);
+
+        // Test native TOON tabular serializer
+        const toonStr = await store.serializeToonTabularNative(["id", "name"], [["1", "Alice"], ["2", "Bob"]]);
+        expect(typeof toonStr).toBe('string');
+        expect(toonStr.length).toBeGreaterThan(0);
 
         // Cleanup test database if created
         if (fs.existsSync(testDbPath)) fs.unlinkSync(testDbPath);
