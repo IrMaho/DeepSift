@@ -40,7 +40,9 @@ import { deadCodeCommand } from './commands/dead-code.js';
 import { autoHealCommand } from './commands/auto-heal.js';
 import { cfgCommand } from './commands/cfg.js';
 import { checkLayersCommand } from './commands/check-layers.js';
+import { visionCommand } from './commands/vision.js';
 import { terminateWorkers } from '../core/embedder.js';
+
 import fs from 'fs';
 
 const VERSION = '1.0.01-amir';
@@ -657,7 +659,13 @@ async function main() {
                 break;
             }
 
+            case 'vision':
+            case 'v':
+                await visionCommand(projectPath, commandArgs);
+                break;
+
             default:
+
                 throw new Error(`Unknown command: "${command}"\nRun 'deepsift --help' for available commands.`);
         }
     } catch (err: any) {

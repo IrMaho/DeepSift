@@ -47,3 +47,5 @@ export interface IndexStatus {
 }
 
 export * from './memo-types.js';
+export * from './vision-types.js';
+

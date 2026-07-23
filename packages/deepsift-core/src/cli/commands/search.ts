@@ -17,7 +17,9 @@ export interface SearchOptions {
     allRealms?: boolean;
     noVisual?: boolean;
     limit?: number;
+    vision?: boolean;
 }
+
 
 export async function searchCommand(
     projectPath: string, 
