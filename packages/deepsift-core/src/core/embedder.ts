@@ -3,11 +3,15 @@ import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
 
+import fs from 'fs';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const NUM_WORKERS = Math.max(1, os.cpus().length - 1);
-const workerPath = path.join(__dirname, 'embedder-worker.js');
+const workerJs = path.join(__dirname, 'embedder-worker.js');
+const workerTs = path.join(__dirname, 'embedder-worker.ts');
+const workerPath = fs.existsSync(workerJs) ? workerJs : (fs.existsSync(workerTs) ? workerTs : workerJs);
 
 let workers: Worker[] = [];
 let nextWorkerIndex = 0;
