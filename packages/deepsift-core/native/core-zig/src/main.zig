@@ -4,6 +4,8 @@ const graph = @import("graph.zig");
 const realm_mod = @import("realm.zig");
 const search_engine = @import("search_engine.zig");
 const tokenizer = @import("tokenizer.zig");
+const walker = @import("walker.zig");
+const similarity = @import("similarity.zig");
 
 const BatchOperation = struct {
     action: []const u8,
@@ -27,6 +29,7 @@ const Request = struct {
     content: ?[]const u8 = null,
     topK: ?usize = null,
     minLines: ?u32 = null,
+    threshold: ?f32 = null,
     queryEmbedding: ?[db.VECTOR_BQ_U32_COUNT]u32 = null,
     batch: ?[]BatchOperation = null,
     
@@ -111,6 +114,18 @@ const ClonesResponse = struct {
     id: ?usize = null,
     success: bool = true,
     data: []const tokenizer.CloneBlock,
+};
+
+const WalkResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const walker.FileWalkInfo,
+};
+
+const SimilarityResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const similarity.SimilarityPair,
 };
 
 fn countKeywordMatches(content: []const u8, file_path: []const u8, query: []const u8) f32 {
@@ -499,6 +514,18 @@ pub fn main() !void {
                 defer allocator.free(clones);
                 try writeResponse(allocator, &writer.interface, ClonesResponse{ .id = req_id, .data = clones });
             }
+        } else if (std.mem.eql(u8, req.action, "walkDirectoryNative")) {
+            if (req.projectPath) |proj_p| {
+                const walked = try walker.walkDirectoryNative(allocator, io, proj_p);
+                defer allocator.free(walked);
+                try writeResponse(allocator, &writer.interface, WalkResponse{ .id = req_id, .data = walked });
+            }
+        } else if (std.mem.eql(u8, req.action, "computeSimilarityMatrixNative")) {
+            const thresh = req.threshold orelse 0.70;
+            const top_k = req.topK orelse 50;
+            const pairs = try similarity.computeSimilarityMatrixNative(allocator, database.chunks.items, thresh, top_k);
+            defer allocator.free(pairs);
+            try writeResponse(allocator, &writer.interface, SimilarityResponse{ .id = req_id, .data = pairs });
         } else {
             try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Unknown action" });
         }

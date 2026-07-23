@@ -262,6 +262,16 @@ export class NativeStore {
         return data || [];
     }
 
+    public async walkDirectoryNative(projectPath: string): Promise<any[]> {
+        const data = await this.executeAction('walkDirectoryNative', { projectPath });
+        return data || [];
+    }
+
+    public async computeSimilarityMatrixNative(threshold: number = 0.70, limit: number = 50): Promise<any[]> {
+        const data = await this.executeAction('computeSimilarityMatrixNative', { threshold, topK: limit });
+        return data || [];
+    }
+
     public async getAllChunks(): Promise<EmbeddedChunk[]> {
         const data = await this.executeAction('getAllChunks');
         if (!data) return [];
