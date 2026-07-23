@@ -6,6 +6,8 @@ const search_engine = @import("search_engine.zig");
 const tokenizer = @import("tokenizer.zig");
 const walker = @import("walker.zig");
 const similarity = @import("similarity.zig");
+const property_miner = @import("property_miner.zig");
+const test_analyzer = @import("test_analyzer.zig");
 
 const BatchOperation = struct {
     action: []const u8,
@@ -126,6 +128,24 @@ const SimilarityResponse = struct {
     id: ?usize = null,
     success: bool = true,
     data: []const similarity.SimilarityPair,
+};
+
+const ColorTokensResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const property_miner.ColorToken,
+};
+
+const ConventionsResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: property_miner.NamingConventionStats,
+};
+
+const CoverageResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const test_analyzer.CoverageInfo,
 };
 
 fn countKeywordMatches(content: []const u8, file_path: []const u8, query: []const u8) f32 {
@@ -526,6 +546,23 @@ pub fn main() !void {
             const pairs = try similarity.computeSimilarityMatrixNative(allocator, database.chunks.items, thresh, top_k);
             defer allocator.free(pairs);
             try writeResponse(allocator, &writer.interface, SimilarityResponse{ .id = req_id, .data = pairs });
+        } else if (std.mem.eql(u8, req.action, "mineColorTokensNative")) {
+            if (req.content) |cnt| {
+                const col_toks = try property_miner.mineColorTokensNative(allocator, cnt);
+                defer allocator.free(col_toks);
+                try writeResponse(allocator, &writer.interface, ColorTokensResponse{ .id = req_id, .data = col_toks });
+            }
+        } else if (std.mem.eql(u8, req.action, "analyzeNamingConventionsNative")) {
+            if (req.content) |cnt| {
+                const conv_stats = property_miner.analyzeNamingConventionsNative(cnt);
+                try writeResponse(allocator, &writer.interface, ConventionsResponse{ .id = req_id, .data = conv_stats });
+            }
+        } else if (std.mem.eql(u8, req.action, "parseLcovNative")) {
+            if (req.content) |cnt| {
+                const cov_info = try test_analyzer.parseLcovNative(allocator, cnt);
+                defer allocator.free(cov_info);
+                try writeResponse(allocator, &writer.interface, CoverageResponse{ .id = req_id, .data = cov_info });
+            }
         } else {
             try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Unknown action" });
         }

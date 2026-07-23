@@ -272,6 +272,21 @@ export class NativeStore {
         return data || [];
     }
 
+    public async mineColorTokensNative(content: string): Promise<any[]> {
+        const data = await this.executeAction('mineColorTokensNative', { content });
+        return data || [];
+    }
+
+    public async analyzeNamingConventionsNative(content: string): Promise<any> {
+        const data = await this.executeAction('analyzeNamingConventionsNative', { content });
+        return data || { camel_case: 0, pascal_case: 0, snake_case: 0, kebab_case: 0 };
+    }
+
+    public async parseLcovNative(content: string): Promise<any[]> {
+        const data = await this.executeAction('parseLcovNative', { content });
+        return data || [];
+    }
+
     public async getAllChunks(): Promise<EmbeddedChunk[]> {
         const data = await this.executeAction('getAllChunks');
         if (!data) return [];
