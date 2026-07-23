@@ -27,41 +27,6 @@ deepsift search "modal component"
 - **Disable image output:** Use `--plain` for pure text with no markdown formatting.
 - **When to switch fonts:** If the INDEX.md visual cache is too small/blurry to read, re-run without `--compress` to bypass pxpipe entirely.
 
-## 🛠 Available DeepSift Commands (Comprehensive 50-Feature Engine)
-
-| Command | Description |
-|---|---|
-| `deepsift overview [path]` | **SUPER-COMMAND (Blueprint):** Single-step Project Blueprint combining Architecture Tree + Central God Nodes + Feature Summaries. Options: `--depth N`. |
-| `deepsift search "query"` | **HYBRID SEMANTIC SEARCH:** Semantic & BM25 auto-switch search enhanced with Graphify PageRank. Options: `--include <path>`, `--sync`, `--layer ui\|domain\|data`, `--realms r1,r2`, `--history`. |
-| `deepsift read "file"` | **MANDATORY FOR READING FILES:** Outputs raw exact text by default. Supports line ranges: `file:10-50`. Use `--compress` to enable visual DEC_v2 tokens. |
-| `deepsift feature "path"` | **AST FEATURE OUTLINE:** AST-based feature summary. Options: `--summary` / `-s`, `--group-by-feature` / `-g`, `--depth N`, `--limit N`, `--offset N`. |
-| `deepsift analyze "path"` | **SUPER-COMMAND (Deep Dive):** Combines Feature Outline and DNA Intelligence for a specific folder or file. |
-| `deepsift arch [--depth N]` | **FOLDER EXPLORATION:** Project architecture blueprint utilizing Graphify communities. Automatically prunes large data files. |
-| `deepsift deps "target"` | **DEPENDENCY TRACER:** Trace imports and dependencies for a target file or module. |
-| `deepsift dna` | **PROJECT DNA & GOD NODES:** Generate or view DNA topology. Options: `--show`, `--section <name>`, `--query <term>`, `--meta`, `--path-filter <path>`. |
-| `deepsift calltree "symbol"` | **CALL GRAPH TRAVERSAL:** Trace upstream callers and downstream callee definitions for a symbol. |
-| `deepsift clones` | **CODE CLONE DETECTOR:** Detect structural code duplicates and copy-paste clusters for DRY compliance. |
-| `deepsift doctor` | **AGENT DIAGNOSTICS:** Run system checks, index health audit, and onboarding workflow report for AI agents. |
-| `deepsift testmap` | **TEST COVERAGE MAPPING:** Map source files to test files (`.test.ts`, `_test.go`) and audit untested modules. |
-| `deepsift refactor rename` | **AST SYMBOL RENAME:** AST-safe symbol renaming across the entire codebase (`deepsift refactor rename <old> <new>`). |
-| `deepsift refactor extract` | **FUNCTION EXTRACTION:** Extract code lines into a new function (`deepsift refactor extract <file:lines> --name <func>`). |
-| `deepsift check-schema-drift` | **SCHEMA DRIFT AUDIT:** Audit schema and DOM config synchronization between client and backend definitions. |
-| `deepsift find-dead-code` | **DEAD CODE ELIMINATION:** Find unreferenced exports, variables, and unused component functions. |
-| `deepsift heal "file"` | **DNA-BASED AUTO-REFACTOR:** Attempt to fix issues in a file using Project DNA context. |
-| `deepsift auto-heal "file"` | **AUTONOMOUS SELF-HEALING LOOP:** Execute 4-step autonomous healing loop (diff ➔ lsp/build ➔ auto-patch ➔ re-verify). |
-| `deepsift patch "patch.json"` | **TOON PATCH INJECTION:** Apply high-confidence code injections. Options: `--dry-run`, `--check-impact`, `--format`, `--scan-security`. |
-| `deepsift memo <action>` | **DRM ENGINE (Dynamic Research Memory):** Persistent research note-taking engine. Actions: `open`, `close`, `archive`, `purge`, `list`, `add`, `query`, `show`, `graph`, `export`, `summarize`, `to-plan`, `gc`. |
-| `deepsift realm <action>` | **KNOWLEDGE REALMS:** Manage external knowledge bases (`list`, `add`, `remove`, `mount`, `snapshot`, `add-swagger`). |
-| `deepsift compare r1 r2` | **VECTOR DIFF SEARCH:** Compare two knowledge realms for gaps and similarities. Options: `-q <term>`, `--diff-only`. |
-| `deepsift index [--force]` | **INCREMENTAL INDEXER:** Re-index project with sha256 incremental file hashing. Options: `--verbose`. |
-| `deepsift context "path"` | **PRE-CREATION CHECKLIST:** Generate context rules and design tokens before creating new components. |
-| `deepsift plan "request"` | **SMART PLANNER:** Generate structured implementation plan from DNA, skills, realms, and architecture. |
-| `deepsift decode "token"` | **DEC_v2 DECODER:** Decompress and decode visual DEC_v2 tokens into plain text. |
-| `deepsift com "command"` | **TERMINAL RUNNER:** Execute any shell command with token compression. Options: `--compress`. |
-| `deepsift diag "problems.json"`| **IDE DIAGNOSTICS:** Read IDE problem diagnostics with context snippets. |
-| `deepsift history / clean` | **SEARCH HISTORY:** View past search results or clean history logs. Options: `--keep N`, `--days D`. |
-| `deepsift ui` | **LOCAL WEB DASHBOARD:** Launch local web dashboard on port 3333 to visualize knowledge graph and DRM. |
-
 ### Practical Decision Tree
 ```
 Need single-step blueprint?  → deepsift overview "." (combines arch + god nodes + feature summary)

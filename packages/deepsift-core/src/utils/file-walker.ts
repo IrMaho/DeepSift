@@ -102,6 +102,7 @@ export async function getFiles(rootDir: string): Promise<string[]> {
         ig.add(config.indexer.excludeExtensions.map(ext => `**/*${ext}`));
     }
 
+    const includeDirs = config.indexer?.includeDirs || [];
     const includeExtensions = config.indexer?.includeExtensions || [];
 
     const files: string[] = [];
@@ -120,6 +121,14 @@ export async function getFiles(rootDir: string): Promise<string[]> {
             const isDirectory = entry.isDirectory();
             const checkPath = isDirectory ? `${relativePath}/` : relativePath;
 
+            // Check if top-level directory is in includeDirs (if includeDirs is specified)
+            if (isDirectory && currentDir === rootDir && includeDirs.length > 0) {
+                const dirName = entry.name;
+                if (!includeDirs.includes(dirName) && !includeDirs.includes(relativePath)) {
+                    continue;
+                }
+            }
+
             // Check if ignored
             if (ig.ignores(checkPath)) {
                 continue;
@@ -129,7 +138,7 @@ export async function getFiles(rootDir: string): Promise<string[]> {
                 await walk(fullPath);
             } else if (entry.isFile()) {
                 if (includeExtensions.length > 0) {
-                    const ext = path.extname(entry.name);
+                    const ext = path.extname(entry.name).toLowerCase();
                     if (!includeExtensions.includes(ext)) {
                         continue;
                     }

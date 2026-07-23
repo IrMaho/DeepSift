@@ -8,8 +8,204 @@ import { getDbPath } from '../cli-paths.js';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 import { dnaCommand } from './dna.js';
+import { loadConfig, saveConfig } from '../../utils/config.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const SYSTEM_IGNORED_DIRS = new Set([
+    'node_modules', '.git', '.deepsift', '.idea', '.vscode', '.gradle',
+    '.dart_tool', 'coverage', '.next', '.cache', '.zig-cache', 'zig-out',
+    '.mcp_search_outputs'
+]);
+
+const RECOMMENDED_SRC_NAMES = new Set([
+    'src', 'lib', 'packages', 'app', 'core', 'features', 'scripts',
+    'backend', 'web', 'tools', 'ai', 'server', 'client', 'test', 'tests',
+    'spec', 'components', 'pages', 'api', 'domain', 'data', 'services'
+]);
+
+const ASSET_OR_BUILD_NAMES = new Set([
+    'dist', 'build', 'assets', 'public', 'icon_temp', 'ver', 'coverage',
+    'out', 'release', 'bin', 'obj', 'temp', 'tmp', 'scratch'
+]);
+
+const CODE_EXTENSIONS = new Set([
+    '.ts', '.tsx', '.js', '.jsx', '.dart', '.py', '.go', '.rs', '.java', '.kt', '.swift',
+    '.c', '.cpp', '.h', '.hpp', '.cs', '.rb', '.php', '.vue', '.svelte', '.astro', '.ex',
+    '.exs', '.zig', '.nim', '.lua', '.sql', '.sh', '.bat', '.ps1',
+    '.json', '.yaml', '.yml', '.toml', '.xml', '.html', '.css', '.scss', '.sass', '.less',
+    '.md', '.txt', '.graphql', '.proto', '.env'
+]);
+
+interface DirChoiceItem {
+    name: string;
+    value: string;
+    checked: boolean;
+}
+
+interface ExtChoiceItem {
+    name: string;
+    value: string;
+    checked: boolean;
+}
+
+function scanProjectDirectories(projectPath: string): DirChoiceItem[] {
+    const choices: DirChoiceItem[] = [];
+    let entries: fs.Dirent[] = [];
+    try {
+        entries = fs.readdirSync(projectPath, { withFileTypes: true });
+    } catch {
+        return choices;
+    }
+
+    for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const name = entry.name;
+        if (name.startsWith('.') || SYSTEM_IGNORED_DIRS.has(name)) continue;
+
+        let fileCount = 0;
+        try {
+            const subEntries = fs.readdirSync(path.join(projectPath, name));
+            fileCount = subEntries.length;
+        } catch { /* skip */ }
+
+        const nameLower = name.toLowerCase();
+        const isRecommended = RECOMMENDED_SRC_NAMES.has(nameLower);
+        const isAssetBuild = ASSET_OR_BUILD_NAMES.has(nameLower);
+
+        let checked = true;
+        let tag = '[Source Folder]';
+        if (isAssetBuild) {
+            checked = false;
+            tag = '[Build/Assets/Extra]';
+        } else if (isRecommended) {
+            checked = true;
+            tag = '[Recommended Source]';
+        }
+
+        choices.push({
+            name: `📁 ${name}/ (${fileCount} items) ${tag}`,
+            value: name,
+            checked
+        });
+    }
+
+    choices.sort((a, b) => (b.checked ? 1 : 0) - (a.checked ? 1 : 0));
+    return choices;
+}
+
+function scanProjectExtensions(projectPath: string): ExtChoiceItem[] {
+    const extCounts = new Map<string, number>();
+
+    function walkScan(dir: string, depth: number) {
+        if (depth > 6) return;
+        let entries: fs.Dirent[] = [];
+        try {
+            entries = fs.readdirSync(dir, { withFileTypes: true });
+        } catch { return; }
+
+        for (const entry of entries) {
+            if (entry.isDirectory()) {
+                if (entry.name.startsWith('.') || SYSTEM_IGNORED_DIRS.has(entry.name) || ASSET_OR_BUILD_NAMES.has(entry.name.toLowerCase())) {
+                    continue;
+                }
+                walkScan(path.join(dir, entry.name), depth + 1);
+            } else if (entry.isFile()) {
+                const ext = path.extname(entry.name).toLowerCase();
+                if (ext && ext.length > 1) {
+                    extCounts.set(ext, (extCounts.get(ext) || 0) + 1);
+                }
+            }
+        }
+    }
+
+    walkScan(projectPath, 0);
+
+    const choices: ExtChoiceItem[] = [];
+    for (const [ext, count] of extCounts.entries()) {
+        const isCode = CODE_EXTENSIONS.has(ext);
+        choices.push({
+            name: `${ext} (${count} files) ${isCode ? '[Code/Logic/Config]' : '[Asset/Binary/Media]'}`,
+            value: ext,
+            checked: isCode
+        });
+    }
+
+    choices.sort((a, b) => {
+        if (a.checked !== b.checked) return a.checked ? -1 : 1;
+        const countA = parseInt((a.name.match(/\((\d+) files\)/) || [])[1] || '0', 10);
+        const countB = parseInt((b.name.match(/\((\d+) files\)/) || [])[1] || '0', 10);
+        return countB - countA;
+    });
+
+    return choices;
+}
+
+async function runInteractiveConfigWizard(projectPath: string) {
+    if (!process.stdin.isTTY) {
+        return;
+    }
+
+    try {
+        const { checkbox } = await import('@inquirer/prompts');
+
+        printInfo('\n✨ DeepSift Interactive Configuration Setup ✨');
+
+        // 1. Scan & Prompt Directories
+        const dirChoices = scanProjectDirectories(projectPath);
+        let selectedDirs: string[] = [];
+        if (dirChoices.length > 0) {
+            try {
+                selectedDirs = await checkbox({
+                    message: '📁 Select Top-Level Directories to Index:',
+                    choices: dirChoices,
+                    pageSize: 15
+                });
+            } catch {
+                selectedDirs = dirChoices.filter(c => c.checked).map(c => c.value);
+            }
+        }
+
+        // 2. Scan & Prompt File Extensions
+        const extChoices = scanProjectExtensions(projectPath);
+        let selectedExts: string[] = [];
+        if (extChoices.length > 0) {
+            try {
+                selectedExts = await checkbox({
+                    message: '📄 Select File Extensions to Index (Code formats auto-selected):',
+                    choices: extChoices,
+                    pageSize: 15
+                });
+            } catch {
+                selectedExts = extChoices.filter(c => c.checked).map(c => c.value);
+            }
+        }
+
+        // 3. Update & Save deepsift.config.json
+        const config = loadConfig(projectPath);
+        const allDirValues = dirChoices.map(c => c.value);
+        const excludedDirs = allDirValues.filter(d => !selectedDirs.includes(d));
+        const allExtValues = extChoices.map(c => c.value);
+        const excludedExts = allExtValues.filter(e => !selectedExts.includes(e));
+
+        config.indexer = {
+            ...config.indexer,
+            includeDirs: selectedDirs,
+            excludeDirs: Array.from(new Set([...(config.indexer?.excludeDirs || []), ...excludedDirs])),
+            includeExtensions: selectedExts,
+            excludeExtensions: Array.from(new Set([...(config.indexer?.excludeExtensions || []), ...excludedExts]))
+        };
+
+        saveConfig(projectPath, config);
+        printSuccess('Saved custom configuration → deepsift.config.json');
+        if (selectedDirs.length > 0) printInfo(`Included Folders: ${selectedDirs.join(', ')}`);
+        if (selectedExts.length > 0) printInfo(`Included Formats: ${selectedExts.join(', ')}`);
+        printInfo('');
+    } catch (err: any) {
+        printError(`Interactive prompt error: ${err.message}`);
+    }
+}
 
 function getTemplateContent(filename: string): string {
     const templatePath = path.resolve(__dirname, `../../templates/${filename}`);
@@ -62,7 +258,6 @@ function compileZigOnDemand() {
     try {
         execSync('zig version', { stdio: 'ignore' });
     } catch (err) {
-        // Zig not on path, fallback to TS
         return;
     }
 
@@ -98,6 +293,8 @@ function runZigBuild(zigDir: string, binDir: string, binPath: string, ext: strin
 export async function initCommand(projectPath: string) {
     compileZigOnDemand();
     printInfo(`Initializing DeepSift for: ${projectPath}`);
+
+    await runInteractiveConfigWizard(projectPath);
 
     const deepsiftDir = path.join(projectPath, '.deepsift');
     const outputsDir = path.join(deepsiftDir, 'outputs');

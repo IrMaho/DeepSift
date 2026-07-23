@@ -85,9 +85,10 @@ This section documents all **50 advanced architectural features** implemented in
 
 ### 🤖 Section 4: Agent-Centric UX & Token Optimization
 22. **Adaptive Omission Summarization:** Groups omitted files into folder clusters (`📁 src/features/ (12 files: *.ts)`).
-23. **Structured JSON-Schema CLI Flag (`--json-schema`):** Emits clean structured JSON for zero-noise agent parsing.
-24. **Dynamic Token Budgeting Engine (`--max-tokens N`):** Adjusts output detail to fit exact agent token limits.
-25. **Single-Step Agent Action Planner (`deepsift plan-step`):** Suggests next logical steps after analysis.
+23. **Structured JSON / AI Agent Format Flag (`--agent-format` / `--json`):** Emits clean structured JSON for zero-noise agent parsing, saving 30-50% tokens and eliminating terminal decoration characters.
+24. **Smart File Weighting & Core Logic Tagging:** Automatically ranks files by logical weight, prioritizing State Stores (`⭐ State Store`), Handlers (`⚡ Handler / Controller`), and Services (`🏛️ Domain Service`) at the top of scans.
+25. **Auto-Pagination Hints for AI Agents:** When result sets exceed page limits, output explicitly includes `nextCommand` so agents can auto-paginate without manual offset calculation.
+26. **Default Deep Scan Depth (Depth = 6):** Scans deep nested feature architectures (`src/features/module/components/sub/...`) up to depth 6 automatically.
 26. **Diff-Only Compression Format:** Compact diff output format saving up to 80% tokens compared to raw git diffs.
 27. **Error Log Stacktrace Resolver (`deepsift resolve-error "trace"`):** Maps runtime stacktraces to source lines.
 28. **Agent Action Sandbox Simulation (`deepsift dry-run-patch`):** Simulates patches in memory and tests build before disk write.
@@ -121,9 +122,6 @@ This section documents all **50 advanced architectural features** implemented in
 50. **Self-Healing Index Audit (`deepsift doctor`):** Auto-heals corrupted indexes, out-of-sync DBs, and stale hashes.
 ---
 trigger: always_on
----  
----
-trigger: always_on
 ---
 
 # 🔍 DeepSift Visual Directive & Mastery (ABSOLUTE MANDATE)
@@ -139,7 +137,7 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
 |---|---|
 | `deepsift overview [path]` | **SUPER-COMMAND (Blueprint):** Single-step Project Blueprint combining Architecture Tree + Central God Nodes + Feature Summaries. Options: `--depth N`. |
 | `deepsift search "query"` | **HYBRID SEMANTIC SEARCH:** Semantic & BM25 auto-switch search enhanced with Graphify PageRank. Options: `--include <path>`, `--sync`, `--layer ui\|domain\|data`, `--realms r1,r2`, `--history`. |
-| `deepsift read "file"` | **MANDATORY FOR READING FILES:** Outputs raw exact text by default. Supports line ranges: `file:10-50`. Use `--compress` to enable visual DEC_v2 tokens. |
+| `deepsift read "file"` | **MANDATORY FOR READING FILES:** Outputs raw exact text by default. Supports line ranges: `file:10-50`. Use `--compress` to enable visual pxpipe tokens. |
 | `deepsift feature "path"` | **AST FEATURE OUTLINE:** AST-based feature summary. Options: `--summary` / `-s`, `--group-by-feature` / `-g`, `--depth N`, `--limit N`, `--offset N`. |
 | `deepsift analyze "path"` | **SUPER-COMMAND (Deep Dive):** Combines Feature Outline and DNA Intelligence for a specific folder or file. |
 | `deepsift arch [--depth N]` | **FOLDER EXPLORATION:** Project architecture blueprint utilizing Graphify communities. Automatically prunes large data files. |
