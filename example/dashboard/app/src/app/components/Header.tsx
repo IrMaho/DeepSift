@@ -1,14 +1,33 @@
 import React from 'react';
-import { Menu, Search, Moon, Sun, Bell, ShoppingBag, Globe } from 'lucide-react';
-
+import { Menu, Search, Moon, Sun, Bell, ShoppingBag, Globe, Maximize, Filter } from 'lucide-react';
 
 interface HeaderProps {
   darkMode: boolean;
   onToggleDarkMode: () => void;
   onToggleSidebar: () => void;
+  onOpenFilter: () => void;
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ darkMode, onToggleDarkMode, onToggleSidebar }) => {
+export const Header: React.FC<HeaderProps> = ({
+  darkMode,
+  onToggleDarkMode,
+  onToggleSidebar,
+  onOpenFilter,
+  searchQuery,
+  onSearchChange
+}) => {
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
   return (
     <header style={{
       height: '70px',
@@ -45,6 +64,8 @@ export const Header: React.FC<HeaderProps> = ({ darkMode, onToggleDarkMode, onTo
           <input
             type="text"
             placeholder="Search Anything..."
+            value={searchQuery}
+            onChange={e => onSearchChange(e.target.value)}
             style={{
               border: 'none',
               background: 'transparent',
@@ -57,13 +78,22 @@ export const Header: React.FC<HeaderProps> = ({ darkMode, onToggleDarkMode, onTo
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <button onClick={onOpenFilter} className="btn btn-outline" style={{ padding: '0.45rem 0.8rem', gap: '0.4rem', fontSize: '0.8rem' }}>
+          <Filter size={15} color="var(--primary)" />
+          <span>Filters</span>
+        </button>
+
         <button className="btn btn-outline" style={{ padding: '0.45rem', borderRadius: '50%' }}>
           <Globe size={18} />
         </button>
 
         <button onClick={onToggleDarkMode} className="btn btn-outline" style={{ padding: '0.45rem', borderRadius: '50%' }}>
           {darkMode ? <Sun size={18} color="#f5b849" /> : <Moon size={18} />}
+        </button>
+
+        <button onClick={toggleFullscreen} className="btn btn-outline" style={{ padding: '0.45rem', borderRadius: '50%' }}>
+          <Maximize size={18} />
         </button>
 
         <button className="btn btn-outline" style={{ padding: '0.45rem', borderRadius: '50%', position: 'relative' }}>

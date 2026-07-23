@@ -5,12 +5,11 @@ import {
   Coins, 
   Briefcase, 
   BarChart3, 
-  Users, 
-  TrendingUp 
+  Image 
 } from 'lucide-react';
 
 
-export type DashboardTab = 'crm' | 'ecommerce' | 'crypto';
+export type DashboardTab = 'crm' | 'ecommerce' | 'crypto' | 'jobs' | 'nft' | 'analytics';
 
 interface SidebarProps {
   activeTab: DashboardTab;
@@ -23,10 +22,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, collap
     { id: 'crm', label: 'CRM', icon: LayoutDashboard, badge: '12' },
     { id: 'ecommerce', label: 'Ecommerce', icon: ShoppingCart },
     { id: 'crypto', label: 'Crypto', icon: Coins },
-    { id: 'jobs', label: 'Jobs', icon: Briefcase, disabled: true },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3, disabled: true },
-    { id: 'sales', label: 'Sales', icon: TrendingUp, disabled: true },
-    { id: 'hrm', label: 'HRM', icon: Users, disabled: true }
+    { id: 'jobs', label: 'Jobs', icon: Briefcase },
+    { id: 'nft', label: 'NFT', icon: Image, badge: 'HOT' },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 }
   ];
 
   return (
@@ -87,8 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, collap
           return (
             <button
               key={item.id}
-              onClick={() => !item.disabled && onTabChange(item.id as DashboardTab)}
-              disabled={item.disabled}
+              onClick={() => onTabChange(item.id as DashboardTab)}
               style={{
                 width: '100%',
                 display: 'flex',
@@ -99,8 +96,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, collap
                 borderRadius: '8px',
                 border: 'none',
                 background: isActive ? 'rgba(92, 103, 247, 0.2)' : 'transparent',
-                color: isActive ? '#5c67f7' : item.disabled ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.75)',
-                cursor: item.disabled ? 'not-allowed' : 'pointer',
+                color: isActive ? '#5c67f7' : 'rgba(255, 255, 255, 0.75)',
+                cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 fontWeight: isActive ? 600 : 400
               }}
@@ -110,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, collap
                 {!collapsed && <span>{item.label}</span>}
               </div>
               {!collapsed && item.badge && (
-                <span className="badge badge-primary" style={{ fontSize: '0.65rem' }}>
+                <span className={`badge ${item.badge === 'HOT' ? 'badge-danger' : 'badge-primary'}`} style={{ fontSize: '0.65rem' }}>
                   {item.badge}
                 </span>
               )}
