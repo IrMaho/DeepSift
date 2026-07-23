@@ -201,9 +201,20 @@ export class GraphExtractor {
             // Look for words followed by '(' but not common keywords
             const callRegex = /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g;
             let callMatch;
+            const ignoreKeywords = [
+                'if', 'while', 'for', 'switch', 'catch', 'function', 'super', 'return', 'await', 'yield',
+                'console', 'log', 'error', 'warn', 'info', 'debug', 'require', 'import', 'from',
+                'Math', 'JSON', 'Array', 'Object', 'Promise', 'String', 'Number', 'Boolean',
+                'Date', 'Error', 'RegExp', 'Map', 'Set', 'Symbol', 'Reflect', 'Proxy',
+                'parseInt', 'parseFloat', 'encodeURIComponent', 'decodeURIComponent',
+                'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval',
+                'describe', 'it', 'test', 'expect', 'beforeEach', 'afterEach', 'beforeAll', 'afterAll',
+                'print', 'main', 'toString', 'valueOf', 'slice', 'push', 'pop', 'shift', 'unshift',
+                'map', 'filter', 'reduce', 'forEach', 'find', 'findIndex', 'some', 'every', 'includes',
+                'split', 'join', 'replace', 'trim', 'toLowerCase', 'toUpperCase', 'match', 'startsWith', 'endsWith'
+            ];
             while ((callMatch = callRegex.exec(line)) !== null) {
                 const callName = callMatch[1];
-                const ignoreKeywords = ['if', 'while', 'for', 'switch', 'catch', 'function', 'super'];
                 if (!ignoreKeywords.includes(callName)) {
                      edges.push({
                         source: currentClass || fileNodeId,

@@ -18,7 +18,10 @@ export class GraphReportGenerator {
 
         // 1. God Nodes (Highest PageRank / InDegree)
         content += `## Core Dependencies (God Nodes)\n\n`;
-        const godNodes = [...this.nodes].sort((a, b) => b.inDegree - a.inDegree).slice(0, 10);
+        const godNodes = [...this.nodes]
+            .filter(n => !n.isPhantom && n.sourceFile && fs.existsSync(n.sourceFile))
+            .sort((a, b) => b.inDegree - a.inDegree)
+            .slice(0, 10);
         for (const node of godNodes) {
             content += `- **${node.label}** (${node.sourceFile}) - Used by ${node.inDegree} nodes\n`;
         }
@@ -46,7 +49,10 @@ export class GraphReportGenerator {
 
         // 3. Central Orchestrators (Highest OutDegree)
         content += `## Central Orchestrators\n\n`;
-        const orchestrators = [...this.nodes].sort((a, b) => b.outDegree - a.outDegree).slice(0, 10);
+        const orchestrators = [...this.nodes]
+            .filter(n => !n.isPhantom && n.sourceFile && fs.existsSync(n.sourceFile))
+            .sort((a, b) => b.outDegree - a.outDegree)
+            .slice(0, 10);
         for (const node of orchestrators) {
             content += `- **${node.label}** (${node.sourceFile}) - Depends on ${node.outDegree} nodes\n`;
         }

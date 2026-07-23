@@ -18,6 +18,10 @@ export function classifyFile(fileName: string, content: string): FileWeightInfo 
     const ext = path.extname(fileName).toLowerCase();
     const nameLower = fileName.toLowerCase();
 
+    if (nameLower.endsWith('-lock.json') || nameLower.endsWith('-lock.yaml') || nameLower.endsWith('.lock') || nameLower === 'package-lock.json' || nameLower === 'pnpm-lock.yaml' || nameLower === 'yarn.lock') {
+        return { category: 'config-schema', weight: 1, badge: '🔒 Lockfile', isCoreLogic: false };
+    }
+
     if (['.svg', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.woff', '.woff2', '.ttf', '.eot', '.min.js', '.map', '.wasm'].includes(ext)) {
         return { category: 'asset', weight: 1, badge: '📦 Asset', isCoreLogic: false };
     }
@@ -64,6 +68,11 @@ function pascalToWords(str: string): string {
 }
 
 function extractPurpose(content: string, fileName: string): string {
+    const nameLower = fileName.toLowerCase();
+    if (nameLower.endsWith('-lock.json') || nameLower.endsWith('-lock.yaml') || nameLower.endsWith('.lock') || nameLower === 'package-lock.json' || nameLower === 'pnpm-lock.yaml' || nameLower === 'yarn.lock') {
+        return 'Package dependency lockfile';
+    }
+
     const lines = content.split('\n');
 
     for (let i = 0; i < Math.min(lines.length, 35); i++) {

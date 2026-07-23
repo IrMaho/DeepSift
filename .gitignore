@@ -3,7 +3,7 @@ node_modules/
 dist/
 .npm-cache/
 .npmrc
-
+test
 # DeepSift core & output
 .deepsift/
 .agents.zip

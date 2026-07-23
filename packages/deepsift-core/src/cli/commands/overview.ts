@@ -32,8 +32,15 @@ export async function overviewCommand(
     lines.push(`## 🎯 Central / God Nodes`);
     const dna = loadDNA(projectPath);
     if (dna && dna.architecture) {
-        const coreFiles = dna.architecture.coreFiles || (dna.architecture.graph && dna.architecture.graph.godNodes) || [];
-        const topGods = coreFiles.slice(0, 5);
+        const rawCoreFiles = dna.architecture.coreFiles || (dna.architecture.graph && dna.architecture.graph.godNodes) || [];
+        const validCoreFiles = rawCoreFiles.filter((file: string) => {
+            if (!file) return false;
+            const abs = path.resolve(projectPath, file);
+            const lower = file.toLowerCase();
+            const isLockfile = lower.endsWith('-lock.json') || lower.endsWith('-lock.yaml') || lower.endsWith('.lock');
+            return fs.existsSync(abs) && !isLockfile;
+        });
+        const topGods = validCoreFiles.slice(0, 5);
         if (topGods.length > 0) {
             topGods.forEach((file: string) => {
                 lines.push(`- **📄 ${file.replace(/\\/g, '/')}**`);

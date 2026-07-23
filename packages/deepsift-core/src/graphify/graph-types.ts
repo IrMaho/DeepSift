@@ -8,6 +8,7 @@ export interface GraphifyNode {
     inDegree: number;
     outDegree: number;
     pageRank: number;
+    isPhantom?: boolean;
 }
 
 export interface GraphifyEdge {

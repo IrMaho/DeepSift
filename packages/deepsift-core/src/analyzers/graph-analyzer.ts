@@ -63,7 +63,9 @@ export function analyzeArchitecture(
     const topology = classifyTopology(nodes, edges, clusters);
     const layerViolations = detectLayerViolations(edges);
 
-    const sortedNodes = Array.from(nodes.values()).sort((a, b) => b.pageRank - a.pageRank);
+    const sortedNodes = Array.from(nodes.values())
+        .filter(n => fs.existsSync(path.resolve(projectPath, n.filePath)))
+        .sort((a, b) => b.pageRank - a.pageRank);
     const coreFiles = sortedNodes.slice(0, 10).map(n => n.filePath);
 
     return {

@@ -114,7 +114,8 @@ export class GraphBuilder {
                 fileType: type,
                 inDegree: 0,
                 outDegree: 0,
-                pageRank: 0
+                pageRank: 0,
+                isPhantom: true
             });
         }
     }
