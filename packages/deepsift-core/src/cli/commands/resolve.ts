@@ -1,3 +1,11 @@
+/**
+ * @file resolve.ts
+ * @description Import and symbol path resolver across workspace files.
+ *
+ * @module cli/commands/resolve
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { printResult, printInfo, OutputFormat } from '../cli-output.js';

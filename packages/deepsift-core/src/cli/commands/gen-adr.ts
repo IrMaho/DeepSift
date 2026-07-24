@@ -1,3 +1,11 @@
+/**
+ * @file gen-adr.ts
+ * @description Architecture Decision Record (ADR) template generator command.
+ *
+ * @module cli/commands/gen-adr
+ * @category Utilities & Dashboard
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { MemoEngine } from '../../memo/memo-engine.js';

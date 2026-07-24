@@ -1,3 +1,11 @@
+/**
+ * @file history.ts
+ * @description Search and read result log persistence and paginated output image saver.
+ *
+ * @module utils/history
+ * @category Utilities & Dashboard
+ * @since 1.0.0
+ */
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';

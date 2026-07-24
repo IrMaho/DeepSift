@@ -1,3 +1,11 @@
+/**
+ * @file type-resolver.ts
+ * @description TypeScript type resolution engine for expanding complex intersection and generic types.
+ *
+ * @module analyzers/type-resolver
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 

@@ -1,3 +1,11 @@
+/**
+ * @file check-layers.ts
+ * @description Clean Architecture layer boundary checker detecting import rule violations.
+ *
+ * @module cli/commands/check-layers
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
 import { checkLayerViolations } from '../../analyzers/layer-watchdog.js';
 import { printResult, OutputFormat } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';

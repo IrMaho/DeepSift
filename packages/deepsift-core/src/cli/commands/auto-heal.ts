@@ -1,3 +1,11 @@
+/**
+ * @file auto-heal.ts
+ * @description Autonomous 4-step healing loop (diff -> build check -> auto-patch -> re-verify).
+ *
+ * @module cli/commands/auto-heal
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
 import path from 'path';
 import fs from 'fs';
 import { execSync } from 'child_process';

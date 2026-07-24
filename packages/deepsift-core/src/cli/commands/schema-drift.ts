@@ -1,3 +1,11 @@
+/**
+ * @file schema-drift.ts
+ * @description Schema drift detection between client UI and backend definitions.
+ *
+ * @module cli/commands/schema-drift
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
 import path from 'path';
 import fs from 'fs';
 import { printResult, OutputFormat } from '../cli-output.js';

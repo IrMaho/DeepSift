@@ -1,3 +1,11 @@
+/**
+ * @file history.ts
+ * @description Search and read result history log viewer command.
+ *
+ * @module cli/commands/history
+ * @category Utilities & Dashboard
+ * @since 1.0.3
+ */
 import { getSearchHistory, getSearchLog, cleanupOldOutputs } from '../../utils/history.js';
 import { printResult, printSuccess, OutputFormat } from '../cli-output.js';
 import fs from 'fs';

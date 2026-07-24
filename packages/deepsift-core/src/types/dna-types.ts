@@ -1,3 +1,11 @@
+/**
+ * @file dna-types.ts
+ * @description Shared TypeScript type definitions for Project DNA, naming conventions, and architecture patterns.
+ *
+ * @module types/dna-types
+ * @category Architecture & Intelligence
+ * @since 1.0.0
+ */
 export type PropertyType =
     | 'color'
     | 'dimension'

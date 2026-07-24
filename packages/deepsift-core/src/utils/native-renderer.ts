@@ -1,3 +1,11 @@
+/**
+ * @file native-renderer.ts
+ * @description Native PNG and image renderer for search result visualization pages.
+ *
+ * @module utils/native-renderer
+ * @category Utilities & Dashboard
+ * @since 1.0.3
+ */
 import { createCanvas } from '@napi-rs/canvas';
 
 export interface RenderOptions {

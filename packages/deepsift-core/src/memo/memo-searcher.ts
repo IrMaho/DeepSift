@@ -1,3 +1,11 @@
+/**
+ * @file memo-searcher.ts
+ * @description Semantic search engine for querying entries within DRM research tags.
+ *
+ * @module memo/memo-searcher
+ * @category Memory & Realms
+ * @since 1.0.3
+ */
 import { MemoManifestManager } from './manifest-manager.js';
 import { NoteProcessor } from './note-processor.js';
 import { NativeStore } from '../storage/native-store.js';

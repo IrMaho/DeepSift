@@ -1,3 +1,11 @@
+/**
+ * @file pattern-miner.ts
+ * @description Project pattern miner extracting recurring code structures and conventions.
+ *
+ * @module analyzers/pattern-miner
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { ProjectDNA, LearnedPattern } from '../types/dna-types.js';

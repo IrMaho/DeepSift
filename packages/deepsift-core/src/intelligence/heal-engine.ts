@@ -1,3 +1,11 @@
+/**
+ * @file heal-engine.ts
+ * @description Self-healing refactoring engine applying DNA-aware patches to resolve lint and type errors.
+ *
+ * @module intelligence/heal-engine
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
 import { InternalGraph, InternalNode } from './internal-graph.js';
 
 export interface HealCluster {

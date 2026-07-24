@@ -1,3 +1,11 @@
+/**
+ * @file outline.ts
+ * @description AST feature outline extractor generating file purpose, class, function, and dependency summaries.
+ *
+ * @module utils/outline
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import fs from 'fs';
 import path from 'path';
 

@@ -1,3 +1,11 @@
+/**
+ * @file memo-types.ts
+ * @description Shared TypeScript type definitions for DRM tags, entries, and manifest structures.
+ *
+ * @module types/memo-types
+ * @category Memory & Realms
+ * @since 1.0.2
+ */
 export type MemoTagStatus = 'open' | 'closed' | 'archived';
 
 export type MemoEntryType =

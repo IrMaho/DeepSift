@@ -1,3 +1,11 @@
+/**
+ * @file wire-tracer.ts
+ * @description Cross-environment IPC and postMessage wire trace analyzer for event channel mapping.
+ *
+ * @module analyzers/wire-tracer
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 

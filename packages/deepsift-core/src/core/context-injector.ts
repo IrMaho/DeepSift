@@ -1,3 +1,11 @@
+/**
+ * @file context-injector.ts
+ * @description Context injection engine that auto-prepends architectural rules before search results.
+ *
+ * @module core/context-injector
+ * @category Core Search & Discovery
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { ProjectDNA, ContextBlock } from '../types/dna-types.js';

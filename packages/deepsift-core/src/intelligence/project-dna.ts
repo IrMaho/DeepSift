@@ -1,3 +1,11 @@
+/**
+ * @file project-dna.ts
+ * @description Project DNA topology persistence, loading, and community cluster management.
+ *
+ * @module intelligence/project-dna
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import { ProjectDNA, createEmptyDNA, DiscoveredToken } from '../types/dna-types.js';
 import { mineTokens } from '../analyzers/property-miner.js';
 import { mineConventions } from '../analyzers/convention-miner.js';

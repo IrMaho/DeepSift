@@ -1,3 +1,11 @@
+/**
+ * @file edit.ts
+ * @description In-place source code file editing command using patch specifications.
+ *
+ * @module cli/commands/edit
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { printResult, printSuccess, printError, printInfo, OutputFormat } from '../cli-output.js';

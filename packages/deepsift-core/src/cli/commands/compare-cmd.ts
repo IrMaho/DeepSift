@@ -1,3 +1,11 @@
+/**
+ * @file compare-cmd.ts
+ * @description Vector knowledge comparison command between two realms.
+ *
+ * @module cli/commands/compare-cmd
+ * @category Memory & Realms
+ * @since 1.0.3
+ */
 import { RealmRouter } from '../../core/realm-router.js';
 import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';

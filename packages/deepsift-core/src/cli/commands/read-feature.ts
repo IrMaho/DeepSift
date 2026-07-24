@@ -1,3 +1,11 @@
+/**
+ * @file read-feature.ts
+ * @description Combined file reader and AST feature outline extractor command.
+ *
+ * @module cli/commands/read-feature
+ * @category Core Search & Discovery
+ * @since 1.0.3
+ */
 import path from 'path';
 import fs from 'fs';
 import { getFiles } from '../../utils/file-walker.js';

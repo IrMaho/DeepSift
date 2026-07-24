@@ -1,3 +1,11 @@
+/**
+ * @file scope.ts
+ * @description Workspace scope and search boundary configuration command.
+ *
+ * @module cli/commands/scope
+ * @category Utilities & Dashboard
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 

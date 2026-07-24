@@ -1,3 +1,11 @@
+/**
+ * @file zig-bridge.ts
+ * @description Native Zig SIMD math bridge for accelerated vector cosine similarity computation.
+ *
+ * @module storage/zig-bridge
+ * @category Core Search & Discovery
+ * @since 1.0.3
+ */
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';

@@ -1,3 +1,11 @@
+/**
+ * @file realm-router.ts
+ * @description Multi-realm search router coordinating queries across mounted knowledge bases.
+ *
+ * @module core/realm-router
+ * @category Memory & Realms
+ * @since 1.0.3
+ */
 import { NativeStore } from '../storage/native-store.js';
 import { Searcher } from './searcher.js';
 import { Indexer } from './indexer.js';

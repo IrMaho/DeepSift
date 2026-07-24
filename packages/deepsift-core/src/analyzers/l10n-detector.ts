@@ -1,3 +1,11 @@
+/**
+ * @file l10n-detector.ts
+ * @description Internationalization (i18n) signal detector and hardcoded string auditor.
+ *
+ * @module analyzers/l10n-detector
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { L10nReport, L10nSignals, HardcodedString } from '../types/dna-types.js';

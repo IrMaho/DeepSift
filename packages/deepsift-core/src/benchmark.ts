@@ -1,3 +1,11 @@
+/**
+ * @file benchmark.ts
+ * @description Performance benchmarking harness for indexing throughput and embedding speed measurement.
+ *
+ * @module benchmark
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import fs from 'fs';
 import path from 'path';
 import { NativeStore } from './storage/native-store.js';

@@ -1,3 +1,11 @@
+/**
+ * @file sed.ts
+ * @description Stream editor command for in-place line-range file content substitution.
+ *
+ * @module cli/commands/sed
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { printError, printInfo, printSuccess } from '../cli-output.js';

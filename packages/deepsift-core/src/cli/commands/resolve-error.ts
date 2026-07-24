@@ -1,3 +1,11 @@
+/**
+ * @file resolve-error.ts
+ * @description Automatic TypeScript error resolution and suggestion generator command.
+ *
+ * @module cli/commands/resolve-error
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { printHeader, printBox, printError } from '../cli-output.js';

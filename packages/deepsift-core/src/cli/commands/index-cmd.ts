@@ -1,3 +1,11 @@
+/**
+ * @file index-cmd.ts
+ * @description Manual codebase indexer and incremental sync trigger command.
+ *
+ * @module cli/commands/index-cmd
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import { RealmRouter } from '../../core/realm-router.js';
 import readline from 'readline';
 import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-output.js';

@@ -1,3 +1,11 @@
+/**
+ * @file cli-output.ts
+ * @description CLI output formatting utilities for color-coded results, info, success, and error messages.
+ *
+ * @module cli/cli-output
+ * @category Utilities & Dashboard
+ * @since 1.0.0
+ */
 export type OutputFormat = 'markdown' | 'json' | 'plain';
 
 export function formatOutput(data: any, format: OutputFormat): string {

@@ -1,3 +1,11 @@
+/**
+ * @file gen-test.ts
+ * @description Automatic unit test and mock file generator command.
+ *
+ * @module cli/commands/gen-test
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { QAGenerator } from '../../analyzers/qa-generator.js';

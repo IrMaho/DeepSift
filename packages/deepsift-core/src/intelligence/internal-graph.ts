@@ -1,3 +1,11 @@
+/**
+ * @file internal-graph.ts
+ * @description Internal in-memory symbol graph for fast cross-file type and reference resolution.
+ *
+ * @module intelligence/internal-graph
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 

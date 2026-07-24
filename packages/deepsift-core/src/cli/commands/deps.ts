@@ -1,3 +1,11 @@
+/**
+ * @file deps.ts
+ * @description Inbound and outbound module dependency tracer command.
+ *
+ * @module cli/commands/deps
+ * @category Architecture & Intelligence
+ * @since 1.0.2
+ */
 import { NativeStore } from '../../storage/native-store.js';
 import { Indexer } from '../../core/indexer.js';
 import { Searcher } from '../../core/searcher.js';

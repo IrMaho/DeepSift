@@ -1,3 +1,11 @@
+/**
+ * @file index.ts
+ * @description Central type barrel export index for all DeepSift public type definitions.
+ *
+ * @module types/index
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import { ChunkFamily } from './dna-types.js';
 
 export type ChunkType = 'function' | 'class' | 'import' | 'config' | 'block' | 'comment';

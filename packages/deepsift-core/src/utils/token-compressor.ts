@@ -1,3 +1,11 @@
+/**
+ * @file token-compressor.ts
+ * @description DEC_v2 visual token compression engine for AI Agent context window optimization.
+ *
+ * @module utils/token-compressor
+ * @category Utilities & Dashboard
+ * @since 1.0.3
+ */
 import crypto from 'crypto';
 
 export interface CognitiveConfig {

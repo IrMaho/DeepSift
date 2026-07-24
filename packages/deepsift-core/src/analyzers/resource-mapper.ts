@@ -1,3 +1,11 @@
+/**
+ * @file resource-mapper.ts
+ * @description Static resource and asset mapper for image, font, and media file discovery.
+ *
+ * @module analyzers/resource-mapper
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { ResourceMap } from '../types/dna-types.js';

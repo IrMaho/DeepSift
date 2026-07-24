@@ -1,3 +1,11 @@
+/**
+ * @file value-classifier.ts
+ * @description Code value and constant classifier categorizing numeric and string literal semantics.
+ *
+ * @module analyzers/value-classifier
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import { PropertyType } from '../types/dna-types.js';
 
 const HEX_COLOR = /^#([0-9a-fA-F]{3,8})$/;

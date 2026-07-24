@@ -1,3 +1,11 @@
+/**
+ * @file complexity.ts
+ * @description Cyclomatic & Cognitive Complexity heatmap CLI command handler.
+ *
+ * @module cli/commands/complexity
+ * @category Security & Diagnostics
+ * @since 1.0.2
+ */
 import { ComplexityAnalyzer } from '../../analyzers/complexity-analyzer.js';
 
 export async function complexityCommand(projectPath: string, targetPath?: string, format = 'markdown', includeBundled = false) {

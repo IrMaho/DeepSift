@@ -1,3 +1,11 @@
+/**
+ * @file server.ts
+ * @description DeepSift MCP server entry point implementing Model Context Protocol tool handlers.
+ *
+ * @module server
+ * @category Utilities & Dashboard
+ * @since 1.0.0
+ */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';

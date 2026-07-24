@@ -1,3 +1,11 @@
+/**
+ * @file test-analyzer.ts
+ * @description Source-to-test file mapping analyzer identifying untested and partially covered modules.
+ *
+ * @module analyzers/test-analyzer
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { ProjectDNA, FileCoverage, TestDNA, TimeBomb } from '../types/dna-types.js';

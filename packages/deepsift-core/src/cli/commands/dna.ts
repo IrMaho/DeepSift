@@ -1,3 +1,11 @@
+/**
+ * @file dna.ts
+ * @description Project DNA topology generator and community cluster visualizer command.
+ *
+ * @module cli/commands/dna
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import { generateDNA, loadDNA, formatDNASummary } from '../../intelligence/project-dna.js';
 import { printError, printResult, OutputFormat } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';

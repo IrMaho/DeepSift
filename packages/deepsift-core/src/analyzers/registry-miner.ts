@@ -1,3 +1,11 @@
+/**
+ * @file registry-miner.ts
+ * @description Feature registry and UI tab miner for project capability and route discovery.
+ *
+ * @module analyzers/registry-miner
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { DiscoveredFeatureTab } from '../types/dna-types.js';

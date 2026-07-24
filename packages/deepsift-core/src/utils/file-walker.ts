@@ -1,3 +1,11 @@
+/**
+ * @file file-walker.ts
+ * @description Recursive directory file walker with .gitignore and noise exclusion support.
+ *
+ * @module utils/file-walker
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import { promises as fs } from 'fs';
 import path from 'path';
 import ignore from 'ignore';

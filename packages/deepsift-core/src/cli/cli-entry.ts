@@ -1,5 +1,12 @@
 #!/usr/bin/env node
-
+/**
+ * @file cli-entry.ts
+ * @description Main CLI entry point and command routing dispatcher for all DeepSift commands.
+ *
+ * @module cli/cli-entry
+ * @category Utilities & Dashboard
+ * @since 1.0.0
+ */
 import path from 'path';
 import { parseGlobalFlags, printError, printInfo } from './cli-output.js';
 import { searchCommand } from './commands/search.js';
@@ -10,6 +17,7 @@ import { depsCommand } from './commands/deps.js';
 import { featureCommand } from './commands/feature.js';
 import { historyCommand, cleanHistoryCommand, drillCommand } from './commands/history.js';
 import { initCommand } from './commands/init.js';
+
 import { watchCommand } from './commands/watch.js';
 import { configCommand } from './commands/config.js';
 import { dnaCommand } from './commands/dna.js';

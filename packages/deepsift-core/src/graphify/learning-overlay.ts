@@ -1,3 +1,11 @@
+/**
+ * @file learning-overlay.ts
+ * @description Adaptive learning overlay enriching graph nodes with discovered project pattern metadata.
+ *
+ * @module graphify/learning-overlay
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { LearningEntry } from './graph-types.js';

@@ -1,3 +1,11 @@
+/**
+ * @file analyze.ts
+ * @description Deep dive analysis super-command combining AST feature outline and DNA topology.
+ *
+ * @module cli/commands/analyze
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import path from 'path';
 import fs from 'fs';
 import { getFeatureOutline } from '../../utils/outline.js';

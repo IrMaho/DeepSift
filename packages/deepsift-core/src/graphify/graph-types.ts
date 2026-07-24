@@ -1,3 +1,11 @@
+/**
+ * @file graph-types.ts
+ * @description Shared TypeScript type definitions for Graphify node, edge, and cluster data structures.
+ *
+ * @module graphify/graph-types
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 export interface GraphifyNode {
     id: string;
     label: string;

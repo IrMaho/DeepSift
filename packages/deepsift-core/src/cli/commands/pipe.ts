@@ -1,3 +1,11 @@
+/**
+ * @file pipe.ts
+ * @description Stdin pipe reader for chaining DeepSift commands with shell pipelines.
+ *
+ * @module cli/commands/pipe
+ * @category Utilities & Dashboard
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { printError, printInfo, printSuccess } from '../cli-output.js';

@@ -1,4 +1,12 @@
 /**
+ * @file toon-serializer.ts
+ * @description TOON-Patch JSON specification serializer and deserializer for structured code edits.
+ *
+ * @module utils/toon-serializer
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
+/**
  * Token-Oriented Object Notation (TOON) Serializer
  * Lossless text-based serialization designed specifically to reduce LLM token count.
  */

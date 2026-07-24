@@ -1,3 +1,11 @@
+/**
+ * @file similarity-engine.ts
+ * @description AST code clone and duplication detection engine using token hash fingerprinting.
+ *
+ * @module analyzers/similarity-engine
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
 import { SimilarityGroup, SimilarityMember } from '../types/dna-types.js';
 import { NativeStore } from '../storage/native-store.js';
 import { EmbeddedChunk } from '../types/index.js';

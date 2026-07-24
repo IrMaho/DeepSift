@@ -1,3 +1,11 @@
+/**
+ * @file heuristic-parser.ts
+ * @description Heuristic regex-based code chunker for languages without tree-sitter grammars.
+ *
+ * @module parsers/heuristic-parser
+ * @category Core Search & Discovery
+ * @since 1.0.2
+ */
 import * as crypto from 'crypto';
 import path from 'path';
 import { CodeChunk } from '../types/index.js';

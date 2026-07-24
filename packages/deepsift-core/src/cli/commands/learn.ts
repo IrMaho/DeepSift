@@ -1,3 +1,11 @@
+/**
+ * @file learn.ts
+ * @description Adaptive learning command for project pattern and token discovery.
+ *
+ * @module cli/commands/learn
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import { generateDNA } from '../../intelligence/project-dna.js';
 import { minePatterns } from '../../analyzers/pattern-miner.js';
 import { printError, printResult } from '../cli-output.js';

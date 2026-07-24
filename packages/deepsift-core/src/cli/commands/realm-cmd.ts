@@ -1,3 +1,11 @@
+/**
+ * @file realm-cmd.ts
+ * @description External knowledge realm management command (list, add, mount, snapshot).
+ *
+ * @module cli/commands/realm-cmd
+ * @category Memory & Realms
+ * @since 1.0.3
+ */
 import { RealmRouter } from '../../core/realm-router.js';
 import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-output.js';
 import { loadConfig, saveConfig, RealmDefinition } from '../../utils/config.js';

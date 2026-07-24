@@ -1,3 +1,11 @@
+/**
+ * @file native-store.ts
+ * @description SQLite native store for vector chunks, graph topology, and metadata persistence.
+ *
+ * @module storage/native-store
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import { ZigBridge } from './zig-bridge.js';
 import path from 'path';
 import { fileURLToPath } from 'url';

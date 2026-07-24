@@ -1,3 +1,11 @@
+/**
+ * @file plan.ts
+ * @description AI Agent implementation plan generator based on DNA, skills, and architecture.
+ *
+ * @module cli/commands/plan
+ * @category Utilities & Dashboard
+ * @since 1.0.3
+ */
 import { PlannerEngine } from '../../intelligence/plan-engine.js';
 import { printResult, printSuccess, printError, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';

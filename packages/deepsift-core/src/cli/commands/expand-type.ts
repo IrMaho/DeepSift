@@ -1,3 +1,11 @@
+/**
+ * @file expand-type.ts
+ * @description TypeScript type expansion and resolution command.
+ *
+ * @module cli/commands/expand-type
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import path from 'path';
 import { TypeResolver } from '../../analyzers/type-resolver.js';
 import { printHeader, printBox, printSuccess, printError } from '../cli-output.js';

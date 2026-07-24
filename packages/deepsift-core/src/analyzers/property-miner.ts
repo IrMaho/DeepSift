@@ -1,3 +1,11 @@
+/**
+ * @file property-miner.ts
+ * @description Design token and CSS/Dart property value extractor for design system discovery.
+ *
+ * @module analyzers/property-miner
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { DiscoveredToken, TokenCluster, PropertyType } from '../types/dna-types.js';

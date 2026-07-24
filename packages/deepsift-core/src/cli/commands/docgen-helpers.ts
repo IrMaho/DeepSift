@@ -18,10 +18,14 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             name: 'overview',
             aliases: ['ov'],
             summary: 'SUPER-COMMAND: Single-step Project Blueprint combining Architecture Tree + Central God Nodes + Feature Summaries.',
-            usage: 'deepsift overview [path] [--depth N]',
-            options: [{ flag: '--depth <number>', description: 'Max directory traversal depth (default: 2)' }],
+            usage: 'deepsift overview [path] [--depth N] [--compress] [--json]',
+            options: [
+                { flag: '--depth <number>', description: 'Max directory traversal depth (default: 2)' },
+                { flag: '--compress', description: 'Enable DEC_v2 visual token compression for context window efficiency' },
+                { flag: '--json', description: 'Output structural blueprint in JSON format' }
+            ],
             category: 'Core Search & Discovery',
-            example: 'deepsift overview --depth 3'
+            example: 'deepsift overview --depth 3 --compress'
         },
         {
             name: 'search',
@@ -30,23 +34,29 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             usage: 'deepsift search "query" [options]',
             options: [
                 { flag: '--include, -i <path>', description: 'Narrow search scope to specific subdirectory' },
-                { flag: '--sync', description: 'Synchronize index before executing search' },
+                { flag: '--sync', description: 'Synchronize vector index before executing search' },
                 { flag: '--layer <ui|domain|data>', description: 'Filter search results by Clean Architecture layer' },
-                { flag: '--verbose, -v', description: 'Display real-time indexing progress' },
+                { flag: '--verbose, -v', description: 'Display real-time indexing progress and processing speed' },
                 { flag: '--context-lines, -C <N>', description: 'Include N surrounding lines of code in match snippets' },
-                { flag: '--realm <id>', description: 'Search within a mounted external knowledge realm' }
+                { flag: '--realm <id>', description: 'Search within a mounted external knowledge realm' },
+                { flag: '--all-realms', description: 'Search simultaneously across all mounted knowledge realms' },
+                { flag: '--limit <number>', description: 'Limit number of search match results returned (default: 8)' },
+                { flag: '--no-compress', description: 'Disable DEC_v2 token compression output' }
             ],
             category: 'Core Search & Discovery',
-            example: 'deepsift search "auth store login" --include "src/features/auth" --context-lines 5'
+            example: 'deepsift search "auth store login" --include "src/features/auth" --context-lines 5 --limit 10'
         },
         {
             name: 'read',
             aliases: [],
             summary: 'Mandatory file reader outputting exact text or compressed DEC_v2 visual tokens.',
-            usage: 'deepsift read "file:start-end" [--compress]',
-            options: [{ flag: '--compress', description: 'Enable DEC_v2 visual token compression to save context window tokens' }],
+            usage: 'deepsift read "file:start-end" [--no-compress] [--json]',
+            options: [
+                { flag: '--no-compress', description: 'Output uncompressed raw file text instead of DEC_v2 tokens' },
+                { flag: '--json', description: 'Output content and line metadata in JSON format' }
+            ],
             category: 'Core Search & Discovery',
-            example: 'deepsift read "src/utils/config.ts:1-50" --compress'
+            example: 'deepsift read "src/utils/config.ts:1-50"'
         },
         {
             name: 'feature',
@@ -58,27 +68,35 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
                 { flag: '--summary, -s', description: 'Summary mode showing top-level exports only' },
                 { flag: '--group-by-feature, -g', description: 'Group files by sub-feature directories' },
                 { flag: '--depth <number>', description: 'Max directory traversal depth' },
-                { flag: '--limit <number>', description: 'Max items per page' },
-                { flag: '--offset <number>', description: 'Pagination offset' }
+                { flag: '--limit <number>', description: 'Max items per page for pagination' },
+                { flag: '--offset <number>', description: 'Pagination offset index' }
             ],
             category: 'Core Search & Discovery',
-            example: 'deepsift feature "src/core" --summary'
+            example: 'deepsift feature "src/core" --summary --compact'
         },
         {
             name: 'analyze',
             aliases: ['an'],
             summary: 'SUPER-COMMAND: Deep dive combining Feature AST Outline and DNA topology for a specific folder/file.',
-            usage: 'deepsift analyze "path"',
-            options: [],
+            usage: 'deepsift analyze "path" [--depth N] [--compact] [--json]',
+            options: [
+                { flag: '--depth <number>', description: 'Max directory traversal depth' },
+                { flag: '--compact', description: 'High-density summary output' },
+                { flag: '--json', description: 'Output structural analysis in JSON format' }
+            ],
             category: 'Architecture & Intelligence',
-            example: 'deepsift analyze "src/memo"'
+            example: 'deepsift analyze "src/memo" --depth 2'
         },
         {
             name: 'arch',
             aliases: [],
             summary: 'Project directory blueprint utilizing Graphify communities and automatic noise pruning.',
-            usage: 'deepsift arch [--depth N]',
-            options: [{ flag: '--depth <number>', description: 'Max directory tree depth' }],
+            usage: 'deepsift arch [--depth N] [--json] [--plain]',
+            options: [
+                { flag: '--depth <number>', description: 'Max directory tree depth (default: 3)' },
+                { flag: '--json', description: 'Output directory graph structure in JSON format' },
+                { flag: '--plain', description: 'Output clean plain text without Markdown formatting' }
+            ],
             category: 'Architecture & Intelligence',
             example: 'deepsift arch --depth 4'
         },
@@ -88,6 +106,8 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             summary: 'Generates or displays Project DNA topology, central God Nodes, and community clusters.',
             usage: 'deepsift dna [--show] [options]',
             options: [
+                { flag: '--show', description: 'Display existing cached DNA topology without re-indexing' },
+                { flag: '--force', description: 'Force full recalculation of project DNA and community clusters' },
                 { flag: '--section <name>', description: 'Filter DNA section (tokens, architecture, conventions)' },
                 { flag: '--query, -q <term>', description: 'Search DNA JSON data by keyword' },
                 { flag: '--path-filter <path>', description: 'Filter DNA records by file path prefix' },
@@ -100,17 +120,23 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             name: 'calltree',
             aliases: [],
             summary: 'Traces upstream callers, downstream callee scopes, and event message flows for any symbol.',
-            usage: 'deepsift calltree "symbol" [--path <dir>]',
-            options: [{ flag: '--path <dir>', description: 'Filter call graph scope to a specific subdirectory' }],
+            usage: 'deepsift calltree "symbol" [options]',
+            options: [
+                { flag: '--path <dir>', description: 'Filter call graph scope to a specific subdirectory' },
+                { flag: '--compress', description: 'Apply DEC_v2 visual token compression' },
+                { flag: '--json', description: 'Output call graph hierarchy in JSON format' }
+            ],
             category: 'Architecture & Intelligence',
-            example: 'deepsift calltree "TokenOptimizerService"'
+            example: 'deepsift calltree "TokenOptimizerService" --path "src/utils"'
         },
         {
             name: 'cfg',
             aliases: [],
             summary: 'Control Flow Graph extractor generating Mermaid and ASCII branch diagrams for functions.',
-            usage: 'deepsift cfg "file:func"',
-            options: [],
+            usage: 'deepsift cfg "file:func" [--json]',
+            options: [
+                { flag: '--json', description: 'Output Control Flow Graph nodes and edge lists in JSON' }
+            ],
             category: 'Architecture & Intelligence',
             example: 'deepsift cfg "src/utils/config.ts:loadConfig"'
         },
@@ -118,17 +144,23 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             name: 'deps',
             aliases: [],
             summary: 'Trace inbound and outbound dependencies for a specific file or module target.',
-            usage: 'deepsift deps "target"',
-            options: [],
+            usage: 'deepsift deps "target" [--incoming] [--outgoing] [--graph]',
+            options: [
+                { flag: '--incoming', description: 'Trace inbound callers depending on target' },
+                { flag: '--outgoing', description: 'Trace outbound modules imported by target' },
+                { flag: '--graph', description: 'Render dependency tree graph' }
+            ],
             category: 'Architecture & Intelligence',
-            example: 'deepsift deps "src/core/indexer.ts"'
+            example: 'deepsift deps "src/core/indexer.ts" --incoming'
         },
         {
             name: 'wire-trace',
             aliases: [],
             summary: 'Maps cross-environment message flows (postMessage, IPC, WebSockets, EventEmitters).',
-            usage: 'deepsift wire-trace [directory]',
-            options: [],
+            usage: 'deepsift wire-trace [directory] [--json]',
+            options: [
+                { flag: '--json', description: 'Output message wire trace channel matrix in JSON' }
+            ],
             category: 'Architecture & Intelligence',
             example: 'deepsift wire-trace "src/figma-core"'
         },
@@ -136,17 +168,22 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             name: 'clones',
             aliases: [],
             summary: 'AST Code Clone Detector highlighting duplicate blocks and copy-paste clusters for DRY compliance.',
-            usage: 'deepsift clones',
-            options: [],
+            usage: 'deepsift clones [path] [--min-tokens N] [--json]',
+            options: [
+                { flag: '--min-tokens <number>', description: 'Minimum token threshold for clone detection (default: 30)' },
+                { flag: '--json', description: 'Output clone clusters in JSON format' }
+            ],
             category: 'Refactoring & Self-Healing',
-            example: 'deepsift clones'
+            example: 'deepsift clones "src/analyzers"'
         },
         {
             name: 'find-dead-code',
             aliases: ['dead-code'],
             summary: 'Scans for unreferenced exports, dead variables, and uncalled component functions.',
-            usage: 'deepsift find-dead-code',
-            options: [],
+            usage: 'deepsift find-dead-code [path] [--json]',
+            options: [
+                { flag: '--json', description: 'Output unreferenced symbols list in JSON format' }
+            ],
             category: 'Refactoring & Self-Healing',
             example: 'deepsift find-dead-code'
         },
@@ -154,8 +191,10 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             name: 'check-schema-drift',
             aliases: ['schema-drift'],
             summary: 'Audits schema and DOM selector synchronization between client UI and backend definitions.',
-            usage: 'deepsift check-schema-drift',
-            options: [],
+            usage: 'deepsift check-schema-drift [--json]',
+            options: [
+                { flag: '--json', description: 'Output schema drift audit report in JSON format' }
+            ],
             category: 'Refactoring & Self-Healing',
             example: 'deepsift check-schema-drift'
         },
@@ -163,17 +202,21 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             name: 'heal',
             aliases: [],
             summary: 'DNA-based auto-refactoring engine that fixes lint, type, and architectural issues in a file.',
-            usage: 'deepsift heal "file"',
-            options: [],
+            usage: 'deepsift heal "file" [--dry-run]',
+            options: [
+                { flag: '--dry-run', description: 'Simulate auto-healing patches without modifying file on disk' }
+            ],
             category: 'Refactoring & Self-Healing',
-            example: 'deepsift heal "src/cli/cli-output.ts"'
+            example: 'deepsift heal "src/cli/cli-output.ts" --dry-run'
         },
         {
             name: 'auto-heal',
             aliases: [],
             summary: 'Autonomous 4-step healing loop (diff -> build check -> auto-patch -> re-verify).',
-            usage: 'deepsift auto-heal "file"',
-            options: [],
+            usage: 'deepsift auto-heal "file" [--max-attempts N]',
+            options: [
+                { flag: '--max-attempts <number>', description: 'Maximum patch retry attempts (default: 3)' }
+            ],
             category: 'Refactoring & Self-Healing',
             example: 'deepsift auto-heal "src/storage/native-store.ts"'
         },
@@ -195,7 +238,9 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             aliases: [],
             summary: 'AST-safe symbol renaming across codebase or function extraction.',
             usage: 'deepsift refactor rename <old> <new> | deepsift refactor extract <file:lines> --name <func>',
-            options: [],
+            options: [
+                { flag: '--name <functionName>', description: 'Name of extracted function target' }
+            ],
             category: 'Refactoring & Self-Healing',
             example: 'deepsift refactor rename "oldHelper" "newHelper"'
         },
@@ -203,8 +248,10 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             name: 'impact',
             aliases: [],
             summary: 'Calculates breaking change risk score and lists caller sites before symbol modification.',
-            usage: 'deepsift impact "symbol"',
-            options: [],
+            usage: 'deepsift impact "symbol" [--json]',
+            options: [
+                { flag: '--json', description: 'Output breaking change impact report in JSON format' }
+            ],
             category: 'Refactoring & Self-Healing',
             example: 'deepsift impact "NativeStore"'
         },
@@ -212,8 +259,10 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             name: 'complexity',
             aliases: [],
             summary: 'Calculates Cyclomatic & Cognitive Complexity heatmap highlighting high-risk refactor targets.',
-            usage: 'deepsift complexity [path]',
-            options: [],
+            usage: 'deepsift complexity [path] [--json]',
+            options: [
+                { flag: '--json', description: 'Output complexity heatmap matrix in JSON format' }
+            ],
             category: 'Security & Diagnostics',
             example: 'deepsift complexity "src/core"'
         },
@@ -221,8 +270,10 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             name: 'security-scan',
             aliases: ['audit-sandbox', 'audit-secrets', 'audit-deps'],
             summary: 'Scans for sandbox boundary leaks (e.g. window in sandbox), hardcoded secrets, and XSS risks.',
-            usage: 'deepsift security-scan',
-            options: [],
+            usage: 'deepsift security-scan [--json]',
+            options: [
+                { flag: '--json', description: 'Output vulnerability finding details in JSON format' }
+            ],
             category: 'Security & Diagnostics',
             example: 'deepsift security-scan'
         },
@@ -230,62 +281,86 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             name: 'doctor',
             aliases: [],
             summary: 'Runs system health diagnostics, database index checks, and self-healing index repairs.',
-            usage: 'deepsift doctor',
-            options: [],
+            usage: 'deepsift doctor [--repair]',
+            options: [
+                { flag: '--repair', description: 'Automatically repair corrupt SQLite indexes or missing cache files' }
+            ],
             category: 'Security & Diagnostics',
-            example: 'deepsift doctor'
+            example: 'deepsift doctor --repair'
         },
         {
             name: 'testmap',
             aliases: [],
             summary: 'Maps source files to corresponding unit test files and identifies untested modules.',
-            usage: 'deepsift testmap [--lang <ts|dart|py|go>]',
-            options: [{ flag: '--lang <ts|dart|py|go>', description: 'Filter test mapping by programming language' }],
+            usage: 'deepsift testmap [--lang <ts|dart|py|go>] [--untested-only]',
+            options: [
+                { flag: '--lang <ts|dart|py|go>', description: 'Filter test mapping by programming language' },
+                { flag: '--untested-only', description: 'Display only source modules lacking test coverage' }
+            ],
             category: 'Security & Diagnostics',
-            example: 'deepsift testmap --lang ts'
+            example: 'deepsift testmap --lang ts --untested-only'
         },
         {
             name: 'git-churn',
             aliases: [],
             summary: 'Git Hotspot Heatmap combining commit frequency with code complexity to find churn hotspots.',
-            usage: 'deepsift git-churn',
-            options: [],
+            usage: 'deepsift git-churn [--limit N] [--json]',
+            options: [
+                { flag: '--limit <number>', description: 'Top N churn hotspot files to display (default: 10)' },
+                { flag: '--json', description: 'Output churn risk metric array in JSON format' }
+            ],
             category: 'Security & Diagnostics',
-            example: 'deepsift git-churn'
+            example: 'deepsift git-churn --limit 15'
         },
         {
             name: 'memo',
             aliases: ['m'],
             summary: 'Dynamic Research Memory (DRM) engine for persisting active research tags and architectural notes.',
-            usage: 'deepsift memo <action> [tag] [content]',
-            options: [],
+            usage: 'deepsift memo <action> [tag] [options]',
+            options: [
+                { flag: 'open <tag> [--desc "text"]', description: 'Create and activate a research tag' },
+                { flag: 'close <tag>', description: 'Close an active research tag' },
+                { flag: 'add <tag> --data "text" [--type type]', description: 'Add research note entry' },
+                { flag: 'query <tag> "query" [--topk N]', description: 'Semantic search within research notes' },
+                { flag: 'list [--open]', description: 'List all active or archived research tags' },
+                { flag: 'export <tag>', description: 'Export research tag findings as Markdown' },
+                { flag: 'to-plan <tag>', description: 'Convert research tag notes directly into implementation_plan.md' }
+            ],
             category: 'Memory & Realms',
-            example: 'deepsift memo open "auth-refactor"'
+            example: 'deepsift memo open "auth-refactor" --desc "OAuth2 token flow redesign"'
         },
         {
             name: 'realm',
             aliases: [],
             summary: 'Manages external knowledge bases and external Swagger/Figma specs (list, add, mount, snapshot).',
-            usage: 'deepsift realm <action> [id]',
-            options: [],
+            usage: 'deepsift realm <action> [id] [options]',
+            options: [
+                { flag: 'list', description: 'List mounted knowledge realms' },
+                { flag: 'add <id> --path <dir>', description: 'Mount external directory as knowledge realm' },
+                { flag: 'snapshot <id>', description: 'Create persistent vector snapshot of realm' }
+            ],
             category: 'Memory & Realms',
-            example: 'deepsift realm mount'
+            example: 'deepsift realm add "figma-spec" --path "../figma-docs"'
         },
         {
             name: 'compare',
             aliases: [],
             summary: 'Compares vector knowledge gaps and similarities between two knowledge realms.',
             usage: 'deepsift compare <r1> <r2> [-q term]',
-            options: [{ flag: '-q <term>', description: 'Filter vector comparison by topic query' }],
+            options: [
+                { flag: '-q <term>', description: 'Filter vector comparison by topic query string' }
+            ],
             category: 'Memory & Realms',
-            example: 'deepsift compare r1 r2 -q "auth"'
+            example: 'deepsift compare code docs -q "authentication"'
         },
         {
             name: 'context',
             aliases: [],
             summary: 'Generates pre-creation checklist with rules and design tokens before building components.',
-            usage: 'deepsift context "path"',
-            options: [],
+            usage: 'deepsift context "path" [--json]',
+            options: [
+                { flag: '--json', description: 'Output pre-creation rule checklist in JSON format' }
+            ],
             category: 'Utilities & Dashboard',
             example: 'deepsift context "src/components/Header.tsx"'
         },
@@ -293,8 +368,10 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             name: 'plan',
             aliases: [],
             summary: 'Generates structured implementation plans based on DNA, skills, realms, and architecture.',
-            usage: 'deepsift plan "request"',
-            options: [],
+            usage: 'deepsift plan "request" [--output <file>]',
+            options: [
+                { flag: '--output <file>', description: 'Write generated implementation plan to target markdown file' }
+            ],
             category: 'Utilities & Dashboard',
             example: 'deepsift plan "Add OAuth2 authentication flow"'
         },
@@ -311,8 +388,10 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             name: 'docgen',
             aliases: ['docs'],
             summary: 'Generates and synchronizes complete Markdown documentation suite for GitHub and AI Agents.',
-            usage: 'deepsift docgen',
-            options: [],
+            usage: 'deepsift docgen [--project <path>]',
+            options: [
+                { flag: '--project <path>', description: 'Specify custom target project root directory' }
+            ],
             category: 'Utilities & Dashboard',
             example: 'deepsift docgen'
         },
@@ -320,10 +399,12 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             name: 'ui',
             aliases: [],
             summary: 'Launches local interactive Web Dashboard visualization on port 3333 for graph and DRM.',
-            usage: 'deepsift ui',
-            options: [],
+            usage: 'deepsift ui [--port N]',
+            options: [
+                { flag: '--port <number>', description: 'Specify custom port number (default: 3333)' }
+            ],
             category: 'Utilities & Dashboard',
-            example: 'deepsift ui'
+            example: 'deepsift ui --port 3333'
         }
     ];
 }

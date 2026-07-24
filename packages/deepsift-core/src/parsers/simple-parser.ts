@@ -1,3 +1,11 @@
+/**
+ * @file simple-parser.ts
+ * @description Simple line-based code chunker for plain text and markdown documents.
+ *
+ * @module parsers/simple-parser
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import { CodeChunk, ChunkType } from '../types/index.js';
 import * as crypto from 'crypto';
 import path from 'path';

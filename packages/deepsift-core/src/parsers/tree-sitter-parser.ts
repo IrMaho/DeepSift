@@ -1,3 +1,11 @@
+/**
+ * @file tree-sitter-parser.ts
+ * @description Tree-sitter AST-based multi-language code chunk extractor for semantic indexing.
+ *
+ * @module parsers/tree-sitter-parser
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import Parser from 'tree-sitter';
 // tree-sitter-typescript exports two grammars: typescript and tsx
 import * as TypeScript from 'tree-sitter-typescript';

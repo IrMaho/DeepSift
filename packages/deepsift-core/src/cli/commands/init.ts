@@ -1,3 +1,11 @@
+/**
+ * @file init.ts
+ * @description Workspace initialization and first-run indexing bootstrap command.
+ *
+ * @module cli/commands/init
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import fs from 'fs';
 import readline from 'readline';
 import path from 'path';

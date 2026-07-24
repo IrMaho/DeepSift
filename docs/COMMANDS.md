@@ -14,17 +14,19 @@ This manual provides exhaustive details on command execution, parameter options,
 
 #### 📋 Usage Syntax
 ```bash
-deepsift overview [path] [--depth N]
+deepsift overview [path] [--depth N] [--compress] [--json]
 ```
 
 #### ⚙️ Command Options & Flags
 | Flag | Description |
 |---|---|
 | `--depth <number>` | Max directory traversal depth (default: 2) |
+| `--compress` | Enable DEC_v2 visual token compression for context window efficiency |
+| `--json` | Output structural blueprint in JSON format |
 
 #### 💡 Concrete Example
 ```bash
-deepsift overview --depth 3
+deepsift overview --depth 3 --compress
 ```
 
 ---
@@ -42,15 +44,18 @@ deepsift search "query" [options]
 | Flag | Description |
 |---|---|
 | `--include, -i <path>` | Narrow search scope to specific subdirectory |
-| `--sync` | Synchronize index before executing search |
+| `--sync` | Synchronize vector index before executing search |
 | `--layer <ui|domain|data>` | Filter search results by Clean Architecture layer |
-| `--verbose, -v` | Display real-time indexing progress |
+| `--verbose, -v` | Display real-time indexing progress and processing speed |
 | `--context-lines, -C <N>` | Include N surrounding lines of code in match snippets |
 | `--realm <id>` | Search within a mounted external knowledge realm |
+| `--all-realms` | Search simultaneously across all mounted knowledge realms |
+| `--limit <number>` | Limit number of search match results returned (default: 8) |
+| `--no-compress` | Disable DEC_v2 token compression output |
 
 #### 💡 Concrete Example
 ```bash
-deepsift search "auth store login" --include "src/features/auth" --context-lines 5
+deepsift search "auth store login" --include "src/features/auth" --context-lines 5 --limit 10
 ```
 
 ---
@@ -61,17 +66,18 @@ deepsift search "auth store login" --include "src/features/auth" --context-lines
 
 #### 📋 Usage Syntax
 ```bash
-deepsift read "file:start-end" [--compress]
+deepsift read "file:start-end" [--no-compress] [--json]
 ```
 
 #### ⚙️ Command Options & Flags
 | Flag | Description |
 |---|---|
-| `--compress` | Enable DEC_v2 visual token compression to save context window tokens |
+| `--no-compress` | Output uncompressed raw file text instead of DEC_v2 tokens |
+| `--json` | Output content and line metadata in JSON format |
 
 #### 💡 Concrete Example
 ```bash
-deepsift read "src/utils/config.ts:1-50" --compress
+deepsift read "src/utils/config.ts:1-50"
 ```
 
 ---
@@ -92,12 +98,12 @@ deepsift feature "path" [options]
 | `--summary, -s` | Summary mode showing top-level exports only |
 | `--group-by-feature, -g` | Group files by sub-feature directories |
 | `--depth <number>` | Max directory traversal depth |
-| `--limit <number>` | Max items per page |
-| `--offset <number>` | Pagination offset |
+| `--limit <number>` | Max items per page for pagination |
+| `--offset <number>` | Pagination offset index |
 
 #### 💡 Concrete Example
 ```bash
-deepsift feature "src/core" --summary
+deepsift feature "src/core" --summary --compact
 ```
 
 ---
@@ -110,12 +116,19 @@ deepsift feature "src/core" --summary
 
 #### 📋 Usage Syntax
 ```bash
-deepsift analyze "path"
+deepsift analyze "path" [--depth N] [--compact] [--json]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--depth <number>` | Max directory traversal depth |
+| `--compact` | High-density summary output |
+| `--json` | Output structural analysis in JSON format |
 
 #### 💡 Concrete Example
 ```bash
-deepsift analyze "src/memo"
+deepsift analyze "src/memo" --depth 2
 ```
 
 ---
@@ -126,13 +139,15 @@ deepsift analyze "src/memo"
 
 #### 📋 Usage Syntax
 ```bash
-deepsift arch [--depth N]
+deepsift arch [--depth N] [--json] [--plain]
 ```
 
 #### ⚙️ Command Options & Flags
 | Flag | Description |
 |---|---|
-| `--depth <number>` | Max directory tree depth |
+| `--depth <number>` | Max directory tree depth (default: 3) |
+| `--json` | Output directory graph structure in JSON format |
+| `--plain` | Output clean plain text without Markdown formatting |
 
 #### 💡 Concrete Example
 ```bash
@@ -153,6 +168,8 @@ deepsift dna [--show] [options]
 #### ⚙️ Command Options & Flags
 | Flag | Description |
 |---|---|
+| `--show` | Display existing cached DNA topology without re-indexing |
+| `--force` | Force full recalculation of project DNA and community clusters |
 | `--section <name>` | Filter DNA section (tokens, architecture, conventions) |
 | `--query, -q <term>` | Search DNA JSON data by keyword |
 | `--path-filter <path>` | Filter DNA records by file path prefix |
@@ -171,17 +188,19 @@ deepsift dna --show --section architecture
 
 #### 📋 Usage Syntax
 ```bash
-deepsift calltree "symbol" [--path <dir>]
+deepsift calltree "symbol" [options]
 ```
 
 #### ⚙️ Command Options & Flags
 | Flag | Description |
 |---|---|
 | `--path <dir>` | Filter call graph scope to a specific subdirectory |
+| `--compress` | Apply DEC_v2 visual token compression |
+| `--json` | Output call graph hierarchy in JSON format |
 
 #### 💡 Concrete Example
 ```bash
-deepsift calltree "TokenOptimizerService"
+deepsift calltree "TokenOptimizerService" --path "src/utils"
 ```
 
 ---
@@ -192,8 +211,13 @@ deepsift calltree "TokenOptimizerService"
 
 #### 📋 Usage Syntax
 ```bash
-deepsift cfg "file:func"
+deepsift cfg "file:func" [--json]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--json` | Output Control Flow Graph nodes and edge lists in JSON |
 
 #### 💡 Concrete Example
 ```bash
@@ -208,12 +232,19 @@ deepsift cfg "src/utils/config.ts:loadConfig"
 
 #### 📋 Usage Syntax
 ```bash
-deepsift deps "target"
+deepsift deps "target" [--incoming] [--outgoing] [--graph]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--incoming` | Trace inbound callers depending on target |
+| `--outgoing` | Trace outbound modules imported by target |
+| `--graph` | Render dependency tree graph |
 
 #### 💡 Concrete Example
 ```bash
-deepsift deps "src/core/indexer.ts"
+deepsift deps "src/core/indexer.ts" --incoming
 ```
 
 ---
@@ -224,8 +255,13 @@ deepsift deps "src/core/indexer.ts"
 
 #### 📋 Usage Syntax
 ```bash
-deepsift wire-trace [directory]
+deepsift wire-trace [directory] [--json]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--json` | Output message wire trace channel matrix in JSON |
 
 #### 💡 Concrete Example
 ```bash
@@ -242,12 +278,18 @@ deepsift wire-trace "src/figma-core"
 
 #### 📋 Usage Syntax
 ```bash
-deepsift clones
+deepsift clones [path] [--min-tokens N] [--json]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--min-tokens <number>` | Minimum token threshold for clone detection (default: 30) |
+| `--json` | Output clone clusters in JSON format |
 
 #### 💡 Concrete Example
 ```bash
-deepsift clones
+deepsift clones "src/analyzers"
 ```
 
 ---
@@ -258,8 +300,13 @@ deepsift clones
 
 #### 📋 Usage Syntax
 ```bash
-deepsift find-dead-code
+deepsift find-dead-code [path] [--json]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--json` | Output unreferenced symbols list in JSON format |
 
 #### 💡 Concrete Example
 ```bash
@@ -274,8 +321,13 @@ deepsift find-dead-code
 
 #### 📋 Usage Syntax
 ```bash
-deepsift check-schema-drift
+deepsift check-schema-drift [--json]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--json` | Output schema drift audit report in JSON format |
 
 #### 💡 Concrete Example
 ```bash
@@ -290,12 +342,17 @@ deepsift check-schema-drift
 
 #### 📋 Usage Syntax
 ```bash
-deepsift heal "file"
+deepsift heal "file" [--dry-run]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--dry-run` | Simulate auto-healing patches without modifying file on disk |
 
 #### 💡 Concrete Example
 ```bash
-deepsift heal "src/cli/cli-output.ts"
+deepsift heal "src/cli/cli-output.ts" --dry-run
 ```
 
 ---
@@ -306,8 +363,13 @@ deepsift heal "src/cli/cli-output.ts"
 
 #### 📋 Usage Syntax
 ```bash
-deepsift auto-heal "file"
+deepsift auto-heal "file" [--max-attempts N]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--max-attempts <number>` | Maximum patch retry attempts (default: 3) |
 
 #### 💡 Concrete Example
 ```bash
@@ -348,6 +410,11 @@ deepsift patch "patch.json" --dry-run
 deepsift refactor rename <old> <new> | deepsift refactor extract <file:lines> --name <func>
 ```
 
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--name <functionName>` | Name of extracted function target |
+
 #### 💡 Concrete Example
 ```bash
 deepsift refactor rename "oldHelper" "newHelper"
@@ -361,8 +428,13 @@ deepsift refactor rename "oldHelper" "newHelper"
 
 #### 📋 Usage Syntax
 ```bash
-deepsift impact "symbol"
+deepsift impact "symbol" [--json]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--json` | Output breaking change impact report in JSON format |
 
 #### 💡 Concrete Example
 ```bash
@@ -379,8 +451,13 @@ deepsift impact "NativeStore"
 
 #### 📋 Usage Syntax
 ```bash
-deepsift complexity [path]
+deepsift complexity [path] [--json]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--json` | Output complexity heatmap matrix in JSON format |
 
 #### 💡 Concrete Example
 ```bash
@@ -395,8 +472,13 @@ deepsift complexity "src/core"
 
 #### 📋 Usage Syntax
 ```bash
-deepsift security-scan
+deepsift security-scan [--json]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--json` | Output vulnerability finding details in JSON format |
 
 #### 💡 Concrete Example
 ```bash
@@ -411,12 +493,17 @@ deepsift security-scan
 
 #### 📋 Usage Syntax
 ```bash
-deepsift doctor
+deepsift doctor [--repair]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--repair` | Automatically repair corrupt SQLite indexes or missing cache files |
 
 #### 💡 Concrete Example
 ```bash
-deepsift doctor
+deepsift doctor --repair
 ```
 
 ---
@@ -427,17 +514,18 @@ deepsift doctor
 
 #### 📋 Usage Syntax
 ```bash
-deepsift testmap [--lang <ts|dart|py|go>]
+deepsift testmap [--lang <ts|dart|py|go>] [--untested-only]
 ```
 
 #### ⚙️ Command Options & Flags
 | Flag | Description |
 |---|---|
 | `--lang <ts|dart|py|go>` | Filter test mapping by programming language |
+| `--untested-only` | Display only source modules lacking test coverage |
 
 #### 💡 Concrete Example
 ```bash
-deepsift testmap --lang ts
+deepsift testmap --lang ts --untested-only
 ```
 
 ---
@@ -448,12 +536,18 @@ deepsift testmap --lang ts
 
 #### 📋 Usage Syntax
 ```bash
-deepsift git-churn
+deepsift git-churn [--limit N] [--json]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--limit <number>` | Top N churn hotspot files to display (default: 10) |
+| `--json` | Output churn risk metric array in JSON format |
 
 #### 💡 Concrete Example
 ```bash
-deepsift git-churn
+deepsift git-churn --limit 15
 ```
 
 ---
@@ -466,12 +560,23 @@ deepsift git-churn
 
 #### 📋 Usage Syntax
 ```bash
-deepsift memo <action> [tag] [content]
+deepsift memo <action> [tag] [options]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `open <tag> [--desc "text"]` | Create and activate a research tag |
+| `close <tag>` | Close an active research tag |
+| `add <tag> --data "text" [--type type]` | Add research note entry |
+| `query <tag> "query" [--topk N]` | Semantic search within research notes |
+| `list [--open]` | List all active or archived research tags |
+| `export <tag>` | Export research tag findings as Markdown |
+| `to-plan <tag>` | Convert research tag notes directly into implementation_plan.md |
 
 #### 💡 Concrete Example
 ```bash
-deepsift memo open "auth-refactor"
+deepsift memo open "auth-refactor" --desc "OAuth2 token flow redesign"
 ```
 
 ---
@@ -482,12 +587,19 @@ deepsift memo open "auth-refactor"
 
 #### 📋 Usage Syntax
 ```bash
-deepsift realm <action> [id]
+deepsift realm <action> [id] [options]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `list` | List mounted knowledge realms |
+| `add <id> --path <dir>` | Mount external directory as knowledge realm |
+| `snapshot <id>` | Create persistent vector snapshot of realm |
 
 #### 💡 Concrete Example
 ```bash
-deepsift realm mount
+deepsift realm add "figma-spec" --path "../figma-docs"
 ```
 
 ---
@@ -504,11 +616,11 @@ deepsift compare <r1> <r2> [-q term]
 #### ⚙️ Command Options & Flags
 | Flag | Description |
 |---|---|
-| `-q <term>` | Filter vector comparison by topic query |
+| `-q <term>` | Filter vector comparison by topic query string |
 
 #### 💡 Concrete Example
 ```bash
-deepsift compare r1 r2 -q "auth"
+deepsift compare code docs -q "authentication"
 ```
 
 ---
@@ -521,8 +633,13 @@ deepsift compare r1 r2 -q "auth"
 
 #### 📋 Usage Syntax
 ```bash
-deepsift context "path"
+deepsift context "path" [--json]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--json` | Output pre-creation rule checklist in JSON format |
 
 #### 💡 Concrete Example
 ```bash
@@ -537,8 +654,13 @@ deepsift context "src/components/Header.tsx"
 
 #### 📋 Usage Syntax
 ```bash
-deepsift plan "request"
+deepsift plan "request" [--output <file>]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--output <file>` | Write generated implementation plan to target markdown file |
 
 #### 💡 Concrete Example
 ```bash
@@ -569,8 +691,13 @@ deepsift plan-ui "User Profile Settings Dialog"
 
 #### 📋 Usage Syntax
 ```bash
-deepsift docgen
+deepsift docgen [--project <path>]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--project <path>` | Specify custom target project root directory |
 
 #### 💡 Concrete Example
 ```bash
@@ -585,12 +712,17 @@ deepsift docgen
 
 #### 📋 Usage Syntax
 ```bash
-deepsift ui
+deepsift ui [--port N]
 ```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--port <number>` | Specify custom port number (default: 3333) |
 
 #### 💡 Concrete Example
 ```bash
-deepsift ui
+deepsift ui --port 3333
 ```
 
 ---

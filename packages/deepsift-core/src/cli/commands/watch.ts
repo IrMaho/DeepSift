@@ -1,3 +1,11 @@
+/**
+ * @file watch.ts
+ * @description File system watcher for incremental auto-indexing on source changes.
+ *
+ * @module cli/commands/watch
+ * @category Core Search & Discovery
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { NativeStore } from '../../storage/native-store.js';

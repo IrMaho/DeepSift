@@ -1,3 +1,11 @@
+/**
+ * @file graph-enhancer.ts
+ * @description Graph topology enhancer adding metadata and inferring missing cross-file edges.
+ *
+ * @module graphify/graph-enhancer
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import { SearchResult } from '../types/index.js';
 import { GraphifyNode, GraphifyEdge } from './graph-types.js';
 import { GraphQueryEngine } from './graph-query-engine.js';

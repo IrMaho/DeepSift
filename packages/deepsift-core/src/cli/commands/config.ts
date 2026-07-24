@@ -1,3 +1,11 @@
+/**
+ * @file config.ts
+ * @description CLI configuration management and project settings command.
+ *
+ * @module cli/commands/config
+ * @category Utilities & Dashboard
+ * @since 1.0.0
+ */
 import fs from 'fs';
 import path from 'path';
 import { checkbox } from '@inquirer/prompts';

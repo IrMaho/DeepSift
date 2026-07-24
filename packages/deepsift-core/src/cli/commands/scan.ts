@@ -1,3 +1,11 @@
+/**
+ * @file scan.ts
+ * @description Full workspace scan and batch index repair command.
+ *
+ * @module cli/commands/scan
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import { printError, printInfo, printSuccess } from '../cli-output.js';
 import { NativeStore } from '../../storage/native-store.js';
 import { getDbPath } from '../cli-paths.js';

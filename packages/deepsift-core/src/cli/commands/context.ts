@@ -1,3 +1,11 @@
+/**
+ * @file context.ts
+ * @description Pre-creation checklist generator for design tokens, rules, and naming standards.
+ *
+ * @module cli/commands/context
+ * @category Utilities & Dashboard
+ * @since 1.0.3
+ */
 import path from 'path';
 import { ProjectDNA, CreationContext } from '../../types/dna-types.js';
 import fs from 'fs';

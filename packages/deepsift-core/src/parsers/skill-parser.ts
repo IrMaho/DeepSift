@@ -1,3 +1,11 @@
+/**
+ * @file skill-parser.ts
+ * @description SKILL.md and markdown knowledge document parser for agent knowledge realms.
+ *
+ * @module parsers/skill-parser
+ * @category Core Search & Discovery
+ * @since 1.0.3
+ */
 import { CodeChunk } from '../types/index.js';
 import crypto from 'crypto';
 import path from 'path';

@@ -1,3 +1,11 @@
+/**
+ * @file graph-cluster.ts
+ * @description Louvain community detection and PageRank scoring for code dependency graphs.
+ *
+ * @module graphify/graph-cluster
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import { GraphifyNode, GraphifyEdge, GraphifyCommunity } from './graph-types.js';
 
 export class GraphClusterer {

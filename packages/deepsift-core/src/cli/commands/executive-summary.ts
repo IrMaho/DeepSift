@@ -1,3 +1,11 @@
+/**
+ * @file executive-summary.ts
+ * @description Executive summary generator for code quality and architecture health reports.
+ *
+ * @module cli/commands/executive-summary
+ * @category Utilities & Dashboard
+ * @since 1.0.3
+ */
 import path from 'path';
 import fs from 'fs';
 import { loadDNA } from '../../intelligence/project-dna.js';

@@ -1,3 +1,11 @@
+/**
+ * @file plan-ui.ts
+ * @description Visual UI specification and design token palette generator command.
+ *
+ * @module cli/commands/plan-ui
+ * @category Utilities & Dashboard
+ * @since 1.0.3
+ */
 import { loadDNA } from '../../intelligence/project-dna.js';
 
 export async function planUiCommand(projectPath: string, featureRequest: string, format = 'markdown') {

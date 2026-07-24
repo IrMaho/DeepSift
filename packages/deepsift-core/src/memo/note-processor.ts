@@ -1,3 +1,11 @@
+/**
+ * @file note-processor.ts
+ * @description Research note preprocessor for content normalization and type classification.
+ *
+ * @module memo/note-processor
+ * @category Memory & Realms
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import crypto from 'crypto';
 import { MemoManifestManager } from './manifest-manager.js';

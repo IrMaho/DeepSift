@@ -1,3 +1,11 @@
+/**
+ * @file benchmark_web.ts
+ * @description Web-worker performance benchmarking harness for browser embedding throughput.
+ *
+ * @module benchmark_web
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import fs from 'fs';
 import path from 'path';
 import { NativeStore } from './storage/native-store.js';

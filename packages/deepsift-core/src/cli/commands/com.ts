@@ -1,3 +1,11 @@
+/**
+ * @file com.ts
+ * @description Community cluster explorer and god node viewer for Graphify topology.
+ *
+ * @module cli/commands/com
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import { execSync } from 'child_process';
 import { printResult, printSuccess, printError, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';

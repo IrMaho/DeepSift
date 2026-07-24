@@ -1,3 +1,11 @@
+/**
+ * @file zoom.ts
+ * @description Deep inspection command for a specific file, class, or symbol scope.
+ *
+ * @module cli/commands/zoom
+ * @category Core Search & Discovery
+ * @since 1.0.3
+ */
 import path from 'path';
 import { featureCommand } from './feature.js';
 import { printError, OutputFormat } from '../cli-output.js';

@@ -1,3 +1,11 @@
+/**
+ * @file binary-check.ts
+ * @description Binary file detection utility to skip non-text files during indexing scans.
+ *
+ * @module utils/binary-check
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import fs from 'fs';
 import path from 'path';
 

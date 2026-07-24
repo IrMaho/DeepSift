@@ -1,3 +1,11 @@
+/**
+ * @file security-scan.ts
+ * @description CWE vulnerability scanner for sandbox leaks, secrets, and XSS risks.
+ *
+ * @module cli/commands/security-scan
+ * @category Security & Diagnostics
+ * @since 1.0.2
+ */
 import { SecurityAuditor } from '../../analyzers/security-auditor.js';
 
 export async function securityScanCommand(projectPath: string, format = 'markdown') {

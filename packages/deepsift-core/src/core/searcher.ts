@@ -1,3 +1,11 @@
+/**
+ * @file searcher.ts
+ * @description Hybrid vector cosine + BM25 lexical result combiner and relevance scorer.
+ *
+ * @module core/searcher
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import { NativeStore } from '../storage/native-store.js';
 import { getEmbedding } from './embedder.js';
 import { applyRRF } from '../utils/similarity.js';

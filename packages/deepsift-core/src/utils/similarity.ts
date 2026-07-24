@@ -1,3 +1,11 @@
+/**
+ * @file similarity.ts
+ * @description Cosine similarity and vector distance computation utilities for search ranking.
+ *
+ * @module utils/similarity
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import { cosineSim } from '@ternlight/base';
 import { SearchResult } from '../types/index.js';
 import path from 'path';

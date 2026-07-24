@@ -1,3 +1,11 @@
+/**
+ * @file heal.ts
+ * @description DNA-based auto-refactoring and lint healing command handler.
+ *
+ * @module cli/commands/heal
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
 import path from 'path';
 import fs from 'fs';
 import { InternalGraphBuilder } from '../../intelligence/internal-graph.js';

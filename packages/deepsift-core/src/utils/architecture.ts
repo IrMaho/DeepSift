@@ -1,3 +1,11 @@
+/**
+ * @file architecture.ts
+ * @description Directory tree architecture blueprint generator with Graphify community pruning.
+ *
+ * @module utils/architecture
+ * @category Architecture & Intelligence
+ * @since 1.0.0
+ */
 import fs from 'fs';
 import path from 'path';
 import { loadConfig } from './config.js';

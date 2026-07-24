@@ -1,3 +1,11 @@
+/**
+ * @file refactor-engine.ts
+ * @description AST-safe code refactoring engine for symbol renames and function extractions.
+ *
+ * @module analyzers/refactor-engine
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { editCommand } from '../cli/commands/edit.js';

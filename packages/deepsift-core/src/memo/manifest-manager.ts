@@ -1,3 +1,11 @@
+/**
+ * @file manifest-manager.ts
+ * @description DRM tag manifest persistence and metadata serialization manager.
+ *
+ * @module memo/manifest-manager
+ * @category Memory & Realms
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';

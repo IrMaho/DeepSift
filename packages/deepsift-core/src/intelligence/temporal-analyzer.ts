@@ -1,3 +1,11 @@
+/**
+ * @file temporal-analyzer.ts
+ * @description Temporal file change history analyzer for churn risk and velocity metrics.
+ *
+ * @module intelligence/temporal-analyzer
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
 import { execSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';

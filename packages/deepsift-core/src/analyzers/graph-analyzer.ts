@@ -1,3 +1,11 @@
+/**
+ * @file graph-analyzer.ts
+ * @description Graphify dependency graph topology analyzer for community detection and hub identification.
+ *
+ * @module analyzers/graph-analyzer
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { DependencyGraphData, GraphNode, GraphEdge, FileCluster } from '../types/dna-types.js';

@@ -1,3 +1,11 @@
+/**
+ * @file web-dashboard.ts
+ * @description Local Express web server providing interactive graph and DRM visualization dashboard on port 3333.
+ *
+ * @module ui/web-dashboard
+ * @category Utilities & Dashboard
+ * @since 1.0.3
+ */
 import http from 'http';
 import fs from 'fs';
 import path from 'path';

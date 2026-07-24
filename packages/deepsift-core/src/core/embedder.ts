@@ -1,3 +1,11 @@
+/**
+ * @file embedder.ts
+ * @description Neural text embedding engine using local ONNX transformer models.
+ *
+ * @module core/embedder
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
 import { Worker } from 'worker_threads';
 import path from 'path';
 import os from 'os';

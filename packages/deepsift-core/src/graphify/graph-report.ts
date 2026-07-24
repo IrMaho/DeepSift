@@ -1,3 +1,11 @@
+/**
+ * @file graph-report.ts
+ * @description Markdown graph report generator for community clusters and god node summaries.
+ *
+ * @module graphify/graph-report
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { GraphifyNode, GraphifyEdge, GraphifyCommunity } from './graph-types.js';

@@ -1,3 +1,11 @@
+/**
+ * @file memo-prompt.ts
+ * @description Interactive and auto-save Research Memory (DRM) prompt facilitator.
+ *
+ * @module cli/commands/memo-prompt
+ * @category Memory & Realms
+ * @since 1.0.2
+ */
 import readline from 'readline';
 import fs from 'fs';
 import { MemoEngine } from '../../memo/memo-engine.js';

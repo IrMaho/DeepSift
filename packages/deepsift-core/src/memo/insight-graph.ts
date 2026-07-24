@@ -1,3 +1,11 @@
+/**
+ * @file insight-graph.ts
+ * @description Research insight knowledge graph builder linking memo entries by semantic similarity.
+ *
+ * @module memo/insight-graph
+ * @category Memory & Realms
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import { MemoManifestManager } from './manifest-manager.js';
 import { NoteProcessor } from './note-processor.js';

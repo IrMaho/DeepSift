@@ -1,3 +1,11 @@
+/**
+ * @file layer-watchdog.ts
+ * @description Clean Architecture layer boundary enforcer detecting cross-layer import violations.
+ *
+ * @module analyzers/layer-watchdog
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { normalizePath } from '../utils/outline.js';

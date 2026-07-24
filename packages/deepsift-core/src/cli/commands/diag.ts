@@ -1,3 +1,11 @@
+/**
+ * @file diag.ts
+ * @description System diagnostics reporter with environment and configuration checks.
+ *
+ * @module cli/commands/diag
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { printResult, printSuccess, OutputFormat } from '../cli-output.js';

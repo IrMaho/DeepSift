@@ -1,3 +1,11 @@
+/**
+ * @file unified-walker.ts
+ * @description Parallel file system walker with intelligent noise filtering and .gitignore awareness.
+ *
+ * @module core/unified-walker
+ * @category Core Search & Discovery
+ * @since 1.0.3
+ */
 import path from 'path';
 import { getFiles } from '../utils/file-walker.js';
 import { ProjectDNA } from '../types/dna-types.js';

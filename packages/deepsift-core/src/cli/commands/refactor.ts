@@ -1,3 +1,11 @@
+/**
+ * @file refactor.ts
+ * @description AST-safe symbol renaming and function extraction refactoring command.
+ *
+ * @module cli/commands/refactor
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
 import path from 'path';
 import fs from 'fs';
 import { printResult, printSuccess, OutputFormat } from '../cli-output.js';

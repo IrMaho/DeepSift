@@ -1,3 +1,11 @@
+/**
+ * @file impact.ts
+ * @description Breaking change risk calculator and caller site tracer command.
+ *
+ * @module cli/commands/impact
+ * @category Refactoring & Self-Healing
+ * @since 1.0.2
+ */
 import { ImpactAnalyzer } from '../../analyzers/impact-analyzer.js';
 
 export async function impactCommand(projectPath: string, symbol: string, format = 'markdown') {

@@ -1,3 +1,11 @@
+/**
+ * @file cli-paths.ts
+ * @description CLI path resolution utilities for workspace root and config directory discovery.
+ *
+ * @module cli/cli-paths
+ * @category Utilities & Dashboard
+ * @since 1.0.0
+ */
 import path from 'path';
 import fs from 'fs';
 

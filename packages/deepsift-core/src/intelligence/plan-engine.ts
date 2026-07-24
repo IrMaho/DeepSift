@@ -1,3 +1,11 @@
+/**
+ * @file plan-engine.ts
+ * @description AI Agent implementation plan generator integrating DNA, skills, and knowledge realms.
+ *
+ * @module intelligence/plan-engine
+ * @category Utilities & Dashboard
+ * @since 1.0.3
+ */
 import path from 'path';
 import fs from 'fs';
 import { SmartPlan, PlanMilestone, PlanRisk } from '../types/dna-types.js';

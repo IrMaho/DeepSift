@@ -1,3 +1,11 @@
+/**
+ * @file graph-query-engine.ts
+ * @description Graph query engine for traversal, neighbor lookup, and shortest path finding.
+ *
+ * @module graphify/graph-query-engine
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import { GraphifyNode, GraphifyEdge, SubgraphResult } from './graph-types.js';
 
 const QUERY_STOPWORDS = new Set([

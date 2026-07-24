@@ -1,3 +1,11 @@
+/**
+ * @file graph-extractor.ts
+ * @description AST import/export symbol extractor for code dependency graph construction.
+ *
+ * @module graphify/graph-extractor
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 import fs from 'fs';
 import path from 'path';
 import { GraphifyNode, GraphifyEdge } from './graph-types.js';
