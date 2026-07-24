@@ -76,7 +76,7 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
         },
         {
             name: 'analyze',
-            aliases: ['an'],
+            aliases: ['an', 'a'],
             summary: 'SUPER-COMMAND: Deep dive combining Feature AST Outline and DNA topology for a specific folder/file.',
             usage: 'deepsift analyze "path" [--depth N] [--compact] [--json]',
             options: [
@@ -118,7 +118,7 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
         },
         {
             name: 'calltree',
-            aliases: [],
+            aliases: ['ct'],
             summary: 'Traces upstream callers, downstream callee scopes, and event message flows for any symbol.',
             usage: 'deepsift calltree "symbol" [options]',
             options: [
@@ -142,7 +142,7 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
         },
         {
             name: 'deps',
-            aliases: [],
+            aliases: ['d'],
             summary: 'Trace inbound and outbound dependencies for a specific file or module target.',
             usage: 'deepsift deps "target" [--incoming] [--outgoing] [--graph]',
             options: [
@@ -405,6 +405,346 @@ export function getFullCliCommandRegistry(): CliCommandMetadata[] {
             ],
             category: 'Utilities & Dashboard',
             example: 'deepsift ui --port 3333'
+        },
+
+        // ── Core Setup & Indexing ──────────────────────────────────────────
+        {
+            name: 'init',
+            aliases: [],
+            summary: 'Initializes DeepSift workspace, creates .deepsift directory and performs first-run indexing bootstrap.',
+            usage: 'deepsift init [--force]',
+            options: [
+                { flag: '--force', description: 'Re-initialize even if .deepsift directory already exists' }
+            ],
+            category: 'Core Search & Discovery',
+            example: 'deepsift init'
+        },
+        {
+            name: 'config',
+            aliases: [],
+            summary: 'Interactive configuration menu for setting excluded folders, embedding model, and indexing preferences.',
+            usage: 'deepsift config',
+            options: [],
+            category: 'Core Search & Discovery',
+            example: 'deepsift config'
+        },
+        {
+            name: 'index',
+            aliases: ['i'],
+            summary: 'Manually triggers incremental or full codebase re-indexing with vector embedding sync.',
+            usage: 'deepsift index [--force] [--verbose] [--path <dir>]',
+            options: [
+                { flag: '--force', description: 'Force full re-index of all files regardless of modification time' },
+                { flag: '--verbose, -v', description: 'Stream real-time per-file indexing progress logs' },
+                { flag: '--path <dir>', description: 'Limit indexing scope to a specific subdirectory' }
+            ],
+            category: 'Core Search & Discovery',
+            example: 'deepsift index --force --verbose'
+        },
+        {
+            name: 'scan',
+            aliases: [],
+            summary: 'Full workspace scan that discovers new files, repairs missing index entries, and prunes deleted chunks.',
+            usage: 'deepsift scan [--verbose]',
+            options: [
+                { flag: '--verbose, -v', description: 'Show detailed per-file scan and repair log output' }
+            ],
+            category: 'Core Search & Discovery',
+            example: 'deepsift scan --verbose'
+        },
+        {
+            name: 'watch',
+            aliases: ['w'],
+            summary: 'Starts a file system watcher that triggers incremental auto-indexing whenever source files change.',
+            usage: 'deepsift watch [--path <dir>]',
+            options: [
+                { flag: '--path <dir>', description: 'Restrict watch scope to a specific subdirectory' }
+            ],
+            category: 'Core Search & Discovery',
+            example: 'deepsift watch'
+        },
+        {
+            name: 'status',
+            aliases: ['st'],
+            summary: 'Displays current index health, chunk counts, last sync timestamp, and embedding model info.',
+            usage: 'deepsift status [--json]',
+            options: [
+                { flag: '--json', description: 'Output index status report in JSON format' }
+            ],
+            category: 'Core Search & Discovery',
+            example: 'deepsift status'
+        },
+        {
+            name: 'start',
+            aliases: [],
+            summary: 'Starts the DeepSift MCP (Model Context Protocol) server for IDE and AI Agent integrations.',
+            usage: 'deepsift start [--compress]',
+            options: [
+                { flag: '--compress', description: 'Enable DEC_v2 output compression for all MCP responses' }
+            ],
+            category: 'Utilities & Dashboard',
+            example: 'deepsift start'
+        },
+        {
+            name: 'scope',
+            aliases: [],
+            summary: 'Sets or displays the active workspace search boundary — constrains all subsequent searches to a subdirectory.',
+            usage: 'deepsift scope [<path>] [--clear]',
+            options: [
+                { flag: '<path>', description: 'Set active search scope to the specified directory path' },
+                { flag: '--clear', description: 'Remove current scope restriction and reset to full workspace' }
+            ],
+            category: 'Utilities & Dashboard',
+            example: 'deepsift scope src/features/auth'
+        },
+
+        // ── File Reading & Inspection ─────────────────────────────────────
+        {
+            name: 'zoom',
+            aliases: [],
+            summary: 'Deep inspection of a specific file, class, or symbol — renders annotated view with type info and cross-references.',
+            usage: 'deepsift zoom "<file[:symbol]>" [--json]',
+            options: [
+                { flag: '--json', description: 'Output inspection data in structured JSON format' }
+            ],
+            category: 'Core Search & Discovery',
+            example: 'deepsift zoom "src/core/indexer.ts:Indexer"'
+        },
+        {
+            name: 'read-feature',
+            aliases: ['rf'],
+            summary: 'Combined command: reads exact file lines AND generates an AST feature outline in a single call.',
+            usage: 'deepsift read-feature "<file:start-end>" [--compact]',
+            options: [
+                { flag: '--compact', description: 'High-density outline omitting verbose descriptions' }
+            ],
+            category: 'Core Search & Discovery',
+            example: 'deepsift read-feature "src/core/searcher.ts:1-80" --compact'
+        },
+
+        // ── Code Editing & Patching ───────────────────────────────────────
+        {
+            name: 'edit',
+            aliases: ['e'],
+            summary: 'In-place file editor applying structured line-range replacements from a JSON edit spec.',
+            usage: 'deepsift edit "<file>" --spec "<json>" [--dry-run]',
+            options: [
+                { flag: '--spec <json>', description: 'Inline JSON edit specification with target and replacement content' },
+                { flag: '--dry-run', description: 'Preview changes without writing to disk' }
+            ],
+            category: 'Refactoring & Self-Healing',
+            example: 'deepsift edit "src/utils/helper.ts" --spec \'{"find":"oldFn","replace":"newFn"}\''
+        },
+        {
+            name: 'sed',
+            aliases: [],
+            summary: 'Stream editor for targeted in-place text substitution within a specific line range of a file.',
+            usage: 'deepsift sed "<file:start-end>" "<search>" "<replace>"',
+            options: [],
+            category: 'Refactoring & Self-Healing',
+            example: 'deepsift sed "src/api/client.ts:10-25" "oldBaseUrl" "newBaseUrl"'
+        },
+        {
+            name: 'decode',
+            aliases: [],
+            summary: 'Decodes and expands DEC_v2 compressed visual token output back into full readable source text.',
+            usage: 'deepsift decode "<compressed-text>"',
+            options: [],
+            category: 'Utilities & Dashboard',
+            example: 'deepsift decode "«block:auth-logic»"'
+        },
+        {
+            name: 'pipe',
+            aliases: ['p'],
+            summary: 'Reads DeepSift input from stdin — enables chaining commands through Unix-style shell pipelines.',
+            usage: 'echo "<query>" | deepsift pipe [--search|--read]',
+            options: [
+                { flag: '--search', description: 'Treat piped input as a semantic search query' },
+                { flag: '--read', description: 'Treat piped input as a file:lines read specification' }
+            ],
+            category: 'Utilities & Dashboard',
+            example: 'echo "auth token logic" | deepsift pipe --search'
+        },
+
+        // ── History Management ────────────────────────────────────────────
+        {
+            name: 'history',
+            aliases: ['h'],
+            summary: 'Displays paginated search and read result history log with timestamps and result previews.',
+            usage: 'deepsift history [--limit N] [--clear]',
+            options: [
+                { flag: '--limit <number>', description: 'Show last N history entries (default: 20)' },
+                { flag: '--clear', description: 'Wipe all stored history log entries' }
+            ],
+            category: 'Utilities & Dashboard',
+            example: 'deepsift history --limit 10'
+        },
+        {
+            name: 'drill',
+            aliases: ['dr'],
+            summary: 'Drills into a specific history entry to re-render full search result with surrounding context lines.',
+            usage: 'deepsift drill <index>',
+            options: [],
+            category: 'Utilities & Dashboard',
+            example: 'deepsift drill 3'
+        },
+
+        // ── Architecture Validation ───────────────────────────────────────
+        {
+            name: 'check-layers',
+            aliases: ['check-architecture'],
+            summary: 'Validates Clean Architecture layer boundary rules — detects illegal cross-layer imports (e.g. data → UI).',
+            usage: 'deepsift check-layers [--json]',
+            options: [
+                { flag: '--json', description: 'Output violation list in JSON format' }
+            ],
+            category: 'Security & Diagnostics',
+            example: 'deepsift check-layers'
+        },
+
+        // ── Code Generation ───────────────────────────────────────────────
+        {
+            name: 'gen-test',
+            aliases: [],
+            summary: 'Automatically generates a unit test scaffold and mock file for a specified source module.',
+            usage: 'deepsift gen-test "<file>" [--framework <jest|vitest>]',
+            options: [
+                { flag: '--framework <jest|vitest>', description: 'Target test framework for generated test boilerplate (default: vitest)' }
+            ],
+            category: 'Security & Diagnostics',
+            example: 'deepsift gen-test "src/core/searcher.ts" --framework vitest'
+        },
+        {
+            name: 'gen-mock',
+            aliases: [],
+            summary: 'Generates a complete type-safe mock file for a module, inferring all exported interfaces and classes.',
+            usage: 'deepsift gen-mock "<file>"',
+            options: [],
+            category: 'Security & Diagnostics',
+            example: 'deepsift gen-mock "src/storage/native-store.ts"'
+        },
+        {
+            name: 'gen-adr',
+            aliases: [],
+            summary: 'Generates an Architecture Decision Record (ADR) Markdown template for documenting design decisions.',
+            usage: 'deepsift gen-adr "<title>" [--output <file>]',
+            options: [
+                { flag: '--output <file>', description: 'Write ADR to specified file path instead of stdout' }
+            ],
+            category: 'Utilities & Dashboard',
+            example: 'deepsift gen-adr "Switch from REST to GraphQL"'
+        },
+
+        // ── Reporting & Summary ───────────────────────────────────────────
+        {
+            name: 'executive-summary',
+            aliases: ['summary'],
+            summary: 'Generates a high-level executive summary report covering code quality, test coverage, architecture health, and complexity.',
+            usage: 'deepsift executive-summary [--json]',
+            options: [
+                { flag: '--json', description: 'Output full summary report in JSON format' }
+            ],
+            category: 'Utilities & Dashboard',
+            example: 'deepsift executive-summary'
+        },
+
+        // ── Type System ───────────────────────────────────────────────────
+        {
+            name: 'expand-type',
+            aliases: ['type'],
+            summary: 'Resolves and expands complex TypeScript types — unrolls generics, intersections, and conditional types.',
+            usage: 'deepsift expand-type "<TypeName>" [--file <path>]',
+            options: [
+                { flag: '--file <path>', description: 'Scope type resolution to a specific source file' }
+            ],
+            category: 'Architecture & Intelligence',
+            example: 'deepsift expand-type "SearchResult" --file "src/types/index.ts"'
+        },
+
+        // ── Symbol Resolution ─────────────────────────────────────────────
+        {
+            name: 'resolve',
+            aliases: ['r'],
+            summary: 'Resolves import paths and export symbols — finds where any identifier is defined across the workspace.',
+            usage: 'deepsift resolve "<symbol>" [--file <path>]',
+            options: [
+                { flag: '--file <path>', description: 'Start resolution from a specific file context' }
+            ],
+            category: 'Architecture & Intelligence',
+            example: 'deepsift resolve "NativeStore"'
+        },
+        {
+            name: 'resolve-error',
+            aliases: [],
+            summary: 'Analyzes a TypeScript compiler error message and suggests targeted fixes with code snippets.',
+            usage: 'deepsift resolve-error "<error message>"',
+            options: [],
+            category: 'Refactoring & Self-Healing',
+            example: 'deepsift resolve-error "TS2339: Property does not exist on type"'
+        },
+
+        // ── i18n & Localization ───────────────────────────────────────────
+        {
+            name: 'i18n-extract',
+            aliases: [],
+            summary: 'Scans codebase for hardcoded display strings and generates an i18n key-value extraction report.',
+            usage: 'deepsift i18n-extract [--path <dir>] [--json]',
+            options: [
+                { flag: '--path <dir>', description: 'Limit i18n scan to a specific directory' },
+                { flag: '--json', description: 'Output extracted string map in JSON format' }
+            ],
+            category: 'Security & Diagnostics',
+            example: 'deepsift i18n-extract --path src/app --json'
+        },
+
+        // ── Learning & Diagnostics ────────────────────────────────────────
+        {
+            name: 'learn',
+            aliases: [],
+            summary: 'Runs adaptive project pattern learning — mines naming conventions, token vocabularies, and architectural signals.',
+            usage: 'deepsift learn [--force]',
+            options: [
+                { flag: '--force', description: 'Force re-learning even if patterns are already cached in DNA' }
+            ],
+            category: 'Architecture & Intelligence',
+            example: 'deepsift learn --force'
+        },
+        {
+            name: 'diag',
+            aliases: [],
+            summary: 'Runs a full system diagnostics report covering Node version, embedding model, SQLite health, and config state.',
+            usage: 'deepsift diag [--json]',
+            options: [
+                { flag: '--json', description: 'Output diagnostics report in machine-readable JSON format' }
+            ],
+            category: 'Security & Diagnostics',
+            example: 'deepsift diag'
+        },
+
+        // ── Shell Integration ─────────────────────────────────────────────
+        {
+            name: 'com',
+            aliases: [],
+            summary: 'Executes any arbitrary shell command from within the DeepSift context — output is compressed, cached, and searchable in history.',
+            usage: 'deepsift com "<shell command>"',
+            options: [
+                { flag: '<command>', description: 'Any valid shell command to execute (e.g. git log, npm test, ls)' },
+                { flag: '--no-compress', description: 'Disable DEC_v2 compression on command output' }
+            ],
+            category: 'Utilities & Dashboard',
+            example: 'deepsift com "git log --oneline -10"'
+        },
+        {
+            name: 'clean',
+            aliases: ['c'],
+            summary: 'Cleans and prunes stored history logs — removes old search and command result cache files.',
+            usage: 'deepsift clean [--keep <N>] [--days <N>]',
+            options: [
+                { flag: '--keep <number>', description: 'Keep the most recent N history entries and delete the rest' },
+                { flag: '--days <number>', description: 'Delete all history entries older than N days' }
+            ],
+            category: 'Utilities & Dashboard',
+            example: 'deepsift clean --keep 20'
         }
     ];
 }

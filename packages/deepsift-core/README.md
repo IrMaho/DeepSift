@@ -55,7 +55,7 @@ deepsift docgen
 
 ## 🛠️ Complete CLI Command Suite
 
-DeepSift features **32 powerful CLI commands**. For detailed options and usage examples, refer to [docs/COMMANDS.md](docs/COMMANDS.md).
+DeepSift features **61 powerful CLI commands**. For detailed options and usage examples, refer to [docs/COMMANDS.md](docs/COMMANDS.md).
 
 | Command | Category | Description |
 |---|---|---|
@@ -91,6 +91,35 @@ DeepSift features **32 powerful CLI commands**. For detailed options and usage e
 | `deepsift plan-ui` | Utilities & Dashboard | Generates visual UI specs layout, token palettes, spacing, and i18n rules. |
 | `deepsift docgen` | Utilities & Dashboard | Generates and synchronizes complete Markdown documentation suite for GitHub and AI Agents. |
 | `deepsift ui` | Utilities & Dashboard | Launches local interactive Web Dashboard visualization on port 3333 for graph and DRM. |
+| `deepsift init` | Core Search & Discovery | Initializes DeepSift workspace, creates .deepsift directory and performs first-run indexing bootstrap. |
+| `deepsift config` | Core Search & Discovery | Interactive configuration menu for setting excluded folders, embedding model, and indexing preferences. |
+| `deepsift index` | Core Search & Discovery | Manually triggers incremental or full codebase re-indexing with vector embedding sync. |
+| `deepsift scan` | Core Search & Discovery | Full workspace scan that discovers new files, repairs missing index entries, and prunes deleted chunks. |
+| `deepsift watch` | Core Search & Discovery | Starts a file system watcher that triggers incremental auto-indexing whenever source files change. |
+| `deepsift status` | Core Search & Discovery | Displays current index health, chunk counts, last sync timestamp, and embedding model info. |
+| `deepsift start` | Utilities & Dashboard | Starts the DeepSift MCP (Model Context Protocol) server for IDE and AI Agent integrations. |
+| `deepsift scope` | Utilities & Dashboard | Sets or displays the active workspace search boundary — constrains all subsequent searches to a subdirectory. |
+| `deepsift zoom` | Core Search & Discovery | Deep inspection of a specific file, class, or symbol — renders annotated view with type info and cross-references. |
+| `deepsift read-feature` | Core Search & Discovery | Combined command: reads exact file lines AND generates an AST feature outline in a single call. |
+| `deepsift edit` | Refactoring & Self-Healing | In-place file editor applying structured line-range replacements from a JSON edit spec. |
+| `deepsift sed` | Refactoring & Self-Healing | Stream editor for targeted in-place text substitution within a specific line range of a file. |
+| `deepsift decode` | Utilities & Dashboard | Decodes and expands DEC_v2 compressed visual token output back into full readable source text. |
+| `deepsift pipe` | Utilities & Dashboard | Reads DeepSift input from stdin — enables chaining commands through Unix-style shell pipelines. |
+| `deepsift history` | Utilities & Dashboard | Displays paginated search and read result history log with timestamps and result previews. |
+| `deepsift drill` | Utilities & Dashboard | Drills into a specific history entry to re-render full search result with surrounding context lines. |
+| `deepsift check-layers` | Security & Diagnostics | Validates Clean Architecture layer boundary rules — detects illegal cross-layer imports (e.g. data → UI). |
+| `deepsift gen-test` | Security & Diagnostics | Automatically generates a unit test scaffold and mock file for a specified source module. |
+| `deepsift gen-mock` | Security & Diagnostics | Generates a complete type-safe mock file for a module, inferring all exported interfaces and classes. |
+| `deepsift gen-adr` | Utilities & Dashboard | Generates an Architecture Decision Record (ADR) Markdown template for documenting design decisions. |
+| `deepsift executive-summary` | Utilities & Dashboard | Generates a high-level executive summary report covering code quality, test coverage, architecture health, and complexity. |
+| `deepsift expand-type` | Architecture & Intelligence | Resolves and expands complex TypeScript types — unrolls generics, intersections, and conditional types. |
+| `deepsift resolve` | Architecture & Intelligence | Resolves import paths and export symbols — finds where any identifier is defined across the workspace. |
+| `deepsift resolve-error` | Refactoring & Self-Healing | Analyzes a TypeScript compiler error message and suggests targeted fixes with code snippets. |
+| `deepsift i18n-extract` | Security & Diagnostics | Scans codebase for hardcoded display strings and generates an i18n key-value extraction report. |
+| `deepsift learn` | Architecture & Intelligence | Runs adaptive project pattern learning — mines naming conventions, token vocabularies, and architectural signals. |
+| `deepsift diag` | Security & Diagnostics | Runs a full system diagnostics report covering Node version, embedding model, SQLite health, and config state. |
+| `deepsift com` | Utilities & Dashboard | Executes any arbitrary shell command from within the DeepSift context — output is compressed, cached, and searchable in history. |
+| `deepsift clean` | Utilities & Dashboard | Cleans and prunes stored history logs — removes old search and command result cache files. |
 
 ---
 

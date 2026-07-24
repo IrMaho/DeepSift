@@ -1,6 +1,6 @@
 # 🛠️ DeepSift CLI Commands Reference Manual
 
-Comprehensive, production-grade manual for all **32 CLI commands** available in DeepSift.
+Comprehensive, production-grade manual for all **61 CLI commands** available in DeepSift.
 
 This manual provides exhaustive details on command execution, parameter options, real-world AI Agent scenarios, and output formats.
 
@@ -108,9 +108,174 @@ deepsift feature "src/core" --summary --compact
 
 ---
 
+### `deepsift init`
+
+**Summary:** Initializes DeepSift workspace, creates .deepsift directory and performs first-run indexing bootstrap.
+
+#### 📋 Usage Syntax
+```bash
+deepsift init [--force]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--force` | Re-initialize even if .deepsift directory already exists |
+
+#### 💡 Concrete Example
+```bash
+deepsift init
+```
+
+---
+
+### `deepsift config`
+
+**Summary:** Interactive configuration menu for setting excluded folders, embedding model, and indexing preferences.
+
+#### 📋 Usage Syntax
+```bash
+deepsift config
+```
+
+#### 💡 Concrete Example
+```bash
+deepsift config
+```
+
+---
+
+### `deepsift index` (Aliases: `i`)
+
+**Summary:** Manually triggers incremental or full codebase re-indexing with vector embedding sync.
+
+#### 📋 Usage Syntax
+```bash
+deepsift index [--force] [--verbose] [--path <dir>]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--force` | Force full re-index of all files regardless of modification time |
+| `--verbose, -v` | Stream real-time per-file indexing progress logs |
+| `--path <dir>` | Limit indexing scope to a specific subdirectory |
+
+#### 💡 Concrete Example
+```bash
+deepsift index --force --verbose
+```
+
+---
+
+### `deepsift scan`
+
+**Summary:** Full workspace scan that discovers new files, repairs missing index entries, and prunes deleted chunks.
+
+#### 📋 Usage Syntax
+```bash
+deepsift scan [--verbose]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--verbose, -v` | Show detailed per-file scan and repair log output |
+
+#### 💡 Concrete Example
+```bash
+deepsift scan --verbose
+```
+
+---
+
+### `deepsift watch` (Aliases: `w`)
+
+**Summary:** Starts a file system watcher that triggers incremental auto-indexing whenever source files change.
+
+#### 📋 Usage Syntax
+```bash
+deepsift watch [--path <dir>]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--path <dir>` | Restrict watch scope to a specific subdirectory |
+
+#### 💡 Concrete Example
+```bash
+deepsift watch
+```
+
+---
+
+### `deepsift status` (Aliases: `st`)
+
+**Summary:** Displays current index health, chunk counts, last sync timestamp, and embedding model info.
+
+#### 📋 Usage Syntax
+```bash
+deepsift status [--json]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--json` | Output index status report in JSON format |
+
+#### 💡 Concrete Example
+```bash
+deepsift status
+```
+
+---
+
+### `deepsift zoom`
+
+**Summary:** Deep inspection of a specific file, class, or symbol — renders annotated view with type info and cross-references.
+
+#### 📋 Usage Syntax
+```bash
+deepsift zoom "<file[:symbol]>" [--json]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--json` | Output inspection data in structured JSON format |
+
+#### 💡 Concrete Example
+```bash
+deepsift zoom "src/core/indexer.ts:Indexer"
+```
+
+---
+
+### `deepsift read-feature` (Aliases: `rf`)
+
+**Summary:** Combined command: reads exact file lines AND generates an AST feature outline in a single call.
+
+#### 📋 Usage Syntax
+```bash
+deepsift read-feature "<file:start-end>" [--compact]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--compact` | High-density outline omitting verbose descriptions |
+
+#### 💡 Concrete Example
+```bash
+deepsift read-feature "src/core/searcher.ts:1-80" --compact
+```
+
+---
+
 ## 📌 Architecture & Intelligence
 
-### `deepsift analyze` (Aliases: `an`)
+### `deepsift analyze` (Aliases: `an`, `a`)
 
 **Summary:** SUPER-COMMAND: Deep dive combining Feature AST Outline and DNA topology for a specific folder/file.
 
@@ -182,7 +347,7 @@ deepsift dna --show --section architecture
 
 ---
 
-### `deepsift calltree`
+### `deepsift calltree` (Aliases: `ct`)
 
 **Summary:** Traces upstream callers, downstream callee scopes, and event message flows for any symbol.
 
@@ -226,7 +391,7 @@ deepsift cfg "src/utils/config.ts:loadConfig"
 
 ---
 
-### `deepsift deps`
+### `deepsift deps` (Aliases: `d`)
 
 **Summary:** Trace inbound and outbound dependencies for a specific file or module target.
 
@@ -266,6 +431,69 @@ deepsift wire-trace [directory] [--json]
 #### 💡 Concrete Example
 ```bash
 deepsift wire-trace "src/figma-core"
+```
+
+---
+
+### `deepsift expand-type` (Aliases: `type`)
+
+**Summary:** Resolves and expands complex TypeScript types — unrolls generics, intersections, and conditional types.
+
+#### 📋 Usage Syntax
+```bash
+deepsift expand-type "<TypeName>" [--file <path>]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--file <path>` | Scope type resolution to a specific source file |
+
+#### 💡 Concrete Example
+```bash
+deepsift expand-type "SearchResult" --file "src/types/index.ts"
+```
+
+---
+
+### `deepsift resolve` (Aliases: `r`)
+
+**Summary:** Resolves import paths and export symbols — finds where any identifier is defined across the workspace.
+
+#### 📋 Usage Syntax
+```bash
+deepsift resolve "<symbol>" [--file <path>]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--file <path>` | Start resolution from a specific file context |
+
+#### 💡 Concrete Example
+```bash
+deepsift resolve "NativeStore"
+```
+
+---
+
+### `deepsift learn`
+
+**Summary:** Runs adaptive project pattern learning — mines naming conventions, token vocabularies, and architectural signals.
+
+#### 📋 Usage Syntax
+```bash
+deepsift learn [--force]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--force` | Force re-learning even if patterns are already cached in DNA |
+
+#### 💡 Concrete Example
+```bash
+deepsift learn --force
 ```
 
 ---
@@ -443,6 +671,60 @@ deepsift impact "NativeStore"
 
 ---
 
+### `deepsift edit` (Aliases: `e`)
+
+**Summary:** In-place file editor applying structured line-range replacements from a JSON edit spec.
+
+#### 📋 Usage Syntax
+```bash
+deepsift edit "<file>" --spec "<json>" [--dry-run]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--spec <json>` | Inline JSON edit specification with target and replacement content |
+| `--dry-run` | Preview changes without writing to disk |
+
+#### 💡 Concrete Example
+```bash
+deepsift edit "src/utils/helper.ts" --spec '{"find":"oldFn","replace":"newFn"}'
+```
+
+---
+
+### `deepsift sed`
+
+**Summary:** Stream editor for targeted in-place text substitution within a specific line range of a file.
+
+#### 📋 Usage Syntax
+```bash
+deepsift sed "<file:start-end>" "<search>" "<replace>"
+```
+
+#### 💡 Concrete Example
+```bash
+deepsift sed "src/api/client.ts:10-25" "oldBaseUrl" "newBaseUrl"
+```
+
+---
+
+### `deepsift resolve-error`
+
+**Summary:** Analyzes a TypeScript compiler error message and suggests targeted fixes with code snippets.
+
+#### 📋 Usage Syntax
+```bash
+deepsift resolve-error "<error message>"
+```
+
+#### 💡 Concrete Example
+```bash
+deepsift resolve-error "TS2339: Property does not exist on type"
+```
+
+---
+
 ## 📌 Security & Diagnostics
 
 ### `deepsift complexity`
@@ -548,6 +830,107 @@ deepsift git-churn [--limit N] [--json]
 #### 💡 Concrete Example
 ```bash
 deepsift git-churn --limit 15
+```
+
+---
+
+### `deepsift check-layers` (Aliases: `check-architecture`)
+
+**Summary:** Validates Clean Architecture layer boundary rules — detects illegal cross-layer imports (e.g. data → UI).
+
+#### 📋 Usage Syntax
+```bash
+deepsift check-layers [--json]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--json` | Output violation list in JSON format |
+
+#### 💡 Concrete Example
+```bash
+deepsift check-layers
+```
+
+---
+
+### `deepsift gen-test`
+
+**Summary:** Automatically generates a unit test scaffold and mock file for a specified source module.
+
+#### 📋 Usage Syntax
+```bash
+deepsift gen-test "<file>" [--framework <jest|vitest>]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--framework <jest|vitest>` | Target test framework for generated test boilerplate (default: vitest) |
+
+#### 💡 Concrete Example
+```bash
+deepsift gen-test "src/core/searcher.ts" --framework vitest
+```
+
+---
+
+### `deepsift gen-mock`
+
+**Summary:** Generates a complete type-safe mock file for a module, inferring all exported interfaces and classes.
+
+#### 📋 Usage Syntax
+```bash
+deepsift gen-mock "<file>"
+```
+
+#### 💡 Concrete Example
+```bash
+deepsift gen-mock "src/storage/native-store.ts"
+```
+
+---
+
+### `deepsift i18n-extract`
+
+**Summary:** Scans codebase for hardcoded display strings and generates an i18n key-value extraction report.
+
+#### 📋 Usage Syntax
+```bash
+deepsift i18n-extract [--path <dir>] [--json]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--path <dir>` | Limit i18n scan to a specific directory |
+| `--json` | Output extracted string map in JSON format |
+
+#### 💡 Concrete Example
+```bash
+deepsift i18n-extract --path src/app --json
+```
+
+---
+
+### `deepsift diag`
+
+**Summary:** Runs a full system diagnostics report covering Node version, embedding model, SQLite health, and config state.
+
+#### 📋 Usage Syntax
+```bash
+deepsift diag [--json]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--json` | Output diagnostics report in machine-readable JSON format |
+
+#### 💡 Concrete Example
+```bash
+deepsift diag
 ```
 
 ---
@@ -723,6 +1106,211 @@ deepsift ui [--port N]
 #### 💡 Concrete Example
 ```bash
 deepsift ui --port 3333
+```
+
+---
+
+### `deepsift start`
+
+**Summary:** Starts the DeepSift MCP (Model Context Protocol) server for IDE and AI Agent integrations.
+
+#### 📋 Usage Syntax
+```bash
+deepsift start [--compress]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--compress` | Enable DEC_v2 output compression for all MCP responses |
+
+#### 💡 Concrete Example
+```bash
+deepsift start
+```
+
+---
+
+### `deepsift scope`
+
+**Summary:** Sets or displays the active workspace search boundary — constrains all subsequent searches to a subdirectory.
+
+#### 📋 Usage Syntax
+```bash
+deepsift scope [<path>] [--clear]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `<path>` | Set active search scope to the specified directory path |
+| `--clear` | Remove current scope restriction and reset to full workspace |
+
+#### 💡 Concrete Example
+```bash
+deepsift scope src/features/auth
+```
+
+---
+
+### `deepsift decode`
+
+**Summary:** Decodes and expands DEC_v2 compressed visual token output back into full readable source text.
+
+#### 📋 Usage Syntax
+```bash
+deepsift decode "<compressed-text>"
+```
+
+#### 💡 Concrete Example
+```bash
+deepsift decode "«block:auth-logic»"
+```
+
+---
+
+### `deepsift pipe` (Aliases: `p`)
+
+**Summary:** Reads DeepSift input from stdin — enables chaining commands through Unix-style shell pipelines.
+
+#### 📋 Usage Syntax
+```bash
+echo "<query>" | deepsift pipe [--search|--read]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--search` | Treat piped input as a semantic search query |
+| `--read` | Treat piped input as a file:lines read specification |
+
+#### 💡 Concrete Example
+```bash
+echo "auth token logic" | deepsift pipe --search
+```
+
+---
+
+### `deepsift history` (Aliases: `h`)
+
+**Summary:** Displays paginated search and read result history log with timestamps and result previews.
+
+#### 📋 Usage Syntax
+```bash
+deepsift history [--limit N] [--clear]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--limit <number>` | Show last N history entries (default: 20) |
+| `--clear` | Wipe all stored history log entries |
+
+#### 💡 Concrete Example
+```bash
+deepsift history --limit 10
+```
+
+---
+
+### `deepsift drill` (Aliases: `dr`)
+
+**Summary:** Drills into a specific history entry to re-render full search result with surrounding context lines.
+
+#### 📋 Usage Syntax
+```bash
+deepsift drill <index>
+```
+
+#### 💡 Concrete Example
+```bash
+deepsift drill 3
+```
+
+---
+
+### `deepsift gen-adr`
+
+**Summary:** Generates an Architecture Decision Record (ADR) Markdown template for documenting design decisions.
+
+#### 📋 Usage Syntax
+```bash
+deepsift gen-adr "<title>" [--output <file>]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--output <file>` | Write ADR to specified file path instead of stdout |
+
+#### 💡 Concrete Example
+```bash
+deepsift gen-adr "Switch from REST to GraphQL"
+```
+
+---
+
+### `deepsift executive-summary` (Aliases: `summary`)
+
+**Summary:** Generates a high-level executive summary report covering code quality, test coverage, architecture health, and complexity.
+
+#### 📋 Usage Syntax
+```bash
+deepsift executive-summary [--json]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--json` | Output full summary report in JSON format |
+
+#### 💡 Concrete Example
+```bash
+deepsift executive-summary
+```
+
+---
+
+### `deepsift com`
+
+**Summary:** Executes any arbitrary shell command from within the DeepSift context — output is compressed, cached, and searchable in history.
+
+#### 📋 Usage Syntax
+```bash
+deepsift com "<shell command>"
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `<command>` | Any valid shell command to execute (e.g. git log, npm test, ls) |
+| `--no-compress` | Disable DEC_v2 compression on command output |
+
+#### 💡 Concrete Example
+```bash
+deepsift com "git log --oneline -10"
+```
+
+---
+
+### `deepsift clean` (Aliases: `c`)
+
+**Summary:** Cleans and prunes stored history logs — removes old search and command result cache files.
+
+#### 📋 Usage Syntax
+```bash
+deepsift clean [--keep <N>] [--days <N>]
+```
+
+#### ⚙️ Command Options & Flags
+| Flag | Description |
+|---|---|
+| `--keep <number>` | Keep the most recent N history entries and delete the rest |
+| `--days <number>` | Delete all history entries older than N days |
+
+#### 💡 Concrete Example
+```bash
+deepsift clean --keep 20
 ```
 
 ---

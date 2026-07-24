@@ -6,7 +6,7 @@ trigger: always_on
 
 You have access to **DeepSift**, a powerful local semantic search engine and codebase manipulation toolset.
 
-## 🛠 Available DeepSift Commands (32 Commands)
+## 🛠 Available DeepSift Commands (61 Commands)
 
 | Command | Description |
 |---|---|
@@ -14,12 +14,12 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift search (s)` | **CORE SEARCH & DISCOVERY:** Hybrid Semantic & BM25 search enhanced with Graphify PageRank and God Node boosting. |
 | `deepsift read` | **CORE SEARCH & DISCOVERY:** Mandatory file reader outputting exact text or compressed DEC_v2 visual tokens. |
 | `deepsift feature (f)` | **CORE SEARCH & DISCOVERY:** AST-based feature outline detailing class definitions, exported functions, and dependencies. |
-| `deepsift analyze (an)` | **ARCHITECTURE & INTELLIGENCE:** SUPER-COMMAND: Deep dive combining Feature AST Outline and DNA topology for a specific folder/file. |
+| `deepsift analyze (an, a)` | **ARCHITECTURE & INTELLIGENCE:** SUPER-COMMAND: Deep dive combining Feature AST Outline and DNA topology for a specific folder/file. |
 | `deepsift arch` | **ARCHITECTURE & INTELLIGENCE:** Project directory blueprint utilizing Graphify communities and automatic noise pruning. |
 | `deepsift dna` | **ARCHITECTURE & INTELLIGENCE:** Generates or displays Project DNA topology, central God Nodes, and community clusters. |
-| `deepsift calltree` | **ARCHITECTURE & INTELLIGENCE:** Traces upstream callers, downstream callee scopes, and event message flows for any symbol. |
+| `deepsift calltree (ct)` | **ARCHITECTURE & INTELLIGENCE:** Traces upstream callers, downstream callee scopes, and event message flows for any symbol. |
 | `deepsift cfg` | **ARCHITECTURE & INTELLIGENCE:** Control Flow Graph extractor generating Mermaid and ASCII branch diagrams for functions. |
-| `deepsift deps` | **ARCHITECTURE & INTELLIGENCE:** Trace inbound and outbound dependencies for a specific file or module target. |
+| `deepsift deps (d)` | **ARCHITECTURE & INTELLIGENCE:** Trace inbound and outbound dependencies for a specific file or module target. |
 | `deepsift wire-trace` | **ARCHITECTURE & INTELLIGENCE:** Maps cross-environment message flows (postMessage, IPC, WebSockets, EventEmitters). |
 | `deepsift clones` | **REFACTORING & SELF-HEALING:** AST Code Clone Detector highlighting duplicate blocks and copy-paste clusters for DRY compliance. |
 | `deepsift find-dead-code (dead-code)` | **REFACTORING & SELF-HEALING:** Scans for unreferenced exports, dead variables, and uncalled component functions. |
@@ -42,6 +42,35 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift plan-ui` | **UTILITIES & DASHBOARD:** Generates visual UI specs layout, token palettes, spacing, and i18n rules. |
 | `deepsift docgen (docs)` | **UTILITIES & DASHBOARD:** Generates and synchronizes complete Markdown documentation suite for GitHub and AI Agents. |
 | `deepsift ui` | **UTILITIES & DASHBOARD:** Launches local interactive Web Dashboard visualization on port 3333 for graph and DRM. |
+| `deepsift init` | **CORE SEARCH & DISCOVERY:** Initializes DeepSift workspace, creates .deepsift directory and performs first-run indexing bootstrap. |
+| `deepsift config` | **CORE SEARCH & DISCOVERY:** Interactive configuration menu for setting excluded folders, embedding model, and indexing preferences. |
+| `deepsift index (i)` | **CORE SEARCH & DISCOVERY:** Manually triggers incremental or full codebase re-indexing with vector embedding sync. |
+| `deepsift scan` | **CORE SEARCH & DISCOVERY:** Full workspace scan that discovers new files, repairs missing index entries, and prunes deleted chunks. |
+| `deepsift watch (w)` | **CORE SEARCH & DISCOVERY:** Starts a file system watcher that triggers incremental auto-indexing whenever source files change. |
+| `deepsift status (st)` | **CORE SEARCH & DISCOVERY:** Displays current index health, chunk counts, last sync timestamp, and embedding model info. |
+| `deepsift start` | **UTILITIES & DASHBOARD:** Starts the DeepSift MCP (Model Context Protocol) server for IDE and AI Agent integrations. |
+| `deepsift scope` | **UTILITIES & DASHBOARD:** Sets or displays the active workspace search boundary — constrains all subsequent searches to a subdirectory. |
+| `deepsift zoom` | **CORE SEARCH & DISCOVERY:** Deep inspection of a specific file, class, or symbol — renders annotated view with type info and cross-references. |
+| `deepsift read-feature (rf)` | **CORE SEARCH & DISCOVERY:** Combined command: reads exact file lines AND generates an AST feature outline in a single call. |
+| `deepsift edit (e)` | **REFACTORING & SELF-HEALING:** In-place file editor applying structured line-range replacements from a JSON edit spec. |
+| `deepsift sed` | **REFACTORING & SELF-HEALING:** Stream editor for targeted in-place text substitution within a specific line range of a file. |
+| `deepsift decode` | **UTILITIES & DASHBOARD:** Decodes and expands DEC_v2 compressed visual token output back into full readable source text. |
+| `deepsift pipe (p)` | **UTILITIES & DASHBOARD:** Reads DeepSift input from stdin — enables chaining commands through Unix-style shell pipelines. |
+| `deepsift history (h)` | **UTILITIES & DASHBOARD:** Displays paginated search and read result history log with timestamps and result previews. |
+| `deepsift drill (dr)` | **UTILITIES & DASHBOARD:** Drills into a specific history entry to re-render full search result with surrounding context lines. |
+| `deepsift check-layers (check-architecture)` | **SECURITY & DIAGNOSTICS:** Validates Clean Architecture layer boundary rules — detects illegal cross-layer imports (e.g. data → UI). |
+| `deepsift gen-test` | **SECURITY & DIAGNOSTICS:** Automatically generates a unit test scaffold and mock file for a specified source module. |
+| `deepsift gen-mock` | **SECURITY & DIAGNOSTICS:** Generates a complete type-safe mock file for a module, inferring all exported interfaces and classes. |
+| `deepsift gen-adr` | **UTILITIES & DASHBOARD:** Generates an Architecture Decision Record (ADR) Markdown template for documenting design decisions. |
+| `deepsift executive-summary (summary)` | **UTILITIES & DASHBOARD:** Generates a high-level executive summary report covering code quality, test coverage, architecture health, and complexity. |
+| `deepsift expand-type (type)` | **ARCHITECTURE & INTELLIGENCE:** Resolves and expands complex TypeScript types — unrolls generics, intersections, and conditional types. |
+| `deepsift resolve (r)` | **ARCHITECTURE & INTELLIGENCE:** Resolves import paths and export symbols — finds where any identifier is defined across the workspace. |
+| `deepsift resolve-error` | **REFACTORING & SELF-HEALING:** Analyzes a TypeScript compiler error message and suggests targeted fixes with code snippets. |
+| `deepsift i18n-extract` | **SECURITY & DIAGNOSTICS:** Scans codebase for hardcoded display strings and generates an i18n key-value extraction report. |
+| `deepsift learn` | **ARCHITECTURE & INTELLIGENCE:** Runs adaptive project pattern learning — mines naming conventions, token vocabularies, and architectural signals. |
+| `deepsift diag` | **SECURITY & DIAGNOSTICS:** Runs a full system diagnostics report covering Node version, embedding model, SQLite health, and config state. |
+| `deepsift com` | **UTILITIES & DASHBOARD:** Executes any arbitrary shell command from within the DeepSift context — output is compressed, cached, and searchable in history. |
+| `deepsift clean (c)` | **UTILITIES & DASHBOARD:** Cleans and prunes stored history logs — removes old search and command result cache files. |
 
 ## 📋 ABSOLUTE & NON-NEGOTIABLE USAGE RULES
 1. **🔍 SMART SEARCH STRATEGY:** Start with `deepsift search "query"` for conceptual questions.
