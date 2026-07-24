@@ -1,13 +1,36 @@
+/**
+ * @file arch.ts
+ * @description Project Directory Blueprint & Graphify Community Blueprint Command.
+ * Generates directory tree blueprints utilizing Graphify communities, module counts, and noise pruning.
+ * 
+ * @module cli/commands/arch
+ * @category Architecture & Intelligence
+ * @since 1.0.0
+ */
+
 import { getProjectArchitecture } from '../../utils/architecture.js';
 import { saveSearchLog } from '../../utils/history.js';
 import { printResult, printSuccess, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 
 /**
- * Executes the project architecture mapping command.
- * Outputs are token-compressed by default.
+ * Executes the `deepsift arch` command to print directory blueprints.
+ * 
+ * @param projectPath Absolute path to workspace root.
+ * @param maxDepth Max folder depth to traverse.
+ * @param format Output format ('markdown', 'plain', or 'json').
+ * @param compress Whether to apply token compression (default: true).
+ * @example
+ * ```ts
+ * await archCommand(process.cwd(), 3, 'markdown', true);
+ * ```
  */
-export async function archCommand(projectPath: string, maxDepth: number, format: OutputFormat, compress: boolean = true) {
+export async function archCommand(
+    projectPath: string, 
+    maxDepth: number, 
+    format: OutputFormat, 
+    compress: boolean = true
+): Promise<void> {
     const architectureText = getProjectArchitecture(projectPath, maxDepth, format);
     let finalOutput = architectureText;
     

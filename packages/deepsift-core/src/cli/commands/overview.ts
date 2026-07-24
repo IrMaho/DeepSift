@@ -1,3 +1,13 @@
+/**
+ * @file overview.ts
+ * @description Single-Step Project Blueprint Overview Super-Command.
+ * Consolidates directory trees, Central God Nodes, feature summaries, and AST outlines into a single output.
+ * 
+ * @module cli/commands/overview
+ * @category Core Search & Discovery
+ * @since 1.0.3
+ */
+
 import path from 'path';
 import fs from 'fs';
 import { getProjectArchitecture } from '../../utils/architecture.js';
@@ -9,8 +19,17 @@ import { printResult, printSuccess, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 
 /**
- * Super Command: deepsift overview [path]
- * Consolidates Architecture Tree + Feature Summary + Core Files/God Nodes into a single, high-efficiency output.
+ * Executes the `deepsift overview` command to generate a project blueprint.
+ * 
+ * @param projectPath Absolute path to workspace root.
+ * @param targetPath Optional target path to limit overview depth.
+ * @param format Output format ('markdown', 'plain', or 'json').
+ * @param compress Whether to apply token compression.
+ * @param depth Max folder depth to traverse (default: 2).
+ * @example
+ * ```ts
+ * await overviewCommand(process.cwd(), undefined, 'markdown', false, 3);
+ * ```
  */
 export async function overviewCommand(
     projectPath: string,
@@ -29,7 +48,6 @@ export async function overviewCommand(
     lines.push(`# 🌐 DeepSift Project Overview`);
     lines.push(`Path: \`${relFocusPath || '.'}\` | Target Depth: ${depth}\n`);
 
-    // 1. Core Files / God Nodes from DNA
     lines.push(`## 🎯 Central / God Nodes`);
     const dna = loadDNA(projectPath);
     if (dna && dna.architecture) {
@@ -54,7 +72,6 @@ export async function overviewCommand(
     }
     lines.push('');
 
-    // Discovered UI Tabs & Feature Capabilities
     const featureTabs = (dna && dna.featureTabs && dna.featureTabs.length > 0)
         ? dna.featureTabs
         : mineFeatureRegistries(projectPath);
@@ -69,11 +86,9 @@ export async function overviewCommand(
         lines.push('');
     }
 
-    // 2. High-level Architecture Blueprint
     lines.push(`## 🌳 Architecture Blueprint`);
     try {
         const archText = getProjectArchitecture(focusDir, depth);
-        // Clean markdown header if duplicate
         const cleanedArch = archText.replace('# Project Architecture Blueprint', '').trim();
         lines.push(cleanedArch);
     } catch (e: any) {
@@ -81,7 +96,6 @@ export async function overviewCommand(
     }
     lines.push('');
 
-    // 3. Feature Summary
     lines.push(`## 📦 Feature & Module Summary`);
     try {
         const featText = getFeatureOutline(focusDir, 15, 0, true, depth);

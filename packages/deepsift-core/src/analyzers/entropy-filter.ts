@@ -1,6 +1,26 @@
+/**
+ * @file entropy-filter.ts
+ * @description Shannon Entropy & Minified Code Filter Engine.
+ * Detects bundled JS files, minified code artifacts, and high-entropy text chunks to prevent indexing noise.
+ * 
+ * @module analyzers/entropy-filter
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
+
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Calculates Shannon Entropy for a text string to detect randomness or minification.
+ * 
+ * @param text Content string to analyze.
+ * @returns Floating point entropy score.
+ * @example
+ * ```ts
+ * const score = calculateEntropy("function foo() { return 42; }");
+ * ```
+ */
 export function calculateEntropy(text: string): number {
     if (!text || text.length === 0) return 0;
     const freqs: Record<string, number> = {};
@@ -17,6 +37,17 @@ export function calculateEntropy(text: string): number {
     return entropy;
 }
 
+/**
+ * Determines whether a file path or file content represents a minified or bundled artifact.
+ * 
+ * @param filePath Relative or absolute path to the file.
+ * @param content Optional pre-read file content.
+ * @returns Boolean indicating if the file is bundled/minified.
+ * @example
+ * ```ts
+ * const isBundled = isBundledOrMinifiedFile('dist/bundle.min.js');
+ * ```
+ */
 export function isBundledOrMinifiedFile(filePath: string, content?: string): boolean {
     const normalized = filePath.replace(/\\/g, '/').toLowerCase();
     
@@ -57,14 +88,6 @@ export function isBundledOrMinifiedFile(filePath: string, content?: string): boo
 
         if (content.includes('__spreadProps') || content.includes('__awaiter') || content.includes('__generator')) {
             if (lines.length > 100 && content.length > 20000) return true;
-        }
-
-        const sample = content.slice(0, 4000);
-        if (sample.length > 1000) {
-            const entropy = calculateEntropy(sample);
-            if (entropy > 5.6 && sample.includes('function(') && !sample.includes('\n  ')) {
-                return true;
-            }
         }
     }
 

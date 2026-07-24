@@ -1,23 +1,46 @@
+/**
+ * @file memo.ts
+ * @description Dynamic Research Memory (DRM) Command Line Interface.
+ * Manages active research tags, research note additions, semantic queries, graph generation,
+ * and Markdown plan exports for multi-step AI Agent workflows.
+ * 
+ * @module cli/commands/memo
+ * @category Memory & Realms
+ * @since 1.0.2
+ */
+
 import { MemoEngine } from '../../memo/memo-engine.js';
 import { printResult, printSuccess, printInfo, printError, OutputFormat } from '../cli-output.js';
 import { MemoEntryType } from '../../types/memo-types.js';
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Executes the `deepsift memo` command to manage DRM tags and notes.
+ * 
+ * @param projectPath Absolute path to workspace root.
+ * @param action Action string ('open', 'close', 'archive', 'purge', 'add', 'query', 'list', 'export', 'prompt').
+ * @param target Target tag name or search query.
+ * @param extraArgs Command arguments array.
+ * @param format Output format ('markdown' or 'json').
+ * @example
+ * ```ts
+ * await memoCommand(process.cwd(), 'open', 'auth-refactor', [], 'markdown');
+ * ```
+ */
 export async function memoCommand(
     projectPath: string,
     action: string,
     target: string | undefined,
     extraArgs: string[],
     format: OutputFormat
-) {
+): Promise<void> {
     const engine = new MemoEngine(projectPath);
 
     switch (action) {
         case 'open': {
             if (!target) throw new Error('Tag name is required. Usage: deepsift memo open "my-research"');
             
-            // Auto-close any previously open tags
             const openTags = engine.getOpenTags();
             for (const tag of openTags) {
                 if (tag.name !== target) {
@@ -238,58 +261,52 @@ export async function memoCommand(
                 for (const tag of openTags) {
                     output += `  🟢 [${tag.name}] — ${tag.entryCount} entries\n`;
                 }
-                output += `\n💡 Record findings: deepsift memo add "<tag>" --data "<your findings>"`;
                 printResult(output, format);
             }
             break;
         }
 
         default:
-            throw new Error(
-                `Unknown memo action: '${action}'. Available: open, close, archive, purge, list, add, query, show, graph, export, prompt`
-            );
+            throw new Error(`Unknown memo action: '${action}'. Valid actions: open, close, archive, purge, list, add, query, show, graph, export, summarize, to-plan, gc, prompt`);
     }
 }
 
 function extractFlag(args: string[], flag: string): string | undefined {
     const idx = args.indexOf(flag);
-    if (idx !== -1 && args[idx + 1]) {
+    if (idx !== -1 && idx + 1 < args.length) {
         return args[idx + 1];
     }
     return undefined;
 }
 
-function formatQueryResults(results: import('../../types/memo-types.js').MemoQueryResult[], format: OutputFormat) {
+function formatQueryResults(results: any[], format: OutputFormat) {
     if (format === 'json') {
         printResult(JSON.stringify(results), format);
-        return;
+    } else {
+        if (results.length === 0) {
+            printInfo('No matching entries found.');
+            return;
+        }
+        let output = `Found ${results.length} entries:\n\n`;
+        for (const res of results) {
+            const entry = res.entry;
+            const icon = getTypeIcon(entry.type);
+            output += `${icon} [${entry.type.toUpperCase()}] (score: ${res.score.toFixed(3)})\n`;
+            output += `   ${entry.content}\n\n`;
+        }
+        printResult(output, format);
     }
-
-    if (results.length === 0) {
-        printInfo('No matching entries found.');
-        return;
-    }
-
-    let output = `Found ${results.length} relevant entries:\n\n`;
-    for (let i = 0; i < results.length; i++) {
-        const r = results[i];
-        const icon = getTypeIcon(r.entry.type);
-        output += `  [${i + 1}] ${icon} (score: ${r.score.toFixed(2)}, type: ${r.entry.type}, tag: ${r.tagName})\n`;
-        output += `  ${r.entry.content.substring(0, 200)}\n\n`;
-    }
-
-    printResult(output, format);
 }
 
 function getTypeIcon(type: MemoEntryType): string {
-    const icons: Record<MemoEntryType, string> = {
-        finding: '🔍',
-        code_snippet: '💻',
-        api_response: '🌐',
-        architecture_note: '🏗️',
-        decision: '⚖️',
-        reference: '📎',
-        error_solution: '🩹'
-    };
-    return icons[type] || '📝';
+    switch (type) {
+        case 'finding': return '💡';
+        case 'decision': return '🎯';
+        case 'architecture_note': return '🏛️';
+        case 'code_snippet': return '💻';
+        case 'api_response': return '📡';
+        case 'reference': return '📚';
+        case 'error_solution': return '🛠️';
+        default: return '📝';
+    }
 }

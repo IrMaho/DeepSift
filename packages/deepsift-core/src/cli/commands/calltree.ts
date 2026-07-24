@@ -1,3 +1,13 @@
+/**
+ * @file calltree.ts
+ * @description Call Graph & Event-Driven Message Traversal Command.
+ * Traces upstream callers, downstream callee scopes, and event-driven message channels (postMessage, IPC, EventEmitters).
+ * 
+ * @module cli/commands/calltree
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
+
 import path from 'path';
 import fs from 'fs';
 import { printResult, OutputFormat } from '../cli-output.js';
@@ -5,6 +15,19 @@ import { saveSearchLog } from '../../utils/history.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 import { normalizePath } from '../../utils/outline.js';
 
+/**
+ * Executes the `deepsift calltree` command to trace call graphs and event channels.
+ * 
+ * @param projectPath Absolute path to workspace root.
+ * @param symbol Target symbol or event type name to trace.
+ * @param format Output format ('markdown', 'plain', or 'json').
+ * @param compress Whether to apply token compression.
+ * @param filterPath Optional path filter to narrow caller search.
+ * @example
+ * ```ts
+ * await calltreeCommand(process.cwd(), 'TokenOptimizerService', 'markdown');
+ * ```
+ */
 export async function calltreeCommand(
     projectPath: string, 
     symbol: string, 
@@ -50,13 +73,11 @@ export async function calltreeCommand(
                                 }
 
                                 const lineSnippet = l.trim();
-                                if (lineSnippet.length > 120) return; // Ignore minified/huge lines
+                                if (lineSnippet.length > 120) return;
 
-                                // Check for Event-Driven / postMessage / Redux dispatch senders
                                 const isSender = /(?:postMessage|dispatch|emit|sendMessage|broadcast|ws\.send)\s*\(/i.test(lineSnippet) ||
                                                  /(?:type|action|event)\s*:\s*['"][^'"]*$/i.test(lineSnippet);
 
-                                // Check for Event Handlers / Listeners
                                 const isHandler = /(?:onmessage|addEventListener|case\s+['"]|msg\.type|action\.type|\.on\s*\()/i.test(lineSnippet);
 
                                 if (isSender && !isHandler) {
@@ -78,7 +99,6 @@ export async function calltreeCommand(
 
     searchInDir(projectPath);
 
-    // 1. Render Event-Driven Message Link Trace (if present)
     if (eventSenders.length > 0 || eventHandlers.length > 0) {
         lines.push(`## ⚡ Event-Driven Message Link Trace (\`postMessage\` / Redux / Events)`);
         lines.push(`*Linked event producers (senders) and handlers (receivers) across UI and Sandbox/Backend environments:*\n`);
@@ -104,7 +124,6 @@ export async function calltreeCommand(
         lines.push('');
     }
 
-    // 2. Render Upstream Callers
     lines.push(`## ⬆️ Upstream Callers (Who calls / references \`${cleanSymbol}\`):`);
     if (callers.length > 0) {
         callers.slice(0, 15).forEach(c => {
@@ -116,7 +135,6 @@ export async function calltreeCommand(
     }
     lines.push('');
 
-    // 3. Render Downstream Definitions
     lines.push(`## ⬇️ Downstream Definitions & Callee Scope:`);
     if (callees.length > 0) {
         callees.forEach(c => {

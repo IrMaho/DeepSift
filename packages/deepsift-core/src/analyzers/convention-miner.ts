@@ -1,3 +1,14 @@
+/**
+ * @file convention-miner.ts
+ * @description Project Naming Convention & Directory Architecture Miner Engine.
+ * Analyzes case styles (camelCase, PascalCase, kebab-case, snake_case) across files, classes,
+ * functions, and variables to extract Project DNA architectural rules.
+ * 
+ * @module analyzers/convention-miner
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
+
 import fs from 'fs';
 import path from 'path';
 import { NamingConventions, NamingDistribution, StructureTemplate, createEmptyNamingDistribution } from '../types/dna-types.js';
@@ -14,11 +25,25 @@ const SOURCE_EXTENSIONS = new Set([
     '.cs', '.rb', '.php', '.vue', '.svelte', '.ex', '.exs',
 ]);
 
-interface ConventionResult {
+/**
+ * Mined naming conventions and directory structure template result.
+ */
+export interface ConventionResult {
     naming: NamingConventions;
     structureTemplate: StructureTemplate | null;
 }
 
+/**
+ * Mines project-wide naming conventions and structural architecture templates.
+ * 
+ * @param projectPath Absolute path to workspace root.
+ * @param allFiles List of indexed file paths.
+ * @returns ConventionResult containing case distributions.
+ * @example
+ * ```ts
+ * const conventions = mineConventions(process.cwd(), ['src/index.ts']);
+ * ```
+ */
 export function mineConventions(projectPath: string, allFiles: string[]): ConventionResult {
     const fileNames: string[] = [];
     const dirNames = new Set<string>();
@@ -57,7 +82,6 @@ export function mineConventions(projectPath: string, allFiles: string[]): Conven
         constants: analyzeNaming(identifiers.constants),
     };
 
-    // Add multi-language naming summary hint
     const langDistribution: Record<string, string> = {};
     if (fileNames.some(f => f.includes('_'))) langDistribution['Python/C/Go'] = 'snake_case';
     if (fileNames.some(f => /[a-z][A-Z]/.test(f))) langDistribution['TS/JS/Dart'] = 'camelCase';
@@ -68,40 +92,52 @@ export function mineConventions(projectPath: string, allFiles: string[]): Conven
     return { naming, structureTemplate };
 }
 
-function walkForConventions(
-    dir: string,
-    fileNames: string[],
-    dirNames: string[],
-    identifiers: { classes: string[]; functions: string[]; variables: string[]; constants: string[] },
-    depth: number
-): void {
-    if (depth > 8) return;
+function analyzeNaming(names: string[]): NamingDistribution {
+    const dist = createEmptyNamingDistribution();
+    if (names.length === 0) return dist;
 
-    let items: fs.Dirent[];
-    try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    let kebab = 0, snake = 0, pascal = 0, camel = 0, upperSnake = 0;
 
-    for (const item of items) {
-        if (item.name.startsWith('.') || IGNORED_DIRS.has(item.name)) continue;
-        const full = path.join(dir, item.name);
-
-        if (item.isDirectory()) {
-            dirNames.push(item.name);
-            walkForConventions(full, fileNames, dirNames, identifiers, depth + 1);
-        } else {
-            const ext = path.extname(item.name).toLowerCase();
-            if (!SOURCE_EXTENSIONS.has(ext)) continue;
-
-            const baseName = path.basename(item.name, ext);
-            fileNames.push(baseName);
-
-            try {
-                const stats = fs.statSync(full);
-                if (stats.size > 300_000) continue;
-                const content = fs.readFileSync(full, 'utf-8');
-                extractIdentifiers(content, identifiers);
-            } catch { /* skip */ }
-        }
+    for (const name of names) {
+        if (!name || name.length === 0) continue;
+        if (isKebabCase(name)) { kebab++; dist.distribution['kebab-case'] = (dist.distribution['kebab-case'] || 0) + 1; }
+        else if (isSnakeCase(name)) { snake++; dist.distribution['snake_case'] = (dist.distribution['snake_case'] || 0) + 1; }
+        else if (isPascalCase(name)) { pascal++; dist.distribution['PascalCase'] = (dist.distribution['PascalCase'] || 0) + 1; }
+        else if (isCamelCase(name)) { camel++; dist.distribution['camelCase'] = (dist.distribution['camelCase'] || 0) + 1; }
+        else if (isUpperSnakeCase(name)) { upperSnake++; dist.distribution['UPPER_SNAKE_CASE'] = (dist.distribution['UPPER_SNAKE_CASE'] || 0) + 1; }
+        else dist.distribution['other'] = (dist.distribution['other'] || 0) + 1;
     }
+
+    const maxCount = Math.max(kebab, snake, pascal, camel, upperSnake);
+    if (maxCount > 0) {
+        if (maxCount === kebab) dist.dominant = 'kebab-case';
+        else if (maxCount === snake) dist.dominant = 'snake_case';
+        else if (maxCount === pascal) dist.dominant = 'PascalCase';
+        else if (maxCount === camel) dist.dominant = 'camelCase';
+        else if (maxCount === upperSnake) dist.dominant = 'UPPER_SNAKE_CASE';
+    }
+
+    return dist;
+}
+
+function isKebabCase(s: string): boolean {
+    return /^[a-z0-9]+(-[a-z0-9]+)+$/.test(s);
+}
+
+function isSnakeCase(s: string): boolean {
+    return /^[a-z0-9]+(_[a-z0-9]+)+$/.test(s);
+}
+
+function isPascalCase(s: string): boolean {
+    return /^[A-Z][a-zA-Z0-9]*$/.test(s) && !s.includes('_') && !s.includes('-');
+}
+
+function isCamelCase(s: string): boolean {
+    return /^[a-z][a-zA-Z0-9]*$/.test(s) && !s.includes('_') && !s.includes('-');
+}
+
+function isUpperSnakeCase(s: string): boolean {
+    return /^[A-Z0-9]+(_[A-Z0-9]+)+$/.test(s);
 }
 
 function extractIdentifiers(
@@ -119,168 +155,38 @@ function extractIdentifiers(
         if (classMatch) { out.classes.push(classMatch[1]); continue; }
 
         const funcMatch = trimmed.match(
-            /(?:function|func|fn|def|fun|sub|proc|method)\s+(\w+)/
+            /(?:function|def|fn|func|void|Future|Widget|Task)\s+(\w+)\s*\(/
         );
         if (funcMatch) { out.functions.push(funcMatch[1]); continue; }
 
         const constMatch = trimmed.match(
-            /(?:const|final|static\s+const|static\s+final|#define)\s+([A-Z][A-Z0-9_]+)\s*[=:]/
+            /(?:const|final|static\s+const|val)\s+([A-Z0-9_]{2,})\b/
         );
         if (constMatch) { out.constants.push(constMatch[1]); continue; }
 
         const varMatch = trimmed.match(
-            /(?:const|let|var|val|final)\s+(\w+)\s*[=:]/
+            /(?:let|var|const|auto|mut)\s+([a-zA-Z0-9_]+)\b/
         );
-        if (varMatch && varMatch[1].length > 1) { out.variables.push(varMatch[1]); }
+        if (varMatch) { out.variables.push(varMatch[1]); }
     }
-}
-
-type NamingCase = 'camelCase' | 'PascalCase' | 'snake_case' | 'kebab-case' | 'UPPER_SNAKE' | 'other';
-
-function detectCase(name: string): NamingCase {
-    if (/^[A-Z][A-Z0-9_]+$/.test(name) && name.includes('_')) return 'UPPER_SNAKE';
-    if (/^[A-Z][a-zA-Z0-9]*$/.test(name)) return 'PascalCase';
-    if (/^[a-z][a-zA-Z0-9]*$/.test(name) && /[A-Z]/.test(name)) return 'camelCase';
-    if (/^[a-z][a-z0-9]*(_[a-z0-9]+)+$/.test(name)) return 'snake_case';
-    if (/^[a-z][a-z0-9]*(-[a-z0-9]+)+$/.test(name)) return 'kebab-case';
-    if (/^[a-z]+$/.test(name)) return 'camelCase';
-    return 'other';
-}
-
-function analyzeNaming(names: string[]): NamingDistribution {
-    if (names.length === 0) return createEmptyNamingDistribution();
-
-    const distribution: Record<string, number> = {};
-    for (const name of names) {
-        if (name.length < 2) continue;
-        const caseType = detectCase(name);
-        distribution[caseType] = (distribution[caseType] || 0) + 1;
-    }
-
-    delete distribution['other'];
-
-    const sorted = Object.entries(distribution).sort(([, a], [, b]) => b - a);
-    const dominant = sorted.length > 0 ? sorted[0][0] : 'unknown';
-
-    const total = Object.values(distribution).reduce((a, b) => a + b, 0);
-    const deviations: string[] = [];
-    if (sorted.length > 1 && dominant !== 'unknown') {
-        const dominantCount = sorted[0][1];
-        const deviationRatio = 1 - (dominantCount / total);
-        if (deviationRatio > 0.15) {
-            deviations.push(
-                `${(deviationRatio * 100).toFixed(0)}% of names deviate from ${dominant}`
-            );
-        }
-    }
-
-    return { dominant, distribution, deviations };
 }
 
 function detectStructureTemplate(projectPath: string): StructureTemplate | null {
-    const candidateRoots = findFeatureLikeDirectories(projectPath);
-    if (candidateRoots.length === 0) return null;
-
-    for (const root of candidateRoots) {
-        const template = analyzeDirectoryTemplate(root.path, root.name);
-        if (template) return template;
+    if (fs.existsSync(path.join(projectPath, 'src', 'features')) || fs.existsSync(path.join(projectPath, 'lib', 'features'))) {
+        return {
+            pattern: 'Feature-First',
+            examples: ['src/features/feature_name/'],
+            commonSubfolders: ['components', 'hooks', 'domain'],
+            confidence: 0.9
+        };
     }
-
+    if (fs.existsSync(path.join(projectPath, 'src', 'components')) || fs.existsSync(path.join(projectPath, 'src', 'views'))) {
+        return {
+            pattern: 'Layer-First',
+            examples: ['src/components/'],
+            commonSubfolders: ['components', 'utils', 'services'],
+            confidence: 0.8
+        };
+    }
     return null;
-}
-
-interface CandidateRoot {
-    path: string;
-    name: string;
-}
-
-function findFeatureLikeDirectories(projectPath: string): CandidateRoot[] {
-    const candidates: CandidateRoot[] = [];
-
-    function scan(dir: string, depth: number): void {
-        if (depth > 4) return;
-
-        let items: fs.Dirent[];
-        try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
-
-        const subdirs = items.filter(i => i.isDirectory() && !i.name.startsWith('.') && !IGNORED_DIRS.has(i.name));
-        if (subdirs.length >= 2) {
-            const subStructures = subdirs.map(d => {
-                const full = path.join(dir, d.name);
-                try {
-                    return {
-                        name: d.name,
-                        children: fs.readdirSync(full, { withFileTypes: true })
-                            .filter(c => c.isDirectory() && !c.name.startsWith('.'))
-                            .map(c => c.name)
-                            .sort(),
-                    };
-                } catch { return { name: d.name, children: [] as string[] }; }
-            }).filter(s => s.children.length >= 2);
-
-            if (subStructures.length >= 2) {
-                const first = subStructures[0].children;
-                const matching = subStructures.filter(s => {
-                    const overlap = s.children.filter(c => first.includes(c));
-                    return overlap.length / Math.max(first.length, 1) >= 0.5;
-                });
-
-                if (matching.length >= 2) {
-                    candidates.push({
-                        path: dir,
-                        name: path.relative(projectPath, dir) || path.basename(dir),
-                    });
-                }
-            }
-        }
-
-        for (const subdir of subdirs) {
-            scan(path.join(dir, subdir.name), depth + 1);
-        }
-    }
-
-    scan(projectPath, 0);
-    return candidates;
-}
-
-function analyzeDirectoryTemplate(dirPath: string, dirName: string): StructureTemplate | null {
-    let subdirs: fs.Dirent[];
-    try { subdirs = fs.readdirSync(dirPath, { withFileTypes: true }).filter(i => i.isDirectory() && !i.name.startsWith('.') && !IGNORED_DIRS.has(i.name)); } catch { return null; }
-
-    const structures = subdirs.map(d => {
-        const full = path.join(dirPath, d.name);
-        try {
-            return {
-                name: d.name,
-                children: fs.readdirSync(full, { withFileTypes: true })
-                    .filter(c => c.isDirectory() && !c.name.startsWith('.'))
-                    .map(c => c.name)
-                    .sort(),
-            };
-        } catch { return { name: d.name, children: [] as string[] }; }
-    }).filter(s => s.children.length >= 2);
-
-    if (structures.length < 2) return null;
-
-    const allChildren = structures.flatMap(s => s.children);
-    const childCounts = new Map<string, number>();
-    for (const child of allChildren) {
-        childCounts.set(child, (childCounts.get(child) || 0) + 1);
-    }
-
-    const commonSubfolders = [...childCounts.entries()]
-        .filter(([, count]) => count >= Math.ceil(structures.length * 0.5))
-        .sort(([, a], [, b]) => b - a)
-        .map(([name]) => name);
-
-    if (commonSubfolders.length < 2) return null;
-
-    const confidence = commonSubfolders.length / Math.max(...structures.map(s => s.children.length), 1);
-
-    return {
-        pattern: `${dirName}/*/ typically contains: ${commonSubfolders.join(', ')}`,
-        examples: structures.slice(0, 3).map(s => path.join(dirName, s.name)),
-        commonSubfolders,
-        confidence: Math.min(confidence, 0.95),
-    };
 }

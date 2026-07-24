@@ -1,16 +1,39 @@
+/**
+ * @file read.ts
+ * @description File Reader Command with Token Compression & Line Range Support.
+ * Reads source file contents, extracts line ranges (e.g. file.ts:10-50), and formats
+ * uncompressed text or compressed DEC_v2 visual tokens for AI agents.
+ * 
+ * @module cli/commands/read
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
+
 import fs from 'fs';
 import path from 'path';
-import { printResult, printInfo, printSuccess, printError, OutputFormat } from '../cli-output.js';
+import { printResult, printSuccess, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 import { saveSearchLog } from '../../utils/history.js';
 import { promptForResearchFindings, AutoSaveContext } from './memo-prompt.js';
 
+/**
+ * Executes the `deepsift read` command to fetch file content or line range snippets.
+ * 
+ * @param projectPath Absolute path to workspace root.
+ * @param targets Array of target file strings with optional line ranges (e.g. ['src/file.ts:1-50']).
+ * @param format Output format ('markdown', 'plain', or 'json').
+ * @param compress Whether to apply DEC_v2 visual token compression (default: true).
+ * @example
+ * ```ts
+ * await readCommand(process.cwd(), ['src/utils/config.ts:1-40'], 'markdown', false);
+ * ```
+ */
 export async function readCommand(
     projectPath: string,
     targets: string[],
     format: OutputFormat,
     compress: boolean = true
-) {
+): Promise<void> {
     if (targets.length === 0) {
         throw new Error('No targets provided for read command.');
     }

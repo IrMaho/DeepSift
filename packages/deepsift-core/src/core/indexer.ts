@@ -1,5 +1,15 @@
+/**
+ * @file indexer.ts
+ * @description Codebase Incremental Indexer & AST Vector Embedder Engine.
+ * Scans workspace files, generates AST chunks, computes vector embeddings,
+ * extracts dependency graphs, and commits metadata to NativeStore SQLite.
+ * 
+ * @module core/indexer
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
+
 import { NativeStore, BatchOperation } from '../storage/native-store.js';
-import { getFiles } from '../utils/file-walker.js';
 import { parseAST } from '../parsers/tree-sitter-parser.js';
 import { parseSkillFile } from '../parsers/skill-parser.js';
 import { getEmbeddings } from './embedder.js';
@@ -11,16 +21,38 @@ import { GraphExtractor } from '../graphify/graph-extractor.js';
 import { GraphBuilder } from '../graphify/graph-builder.js';
 import { GraphClusterer } from '../graphify/graph-cluster.js';
 
+/**
+ * Incremental codebase indexer coordinating AST parsing, embeddings, and graph extraction.
+ */
 export class Indexer {
     private store: NativeStore;
     private isIndexing: boolean = false;
     private parserProfile: 'code' | 'skill' | 'docs';
 
+    /**
+     * Initializes the Indexer.
+     * 
+     * @param store Target NativeStore instance.
+     * @param parserProfile Parser mode ('code', 'skill', or 'docs').
+     */
     constructor(store: NativeStore, parserProfile: 'code' | 'skill' | 'docs' = 'code') {
         this.store = store;
         this.parserProfile = parserProfile;
     }
 
+    /**
+     * Indexes or incrementally updates indexed files within rootDir.
+     * 
+     * @param rootDir Absolute path to workspace root.
+     * @param forceReindex Force full re-indexing of all files.
+     * @param onProgress Optional progress callback.
+     * @returns Execution stats (files, chunks, newOrUpdated, deleted).
+     * @example
+     * ```ts
+     * const indexer = new Indexer(store);
+     * const stats = await indexer.indexProject(process.cwd());
+     * ```
+     */
     public async indexProject(
         rootDir: string, 
         forceReindex: boolean = false,
@@ -41,14 +73,12 @@ export class Indexer {
             const walkResult = await unifiedWalk(rootDir);
             const allFiles = walkResult.allFiles;
             
-            // Phase 1: Fetch all metadata in a SINGLE call!
             const allMetadata = forceReindex ? new Map() : await this.store.getAllMetadata();
 
             const filesToProcess: string[] = [];
             const fileHashes = new Map<string, string>();
             const currentFilesSet = new Set(allFiles);
 
-            
             for (const [file, meta] of allMetadata.entries()) {
                 if (!currentFilesSet.has(file)) {
                     batchOperations.push({ action: 'deleteFileChunks', filePath: file });
@@ -56,7 +86,6 @@ export class Indexer {
                 }
             }
 
-            // Phase 2: Rapid file scanning (No DB spawn!)
             for (let i = 0; i < allFiles.length; i++) {
                 const file = allFiles[i];
                 if (onProgress) {
@@ -80,16 +109,13 @@ export class Indexer {
 
                     filesToProcess.push(file);
                 } catch (err) {
-                    // ignore unreadable files
+                    // Safe ignore
                 }
             }
 
-            // Phase 3: Parsing and Embedding in parallel (batched)
             const BATCH_SIZE = 5;
             let currentFileIndex = 0;
             const totalFilesToProcess = filesToProcess.length;
-
-            
 
             for (let i = 0; i < filesToProcess.length; i += BATCH_SIZE) {
                 const batchFiles = filesToProcess.slice(i, i + BATCH_SIZE);
@@ -125,7 +151,6 @@ export class Indexer {
                                 embedding: embeddings[idx]
                             }));
 
-                            // Format them for the batch API
                             const formattedChunks = embeddedChunks.map(c => this.store.formatChunkForBatch(c));
                             batchOperations.push({ action: 'saveChunks', chunks: formattedChunks });
                         }
@@ -162,7 +187,6 @@ export class Indexer {
                 }
             }
             
-            // Phase 4: Graph Building
             if (filesProcessed > 0 || deletedCount > 0 || forceReindex) {
                 if (onProgress) {
                     onProgress(totalFilesToProcess, totalFilesToProcess, "Building dependency graph...");
@@ -177,7 +201,7 @@ export class Indexer {
                             const result = extractor.extractFromFile(file);
                             builder.addExtraction(result);
                         } catch (err) {
-                            // ignore unparseable for graph
+                            // Safe ignore
                         }
                     }
                     
@@ -206,6 +230,9 @@ export class Indexer {
         return { files: filesProcessed, chunks: chunksProcessed, newOrUpdated: filesProcessed, deleted: deletedCount };
     }
 
+    /**
+     * Gets index statistics and active indexing state.
+     */
     public async getStatus() {
         const status = await this.store.getStatus();
         status.isIndexing = this.isIndexing;

@@ -1,3 +1,13 @@
+/**
+ * @file feature.ts
+ * @description AST Feature Outline Generator Command.
+ * Extracts function signatures, exported classes, dependencies, and file purpose summaries for targeted directories.
+ * 
+ * @module cli/commands/feature
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
+
 import path from 'path';
 import fs from 'fs';
 import { getFeatureOutline } from '../../utils/outline.js';
@@ -6,8 +16,23 @@ import { printResult, printSuccess, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 
 /**
- * Generates outline stats and imports for a specific folder feature.
- * Outputs are token-compressed by default.
+ * Executes the `deepsift feature` command to generate AST feature outlines.
+ * 
+ * @param projectPath Absolute path to workspace root.
+ * @param featureDir Target feature directory or file path.
+ * @param format Output format ('markdown', 'plain', or 'json').
+ * @param compress Whether to apply DEC_v2 visual token compression.
+ * @param limit Max files per page.
+ * @param offset Starting file index for pagination.
+ * @param summarizeOnly Summary mode displaying top-level exports only.
+ * @param maxDepth Max directory depth to traverse.
+ * @param groupByFeature Group output by sub-feature directories.
+ * @param compact High-density purpose & dependency outline.
+ * @param quietCache Suppress log cache print output.
+ * @example
+ * ```ts
+ * await featureCommand(process.cwd(), 'src/core', 'markdown', false, 15, 0, true);
+ * ```
  */
 export async function featureCommand(
     projectPath: string, 
@@ -21,7 +46,7 @@ export async function featureCommand(
     groupByFeature: boolean = false,
     compact: boolean = false,
     quietCache: boolean = false
-) {
+): Promise<void> {
     let targetPath = featureDir;
     if (!path.isAbsolute(featureDir)) {
         let tempPath = path.resolve(process.cwd(), featureDir);

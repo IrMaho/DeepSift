@@ -1,19 +1,35 @@
+/**
+ * @file graph-builder.ts
+ * @description Graphify Topology & Graph Construction Engine.
+ * Resolves symbol labels, cross-file imports, and node edges to construct code dependency graphs.
+ * 
+ * @module graphify/graph-builder
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
+
 import { GraphifyNode, GraphifyEdge } from './graph-types.js';
 import { ExtractionResult } from './graph-extractor.js';
 import path from 'path';
 
+/**
+ * Builder class that accumulates extracted graph elements and resolves edge references into a clean network graph.
+ */
 export class GraphBuilder {
     private nodes = new Map<string, GraphifyNode>();
     private edges: GraphifyEdge[] = [];
     private labelToNodeIds = new Map<string, string[]>();
 
-    public addExtraction(result: ExtractionResult) {
-        // Add all nodes
+    /**
+     * Adds AST nodes and edges extracted from a single source file.
+     * 
+     * @param result ExtractionResult from GraphExtractor.
+     */
+    public addExtraction(result: ExtractionResult): void {
         for (const node of result.nodes) {
             if (!this.nodes.has(node.id)) {
                 this.nodes.set(node.id, node);
                 
-                // Track labels for global resolution
                 if (!this.labelToNodeIds.has(node.label)) {
                     this.labelToNodeIds.set(node.label, []);
                 }
@@ -21,24 +37,30 @@ export class GraphBuilder {
             }
         }
 
-        // Add all edges (will be resolved in build())
         this.edges.push(...result.edges);
     }
 
+    /**
+     * Resolves ambiguous symbol targets and builds the final Graphify node and edge lists.
+     * 
+     * @returns Object containing nodes and resolved edges arrays.
+     * @example
+     * ```ts
+     * const builder = new GraphBuilder();
+     * builder.addExtraction(result);
+     * const { nodes, edges } = builder.build();
+     * ```
+     */
     public build(): { nodes: GraphifyNode[], edges: GraphifyEdge[] } {
         const resolvedEdges: GraphifyEdge[] = [];
         
         for (const edge of this.edges) {
             let targetId = edge.target;
             
-            // Resolve INFERRED/AMBIGUOUS targets
             if (edge.confidence !== 'EXTRACTED' && !this.nodes.has(targetId)) {
-                // Try to resolve by label
                 const potentialTargets = this.labelToNodeIds.get(targetId);
                 
                 if (potentialTargets && potentialTargets.length > 0) {
-                    // Simple heuristic: pick the first one for now, or the one in the same file
-                    // Graphify Python does more advanced resolution like checking imports
                     const sourceNode = this.nodes.get(edge.source);
                     let bestTarget = potentialTargets[0];
                     
@@ -50,73 +72,47 @@ export class GraphBuilder {
                     }
                     targetId = bestTarget;
                 } else if (edge.relation === 'imports') {
-                    // Try to resolve import path
                     const sourceNode = this.nodes.get(edge.source);
                     if (sourceNode) {
                         try {
                             const sourceDir = path.dirname(sourceNode.sourceFile);
                             let resolvedImport = path.resolve(sourceDir, targetId);
-                            // Very basic extension appending
                             if (!path.extname(resolvedImport)) {
-                                resolvedImport += '.ts'; // Fallback
+                                resolvedImport += '.ts';
                             }
                             if (this.nodes.has(resolvedImport)) {
                                 targetId = resolvedImport;
-                            } else {
-                                // Phantom edge to external module
-                                this.createPhantomNode(targetId, 'concept');
                             }
-                        } catch (e) {
-                             this.createPhantomNode(targetId, 'concept');
+                        } catch {
+                            // Safe ignore
                         }
-                    } else {
-                         this.createPhantomNode(targetId, 'concept');
                     }
-                } else {
-                    // Phantom node for unresolved symbol
-                    this.createPhantomNode(targetId, 'concept');
                 }
             }
 
-            // Only add edge if target exists
-            if (this.nodes.has(targetId) && edge.source !== targetId) {
+            if (this.nodes.has(edge.source) && this.nodes.has(targetId)) {
                 resolvedEdges.push({
-                    source: edge.source,
-                    target: targetId,
-                    relation: edge.relation,
-                    confidence: edge.confidence,
-                    context: edge.context
+                    ...edge,
+                    target: targetId
                 });
             }
         }
 
-        // Calculate degrees
         const nodesList = Array.from(this.nodes.values());
         
+        for (const node of nodesList) {
+            node.inDegree = 0;
+            node.outDegree = 0;
+        }
+
         for (const edge of resolvedEdges) {
             const sourceNode = this.nodes.get(edge.source);
             const targetNode = this.nodes.get(edge.target);
+
             if (sourceNode) sourceNode.outDegree++;
             if (targetNode) targetNode.inDegree++;
         }
 
         return { nodes: nodesList, edges: resolvedEdges };
-    }
-
-    private createPhantomNode(id: string, type: 'concept') {
-        if (!this.nodes.has(id)) {
-            this.nodes.set(id, {
-                id: id,
-                label: id.split('/').pop() || id,
-                sourceFile: '',
-                sourceLocation: '',
-                community: 0,
-                fileType: type,
-                inDegree: 0,
-                outDegree: 0,
-                pageRank: 0,
-                isPhantom: true
-            });
-        }
     }
 }

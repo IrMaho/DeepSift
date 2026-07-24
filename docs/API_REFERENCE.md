@@ -25,14 +25,30 @@ Analyzer that scans source code and calculates Cyclomatic and Cognitive complexi
 ## 📄 [`convention-miner`](file:///packages/deepsift-core/src/analyzers/convention-miner.ts)
 
 - **Path:** `packages/deepsift-core/src/analyzers/convention-miner.ts`  
-- **Description:** TypeScript source module.
+- **Description:** Project Naming Convention & Directory Architecture Miner Engine.
+
+### Exported Symbols
+
+#### `interface ConventionResult`
+Analyzes case styles (camelCase, PascalCase, kebab-case, snake_case) across files, classes,
+
+#### `function mineConventions`
+Mines project-wide naming conventions and structural architecture templates.
 
 ---
 
 ## 📄 [`entropy-filter`](file:///packages/deepsift-core/src/analyzers/entropy-filter.ts)
 
 - **Path:** `packages/deepsift-core/src/analyzers/entropy-filter.ts`  
-- **Description:** TypeScript source module.
+- **Description:** Shannon Entropy & Minified Code Filter Engine.
+
+### Exported Symbols
+
+#### `function calculateEntropy`
+Detects bundled JS files, minified code artifacts, and high-entropy text chunks to prevent indexing noise.
+
+#### `function isBundledOrMinifiedFile`
+Determines whether a file path or file content represents a minified or bundled artifact.
 
 ---
 
@@ -258,12 +274,12 @@ Super-command: Analyzes a specific path by combining Feature Outline and DNA Int
 ## 📄 [`arch`](file:///packages/deepsift-core/src/cli/commands/arch.ts)
 
 - **Path:** `packages/deepsift-core/src/cli/commands/arch.ts`  
-- **Description:** TypeScript source module.
+- **Description:** Project Directory Blueprint & Graphify Community Blueprint Command.
 
 ### Exported Symbols
 
 #### `function archCommand`
-Executes the project architecture mapping command.
+Generates directory tree blueprints utilizing Graphify communities, module counts, and noise pruning.
 
 ---
 
@@ -277,7 +293,12 @@ Executes the project architecture mapping command.
 ## 📄 [`calltree`](file:///packages/deepsift-core/src/cli/commands/calltree.ts)
 
 - **Path:** `packages/deepsift-core/src/cli/commands/calltree.ts`  
-- **Description:** TypeScript source module.
+- **Description:** Call Graph & Event-Driven Message Traversal Command.
+
+### Exported Symbols
+
+#### `function calltreeCommand`
+Traces upstream callers, downstream callee scopes, and event-driven message channels (postMessage, IPC, EventEmitters).
 
 ---
 
@@ -476,12 +497,12 @@ Runs system health checks, database index diagnostics, configuration checks,
 ## 📄 [`feature`](file:///packages/deepsift-core/src/cli/commands/feature.ts)
 
 - **Path:** `packages/deepsift-core/src/cli/commands/feature.ts`  
-- **Description:** TypeScript source module.
+- **Description:** AST Feature Outline Generator Command.
 
 ### Exported Symbols
 
 #### `function featureCommand`
-Generates outline stats and imports for a specific folder feature.
+Extracts function signatures, exported classes, dependencies, and file purpose summaries for targeted directories.
 
 ---
 
@@ -551,19 +572,24 @@ Generates outline stats and imports for a specific folder feature.
 ## 📄 [`memo`](file:///packages/deepsift-core/src/cli/commands/memo.ts)
 
 - **Path:** `packages/deepsift-core/src/cli/commands/memo.ts`  
-- **Description:** TypeScript source module.
+- **Description:** Dynamic Research Memory (DRM) Command Line Interface.
+
+### Exported Symbols
+
+#### `function memoCommand`
+Manages active research tags, research note additions, semantic queries, graph generation,
 
 ---
 
 ## 📄 [`overview`](file:///packages/deepsift-core/src/cli/commands/overview.ts)
 
 - **Path:** `packages/deepsift-core/src/cli/commands/overview.ts`  
-- **Description:** TypeScript source module.
+- **Description:** Single-Step Project Blueprint Overview Super-Command.
 
 ### Exported Symbols
 
 #### `function overviewCommand`
-Super Command: deepsift overview [path]
+Consolidates directory trees, Central God Nodes, feature summaries, and AST outlines into a single output.
 
 ---
 
@@ -603,7 +629,12 @@ Reads all relevant code files within a feature directory.
 ## 📄 [`read`](file:///packages/deepsift-core/src/cli/commands/read.ts)
 
 - **Path:** `packages/deepsift-core/src/cli/commands/read.ts`  
-- **Description:** TypeScript source module.
+- **Description:** File Reader Command with Token Compression & Line Range Support.
+
+### Exported Symbols
+
+#### `function readCommand`
+Reads source file contents, extracts line ranges (e.g. file.ts:10-50), and formats
 
 ---
 
@@ -659,7 +690,15 @@ Reads all relevant code files within a feature directory.
 ## 📄 [`search`](file:///packages/deepsift-core/src/cli/commands/search.ts)
 
 - **Path:** `packages/deepsift-core/src/cli/commands/search.ts`  
-- **Description:** TypeScript source module.
+- **Description:** Hybrid Semantic & BM25 Search Command Engine.
+
+### Exported Symbols
+
+#### `interface SearchOptions`
+Executes vector semantic search, BM25 lexical retrieval, Graphify PageRank boosting,
+
+#### `function searchCommand`
+Executes the `deepsift search` command across single or multiple queries.
 
 ---
 
@@ -774,7 +813,12 @@ Terminate all running worker threads.
 ## 📄 [`indexer`](file:///packages/deepsift-core/src/core/indexer.ts)
 
 - **Path:** `packages/deepsift-core/src/core/indexer.ts`  
-- **Description:** TypeScript source module.
+- **Description:** Codebase Incremental Indexer & AST Vector Embedder Engine.
+
+### Exported Symbols
+
+#### `class Indexer`
+Scans workspace files, generates AST chunks, computes vector embeddings,
 
 ---
 
@@ -802,7 +846,12 @@ Terminate all running worker threads.
 ## 📄 [`graph-builder`](file:///packages/deepsift-core/src/graphify/graph-builder.ts)
 
 - **Path:** `packages/deepsift-core/src/graphify/graph-builder.ts`  
-- **Description:** TypeScript source module.
+- **Description:** Graphify Topology & Graph Construction Engine.
+
+### Exported Symbols
+
+#### `class GraphBuilder`
+Resolves symbol labels, cross-file imports, and node edges to construct code dependency graphs.
 
 ---
 

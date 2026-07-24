@@ -1,3 +1,14 @@
+/**
+ * @file search.ts
+ * @description Hybrid Semantic & BM25 Search Command Engine.
+ * Executes vector semantic search, BM25 lexical retrieval, Graphify PageRank boosting,
+ * AST symbol fallbacks, and token compression for multi-realm codebases.
+ * 
+ * @module cli/commands/search
+ * @category Core Search & Discovery
+ * @since 1.0.0
+ */
+
 import fs from 'fs';
 import path from 'path';
 import { RealmRouter, CrossRealmResult } from '../../core/realm-router.js';
@@ -7,6 +18,9 @@ import { TokenOptimizerService } from '../../utils/token-compressor.js';
 import { ContextInjector } from '../../core/context-injector.js';
 import { promptForResearchFindings, AutoSaveContext } from './memo-prompt.js';
 
+/**
+ * Options interface for controlling semantic search execution.
+ */
 export interface SearchOptions {
     skipSync?: boolean;
     verbose?: boolean;
@@ -19,13 +33,24 @@ export interface SearchOptions {
     limit?: number;
 }
 
-
+/**
+ * Executes the `deepsift search` command across single or multiple queries.
+ * 
+ * @param projectPath Absolute path to the workspace root.
+ * @param queries Array of search query strings.
+ * @param format Output format ('markdown', 'plain', or 'json').
+ * @param options Search execution options (skipSync, filterPath, limit).
+ * @example
+ * ```ts
+ * await searchCommand(process.cwd(), ['authentication store'], 'markdown', { limit: 10 });
+ * ```
+ */
 export async function searchCommand(
     projectPath: string, 
     queries: string[], 
     format: OutputFormat, 
     options: SearchOptions = {}
-) {
+): Promise<void> {
     const router = new RealmRouter(projectPath);
     const targetRealms = options.allRealms ? undefined : (options.realm ? options.realm.split(',').map(r => r.trim()) : undefined);
 
@@ -60,7 +85,6 @@ export async function searchCommand(
             }
         }
     } else {
-        // Recovery check if index is empty
         try {
             const store = router.getStore('code');
             const metaMap = await store.getAllMetadata();
@@ -82,6 +106,9 @@ export async function searchCommand(
     return executeMultiSearch(router, projectPath, queries, format, options, targetRealms);
 }
 
+/**
+ * AST & Path Token fallback matcher executed when vector search yields no direct hits.
+ */
 function astSymbolFallback(projectPath: string, rawQuery: string): Array<{ file: string; line: number; snippet: string; score: number }> {
     const matches: Array<{ file: string; line: number; snippet: string; score: number }> = [];
     const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.deepsift', 'coverage', '.dart_tool', 'venv', '.venv', 'site-packages']);
@@ -109,7 +136,6 @@ function astSymbolFallback(projectPath: string, rawQuery: string): Array<{ file:
                         const rel = path.relative(projectPath, fullPath).replace(/\\/g, '/');
                         const relLower = rel.toLowerCase();
                         
-                        // Check if file path matches query tokens
                         let pathMatchCount = 0;
                         for (const t of tokens) {
                             if (relLower.includes(t)) pathMatchCount++;
@@ -118,7 +144,6 @@ function astSymbolFallback(projectPath: string, rawQuery: string): Array<{ file:
                         const content = fs.readFileSync(fullPath, 'utf8');
                         const contentLower = content.toLowerCase();
 
-                        // Exact substring match check
                         if (content.includes(queryClean)) {
                             const lines = content.split('\n');
                             lines.forEach((line, idx) => {
@@ -127,7 +152,6 @@ function astSymbolFallback(projectPath: string, rawQuery: string): Array<{ file:
                                 }
                             });
                         } else {
-                            // Multi-token match check
                             let contentMatchCount = 0;
                             for (const t of tokens) {
                                 if (contentLower.includes(t)) contentMatchCount++;
@@ -142,7 +166,7 @@ function astSymbolFallback(projectPath: string, rawQuery: string): Array<{ file:
                                     const hasToken = tokens.some(t => lineLower.includes(t));
                                     if (hasToken) {
                                         matches.push({ file: rel, line: idx + 1, snippet: lines[idx].trim(), score: totalMatchScore });
-                                        break; // Pick first matching line per file
+                                        break;
                                     }
                                 }
                             }
@@ -157,6 +181,9 @@ function astSymbolFallback(projectPath: string, rawQuery: string): Array<{ file:
     return matches.sort((a, b) => b.score - a.score);
 }
 
+/**
+ * Handles single query vector and BM25 search.
+ */
 async function executeSingleSearch(router: RealmRouter, projectPath: string, query: string, format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
     const rawResults = await router.searchAllRealms({ query, topK: 5, filterPath: options.filterPath }, targetRealms);
     const results = rawResults.filter(r => r.score >= 0.15);
@@ -248,100 +275,77 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
         `[${r.realmId}] ${r.chunk.filePath}:${r.chunk.startLine}-${r.chunk.endLine} (score: ${r.score.toFixed(3)})`
     );
     const snippetParts = results.slice(0, 3).map(r => {
-        const truncated = r.chunk.content.length > 300
-            ? r.chunk.content.substring(0, 300) + '...'
-            : r.chunk.content;
-        return `--- ${r.chunk.filePath}:${r.chunk.startLine} ---\n${truncated}`;
+        const firstLine = r.chunk.content.split('\n')[0] || '';
+        return `[${r.chunk.filePath}:${r.chunk.startLine}] ${firstLine.substring(0, 80)}`;
     });
 
-    const autoSaveCtx: AutoSaveContext = {
-        query,
+    const memoCtx: AutoSaveContext = {
+        query: query,
         resultCount: results.length,
         topFiles,
-        contentSummary: snippetParts.join('\n\n'),
-        logFilePath: logInfo.filePath
+        contentSummary: snippetParts.join(' | ')
     };
-
-    await promptForResearchFindings(projectPath, format, autoSaveCtx);
+    await promptForResearchFindings(projectPath, format, memoCtx);
 }
 
+/**
+ * Handles multi-query parallel vector and BM25 search.
+ */
 async function executeMultiSearch(router: RealmRouter, projectPath: string, queries: string[], format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
-    const allResults: string[] = [];
-    let totalHits = 0;
-    const allTopFiles: string[] = [];
-    const allSnippets: string[] = [];
+    let combinedOutput = `# 🔍 Multi-Query Search Results (${queries.length} Queries)\n\n`;
+    const allResultsMap = new Map<string, CrossRealmResult>();
 
     for (let i = 0; i < queries.length; i++) {
-        const rawResults = await router.searchAllRealms({ query: queries[i], topK: 4, filterPath: options.filterPath }, targetRealms);
+        const query = queries[i];
+        const rawResults = await router.searchAllRealms({ query, topK: 5, filterPath: options.filterPath }, targetRealms);
         const results = rawResults.filter(r => r.score >= 0.15);
-        totalHits += results.length;
 
-        results.slice(0, 3).forEach(r => {
-            allTopFiles.push(`[${r.realmId}] ${r.chunk.filePath}:${r.chunk.startLine}-${r.chunk.endLine} (score: ${r.score.toFixed(3)})`);
-            const truncated = r.chunk.content.length > 200
-                ? r.chunk.content.substring(0, 200) + '...'
-                : r.chunk.content;
-            allSnippets.push(`--- [Q: "${queries[i]}"] ${r.chunk.filePath}:${r.chunk.startLine} ---\n${truncated}`);
-        });
-
-        const formattedResults = results.map((res: CrossRealmResult, j: number) => {
-            let contentToDisplay = res.chunk.content;
-            let displayStartLine = res.chunk.startLine;
-            let displayEndLine = res.chunk.endLine;
-
-            if (options.contextLines !== undefined && options.contextLines > 0) {
-                try {
-                    const fullPath = path.join(projectPath, res.chunk.filePath);
-                    const fileContent = fs.readFileSync(fullPath, 'utf-8');
-                    const lines = fileContent.split('\n');
-                    
-                    displayStartLine = Math.max(1, res.chunk.startLine - options.contextLines);
-                    displayEndLine = Math.min(lines.length, res.chunk.endLine + options.contextLines);
-                    
-                    contentToDisplay = lines.slice(displayStartLine - 1, displayEndLine).join('\n');
-                } catch (err) {
-                }
+        combinedOutput += `## Query ${i + 1}: "${query}"\n`;
+        if (results.length === 0) {
+            const fallbackMatches = astSymbolFallback(projectPath, query.trim());
+            if (fallbackMatches.length > 0) {
+                combinedOutput += `ℹ AST & Path Matcher found **${fallbackMatches.length}** code references:\n`;
+                fallbackMatches.slice(0, 5).forEach(m => {
+                    combinedOutput += `  - 📄 **${m.file}:${m.line}**: \`${m.snippet.substring(0, 70)}\`\n`;
+                });
+                combinedOutput += '\n';
+                continue;
             }
+            combinedOutput += `⚠️ No relevant code found.\n\n`;
+            continue;
+        }
 
-            return `    ${j + 1}. [${res.realmId}] [${res.chunk.filePath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)})\n       \`\`\`${res.chunk.language}\n${contentToDisplay}\n       \`\`\``;
-        }).join('\n\n');
-
-        allResults.push(`--- Query ${i + 1}: "${queries[i]}" ---\nFound ${results.length} results:\n${formattedResults}`);
+        results.slice(0, 5).forEach((res, idx) => {
+            const key = `${res.realmId}:${res.chunk.filePath}:${res.chunk.startLine}`;
+            allResultsMap.set(key, res);
+            combinedOutput += `${idx + 1}. [${res.realmId}] [${res.chunk.filePath}:${res.chunk.startLine}-${res.chunk.endLine}] (score: ${res.score.toFixed(3)})\n   \`\`\`${res.chunk.language}\n${res.chunk.content.substring(0, 200)}...\n   \`\`\`\n`;
+        });
+        combinedOutput += '\n';
     }
 
-    const injector = new ContextInjector(projectPath);
-    const contextStr = injector.formatForOutput(await injector.inject(queries));
-
-    const rawOutput = `${contextStr}Multi-Search Complete. ${queries.length} queries, ${totalHits} total results.\n\n${allResults.join('\n\n')}`;
-    let finalOutput = rawOutput;
-
+    let finalOutput = combinedOutput;
     if (options.compress !== false && format !== 'json') {
         const optimizer = new TokenOptimizerService();
-        const payload = optimizer.optimize(rawOutput);
+        const payload = optimizer.optimize(combinedOutput);
         finalOutput = payload.toUnifiedString();
     }
 
     const logInfo = await saveSearchLog(projectPath, queries, finalOutput, { skipVisuals: options.noVisual });
     printResult(finalOutput, format);
     if (format !== 'json') {
-        if (logInfo.images && logInfo.images.length > 0) {
-            logInfo.images.forEach((img, idx) => {
-                const link = `file:///${img.replace(/\\/g, '/')}`;
-                printSuccess(`Results cached in (Page ${idx + 1}): ${link}`);
-            });
-        } else {
-            const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
-            printSuccess(`Results cached in: ${link}`);
-        }
+        const link = `file:///${logInfo.filePath.replace(/\\/g, '/')}`;
+        printSuccess(`Multi-search results cached in: ${link}`);
     }
 
-    const autoSaveCtx: AutoSaveContext = {
-        query: queries.join(' | '),
-        resultCount: totalHits,
-        topFiles: allTopFiles.slice(0, 8),
-        contentSummary: allSnippets.slice(0, 5).join('\n\n'),
-        logFilePath: logInfo.filePath
+    const allResArray = Array.from(allResultsMap.values());
+    const topFiles = allResArray.slice(0, 5).map(r =>
+        `[${r.realmId}] ${r.chunk.filePath}:${r.chunk.startLine}-${r.chunk.endLine}`
+    );
+    const memoCtx: AutoSaveContext = {
+        query: queries.join(', '),
+        resultCount: allResultsMap.size,
+        topFiles,
+        contentSummary: `Multi-query search across ${queries.length} queries returned ${allResultsMap.size} distinct code matches.`
     };
-
-    await promptForResearchFindings(projectPath, format, autoSaveCtx);
+    await promptForResearchFindings(projectPath, format, memoCtx);
 }
