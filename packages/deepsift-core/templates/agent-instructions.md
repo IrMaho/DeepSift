@@ -57,6 +57,10 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift gen-mock <Type>` | **AST MOCK DATA GENERATOR:** Generate realistic mock objects from TypeScript interfaces or Go/Python structs. |
 | `deepsift gen-adr [tag]` | **ADR ARTIFACT GENERATOR:** Convert active DRM research notes into formal Architecture Decision Records in `.agents/adr/`. |
 | `deepsift git-churn` | **GIT HOTSPOT HEATMAP:** Combine git commit frequency with code complexity to highlight high-churn refactoring hotspots. |
+| `deepsift impact "symbol"` | **BREAKING CHANGE IMPACT PREDICTOR:** Trace all callers and calculate risk level before modifying a symbol. |
+| `deepsift plan-ui "request"` | **VISUAL UI SPEC AUTO-PLANNER:** Generate pixel-perfect visual UI specification layout, spacing, tokens, and i18n rules. |
+| `deepsift zoom "folder"` | **SMART CLUSTER DRILL-DOWN:** Instantly zoom into an omitted folder cluster to analyze internal AST structure and signatures. |
+| `deepsift refactor guide "file"` | **GOD NODE DECOMPOSITION ROADMAP:** Generate step-by-step Clean Architecture (SoC) refactoring roadmap for monolithic files. |
 
 ---
 
@@ -181,6 +185,10 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
 | `deepsift gen-mock <Type>` | **AST MOCK DATA GENERATOR:** Generate realistic mock objects from TypeScript interfaces or Go/Python structs. |
 | `deepsift gen-adr [tag]` | **ADR ARTIFACT GENERATOR:** Convert active DRM research notes into formal Architecture Decision Records in `.agents/adr/`. |
 | `deepsift git-churn` | **GIT HOTSPOT HEATMAP:** Combine git commit frequency with code complexity to highlight high-churn refactoring hotspots. |
+| `deepsift impact "symbol"` | **BREAKING CHANGE IMPACT PREDICTOR:** Trace all callers and calculate risk level before modifying a symbol. |
+| `deepsift plan-ui "request"` | **VISUAL UI SPEC AUTO-PLANNER:** Generate pixel-perfect visual UI specification layout, spacing, tokens, and i18n rules. |
+| `deepsift zoom "folder"` | **SMART CLUSTER DRILL-DOWN:** Instantly zoom into an omitted folder cluster to analyze internal AST structure and signatures. |
+| `deepsift refactor guide "file"` | **GOD NODE DECOMPOSITION ROADMAP:** Generate step-by-step Clean Architecture (SoC) refactoring roadmap for monolithic files. |
 | `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Uses the same inline 🎯 **Purpose Summaries** and **AST logic signatures** as `feature`, combined with matching `dna` intelligence in one unified, heavily compressed markdown report. |
 | `deepsift deps "filename"` | Find imports/dependencies for a target. |
 | `deepsift feature "src/path"` | Get AST-based feature outline. **RELY ON THIS:** It automatically includes an inline 🎯 **Purpose Summary** and full **AST logic signatures** (classes/functions) right in the console. You do NOT need to open the file to know what it does! |

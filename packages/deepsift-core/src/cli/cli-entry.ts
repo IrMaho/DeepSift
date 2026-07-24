@@ -47,8 +47,10 @@ import { scopeCommand } from './commands/scope.js';
 import { genTestCommand } from './commands/gen-test.js';
 import { genAdrCommand } from './commands/gen-adr.js';
 import { launchWebDashboard } from '../ui/web-dashboard.js';
-import { GitChurnMiner } from '../analyzers/git-churn-miner.js';
+import { impactCommand } from './commands/impact.js';
+import { planUiCommand } from './commands/plan-ui.js';
 import { QAGenerator } from '../analyzers/qa-generator.js';
+import { GitChurnMiner } from '../analyzers/git-churn-miner.js';
 import { terminateWorkers } from '../core/embedder.js';
 
 import fs from 'fs';
@@ -699,7 +701,7 @@ async function main() {
                 } else {
                     console.log(`\n\x1b[36m🔥 DeepSift Git Churn & Refactoring Heatmap\x1b[0m`);
                     console.log(`=================================================`);
-                    churn.slice(0, 10).forEach((c, idx) => {
+                    churn.slice(0, 10).forEach((c: any, idx: number) => {
                         console.log(`${idx + 1}. \x1b[33m${c.file}\x1b[0m (Commits: ${c.commitCount}, Lines: ${c.lineCount}, Risk Score: \x1b[31m${c.riskScore}\x1b[0m)`);
                     });
                 }
@@ -708,6 +710,19 @@ async function main() {
 
             case 'ui':
                 launchWebDashboard(projectPath);
+                break;
+
+            case 'impact':
+                await impactCommand(projectPath, commandArgs[0], format);
+                break;
+
+            case 'plan-ui':
+                await planUiCommand(projectPath, commandArgs[0] || 'New UI Feature', format);
+                break;
+
+            case 'zoom':
+                if (commandArgs.length === 0) throw new Error('Specify a folder to zoom. Usage: deepsift zoom "src/features/auth"');
+                await analyzeCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
             case 'memo':

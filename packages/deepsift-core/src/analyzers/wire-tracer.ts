@@ -39,23 +39,24 @@ export class WireTracer {
                 const relativePath = path.relative(this.projectPath, file);
                 const lines = content.split('\n');
 
-                lines.forEach((line, index) => {
-                    const lineNum = index + 1;
+                // Multi-line sliding window parsing for nested payloads
+                for (let i = 0; i < lines.length; i++) {
+                    const lineNum = i + 1;
+                    const block = lines.slice(i, Math.min(i + 15, lines.length)).join('\n');
 
-                    // 1. postMessage senders: parent.postMessage({ type: 'create-rect' }, '*') or window.postMessage(...)
-                    const postMessageSendMatch = line.match(/(?:parent|window|target|figma\.ui)\.postMessage\(\s*\{[^}]*type:\s*['"`]([^'"`]+)['"`]/i) ||
-                                                 line.match(/postMessage\(\s*\{\s*pluginMessage:\s*\{\s*type:\s*['"`]([^'"`]+)['"`]/i);
-                    if (postMessageSendMatch) {
+                    // 1. Nested postMessage senders (e.g. parent.postMessage({ pluginMessage: { type: 'create-rect' } }, '*'))
+                    const postMessageMatch = block.match(/postMessage\s*\(\s*\{[\s\S]*?(?:type|action|event)\s*:\s*['"`]([^'"`]+)['"`]/i);
+                    if (postMessageMatch && lines[i].includes('postMessage')) {
                         senders.push({
-                            type: postMessageSendMatch[1],
+                            type: postMessageMatch[1],
                             senderFile: relativePath,
                             senderLine: lineNum,
                             channel: 'postMessage'
                         });
                     }
 
-                    // 2. Electron IPC senders: ipcRenderer.send('channel', data)
-                    const electronSendMatch = line.match(/ipcRenderer\.(?:send|invoke)\(['"`]([^'"`]+)['"`]/i);
+                    // 2. Electron IPC senders: ipcRenderer.send / invoke / sendSync
+                    const electronSendMatch = lines[i].match(/ipcRenderer\.(?:send|invoke|sendSync)\s*\(\s*['"`]([^'"`]+)['"`]/i);
                     if (electronSendMatch) {
                         senders.push({
                             type: electronSendMatch[1],
@@ -65,8 +66,8 @@ export class WireTracer {
                         });
                     }
 
-                    // 3. EventEmitter senders: emitter.emit('event', data)
-                    const emitMatch = line.match(/\.emit\(['"`]([^'"`]+)['"`]/i);
+                    // 3. EventEmitter senders: .emit('event', ...)
+                    const emitMatch = lines[i].match(/\.emit\s*\(\s*['"`]([^'"`]+)['"`]/i);
                     if (emitMatch) {
                         senders.push({
                             type: emitMatch[1],
@@ -76,9 +77,9 @@ export class WireTracer {
                         });
                     }
 
-                    // 4. Receivers: figma.ui.onmessage = (msg) => { if (msg.type === 'foo') } or addEventListener('message')
-                    const receiverMatch = line.match(/(?:msg|event|e)\.type\s*===\s*['"`]([^'"`]+)['"`]/i) ||
-                                          line.match(/case\s+['"`]([^'"`]+)['"`]:/i);
+                    // 4. Receivers: if (msg.type === 'x') or case 'x': or msg?.pluginMessage?.type === 'x'
+                    const receiverMatch = lines[i].match(/(?:msg|event|e|data)(?:\?\.[a-zA-Z0-9_$]+|\.[a-zA-Z0-9_$]+)*\.(?:type|action|event)\s*===\s*['"`]([^'"`]+)['"`]/i) ||
+                                          lines[i].match(/case\s+['"`]([^'"`]+)['"`]\s*:/i);
                     if (receiverMatch) {
                         receivers.push({
                             type: receiverMatch[1],
@@ -90,8 +91,8 @@ export class WireTracer {
                         });
                     }
 
-                    // 5. Electron IPC handlers: ipcMain.on('channel', ...) or handle('channel', ...)
-                    const electronOnMatch = line.match(/ipcMain\.(?:on|handle)\(['"`]([^'"`]+)['"`]/i);
+                    // 5. Electron IPC handlers: ipcMain.on / handle
+                    const electronOnMatch = lines[i].match(/ipcMain\.(?:on|handle)\s*\(\s*['"`]([^'"`]+)['"`]/i);
                     if (electronOnMatch) {
                         receivers.push({
                             type: electronOnMatch[1],
@@ -104,8 +105,8 @@ export class WireTracer {
                     }
 
                     // 6. EventEmitter on handlers: .on('event', ...)
-                    const eventOnMatch = line.match(/\.on\(['"`]([^'"`]+)['"`]/i);
-                    if (eventOnMatch && !line.includes('ipcMain')) {
+                    const eventOnMatch = lines[i].match(/\.on\s*\(\s*['"`]([^'"`]+)['"`]/i);
+                    if (eventOnMatch && !lines[i].includes('ipcMain')) {
                         receivers.push({
                             type: eventOnMatch[1],
                             senderFile: '',
@@ -115,9 +116,9 @@ export class WireTracer {
                             channel: 'event-listener'
                         });
                     }
-                });
+                }
             } catch (e) {
-                // Ignore read errors
+                // Skip read error
             }
         }
 
