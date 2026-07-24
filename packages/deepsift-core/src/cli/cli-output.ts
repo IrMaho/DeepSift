@@ -81,3 +81,18 @@ export function parseGlobalFlags(args: string[]): { format: OutputFormat; compre
 
     return { format, compress, cleanArgs, projectPathOverride, maxTokens, quietCache };
 }
+
+export function printHeader(title: string) {
+    console.log(`\n\x1b[36m========================================\x1b[0m`);
+    console.log(`\x1b[1m\x1b[36m${title}\x1b[0m`);
+    console.log(`\x1b[36m========================================\x1b[0m\n`);
+}
+
+export function printBox(content: string, title?: string) {
+    if (title) {
+        console.log(`\x1b[33m--- ${title} ---\x1b[0m`);
+    }
+    console.log(content);
+    console.log(`\x1b[33m------------------------------\x1b[0m\n`);
+}
+

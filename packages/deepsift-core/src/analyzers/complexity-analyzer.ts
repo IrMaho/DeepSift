@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { isBundledOrMinifiedFile } from './entropy-filter.js';
 
 export interface FunctionComplexity {
     name: string;
@@ -24,7 +25,7 @@ export class ComplexityAnalyzer {
         this.projectPath = projectPath;
     }
 
-    public analyze(targetPath?: string): ComplexityReport {
+    public analyze(targetPath?: string, includeBundled = false): ComplexityReport {
         const searchDir = targetPath ? path.resolve(this.projectPath, targetPath) : this.projectPath;
         const files = this.collectFiles(searchDir);
 
@@ -32,12 +33,14 @@ export class ComplexityAnalyzer {
 
         for (const file of files) {
             try {
-                const content = fs.readFileSync(file, 'utf-8');
                 const relFile = path.relative(this.projectPath, file);
+                const content = fs.readFileSync(file, 'utf-8');
+                if (!includeBundled && isBundledOrMinifiedFile(relFile, content)) {
+                    continue;
+                }
                 const fileFuncs = this.parseFunctionsInFile(content, relFile);
                 functions.push(...fileFuncs);
             } catch (e) {
-                // Skip read errors
             }
         }
 

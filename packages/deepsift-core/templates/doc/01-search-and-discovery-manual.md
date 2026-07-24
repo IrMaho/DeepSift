@@ -89,6 +89,35 @@ deepsift context "src/features/auth/NewLoginComponent.tsx"
 
 ---
 
+## 4. 📐 `deepsift expand-type <Symbol>` (AST Type Expansion)
+
+The `expand-type` command extracts the exact AST structural definition of an Interface, Type alias, Struct, Enum, or Class across the entire codebase without opening the file.
+
+**Usage:**
+```bash
+deepsift expand-type "ColorState"
+deepsift type "TypeDefinition" --json
+```
+
+### 💡 Agent Rules for Type Expansion:
+- **Instant AST Field Resolution:** Use when encountering function parameters like `function createPalette(state: PaletteState)`. Instead of searching and reading `palette-types.ts`, run `deepsift expand-type PaletteState` to get all fields, types, and optional markers in one shot.
+- **Zero Token Waste:** Provides field breakdown and exact source line references without swelling the context window with unrelated file contents.
+
+---
+
+## 5. 🚨 `deepsift resolve-error "<Stacktrace>"` (Stacktrace Line & AST Resolver)
+
+The `resolve-error` command parses browser, runtime, or build stacktraces, resolving each call site directly to exact source lines and code snippets in the active workspace.
+
+**Usage:**
+```bash
+deepsift resolve-error "TypeError: Cannot read properties of undefined at src/features/auth/auth-handler.ts:42:15"
+```
+
+### 💡 Agent Rules for Error Resolution:
+- **Empirical Diagnostics:** Never guess where an error occurred. Copy the stacktrace or log error into `resolve-error` to locate the target line and AST block automatically.
+
+
 ## 5. 🩺 `deepsift diag "problems.json"` (IDE Diagnostics)
 
 If a build fails (e.g., `npm run build` throws TS errors), use `diag`.

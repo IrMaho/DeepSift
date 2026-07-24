@@ -1,8 +1,8 @@
 import { ComplexityAnalyzer } from '../../analyzers/complexity-analyzer.js';
 
-export async function complexityCommand(projectPath: string, targetPath?: string, format = 'markdown') {
+export async function complexityCommand(projectPath: string, targetPath?: string, format = 'markdown', includeBundled = false) {
     const analyzer = new ComplexityAnalyzer(projectPath);
-    const report = analyzer.analyze(targetPath);
+    const report = analyzer.analyze(targetPath, includeBundled);
 
     if (format === 'json') {
         console.log(JSON.stringify(report, null, 2));

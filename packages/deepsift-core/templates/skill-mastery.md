@@ -29,19 +29,23 @@ deepsift search "modal component" --silent-disk --token-budget 800
 
 ### Practical Decision Tree
 ```
-Need single-step blueprint?      → deepsift overview "." (combines arch + god nodes + feature summary)
-Need IPC & event message map?    → deepsift wire-trace (postMessage, Electron IPC, WebSockets)
-Need complexity heatmap?         → deepsift complexity (Cognitive & Cyclomatic complexity)
-Need security & sandbox check?   → deepsift security-scan (sandbox leaks, hardcoded secrets, XSS/eval)
-Need lock focus on sub-folder?   → deepsift scope lock "src/features/auth"
-Need auto-test boilerplate?     → deepsift gen-test "src/services/user.ts"
-Need local visual dashboard?     → deepsift ui (Spawns dashboard on port 3333)
-Need to understand structure?   → deepsift read "file" --compress (fast, visual)
-Need to deep dive a folder?     → deepsift analyze "src/folder" (combines feature + DNA)
-Need to EDIT the file?          → deepsift read "file" (exact text)
-Can't read PNG cache?           → deepsift read "file" (bypass pxpipe)
-Need exact build errors?        → deepsift com "npm run build"
-Need git diff details?          → deepsift com "git diff"
+Need instant type / struct definition? → deepsift expand-type "SymbolName" (or deepsift type "Symbol")
+Need fast workspace dashboard?        → deepsift executive-summary (ultra-fast <50 line overview)
+Need to drill down omitted cluster?   → deepsift zoom "src/components" (direct cluster AST view)
+Need stacktrace error line resolver?  → deepsift resolve-error "<StacktraceString>"
+Need single-step blueprint?           → deepsift overview "." (combines arch + god nodes + feature summary)
+Need IPC & event message map?         → deepsift wire-trace (postMessage, Electron IPC, WebSockets with Enum resolution)
+Need complexity heatmap?              → deepsift complexity (Cognitive complexity auto-excluding compiled artifacts)
+Need security & sandbox check?        → deepsift security-scan (sandbox leaks, hardcoded secrets, XSS/eval)
+Need lock focus on sub-folder?        → deepsift scope lock "src/features/auth"
+Need auto-test boilerplate?          → deepsift gen-test "src/services/user.ts"
+Need local visual dashboard?          → deepsift ui (Spawns dashboard on port 3333)
+Need to understand structure?        → deepsift read "file" --compress (fast, visual)
+Need to deep dive a folder?          → deepsift analyze "src/folder" (combines feature + DNA)
+Need to EDIT the file?               → deepsift read "file" (exact text)
+Can't read PNG cache?                → deepsift read "file" (bypass pxpipe)
+Need exact build errors?             → deepsift com "npm run build"
+Need git diff details?               → deepsift com "git diff"
 ```
 
 ## 0.5 Hybrid Search Strategy

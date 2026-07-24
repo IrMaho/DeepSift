@@ -75,3 +75,63 @@ deepsift dna --show --section architecture
 - **WARNING:** Modifying God Nodes is extremely dangerous. Always use `deepsift heal` or write highly precise patches when dealing with them.
 - **Design Tokens:** DNA automatically mines UI design tokens (Colors, Typography, Spacing, Shadows). You MUST check DNA before writing CSS or UI code to ensure you are using the project's official tokens.
 - **Paginating Large DNA:** If the DNA is huge, use `--limit` and `--offset` to safely extract TOON trees without blowing up your context window.
+
+---
+
+## 5. 🚀 `deepsift executive-summary` (Instant Verbal Overview)
+
+Generate an ultra-fast <50 line overview dashboard for instant orientation at the beginning of any task.
+
+**Usage:**
+```bash
+deepsift executive-summary
+deepsift summary --json
+```
+
+### 💡 Agent Rules for Executive Summary:
+- **Instant Orientation:** Run `executive-summary` at the start of a conversation to see primary languages, God Node count, core hubs, total files, and test coverage status in under 3 seconds.
+
+---
+
+## 6. 🔍 `deepsift zoom "folder"` (Cluster AST Drill-Down)
+
+Drill down directly into omitted file clusters to analyze their AST signatures.
+
+**Usage:**
+```bash
+deepsift zoom "src/components"
+```
+
+### 💡 Agent Rules for Zoom:
+- When `overview` or `feature` lists an omitted cluster (`📁 src/components/ (15 files)`), run `deepsift zoom "src/components"` to analyze that folder's AST signatures without calculating offsets manually.
+
+---
+
+## 7. ⚡ `deepsift wire-trace [dir]` (Type-Aware IPC & Message Flow Tracer)
+
+Trace cross-environment messages (`postMessage`, Electron IPC, WebSockets, EventEmitters) with AST Enum & Type alias matching.
+
+**Usage:**
+```bash
+deepsift wire-trace
+deepsift wire-trace "src/plugin"
+```
+
+### 💡 Agent Rules for Wire Trace:
+- Automatically matches Enum member references (e.g. `MessageTypes.CREATE_RECT` ↔ `'create-rect'`), `switch (msg.type)` statements, and flags `⚠️ Orphan IPC Channel` for senders or receivers missing a pair.
+
+---
+
+## 8. 📊 `deepsift complexity [path]` (Cognitive Complexity Heatmap)
+
+Calculate Cyclomatic and Cognitive complexity per function across the codebase.
+
+**Usage:**
+```bash
+deepsift complexity
+deepsift complexity "src/services"
+```
+
+### 💡 Agent Rules for Complexity:
+- Automatically filters out compiled/minified build artifacts (`dist/`, `build/`, `code.js`, `min.js`) and transpiler boilerplates to highlight real source code complexity hotspots.
+

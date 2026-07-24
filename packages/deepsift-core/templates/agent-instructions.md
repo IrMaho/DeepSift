@@ -49,8 +49,12 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift diag "problems.json"`| **IDE DIAGNOSTICS:** Read IDE problem diagnostics with context snippets. |
 | `deepsift history / clean` | **SEARCH HISTORY:** View past search results or clean history logs. Options: `--keep N`, `--days D`. |
 | `deepsift ui` | **LOCAL WEB DASHBOARD:** Launch local web dashboard on port 3333 to visualize knowledge graph and DRM. |
-| `deepsift wire-trace [dir]` | **IPC & EVENT MESSAGE TRACER:** Map cross-environment message flows (`postMessage`, Electron IPC, WebSockets, EventEmitters). |
-| `deepsift complexity [path]` | **COGNITIVE COMPLEXITY HEATMAP:** Calculate Cyclomatic & Cognitive Complexity per function and highlight high-risk refactoring targets. |
+| `deepsift expand-type <Symbol>` | **AST TYPE DEFINITION EXPANDER:** Inspect interface, type alias, struct, enum, or class field structure instantly without opening files. Alias: `type`. |
+| `deepsift executive-summary` | **EXECUTIVE WORKSPACE DASHBOARD:** Ultra-fast <50 sline verbal overview dashboard for instant orientation at task entry. Alias: `summary`. |
+| `deepsift zoom "folder"` | **SMART CLUSTER DRILL-DOWN:** Instantly zoom into an omitted folder cluster to analyze internal AST structure and signatures. |
+| `deepsift resolve-error "trace"` | **STACKTRACE LINE RESOLVER:** Map runtime browser/build stacktraces directly to source lines and AST signatures. |
+| `deepsift wire-trace [dir]` | **TYPE-AWARE IPC & EVENT TRACER:** Map cross-environment message flows (`postMessage`, Electron IPC, WebSockets, EventEmitters) with AST Enum & Type alias matching. |
+| `deepsift complexity [path]` | **COGNITIVE COMPLEXITY HEATMAP:** Calculate Cyclomatic & Cognitive Complexity per function, automatically filtering minified/bundled build outputs (`dist/`, `code.js`). |
 | `deepsift security-scan` | **SECURITY & COMPLIANCE AUDITOR:** Scan for sandbox leaks (`window` in sandbox), hardcoded API keys/secrets, XSS/eval vulnerabilities, and dependency CVEs. |
 | `deepsift scope <lock\|unlock>` | **AGENT FOCUS LOCK:** Lock agent focus to a specific folder sub-tree (`deepsift scope lock "src/features/auth"`). |
 | `deepsift gen-test <file>` | **AUTOMATED TEST GENERATOR:** Auto-generate Vitest/Jest/PyTest/Go test specs for high-connectivity God Nodes. |

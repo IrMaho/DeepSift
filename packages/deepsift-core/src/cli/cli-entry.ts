@@ -46,6 +46,10 @@ import { securityScanCommand } from './commands/security-scan.js';
 import { scopeCommand } from './commands/scope.js';
 import { genTestCommand } from './commands/gen-test.js';
 import { genAdrCommand } from './commands/gen-adr.js';
+import { expandTypeCommand } from './commands/expand-type.js';
+import { executiveSummaryCommand } from './commands/executive-summary.js';
+import { zoomCommand } from './commands/zoom.js';
+import { resolveErrorCommand } from './commands/resolve-error.js';
 import { launchWebDashboard } from '../ui/web-dashboard.js';
 import { impactCommand } from './commands/impact.js';
 import { planUiCommand } from './commands/plan-ui.js';
@@ -691,6 +695,24 @@ async function main() {
 
             case 'gen-adr':
                 await genAdrCommand(projectPath, commandArgs[0]);
+                break;
+
+            case 'expand-type':
+            case 'type':
+                await expandTypeCommand(commandArgs[0], { json: format === 'json' });
+                break;
+
+            case 'executive-summary':
+            case 'summary':
+                await executiveSummaryCommand({ json: format === 'json' });
+                break;
+
+            case 'zoom':
+                await zoomCommand(commandArgs[0], { json: format === 'json' });
+                break;
+
+            case 'resolve-error':
+                await resolveErrorCommand(commandArgs.join(' '), { json: format === 'json' });
                 break;
 
             case 'git-churn': {
