@@ -87,6 +87,7 @@ export function saveDNA(projectPath: string, dna: ProjectDNA): void {
 }
 
 import { WalkResult } from '../core/unified-walker.js';
+import { mineFeatureRegistries } from '../analyzers/registry-miner.js';
 
 export async function generateDNA(
     projectPath: string,
@@ -97,6 +98,12 @@ export async function generateDNA(
 
     if (onProgress) onProgress('identity', 'Detecting project identity...');
     detectIdentity(projectPath, dna, walkResult);
+
+    if (onProgress) onProgress('registries', 'Mining UI feature tabs and domain registries...');
+    const featureTabs = mineFeatureRegistries(projectPath);
+    if (featureTabs.length > 0) {
+        dna.featureTabs = featureTabs;
+    }
 
     if (onProgress) onProgress('tokens', 'Mining design tokens...');
     integratePropertyMiner(projectPath, dna, walkResult, onProgress);

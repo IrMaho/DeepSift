@@ -121,10 +121,14 @@ export async function getFiles(rootDir: string): Promise<string[]> {
             const isDirectory = entry.isDirectory();
             const checkPath = isDirectory ? `${relativePath}/` : relativePath;
 
-            // Check if top-level directory is in includeDirs (if includeDirs is specified)
-            if (isDirectory && currentDir === rootDir && includeDirs.length > 0) {
+            // Check if directory matches includeDirs if includeDirs is specified
+            if (isDirectory && includeDirs.length > 0) {
                 const dirName = entry.name;
-                if (!includeDirs.includes(dirName) && !includeDirs.includes(relativePath)) {
+                const isParentOfIncluded = includeDirs.some(inc => inc.startsWith(relativePath + '/'));
+                const isChildOfIncluded = includeDirs.some(inc => relativePath === inc || relativePath.startsWith(inc + '/'));
+                const isTopLevelIncluded = currentDir === rootDir && (includeDirs.includes(dirName) || includeDirs.includes(relativePath));
+
+                if (!isParentOfIncluded && !isChildOfIncluded && !isTopLevelIncluded) {
                     continue;
                 }
             }

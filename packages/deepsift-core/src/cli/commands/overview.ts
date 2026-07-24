@@ -3,6 +3,7 @@ import fs from 'fs';
 import { getProjectArchitecture } from '../../utils/architecture.js';
 import { getFeatureOutline } from '../../utils/outline.js';
 import { loadDNA } from '../../intelligence/project-dna.js';
+import { mineFeatureRegistries } from '../../analyzers/registry-miner.js';
 import { saveSearchLog } from '../../utils/history.js';
 import { printResult, printSuccess, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
@@ -40,18 +41,33 @@ export async function overviewCommand(
             const isLockfile = lower.endsWith('-lock.json') || lower.endsWith('-lock.yaml') || lower.endsWith('.lock');
             return fs.existsSync(abs) && !isLockfile;
         });
-        const topGods = validCoreFiles.slice(0, 5);
-        if (topGods.length > 0) {
-            topGods.forEach((file: string) => {
-                lines.push(`- **📄 ${file.replace(/\\/g, '/')}**`);
+
+        if (validCoreFiles.length > 0) {
+            validCoreFiles.slice(0, 8).forEach((file: string) => {
+                lines.push(`- \`${file}\` ⭐`);
             });
         } else {
-            lines.push(`- No central God Nodes detected yet.`);
+            lines.push(`*(No god nodes found)*`);
         }
     } else {
         lines.push(`- Run \`deepsift dna\` to analyze graph topology & core files.`);
     }
     lines.push('');
+
+    // Discovered UI Tabs & Feature Capabilities
+    const featureTabs = (dna && dna.featureTabs && dna.featureTabs.length > 0) 
+        ? dna.featureTabs 
+        : mineFeatureRegistries(projectPath);
+
+    if (featureTabs && featureTabs.length > 0) {
+        lines.push(`## 🎨 Discovered UI Tabs & Core Feature Capabilities`);
+        featureTabs.forEach((tab, idx) => {
+            const capStr = tab.capabilities ? ` (${tab.capabilities.slice(0, 3).join(', ')})` : '';
+            const descStr = tab.description ? `: ${tab.description}` : '';
+            lines.push(`${idx + 1}. **${tab.title}** (\`${tab.id}\` via \`${tab.sourceFile}\`)${descStr}${capStr}`);
+        });
+        lines.push('');
+    }
 
     // 2. High-level Architecture Blueprint
     lines.push(`## 🌳 Architecture Blueprint`);

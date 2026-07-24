@@ -246,10 +246,20 @@ export interface SmartPlan {
     drmInsights?: string[];
 }
 
+export interface DiscoveredFeatureTab {
+    id: string;
+    title: string;
+    description?: string;
+    sourceFile: string;
+    capabilities?: string[];
+}
+
 export interface ProjectDNA {
     version: string;
     generatedAt: string;
     fingerprint: string;
+
+    featureTabs?: DiscoveredFeatureTab[];
 
     identity: {
         name: string;

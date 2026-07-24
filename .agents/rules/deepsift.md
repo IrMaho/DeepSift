@@ -208,8 +208,11 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
     - **ALWAYS** run `deepsift dna` first to generate DNA (takes ~30s).
     - **THEN** check DNA metadata: `deepsift dna --show --meta`.
     - **PAGINATE AND FILTER:** Use `--limit`, `--offset`, `--path-filter`, and `--query` to extract exact TOON trees.
-11. **🕸️ GRAPH TOPOLOGY & GOD NODES:** Always use `deepsift dna --show --section architecture` to map out spaghetti vs modular zones and identify dangerous Core Files (God Nodes) before heavy refactoring.
-12. **🤖 AUTONOMOUS ORCHESTRATION (USER PROXY):** When the user asks you to "index a framework", "configure the project", "add skills", or "learn a package", you MUST act autonomously to orchestrate DeepSift:
+11. **🧠 DEEP PROJECT & FEATURE TAB ANALYSIS DIRECTIVE:**
+    - When asked to "analyze the project" or "tell me what features/tabs I have" (پروژه‌ام رو تحلیل کن / چه فیچرهایی داره), NEVER return surface-level folder structure listings (e.g., `src/`, `web/`).
+    - You MUST run `deepsift overview`, inspect the `Discovered UI Tabs & Core Feature Capabilities` section, and search domain registries (`deepsift search "tabs routes navigation features"`) to present a deep, feature-rich analysis detailing all UI tabs, user flows, and core functional capabilities right from your VERY FIRST response!
+12. **🕸️ GRAPH TOPOLOGY & GOD NODES:** Always use `deepsift dna --show --section architecture` to map out spaghetti vs modular zones and identify dangerous Core Files (God Nodes) before heavy refactoring.
+13. **🤖 AUTONOMOUS ORCHESTRATION (USER PROXY):** When the user asks you to "index a framework", "configure the project", "add skills", or "learn a package", you MUST act autonomously to orchestrate DeepSift:
     - Download or create the requested skills/docs in a folder.
     - Generate any requested JSON registries (e.g., `inspection_summary.json` or `registry.json`) to categorize them for the user.
     - Use `deepsift realm add <name> --type <type> --source <path>` to register the new knowledge base.

@@ -95,6 +95,48 @@ function scanProjectDirectories(projectPath: string): DirChoiceItem[] {
     return choices;
 }
 
+function scanSubDirectories(projectPath: string, parentDirs: string[]): DirChoiceItem[] {
+    const choices: DirChoiceItem[] = [];
+
+    function scanDir(relDir: string, currentDepth: number) {
+        if (currentDepth > 3) return;
+        const absDir = path.join(projectPath, relDir);
+        let entries: fs.Dirent[] = [];
+        try {
+            entries = fs.readdirSync(absDir, { withFileTypes: true });
+        } catch { return; }
+
+        for (const entry of entries) {
+            if (!entry.isDirectory()) continue;
+            const name = entry.name;
+            if (name.startsWith('.') || SYSTEM_IGNORED_DIRS.has(name)) continue;
+
+            const subRelPath = `${relDir}/${name}`.replace(/\\/g, '/');
+            let fileCount = 0;
+            try {
+                fileCount = fs.readdirSync(path.join(absDir, name)).length;
+            } catch { /* skip */ }
+
+            const nameLower = name.toLowerCase();
+            const isAssetBuild = ASSET_OR_BUILD_NAMES.has(nameLower);
+
+            choices.push({
+                name: `📂 ${subRelPath}/ (${fileCount} items) ${isAssetBuild ? '[Extra/Asset]' : '[Subfolder]'}`,
+                value: subRelPath,
+                checked: !isAssetBuild
+            });
+
+            scanDir(subRelPath, currentDepth + 1);
+        }
+    }
+
+    for (const pDir of parentDirs) {
+        scanDir(pDir, 1);
+    }
+
+    return choices;
+}
+
 function scanProjectExtensions(projectPath: string): ExtChoiceItem[] {
     const extCounts = new Map<string, number>();
 
@@ -142,44 +184,103 @@ function scanProjectExtensions(projectPath: string): ExtChoiceItem[] {
     return choices;
 }
 
+function interactiveKeyboardCheckbox(
+    title: string,
+    items: { name: string; value: string; checked: boolean }[]
+): Promise<string[]> {
+    return new Promise(resolve => {
+        if (!process.stdin.isTTY || items.length === 0) {
+            resolve(items.filter(i => i.checked).map(i => i.value));
+            return;
+        }
+
+        let cursorIndex = 0;
+
+        function render() {
+            console.clear();
+            printInfo('✨ DeepSift Interactive Configuration Setup ✨\n');
+            printInfo(`📁 ${title}`);
+            console.log('\x1b[90m(Use ⬆️ / ⬇️ Arrow keys to navigate, Spacebar to toggle, Enter to confirm)\x1b[0m\n');
+
+            items.forEach((item, idx) => {
+                const isSelected = idx === cursorIndex;
+                const pointer = isSelected ? '\x1b[36m❯\x1b[0m' : ' ';
+                const check = item.checked ? '\x1b[32m☑\x1b[0m' : '\x1b[90m☐\x1b[0m';
+                const tag = item.checked ? '\x1b[32m[INCLUDED]\x1b[0m' : '\x1b[90m[EXCLUDED]\x1b[0m';
+
+                if (isSelected) {
+                    console.log(` ${pointer} ${check} \x1b[1m\x1b[36m${item.name}\x1b[0m ${tag}`);
+                } else {
+                    console.log(`   ${check} ${item.name} ${tag}`);
+                }
+            });
+
+            console.log('\n\x1b[36m[Space]\x1b[0m Toggle  •  \x1b[36m[Enter]\x1b[0m Confirm & Proceed');
+        }
+
+        render();
+
+        readline.emitKeypressEvents(process.stdin);
+        process.stdin.setRawMode(true);
+
+        function onKeypress(_str: string, key: readline.Key) {
+            if (!key) return;
+
+            if (key.name === 'up') {
+                cursorIndex = (cursorIndex - 1 + items.length) % items.length;
+                render();
+            } else if (key.name === 'down') {
+                cursorIndex = (cursorIndex + 1) % items.length;
+                render();
+            } else if (key.name === 'space') {
+                items[cursorIndex].checked = !items[cursorIndex].checked;
+                render();
+            } else if (key.name === 'return' || key.name === 'enter') {
+                cleanup();
+                console.clear();
+                const selected = items.filter(i => i.checked).map(i => i.value);
+                resolve(selected);
+            } else if (key.ctrl && key.name === 'c') {
+                cleanup();
+                process.exit(0);
+            }
+        }
+
+        function cleanup() {
+            process.stdin.removeListener('keypress', onKeypress);
+            if (process.stdin.isTTY) {
+                process.stdin.setRawMode(false);
+            }
+        }
+
+        process.stdin.on('keypress', onKeypress);
+    });
+}
+
 async function runInteractiveConfigWizard(projectPath: string) {
     if (!process.stdin.isTTY) {
         return;
     }
 
     try {
-        const { checkbox } = await import('@inquirer/prompts');
-
-        printInfo('\n✨ DeepSift Interactive Configuration Setup ✨');
-
-        // 1. Scan & Prompt Directories
+        // 1. Scan & Prompt Top-Level Directories
         const dirChoices = scanProjectDirectories(projectPath);
         let selectedDirs: string[] = [];
         if (dirChoices.length > 0) {
-            try {
-                selectedDirs = await checkbox({
-                    message: '📁 Select Top-Level Directories to Index:',
-                    choices: dirChoices,
-                    pageSize: 15
-                });
-            } catch {
-                selectedDirs = dirChoices.filter(c => c.checked).map(c => c.value);
-            }
+            selectedDirs = await interactiveKeyboardCheckbox(
+                'Select Top-Level Directories to Index:',
+                dirChoices
+            );
         }
 
         // 2. Scan & Prompt File Extensions
         const extChoices = scanProjectExtensions(projectPath);
         let selectedExts: string[] = [];
         if (extChoices.length > 0) {
-            try {
-                selectedExts = await checkbox({
-                    message: '📄 Select File Extensions to Index (Code formats auto-selected):',
-                    choices: extChoices,
-                    pageSize: 15
-                });
-            } catch {
-                selectedExts = extChoices.filter(c => c.checked).map(c => c.value);
-            }
+            selectedExts = await interactiveKeyboardCheckbox(
+                'Select File Extensions to Index (Code formats auto-selected):',
+                extChoices
+            );
         }
 
         // 3. Update & Save deepsift.config.json
@@ -198,7 +299,8 @@ async function runInteractiveConfigWizard(projectPath: string) {
         };
 
         saveConfig(projectPath, config);
-        printSuccess('Saved custom configuration → deepsift.config.json');
+        console.clear();
+        printSuccess('✅ Saved custom configuration → deepsift.config.json');
         if (selectedDirs.length > 0) printInfo(`Included Folders: ${selectedDirs.join(', ')}`);
         if (selectedExts.length > 0) printInfo(`Included Formats: ${selectedExts.join(', ')}`);
         printInfo('');
