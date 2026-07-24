@@ -13,9 +13,9 @@ import { TokenOptimizerService } from '../../utils/token-compressor.js';
  * Consolidates Architecture Tree + Feature Summary + Core Files/God Nodes into a single, high-efficiency output.
  */
 export async function overviewCommand(
-    projectPath: string, 
-    targetPath?: string, 
-    format: OutputFormat = 'markdown', 
+    projectPath: string,
+    targetPath?: string,
+    format: OutputFormat = 'markdown',
     compress: boolean = false,
     depth: number = 2
 ): Promise<void> {
@@ -55,8 +55,8 @@ export async function overviewCommand(
     lines.push('');
 
     // Discovered UI Tabs & Feature Capabilities
-    const featureTabs = (dna && dna.featureTabs && dna.featureTabs.length > 0) 
-        ? dna.featureTabs 
+    const featureTabs = (dna && dna.featureTabs && dna.featureTabs.length > 0)
+        ? dna.featureTabs
         : mineFeatureRegistries(projectPath);
 
     if (featureTabs && featureTabs.length > 0) {

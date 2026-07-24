@@ -49,6 +49,14 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift diag "problems.json"`| **IDE DIAGNOSTICS:** Read IDE problem diagnostics with context snippets. |
 | `deepsift history / clean` | **SEARCH HISTORY:** View past search results or clean history logs. Options: `--keep N`, `--days D`. |
 | `deepsift ui` | **LOCAL WEB DASHBOARD:** Launch local web dashboard on port 3333 to visualize knowledge graph and DRM. |
+| `deepsift wire-trace [dir]` | **IPC & EVENT MESSAGE TRACER:** Map cross-environment message flows (`postMessage`, Electron IPC, WebSockets, EventEmitters). |
+| `deepsift complexity [path]` | **COGNITIVE COMPLEXITY HEATMAP:** Calculate Cyclomatic & Cognitive Complexity per function and highlight high-risk refactoring targets. |
+| `deepsift security-scan` | **SECURITY & COMPLIANCE AUDITOR:** Scan for sandbox leaks (`window` in sandbox), hardcoded API keys/secrets, XSS/eval vulnerabilities, and dependency CVEs. |
+| `deepsift scope <lock\|unlock>` | **AGENT FOCUS LOCK:** Lock agent focus to a specific folder sub-tree (`deepsift scope lock "src/features/auth"`). |
+| `deepsift gen-test <file>` | **AUTOMATED TEST GENERATOR:** Auto-generate Vitest/Jest/PyTest/Go test specs for high-connectivity God Nodes. |
+| `deepsift gen-mock <Type>` | **AST MOCK DATA GENERATOR:** Generate realistic mock objects from TypeScript interfaces or Go/Python structs. |
+| `deepsift gen-adr [tag]` | **ADR ARTIFACT GENERATOR:** Convert active DRM research notes into formal Architecture Decision Records in `.agents/adr/`. |
+| `deepsift git-churn` | **GIT HOTSPOT HEATMAP:** Combine git commit frequency with code complexity to highlight high-churn refactoring hotspots. |
 
 ---
 
@@ -165,6 +173,14 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
 | `deepsift diag "problems.json"`| **IDE DIAGNOSTICS:** Read IDE problem diagnostics with context snippets. |
 | `deepsift history / clean` | **SEARCH HISTORY:** View past search results or clean history logs. Options: `--keep N`, `--days D`. |
 | `deepsift ui` | **LOCAL WEB DASHBOARD:** Launch local web dashboard on port 3333 to visualize knowledge graph and DRM. |
+| `deepsift wire-trace [dir]` | **IPC & EVENT MESSAGE TRACER:** Map cross-environment message flows (`postMessage`, Electron IPC, WebSockets, EventEmitters). |
+| `deepsift complexity [path]` | **COGNITIVE COMPLEXITY HEATMAP:** Calculate Cyclomatic & Cognitive Complexity per function and highlight high-risk refactoring targets. |
+| `deepsift security-scan` | **SECURITY & COMPLIANCE AUDITOR:** Scan for sandbox leaks (`window` in sandbox), hardcoded API keys/secrets, XSS/eval vulnerabilities, and dependency CVEs. |
+| `deepsift scope <lock\|unlock>` | **AGENT FOCUS LOCK:** Lock agent focus to a specific folder sub-tree (`deepsift scope lock "src/features/auth"`). |
+| `deepsift gen-test <file>` | **AUTOMATED TEST GENERATOR:** Auto-generate Vitest/Jest/PyTest/Go test specs for high-connectivity God Nodes. |
+| `deepsift gen-mock <Type>` | **AST MOCK DATA GENERATOR:** Generate realistic mock objects from TypeScript interfaces or Go/Python structs. |
+| `deepsift gen-adr [tag]` | **ADR ARTIFACT GENERATOR:** Convert active DRM research notes into formal Architecture Decision Records in `.agents/adr/`. |
+| `deepsift git-churn` | **GIT HOTSPOT HEATMAP:** Combine git commit frequency with code complexity to highlight high-churn refactoring hotspots. |
 | `deepsift analyze "path"` | **SUPER-COMMAND FOR DEEP DIVES:** Uses the same inline 🎯 **Purpose Summaries** and **AST logic signatures** as `feature`, combined with matching `dna` intelligence in one unified, heavily compressed markdown report. |
 | `deepsift deps "filename"` | Find imports/dependencies for a target. |
 | `deepsift feature "src/path"` | Get AST-based feature outline. **RELY ON THIS:** It automatically includes an inline 🎯 **Purpose Summary** and full **AST logic signatures** (classes/functions) right in the console. You do NOT need to open the file to know what it does! |

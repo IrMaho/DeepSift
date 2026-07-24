@@ -40,6 +40,15 @@ import { deadCodeCommand } from './commands/dead-code.js';
 import { autoHealCommand } from './commands/auto-heal.js';
 import { cfgCommand } from './commands/cfg.js';
 import { checkLayersCommand } from './commands/check-layers.js';
+import { wireTraceCommand } from './commands/wire-trace.js';
+import { complexityCommand } from './commands/complexity.js';
+import { securityScanCommand } from './commands/security-scan.js';
+import { scopeCommand } from './commands/scope.js';
+import { genTestCommand } from './commands/gen-test.js';
+import { genAdrCommand } from './commands/gen-adr.js';
+import { launchWebDashboard } from '../ui/web-dashboard.js';
+import { GitChurnMiner } from '../analyzers/git-churn-miner.js';
+import { QAGenerator } from '../analyzers/qa-generator.js';
 import { terminateWorkers } from '../core/embedder.js';
 
 import fs from 'fs';
@@ -645,6 +654,60 @@ async function main() {
             case 'dead-code':
             case 'find-dead-code':
                 await deadCodeCommand(projectPath, format);
+                break;
+
+            case 'wire-trace':
+                await wireTraceCommand(projectPath, commandArgs[0], format);
+                break;
+
+            case 'complexity':
+                await complexityCommand(projectPath, commandArgs[0], format);
+                break;
+
+            case 'security-scan':
+            case 'audit-sandbox':
+            case 'audit-secrets':
+            case 'audit-deps':
+            case 'i18n-extract':
+                await securityScanCommand(projectPath, format);
+                break;
+
+            case 'scope':
+                scopeCommand(projectPath, commandArgs[0], commandArgs[1]);
+                break;
+
+            case 'gen-test':
+                await genTestCommand(projectPath, commandArgs[0]);
+                break;
+
+            case 'gen-mock': {
+                if (commandArgs.length === 0) throw new Error('Specify a type name. Usage: deepsift gen-mock "ColorState"');
+                const qa = new QAGenerator(projectPath);
+                console.log(qa.generateMockDataType(commandArgs[0]));
+                break;
+            }
+
+            case 'gen-adr':
+                await genAdrCommand(projectPath, commandArgs[0]);
+                break;
+
+            case 'git-churn': {
+                const miner = new GitChurnMiner(projectPath);
+                const churn = miner.analyze();
+                if (format === 'json') {
+                    console.log(JSON.stringify(churn, null, 2));
+                } else {
+                    console.log(`\n\x1b[36m🔥 DeepSift Git Churn & Refactoring Heatmap\x1b[0m`);
+                    console.log(`=================================================`);
+                    churn.slice(0, 10).forEach((c, idx) => {
+                        console.log(`${idx + 1}. \x1b[33m${c.file}\x1b[0m (Commits: ${c.commitCount}, Lines: ${c.lineCount}, Risk Score: \x1b[31m${c.riskScore}\x1b[0m)`);
+                    });
+                }
+                break;
+            }
+
+            case 'ui':
+                launchWebDashboard(projectPath);
                 break;
 
             case 'memo':
