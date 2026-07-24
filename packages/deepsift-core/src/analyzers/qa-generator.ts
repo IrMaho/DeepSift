@@ -1,18 +1,49 @@
+/**
+ * @file qa-generator.ts
+ * @description QA Test Boilerplate & Mock Data Generator Engine.
+ * Generates unit test stubs (Vitest, PyTest, GoTest), mock data definitions, and test-to-production line ratios.
+ * 
+ * @module analyzers/qa-generator
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
+
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Options for unit test boilerplate generation.
+ */
 export interface TestGeneratorOptions {
     targetFile: string;
     framework?: 'vitest' | 'jest' | 'pytest' | 'gotest';
 }
 
+/**
+ * Engine that generates test stubs, mock data types, and calculates test production line ratios.
+ */
 export class QAGenerator {
     private projectPath: string;
 
+    /**
+     * Initializes the QAGenerator.
+     * @param projectPath Absolute path to workspace root.
+     */
     constructor(projectPath: string) {
         this.projectPath = projectPath;
     }
 
+    /**
+     * Generates a boilerplate unit test file matching the programming language of targetFile.
+     * 
+     * @param targetFile Target source file path.
+     * @returns Object containing generated test file path and string content.
+     * @example
+     * ```ts
+     * const qa = new QAGenerator(process.cwd());
+     * const stub = qa.generateBoilerplateTest('src/utils/config.ts');
+     * ```
+     */
     public generateBoilerplateTest(targetFile: string): { testFilePath: string; content: string } {
         const fullPath = path.resolve(this.projectPath, targetFile);
         const relPath = path.relative(this.projectPath, fullPath);
@@ -34,7 +65,6 @@ describe('${baseName} Unit Tests', () => {
     });
 
     it('should execute basic functionality without throwing', () => {
-        // Auto-generated test stub by DeepSift QAGenerator
         expect(true).toBe(true);
     });
 });
@@ -71,8 +101,13 @@ Test${baseName.charAt(0).toUpperCase() + baseName.slice(1)} (t *testing.T) {
         return { testFilePath, content };
     }
 
+    /**
+     * Scans codebase for an interface/type definition and generates mock object code.
+     * 
+     * @param typeName Name of the interface or type alias.
+     * @returns Mock object TypeScript string definition.
+     */
     public generateMockDataType(typeName: string): string {
-        // Scans project for type/interface definition and builds mock object
         const files = this.collectSourceFiles(this.projectPath);
         let fields: { name: string; type: string }[] = [];
 
@@ -93,7 +128,7 @@ Test${baseName.charAt(0).toUpperCase() + baseName.slice(1)} (t *testing.T) {
                     break;
                 }
             } catch (e) {
-                // Ignore read error
+                // Safe ignore
             }
         }
 
@@ -114,6 +149,9 @@ Test${baseName.charAt(0).toUpperCase() + baseName.slice(1)} (t *testing.T) {
         return `export const mock${typeName} = ${JSON.stringify(mockObj, null, 2)};`;
     }
 
+    /**
+     * Calculates Test Production Ratio (TPR) comparing test line count to production code lines.
+     */
     public calculateTPR(): { prodLines: number; testLines: number; ratio: string } {
         const files = this.collectSourceFiles(this.projectPath);
         let prodLines = 0;
@@ -129,7 +167,7 @@ Test${baseName.charAt(0).toUpperCase() + baseName.slice(1)} (t *testing.T) {
                     prodLines += lineCount;
                 }
             } catch (e) {
-                // Ignore
+                // Safe ignore
             }
         }
 
@@ -137,6 +175,9 @@ Test${baseName.charAt(0).toUpperCase() + baseName.slice(1)} (t *testing.T) {
         return { prodLines, testLines, ratio };
     }
 
+    /**
+     * Collects all code source files.
+     */
     private collectSourceFiles(dir: string): string[] {
         const files: string[] = [];
         if (!fs.existsSync(dir)) return files;

@@ -11,7 +11,7 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | Command | Description |
 |---|---|
 | `deepsift overview (ov)` | **CORE SEARCH & DISCOVERY:** SUPER-COMMAND: Single-step Project Blueprint combining Architecture Tree + Central God Nodes + Feature Summaries. |
-| `deepsift search` | **CORE SEARCH & DISCOVERY:** Hybrid Semantic & BM25 search enhanced with Graphify PageRank and God Node boosting. |
+| `deepsift search (s)` | **CORE SEARCH & DISCOVERY:** Hybrid Semantic & BM25 search enhanced with Graphify PageRank and God Node boosting. |
 | `deepsift read` | **CORE SEARCH & DISCOVERY:** Mandatory file reader outputting exact text or compressed DEC_v2 visual tokens. |
 | `deepsift feature (f)` | **CORE SEARCH & DISCOVERY:** AST-based feature outline detailing class definitions, exported functions, and dependencies. |
 | `deepsift analyze (an)` | **ARCHITECTURE & INTELLIGENCE:** SUPER-COMMAND: Deep dive combining Feature AST Outline and DNA topology for a specific folder/file. |

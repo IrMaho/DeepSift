@@ -1,7 +1,20 @@
+/**
+ * @file complexity-analyzer.ts
+ * @description Cyclomatic & Cognitive Complexity Heatmap Analyzer Engine.
+ * Calculates branch complexity scores for functions, methods, and modules to flag high-risk refactoring targets.
+ * 
+ * @module analyzers/complexity-analyzer
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
+
 import fs from 'fs';
 import path from 'path';
 import { isBundledOrMinifiedFile } from './entropy-filter.js';
 
+/**
+ * Calculated complexity metrics for a single function or method.
+ */
 export interface FunctionComplexity {
     name: string;
     file: string;
@@ -11,6 +24,9 @@ export interface FunctionComplexity {
     status: 'low' | 'moderate' | 'high' | 'critical';
 }
 
+/**
+ * Summary report containing complexity metrics across target codebase directory.
+ */
 export interface ComplexityReport {
     functions: FunctionComplexity[];
     totalFunctions: number;
@@ -18,13 +34,32 @@ export interface ComplexityReport {
     averageComplexity: number;
 }
 
+/**
+ * Analyzer that scans source code and calculates Cyclomatic and Cognitive complexity scores.
+ */
 export class ComplexityAnalyzer {
     private projectPath: string;
 
+    /**
+     * Initializes the ComplexityAnalyzer.
+     * @param projectPath Absolute path to workspace root.
+     */
     constructor(projectPath: string) {
         this.projectPath = projectPath;
     }
 
+    /**
+     * Scans source files and generates a complexity report highlighting refactoring hotspots.
+     * 
+     * @param targetPath Target folder or file path to analyze.
+     * @param includeBundled Whether to include minified or bundled files.
+     * @returns ComplexityReport containing ranked function complexity metrics.
+     * @example
+     * ```ts
+     * const analyzer = new ComplexityAnalyzer(process.cwd());
+     * const report = analyzer.analyze('src/core');
+     * ```
+     */
     public analyze(targetPath?: string, includeBundled = false): ComplexityReport {
         const searchDir = targetPath ? path.resolve(this.projectPath, targetPath) : this.projectPath;
         const files = this.collectFiles(searchDir);
@@ -41,6 +76,7 @@ export class ComplexityAnalyzer {
                 const fileFuncs = this.parseFunctionsInFile(content, relFile);
                 functions.push(...fileFuncs);
             } catch (e) {
+                // Safe ignore
             }
         }
 
@@ -58,6 +94,9 @@ export class ComplexityAnalyzer {
         };
     }
 
+    /**
+     * Parses function declarations and branch complexity in a single file content.
+     */
     private parseFunctionsInFile(content: string, relFile: string): FunctionComplexity[] {
         const results: FunctionComplexity[] = [];
         const lines = content.split('\n');
@@ -68,7 +107,6 @@ export class ComplexityAnalyzer {
         lines.forEach((line, idx) => {
             const lineNum = idx + 1;
 
-            // Detect function declaration
             const funcMatch = line.match(/(?:function\s+([a-zA-Z0-9_$]+)|(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(?:async\s*)?\(|([a-zA-Z0-9_$]+)\s*\([^)]*\)\s*\{)/);
             if (funcMatch && !currentFunc) {
                 const name = funcMatch[1] || funcMatch[2] || funcMatch[3] || 'anonymous';
@@ -85,7 +123,6 @@ export class ComplexityAnalyzer {
             if (currentFunc) {
                 braceCount += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length;
 
-                // Branching keywords that increase complexity
                 const branches = line.match(/\b(if|else\s+if|for|while|switch|case|catch|&&|\|\||\?)\b/g);
                 if (branches) {
                     currentFunc.cyclomatic += branches.length;
@@ -107,7 +144,6 @@ export class ComplexityAnalyzer {
                         status
                     });
                     currentFunc = null;
-                    braceCount = 0;
                 }
             }
         });
@@ -115,6 +151,9 @@ export class ComplexityAnalyzer {
         return results;
     }
 
+    /**
+     * Recursively collects code source files.
+     */
     private collectFiles(dir: string): string[] {
         const files: string[] = [];
         if (!fs.existsSync(dir)) return files;
@@ -126,7 +165,7 @@ export class ComplexityAnalyzer {
                 if (!['node_modules', '.git', '.deepsift', 'dist', 'build'].includes(entry.name)) {
                     files.push(...this.collectFiles(full));
                 }
-            } else if (/\.(ts|js|tsx|jsx|py|go|dart|rs|java|cpp|c)$/i.test(entry.name)) {
+            } else if (/\.(ts|js|tsx|jsx|py|go|dart|rs|java|c|cpp)$/i.test(entry.name)) {
                 files.push(full);
             }
         }

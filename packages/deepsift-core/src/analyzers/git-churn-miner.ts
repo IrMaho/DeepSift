@@ -1,7 +1,20 @@
+/**
+ * @file git-churn-miner.ts
+ * @description Git Hotspot Heatmap & Churn Risk Miner Engine.
+ * Combines commit change frequency with file size complexity to calculate refactoring risk scores.
+ * 
+ * @module analyzers/git-churn-miner
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
+
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Single git churn hotspot item with commit counts and calculated risk score.
+ */
 export interface GitChurnItem {
     file: string;
     commitCount: number;
@@ -9,18 +22,34 @@ export interface GitChurnItem {
     riskScore: number;
 }
 
+/**
+ * Miner that extracts commit frequency and churn hotspots from Git repository history.
+ */
 export class GitChurnMiner {
     private projectPath: string;
 
+    /**
+     * Initializes the GitChurnMiner.
+     * @param projectPath Absolute path to workspace root.
+     */
     constructor(projectPath: string) {
         this.projectPath = projectPath;
     }
 
+    /**
+     * Analyzes Git commit history and calculates risk score heatmaps for source files.
+     * 
+     * @returns Array of ranked GitChurnItem hotspot records.
+     * @example
+     * ```ts
+     * const miner = new GitChurnMiner(process.cwd());
+     * const hotspots = miner.analyze();
+     * ```
+     */
     public analyze(): GitChurnItem[] {
         const results: GitChurnItem[] = [];
 
         try {
-            // Get git log shortstat summary per file
             const output = execSync('git log --name-only --format=""', {
                 cwd: this.projectPath,
                 encoding: 'utf-8',
@@ -41,7 +70,6 @@ export class GitChurnMiner {
                 try {
                     const content = fs.readFileSync(path.join(this.projectPath, file), 'utf-8');
                     const lineCount = content.split('\n').length;
-                    // Risk Score = commit count * sqrt(line count)
                     const riskScore = parseFloat((commitCount * Math.sqrt(lineCount)).toFixed(1));
 
                     results.push({
@@ -51,11 +79,11 @@ export class GitChurnMiner {
                         riskScore
                     });
                 } catch (e) {
-                    // Ignore
+                    // Safe ignore
                 }
             });
         } catch (e) {
-            // Git command not available or not a git repository
+            // Safe ignore if git is absent
         }
 
         results.sort((a, b) => b.riskScore - a.riskScore);

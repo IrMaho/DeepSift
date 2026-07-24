@@ -1,14 +1,34 @@
+/**
+ * @file dead-code.ts
+ * @description Dead Code Elimination & Unreferenced Export Audit Command.
+ * Scans exported symbols, classes, functions, and interfaces to identify unused or dead code.
+ * 
+ * @module cli/commands/dead-code
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
+
 import path from 'path';
 import fs from 'fs';
 import { printResult, OutputFormat } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';
 import { normalizePath } from '../../utils/outline.js';
 
+/**
+ * Executes the `deepsift dead-code` command to identify unreferenced export symbols.
+ * 
+ * @param projectPath Absolute path to workspace root.
+ * @param format Output format ('markdown' or 'json').
+ * @example
+ * ```ts
+ * await deadCodeCommand(process.cwd(), 'markdown');
+ * ```
+ */
 export async function deadCodeCommand(projectPath: string, format: OutputFormat = 'markdown'): Promise<void> {
     const lines: string[] = [];
     lines.push(`# 🧹 Dead Code Elimination Audit\n`);
 
-    const exportsMap: Map<string, string> = new Map(); // exportName -> filePath
+    const exportsMap: Map<string, string> = new Map();
     const importsSet: Set<string> = new Set();
 
     function scan(dir: string) {
@@ -26,7 +46,6 @@ export async function deadCodeCommand(projectPath: string, format: OutputFormat 
                         const content = fs.readFileSync(fullPath, 'utf8');
                         const rel = normalizePath(path.relative(projectPath, fullPath));
                         
-                        // Collect exports
                         const exportMatches = content.matchAll(/\bexport\s+(?:const|function|class|type|interface)\s+([\w_]+)/g);
                         for (const match of exportMatches) {
                             if (match[1] && !['default', 'main'].includes(match[1])) {
@@ -34,7 +53,6 @@ export async function deadCodeCommand(projectPath: string, format: OutputFormat 
                             }
                         }
 
-                        // Collect imports & references
                         const words = content.match(/\b[A-Za-z_]\w*\b/g) || [];
                         words.forEach(w => importsSet.add(w));
                     } catch {}
@@ -48,7 +66,6 @@ export async function deadCodeCommand(projectPath: string, format: OutputFormat 
     const unusedSymbols: Array<{ symbol: string, file: string }> = [];
 
     exportsMap.forEach((filePath, symbol) => {
-        // If symbol appears only once (its own export definition)
         const usages = Array.from(importsSet).filter(w => w === symbol).length;
         if (usages <= 1) {
             unusedSymbols.push({ symbol, file: filePath });

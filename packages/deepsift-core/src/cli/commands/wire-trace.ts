@@ -1,7 +1,28 @@
-import { WireTracer } from '../../analyzers/wire-tracer.js';
-import { printInfo, printSuccess } from '../cli-output.js';
+/**
+ * @file wire-trace.ts
+ * @description Cross-Environment IPC & Event Wire Tracer Command.
+ * Maps postMessage, EventEmitters, WebSocket, and IPC message channels between environments.
+ * 
+ * @module cli/commands/wire-trace
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
 
-export async function wireTraceCommand(projectPath: string, targetDir?: string, format = 'markdown') {
+import { WireTracer } from '../../analyzers/wire-tracer.js';
+import { printInfo } from '../cli-output.js';
+
+/**
+ * Executes the `deepsift wire-trace` command to map message senders and listeners.
+ * 
+ * @param projectPath Absolute path to workspace root.
+ * @param targetDir Optional target directory to analyze.
+ * @param format Output format ('markdown' or 'json').
+ * @example
+ * ```ts
+ * await wireTraceCommand(process.cwd(), 'src/figma-core', 'markdown');
+ * ```
+ */
+export async function wireTraceCommand(projectPath: string, targetDir?: string, format = 'markdown'): Promise<void> {
     const tracer = new WireTracer(projectPath);
     const result = tracer.analyze(targetDir);
 

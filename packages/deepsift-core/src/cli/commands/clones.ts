@@ -1,3 +1,13 @@
+/**
+ * @file clones.ts
+ * @description AST Code Clone Detector & DRY Compliance Command.
+ * Scans files for structural code duplicates, copy-paste clusters, and block-level redundancies.
+ * 
+ * @module cli/commands/clones
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
+
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
@@ -5,12 +15,18 @@ import { printResult, OutputFormat } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';
 import { normalizePath } from '../../utils/outline.js';
 
+/**
+ * Raw hash hit for duplicate code chunk.
+ */
 interface RawHit {
     file: string;
     line: number;
     snippet: string;
 }
 
+/**
+ * Merged duplicate block cluster spanning across two files.
+ */
 interface MergedBlock {
     fileA: string;
     startA: number;
@@ -29,6 +45,18 @@ const IGNORED_DIRS = new Set([
     'venv', '.venv', 'site-packages', 'assets'
 ]);
 
+/**
+ * Executes the `deepsift clones` command to audit code duplication and DRY compliance.
+ * 
+ * @param projectPath Absolute path to workspace root.
+ * @param format Output format ('markdown' or 'json').
+ * @param minLines Minimum contiguous lines to qualify as a clone (default: 6).
+ * @param limit Max clone clusters to display (default: 20).
+ * @example
+ * ```ts
+ * await clonesCommand(process.cwd(), 'markdown', 6, 20);
+ * ```
+ */
 export async function clonesCommand(projectPath: string, format: OutputFormat = 'markdown', minLines: number = 6, limit: number = 20): Promise<void> {
     const lines: string[] = [];
     lines.push(`# 👯 Code Clone Detection (DRY Compliance)\n`);
@@ -52,11 +80,11 @@ export async function clonesCommand(projectPath: string, format: OutputFormat = 
                 if (['.ts', '.tsx', '.js', '.jsx', '.dart', '.py', '.java', '.go', '.vue', '.svelte'].includes(ext)) {
                     try {
                         const stats = fs.statSync(fullPath);
-                        if (stats.size > 150_000) continue; // Skip huge generated files
+                        if (stats.size > 150_000) continue;
 
                         const content = fs.readFileSync(fullPath, 'utf8');
                         const fileLines = content.split('\n');
-                        if (fileLines.length > 2500) continue; // Skip massive files
+                        if (fileLines.length > 2500) continue;
 
                         for (let i = 0; i <= fileLines.length - minLines; i += 2) {
                             const window = fileLines.slice(i, i + minLines)
@@ -82,12 +110,10 @@ export async function clonesCommand(projectPath: string, format: OutputFormat = 
 
     scanDir(projectPath);
 
-    // Block-Level Aggregation across matching pairs with memory safety limits
     const mergedBlocks: MergedBlock[] = [];
     const pairMap: Map<string, Array<{ lineA: number; lineB: number; snippet: string }>> = new Map();
 
     for (const hits of chunkHashes.values()) {
-        // Skip boilerplate chunks occurring in too many files (>20) to prevent OOM
         if (hits.length < 2 || hits.length > 20) continue;
 
         for (let i = 0; i < hits.length; i++) {
@@ -106,7 +132,6 @@ export async function clonesCommand(projectPath: string, format: OutputFormat = 
         }
     }
 
-    // Clear chunkHashes to free memory
     chunkHashes.clear();
 
     for (const [pairKey, matches] of pairMap.entries()) {
@@ -128,7 +153,6 @@ export async function clonesCommand(projectPath: string, format: OutputFormat = 
                     snippet: m.snippet
                 };
             } else {
-                // If this match continues the current block in both files
                 if (m.lineA <= currentBlock.endA + 3 && Math.abs((m.lineB - currentBlock.startB) - (m.lineA - currentBlock.startA)) <= 3) {
                     currentBlock.endA = Math.max(currentBlock.endA, m.lineA + minLines - 1);
                     currentBlock.endB = Math.max(currentBlock.endB, m.lineB + minLines - 1);
@@ -153,13 +177,9 @@ export async function clonesCommand(projectPath: string, format: OutputFormat = 
         }
     }
 
-    // Clear pairMap to free memory
     pairMap.clear();
-
-    // Sort by largest duplicated blocks
     mergedBlocks.sort((b1, b2) => b2.lines - b1.lines);
 
-    // Deduplicate sub-blocks
     const finalBlocks: MergedBlock[] = [];
     for (const b of mergedBlocks) {
         const isSubBlock = finalBlocks.some(existing => 

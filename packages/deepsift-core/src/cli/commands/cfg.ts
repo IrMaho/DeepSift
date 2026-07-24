@@ -1,20 +1,48 @@
+/**
+ * @file cfg.ts
+ * @description Control Flow Graph (CFG) Generator Command.
+ * Extracts function boundaries, decision branches, switch statements, and try/catch blocks
+ * to generate Mermaid and ASCII control flow diagrams.
+ * 
+ * @module cli/commands/cfg
+ * @category Architecture & Intelligence
+ * @since 1.0.3
+ */
+
 import path from 'path';
 import fs from 'fs';
 import { printResult, OutputFormat } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';
 
-interface CFGNode {
+/**
+ * Node within a Control Flow Graph diagram.
+ */
+export interface CFGNode {
     id: string;
     label: string;
     type: 'start' | 'decision' | 'action' | 'error' | 'end';
 }
 
-interface CFGEdge {
+/**
+ * Edge connection between nodes in a Control Flow Graph.
+ */
+export interface CFGEdge {
     from: string;
     to: string;
     label?: string;
 }
 
+/**
+ * Executes the `deepsift cfg` command to analyze a function's control flow and print a Mermaid branch diagram.
+ * 
+ * @param projectPath Absolute path to workspace root.
+ * @param targetSpec Target specification in format 'file.ts:functionName'.
+ * @param format Output format ('markdown' or 'json').
+ * @example
+ * ```ts
+ * await cfgCommand(process.cwd(), 'src/utils/config.ts:loadConfig', 'markdown');
+ * ```
+ */
 export async function cfgCommand(projectPath: string, targetSpec: string, format: OutputFormat = 'markdown'): Promise<void> {
     const lines: string[] = [];
     lines.push(`# 🔀 Control Flow Graph (CFG Analyzer)\n`);
@@ -40,7 +68,6 @@ export async function cfgCommand(projectPath: string, targetSpec: string, format
     const content = fs.readFileSync(fullPath, 'utf8');
     const fileLines = content.split('\n');
 
-    // Find function boundaries
     let funcStart = -1;
     let funcEnd = -1;
     let braceCount = 0;
@@ -70,7 +97,6 @@ export async function cfgCommand(projectPath: string, targetSpec: string, format
 
     const funcBody = fileLines.slice(funcStart, funcEnd + 1);
 
-    // Extract branches
     const nodes: CFGNode[] = [{ id: 'N0', label: `Start: ${funcName}`, type: 'start' }];
     const edges: CFGEdge[] = [];
     let nodeIdx = 1;

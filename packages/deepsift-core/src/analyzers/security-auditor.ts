@@ -1,6 +1,20 @@
+/**
+ * @file security-auditor.ts
+ * @description Security Vulnerability & Sandbox Leak Auditor Engine.
+ * Scans codebases for sandbox boundary leaks (window in core sandbox), hardcoded API keys/secrets,
+ * XSS injection risks, eval() calls, and vulnerable package dependencies.
+ * 
+ * @module analyzers/security-auditor
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
+
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Individual security vulnerability finding details.
+ */
 export interface SecurityFinding {
     type: 'sandbox-leak' | 'secret-exposure' | 'vulnerability' | 'vulnerable-dependency' | 'i18n-hardcoded';
     file: string;
@@ -10,6 +24,9 @@ export interface SecurityFinding {
     snippet?: string;
 }
 
+/**
+ * Complete security audit report summary.
+ */
 export interface SecurityReport {
     findings: SecurityFinding[];
     sandboxLeakCount: number;
@@ -19,13 +36,30 @@ export interface SecurityReport {
     totalFindings: number;
 }
 
+/**
+ * Auditor that performs CWE security analysis, sandbox isolation checks, and secret scans.
+ */
 export class SecurityAuditor {
     private projectPath: string;
 
+    /**
+     * Initializes the SecurityAuditor.
+     * @param projectPath Absolute path to workspace root.
+     */
     constructor(projectPath: string) {
         this.projectPath = projectPath;
     }
 
+    /**
+     * Executes a full security audit across all project source files and package manifests.
+     * 
+     * @returns SecurityReport object containing all detected vulnerability findings.
+     * @example
+     * ```ts
+     * const auditor = new SecurityAuditor(process.cwd());
+     * const report = auditor.auditAll();
+     * ```
+     */
     public auditAll(): SecurityReport {
         const files = this.collectFiles(this.projectPath);
         const findings: SecurityFinding[] = [];
@@ -40,7 +74,7 @@ export class SecurityAuditor {
                 this.auditVulnerabilities(content, relFile, findings);
                 this.auditHardcodedI18n(content, relFile, findings);
             } catch (e) {
-                // Ignore read errors
+                // Safe ignore
             }
         }
 
@@ -61,8 +95,10 @@ export class SecurityAuditor {
         };
     }
 
+    /**
+     * Checks if browser APIs (window, document, localStorage) are referenced in sandbox files.
+     */
     public auditSandboxLeaks(content: string, relFile: string, findings: SecurityFinding[]) {
-        // Only inspect sandbox/backend files (e.g. code.ts, figma-core, worker, server, backend)
         const isSandboxOrBackend = /(figma-core|code\.ts|sandbox|worker|server|backend|main\.ts|cli)/i.test(relFile);
         if (!isSandboxOrBackend) return;
 
@@ -83,11 +119,13 @@ export class SecurityAuditor {
         });
     }
 
+    /**
+     * Audits source code lines for hardcoded secrets or API keys.
+     */
     public auditHardcodedSecrets(content: string, relFile: string, findings: SecurityFinding[]) {
         const lines = content.split('\n');
         lines.forEach((line, idx) => {
             const lineNum = idx + 1;
-            // Secret patterns: API keys, Firebase keys, private keys, Tokens
             const secretMatch = line.match(/(?:api[_-]?key|secret|token|password|auth_key|private[_-]?key)\s*[:=]\s*['"`]([A-Za-z0-9_\-]{16,})['"`]/i);
             if (secretMatch && !relFile.includes('test') && !line.includes('example') && !line.includes('process.env')) {
                 findings.push({
@@ -102,6 +140,9 @@ export class SecurityAuditor {
         });
     }
 
+    /**
+     * Audits source code lines for dangerous execution patterns (eval, dangerouslySetInnerHTML).
+     */
     public auditVulnerabilities(content: string, relFile: string, findings: SecurityFinding[]) {
         const lines = content.split('\n');
         lines.forEach((line, idx) => {
@@ -129,6 +170,9 @@ export class SecurityAuditor {
         });
     }
 
+    /**
+     * Audits UI files for hardcoded text strings candidate for i18n extraction.
+     */
     public auditHardcodedI18n(content: string, relFile: string, findings: SecurityFinding[]) {
         if (!/\.(tsx|jsx|html|dart)$/i.test(relFile)) return;
         const lines = content.split('\n');
@@ -148,6 +192,9 @@ export class SecurityAuditor {
         });
     }
 
+    /**
+     * Audits project dependencies for known vulnerable packages.
+     */
     public auditDependencies(findings: SecurityFinding[]) {
         const pkgPath = path.join(this.projectPath, 'package.json');
         if (fs.existsSync(pkgPath)) {
@@ -155,7 +202,6 @@ export class SecurityAuditor {
                 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
                 const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
 
-                // Known problematic / vulnerable pattern heuristics
                 const suspicious = ['event-stream', 'flatmap-stream', 'rc-pagination@1.0.0'];
                 for (const dep of suspicious) {
                     if (allDeps[dep]) {
@@ -169,11 +215,14 @@ export class SecurityAuditor {
                     }
                 }
             } catch (e) {
-                // Ignore parse error
+                // Safe ignore
             }
         }
     }
 
+    /**
+     * Collects all code source files.
+     */
     private collectFiles(dir: string): string[] {
         const files: string[] = [];
         if (!fs.existsSync(dir)) return files;
@@ -185,7 +234,7 @@ export class SecurityAuditor {
                 if (!['node_modules', '.git', '.deepsift', 'dist', 'build'].includes(entry.name)) {
                     files.push(...this.collectFiles(full));
                 }
-            } else if (/\.(ts|js|tsx|jsx|py|go|dart|json|rs|html)$/i.test(entry.name)) {
+            } else if (/\.(ts|js|tsx|jsx|py|go|dart|rs)$/i.test(entry.name)) {
                 files.push(full);
             }
         }

@@ -1,9 +1,30 @@
+/**
+ * @file testmap.ts
+ * @description Source-to-Test Coverage Mapping Command.
+ * Maps source files to corresponding unit/integration test files and identifies untested modules.
+ * 
+ * @module cli/commands/testmap
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
+
 import path from 'path';
 import fs from 'fs';
 import { printResult, OutputFormat } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';
 import { normalizePath } from '../../utils/outline.js';
 
+/**
+ * Executes the `deepsift testmap` command to generate source-to-test mapping reports.
+ * 
+ * @param projectPath Absolute path to workspace root.
+ * @param format Output format ('markdown' or 'json').
+ * @param langFilter Optional language extension filter (ts, dart, py, go).
+ * @example
+ * ```ts
+ * await testmapCommand(process.cwd(), 'markdown', 'ts');
+ * ```
+ */
 export async function testmapCommand(projectPath: string, format: OutputFormat = 'markdown', langFilter?: string): Promise<void> {
     const lines: string[] = [];
     const langTitle = langFilter ? ` (${langFilter.toUpperCase()} Only)` : '';

@@ -1,9 +1,30 @@
+/**
+ * @file doctor.ts
+ * @description Health Diagnostics & Self-Healing Doctor Command.
+ * Runs system health checks, database index diagnostics, configuration checks,
+ * and outputs recommended agent onboarding workflows.
+ * 
+ * @module cli/commands/doctor
+ * @category Security & Diagnostics
+ * @since 1.0.3
+ */
+
 import path from 'path';
 import fs from 'fs';
 import { printResult, OutputFormat } from '../cli-output.js';
 import { loadConfig } from '../../utils/config.js';
 import { loadDNA } from '../../intelligence/project-dna.js';
 
+/**
+ * Executes the `deepsift doctor` command to perform system health checks.
+ * 
+ * @param projectPath Absolute path to workspace root.
+ * @param format Output format ('markdown' or 'json').
+ * @example
+ * ```ts
+ * await doctorCommand(process.cwd(), 'markdown');
+ * ```
+ */
 export async function doctorCommand(projectPath: string, format: OutputFormat = 'markdown'): Promise<void> {
     const lines: string[] = [];
     lines.push(`# 🩺 DeepSift Diagnostics & Agent Onboarding Status\n`);
