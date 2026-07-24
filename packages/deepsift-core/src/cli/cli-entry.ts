@@ -53,6 +53,7 @@ import { resolveErrorCommand } from './commands/resolve-error.js';
 import { launchWebDashboard } from '../ui/web-dashboard.js';
 import { impactCommand } from './commands/impact.js';
 import { planUiCommand } from './commands/plan-ui.js';
+import { docgenCommand } from './commands/docgen.js';
 import { QAGenerator } from '../analyzers/qa-generator.js';
 import { GitChurnMiner } from '../analyzers/git-churn-miner.js';
 import { terminateWorkers } from '../core/embedder.js';
@@ -648,6 +649,11 @@ async function main() {
             case 'schema-drift':
             case 'check-schema-drift':
                 await schemaDriftCommand(projectPath, format);
+                break;
+
+            case 'docgen':
+            case 'docs':
+                await docgenCommand(projectPath, format);
                 break;
 
             case 'cfg':

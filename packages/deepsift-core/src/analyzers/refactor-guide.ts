@@ -1,6 +1,19 @@
+/**
+ * @file refactor-guide.ts
+ * @description God Node Decomposition Roadmap Generator Engine.
+ * Analyzes large monolithic files and auto-generates step-by-step Clean Architecture (SoC) refactoring roadmaps.
+ * 
+ * @module analyzers/refactor-guide
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
+
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Step detail in a refactoring guide roadmap.
+ */
 export interface RefactorStep {
     step: number;
     title: string;
@@ -8,6 +21,9 @@ export interface RefactorStep {
     proposedFile: string;
 }
 
+/**
+ * Complete decomposition roadmap report for a monolithic file.
+ */
 export interface RefactorGuideReport {
     godNodeFile: string;
     lineCount: number;
@@ -15,13 +31,31 @@ export interface RefactorGuideReport {
     steps: RefactorStep[];
 }
 
+/**
+ * Engine that generates architectural decomposition blueprints for large God Nodes.
+ */
 export class RefactorGuideEngine {
     private projectPath: string;
 
+    /**
+     * Initializes the RefactorGuideEngine.
+     * @param projectPath Absolute path to workspace root.
+     */
     constructor(projectPath: string) {
         this.projectPath = projectPath;
     }
 
+    /**
+     * Generates a step-by-step Clean Architecture refactoring roadmap for a targeted God Node file.
+     * 
+     * @param godNodeFile Relative or absolute path to the target file.
+     * @returns RefactorGuideReport object containing actionable decomposition steps.
+     * @example
+     * ```ts
+     * const engine = new RefactorGuideEngine(process.cwd());
+     * const guide = engine.generateGuide('src/server.ts');
+     * ```
+     */
     public generateGuide(godNodeFile: string): RefactorGuideReport {
         const fullPath = path.resolve(this.projectPath, godNodeFile);
         const relPath = path.relative(this.projectPath, fullPath);

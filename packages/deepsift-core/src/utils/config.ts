@@ -1,6 +1,19 @@
+/**
+ * @file config.ts
+ * @description DeepSift Configuration Management Module.
+ * Manages loading, merging, defaults, and saving of deepsift.config.json settings.
+ * 
+ * @module utils/config
+ * @category Utilities
+ * @since 1.0.0
+ */
+
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Definition for a Knowledge Realm within DeepSift.
+ */
 export interface RealmDefinition {
     displayName: string;
     sourcePaths: string[];
@@ -11,6 +24,9 @@ export interface RealmDefinition {
     isExternalHivemind?: boolean;
 }
 
+/**
+ * Root DeepSift Configuration Interface.
+ */
 export interface DeepSiftConfig {
     search?: {
         defaultTopK?: number;
@@ -28,6 +44,9 @@ export interface DeepSiftConfig {
     realms?: Record<string, RealmDefinition>;
 }
 
+/**
+ * Default global configuration values for DeepSift.
+ */
 export const DEFAULT_CONFIG: DeepSiftConfig = {
     search: {
         defaultTopK: 10,
@@ -59,7 +78,6 @@ export const DEFAULT_CONFIG: DeepSiftConfig = {
         outputTheme: "default"
     },
     realms: {
-
         "code": {
             displayName: "User Codebase",
             sourcePaths: ["."],
@@ -76,6 +94,16 @@ export const DEFAULT_CONFIG: DeepSiftConfig = {
     }
 };
 
+/**
+ * Loads project configuration from deepsift.config.json or returns default configuration.
+ * 
+ * @param projectPath Absolute path to the project root directory.
+ * @returns Parsed and merged DeepSiftConfig object.
+ * @example
+ * ```ts
+ * const config = loadConfig(process.cwd());
+ * ```
+ */
 export function loadConfig(projectPath: string): DeepSiftConfig {
     const configPath = path.join(projectPath, 'deepsift.config.json');
     if (fs.existsSync(configPath)) {
@@ -90,11 +118,28 @@ export function loadConfig(projectPath: string): DeepSiftConfig {
     return DEFAULT_CONFIG;
 }
 
-export function saveConfig(projectPath: string, config: DeepSiftConfig) {
+/**
+ * Saves updated DeepSift configuration to deepsift.config.json in the project root.
+ * 
+ * @param projectPath Absolute path to the project root directory.
+ * @param config Configuration object to persist.
+ * @example
+ * ```ts
+ * saveConfig(process.cwd(), updatedConfig);
+ * ```
+ */
+export function saveConfig(projectPath: string, config: DeepSiftConfig): void {
     const configPath = path.join(projectPath, 'deepsift.config.json');
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
 }
 
+/**
+ * Deeply merges user override configuration with base defaults.
+ * 
+ * @param base Base configuration object.
+ * @param overrides User configuration overrides.
+ * @returns Merged configuration object.
+ */
 function mergeConfig(base: any, overrides: any): any {
     const result = { ...base };
     for (const key in overrides) {

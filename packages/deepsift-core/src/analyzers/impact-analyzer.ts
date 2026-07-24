@@ -1,6 +1,20 @@
+/**
+ * @file impact-analyzer.ts
+ * @description Breaking Change Impact Analyzer Module.
+ * Traces symbol references across source files, calculates breaking risk scores,
+ * and compiles call-site impact reports before performing refactoring.
+ * 
+ * @module analyzers/impact-analyzer
+ * @category Refactoring & Self-Healing
+ * @since 1.0.3
+ */
+
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Report containing calculated impact metrics for a symbol modification.
+ */
 export interface ImpactReport {
     symbol: string;
     affectedFilesCount: number;
@@ -9,13 +23,31 @@ export interface ImpactReport {
     affectedCallers: { file: string; line: number; snippet: string }[];
 }
 
+/**
+ * Analyzer that evaluates breaking change risk for code symbols across the codebase.
+ */
 export class ImpactAnalyzer {
     private projectPath: string;
 
+    /**
+     * Initializes the ImpactAnalyzer.
+     * @param projectPath Absolute path to workspace root.
+     */
     constructor(projectPath: string) {
         this.projectPath = projectPath;
     }
 
+    /**
+     * Calculates breaking change impact for a symbol by scanning call sites across source files.
+     * 
+     * @param symbol Symbol name to analyze (function, class, variable).
+     * @returns ImpactReport object detailing affected files and risk score.
+     * @example
+     * ```ts
+     * const analyzer = new ImpactAnalyzer(process.cwd());
+     * const report = await analyzer.calculateImpact('NativeStore');
+     * ```
+     */
     public async calculateImpact(symbol: string): Promise<ImpactReport> {
         const files = this.collectFiles(this.projectPath);
         const affectedCallers: { file: string; line: number; snippet: string }[] = [];
@@ -40,7 +72,7 @@ export class ImpactAnalyzer {
                     }
                 });
             } catch (e) {
-                // Ignore
+                // Safe ignore
             }
         }
 
@@ -58,6 +90,9 @@ export class ImpactAnalyzer {
         };
     }
 
+    /**
+     * Synchronously collects all indexable code source files.
+     */
     private collectFiles(dir: string): string[] {
         const files: string[] = [];
         if (!fs.existsSync(dir)) return files;
