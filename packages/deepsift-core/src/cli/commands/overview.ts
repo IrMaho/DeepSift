@@ -60,7 +60,7 @@ export async function overviewCommand(
         : mineFeatureRegistries(projectPath);
 
     if (featureTabs && featureTabs.length > 0) {
-        lines.push(`## 🎨 Discovered UI Tabs & Core Feature Capabilities`);
+        lines.push(`## 🌐 Discovered Core Features, UI Tabs & API Endpoints`);
         featureTabs.forEach((tab, idx) => {
             const capStr = tab.capabilities ? ` (${tab.capabilities.slice(0, 3).join(', ')})` : '';
             const descStr = tab.description ? `: ${tab.description}` : '';

@@ -4,19 +4,25 @@ import { DiscoveredFeatureTab } from '../types/dna-types.js';
 
 const REGISTRY_FILE_PATTERNS = [
     /tabs?[-_]?registry/i,
-    /routes?[-_]?registry/i,
-    /features?[-_]?registry/i,
-    /nav(igation)?[-_]?config/i,
+    /routes?[-_]?(registry|config|main|app)/i,
+    /features?[-_]?(registry|config|list)/i,
+    /nav(igation)?[-_]?(config|items|routes)/i,
     /tab[-_]?config/i,
     /menu[-_]?items/i,
-    /app[-_]?routes/i,
+    /app[-_]?(routes|router)/i,
     /tabs?\.json$/i,
     /routes?\.json$/i,
-    /manifest\.json$/i
+    /manifest\.json$/i,
+    /swagger\.(json|yaml|yml)$/i,
+    /openapi\.(json|yaml|yml)$/i,
+    /controllers?/i,
+    /endpoints?/i,
+    /handlers?/i,
+    /commands?/i
 ];
 
 const IGNORED_DIRS = new Set([
-    'node_modules', '.git', '.deepsift', 'dist', 'build', 'out', 'coverage', '.cache'
+    'node_modules', '.git', '.deepsift', 'dist', 'build', 'out', 'coverage', '.cache', 'vendor'
 ]);
 
 export function mineFeatureRegistries(projectPath: string): DiscoveredFeatureTab[] {
@@ -79,14 +85,14 @@ function parseDataObject(
 ) {
     if (!data) return;
 
-    const items = Array.isArray(data) ? data : (data.tabs || data.routes || data.features || data.items || [data]);
+    const items = Array.isArray(data) ? data : (data.tabs || data.routes || data.features || data.endpoints || data.items || [data]);
     if (!Array.isArray(items)) return;
 
     for (const item of items) {
         if (!item || typeof item !== 'object') continue;
 
-        const id = String(item.id || item.key || item.code || item.name || '').trim();
-        const title = String(item.title || item.label || item.name || item.displayName || id).trim();
+        const id = String(item.id || item.key || item.code || item.name || item.path || '').trim();
+        const title = String(item.title || item.label || item.name || item.displayName || item.summary || id).trim();
         if (!title && !id) continue;
 
         const uniqueKey = `${id}:${title}`.toLowerCase();
@@ -118,7 +124,8 @@ function parseTextStructures(
     out: DiscoveredFeatureTab[],
     seen: Set<string>
 ) {
-    const tabRegex = /id\s*:\s*['"`]([^'"`]+)['"`]\s*,\s*(?:title|label|name)\s*:\s*['"`]([^'"`]+)['"`]/g;
+    // 1. Match JS/TS object tab definitions: id: 'color', title: 'Color Palette'
+    const tabRegex = /(?:id|name|path)\s*:\s*['"`]([^'"`]+)['"`]\s*,\s*(?:title|label|name|displayName)\s*:\s*['"`]([^'"`]+)['"`]/g;
     let match: RegExpExecArray | null;
 
     while ((match = tabRegex.exec(content)) !== null) {
@@ -131,6 +138,26 @@ function parseTextStructures(
             out.push({
                 id,
                 title,
+                sourceFile: relPath
+            });
+        }
+    }
+
+    // 2. Match Backend API Route definitions: e.g. app.get('/api/v1/users'), @Get('/users'), router.HandleFunc("/login")
+    const apiRegex = /(?:@(?:Get|Post|Put|Delete|Patch)|app\.(?:get|post|put|delete)|router\.(?:GET|POST|PUT|DELETE|HandleFunc)|GoRoute|Route)\s*\(\s*['"`]([^'"`]+)['"`]/gi;
+    let apiMatch: RegExpExecArray | null;
+
+    while ((apiMatch = apiRegex.exec(content)) !== null) {
+        const routePath = apiMatch[1].trim();
+        if (routePath.length <= 1) continue;
+
+        const key = `api:${routePath}`.toLowerCase();
+        if (!seen.has(key)) {
+            seen.add(key);
+            out.push({
+                id: routePath,
+                title: `Route: ${routePath}`,
+                description: `API / Navigation Route in ${relPath}`,
                 sourceFile: relPath
             });
         }

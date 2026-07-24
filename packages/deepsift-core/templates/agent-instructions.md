@@ -260,7 +260,7 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
       3. **BEFORE** changing any interface, run `deepsift deps "filepath"` and `deepsift search "import.*ComponentName"` to find ALL consumers.
       4. Update ALL consumers in the same session (with build verification between each).
     - **WHY:** The agent changed `icon` to `iconName` and removed `maxWidth`, breaking every component that used the old interface.
-23. **🌍 PRESERVE EXISTING CAPABILITIES (LOCALIZATION, A11Y, THEMES):**
+23. **🌐 PRESERVE EXISTING CAPABILITIES (LOCALIZATION, A11Y, THEMES):**
     - When refactoring a file, you MUST preserve ALL existing capabilities:
       - RTL support (`useLanguageStore`, `isRtl`, `dir` attributes, `text-right`/`text-left`)
       - i18n (`t()` function calls, translation keys)
@@ -269,6 +269,15 @@ You **MUST EXCLUSIVELY** use DeepSift via `run_command` for ALL project interact
       - Existing imports (especially icon/asset imports like SVG files)
     - Before writing replacement code, create a **checklist** of these capabilities from the original file and verify each one exists in your replacement.
     - **WHY:** The agent deleted RTL support, `RawSvgIcon` imports, `Button` component usage, and icon asset imports during refactoring.
+27. **🧠 DYNAMIC POLYGLOT PROJECT & FEATURE ANALYSIS DIRECTIVE (MANDATORY):**
+    - When requested to analyze any codebase (regardless of language or architecture: React, Flutter, Go, Python, Rust, C++, Java, C#, etc.):
+      - **NEVER** return a surface-level, generic folder tree listing (e.g., `src/`, `lib/`, `dist/`, `bin/`).
+      - **ALWAYS** execute `deepsift overview` first to inspect auto-discovered core features, UI screens/tabs, API endpoints, or CLI subcommands.
+      - **DYNAMICALLY ADAPT ANALYSIS BASED ON PROJECT TYPE:**
+        • For UI/Mobile Apps: Detail UI screens, tabs, navigation flows, and visual capabilities.
+        • For Backend APIs: Detail HTTP endpoints, controllers, request/response DTOs, and middleware pipelines.
+        • For CLI Tools & Libraries: Detail CLI subcommands, flags, public API surfaces, and core engines.
+      - **ALWAYS** perform targeted domain searches (`deepsift search "routes endpoints controllers tabs commands"`) to extract exact business logic and user/developer features right from your VERY FIRST response!
 26. **🧠 DYNAMIC RESEARCH MEMORY (DRM) — YOUR COGNITIVE BACKBONE (MANDATORY):**
     DRM is NOT optional. It is your **persistent brain** across operations. Without it, you are stateless — you forget everything between tool calls and produce shallow, incomplete, inaccurate outputs. DRM fixes this by storing structured research data that you can query, recall, and build upon.
 
