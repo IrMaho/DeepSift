@@ -1,6 +1,8 @@
 const std = @import("std");
 const mem = std.mem;
+const math = @import("math_engine.zig");
 const sift_vector = @import("sift_vector.zig");
+const ivf = @import("ivf.zig");
 
 pub const VECTOR_DIM: usize = 384;
 pub const VECTOR_BQ_U32_COUNT: usize = VECTOR_DIM / 32;
@@ -103,6 +105,7 @@ pub const Database = struct {
     metadata: std.StringHashMap(FileMetadata),
     mapped_data: ?[]const u8 = null,
     mapped_handle: ?std.os.windows.HANDLE = null,
+    ivf_index: ?*ivf.IVFIndex = null,
 
     const Self = @This();
 
@@ -114,11 +117,16 @@ pub const Database = struct {
             .metadata = std.StringHashMap(FileMetadata).init(allocator),
             .mapped_data = null,
             .mapped_handle = null,
+            .ivf_index = null,
         };
     }
 
     pub fn deinit(self: *Self) void {
         self.unmapData();
+        if (self.ivf_index) |idx| {
+            idx.deinit();
+            self.allocator.destroy(idx);
+        }
         self.chunks.deinit(self.allocator);
         self.metadata.deinit();
         self.arena.deinit();
@@ -126,6 +134,11 @@ pub const Database = struct {
 
     pub fn reset(self: *Self) void {
         self.unmapData();
+        if (self.ivf_index) |idx| {
+            idx.deinit();
+            self.allocator.destroy(idx);
+            self.ivf_index = null;
+        }
         self.chunks.clearRetainingCapacity();
         self.metadata.clearRetainingCapacity();
         _ = self.arena.reset(.retain_capacity);
@@ -147,6 +160,21 @@ pub const Database = struct {
             }
             self.mapped_data = null;
         }
+    }
+
+    pub fn buildIvf(self: *Self) !void {
+        if (self.ivf_index != null) return;
+        if (self.chunks.items.len == 0) return;
+        
+        const idx = try self.allocator.create(ivf.IVFIndex);
+        idx.* = ivf.IVFIndex.init(self.allocator);
+        
+        // Use sqrt(N) as standard heuristic for number of clusters, capped at 1024
+        const n_clusters_f: f32 = @sqrt(@as(f32, @floatFromInt(self.chunks.items.len)));
+        const k = @min(@as(usize, @intFromFloat(n_clusters_f)), 1024);
+        
+        try idx.build(self.chunks.items, @max(k, 1));
+        self.ivf_index = idx;
     }
 
     fn writeString(writer: anytype, str: []const u8) !void {

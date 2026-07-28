@@ -65,6 +65,7 @@ pub fn searchHybridNative(
     bm25_cfg: BM25Config,
     rrf_cfg: RRFConfig,
     graph_db: ?*db.GraphDatabase,
+    ivf_idx: ?*@import("ivf.zig").IVFIndex,
 ) ![]SearchMatch {
     if (chunks.len == 0 or query.len == 0) return &[_]SearchMatch{};
 
@@ -81,12 +82,36 @@ pub fn searchHybridNative(
     const term_count = terms_list.items.len;
     if (term_count == 0) return &[_]SearchMatch{};
 
+    var candidate_indices = std.ArrayList(usize).empty;
+    defer candidate_indices.deinit(allocator);
+
+    if (ivf_idx != null and query_vector != null) {
+        const q_vec = query_vector.?.toQuantizedVector();
+        // nprobe = 10 (search top 10 closest clusters)
+        const top_clusters = try ivf_idx.?.searchNearestClusters(&q_vec, 10);
+        defer allocator.free(top_clusters);
+        for (top_clusters) |cluster_score| {
+            const centroid = ivf_idx.?.centroids.items[cluster_score.centroid_idx];
+            for (centroid.chunk_indices.items) |ci| {
+                try candidate_indices.append(allocator, ci);
+            }
+        }
+    } else {
+        // Fallback to exhaustive search
+        try candidate_indices.ensureTotalCapacity(allocator, chunks.len);
+        for (0..chunks.len) |ci| {
+            candidate_indices.appendAssumeCapacity(ci);
+        }
+    }
+
+    if (candidate_indices.items.len == 0) return &[_]SearchMatch{};
+
     // 1. Calculate Average Document Length (avgdl)
     var total_doc_len: usize = 0;
-    for (chunks) |chunk| {
-        total_doc_len += chunk.content.len;
+    for (candidate_indices.items) |ci| {
+        total_doc_len += chunks[ci].content.len;
     }
-    const avgdl = @as(f32, @floatFromInt(total_doc_len)) / @as(f32, @floatFromInt(chunks.len));
+    const avgdl = @as(f32, @floatFromInt(total_doc_len)) / @as(f32, @floatFromInt(candidate_indices.items.len));
 
     // 2. Calculate Document Frequency (df) for each term
     const dfs = try allocator.alloc(usize, term_count);
@@ -94,7 +119,8 @@ pub fn searchHybridNative(
     @memset(dfs, 0);
 
     for (terms_list.items, 0..) |term, ti| {
-        for (chunks) |chunk| {
+        for (candidate_indices.items) |ci| {
+            const chunk = chunks[ci];
             if (countTermFrequency(chunk.content, term) > 0 or countTermFrequency(chunk.file_path, term) > 0) {
                 dfs[ti] += 1;
             }
@@ -102,11 +128,12 @@ pub fn searchHybridNative(
     }
 
     // 3. Compute BM25 & Vector Scores for each chunk
-    const N = @as(f32, @floatFromInt(chunks.len));
-    var matches = try std.ArrayList(SearchMatch).initCapacity(allocator, chunks.len);
+    const N = @as(f32, @floatFromInt(candidate_indices.items.len));
+    var matches = try std.ArrayList(SearchMatch).initCapacity(allocator, candidate_indices.items.len);
     defer matches.deinit(allocator);
 
-    for (chunks, 0..) |chunk, ci| {
+    for (candidate_indices.items) |ci| {
+        const chunk = chunks[ci];
         var bm25_score: f32 = 0.0;
         const doc_len = @as(f32, @floatFromInt(chunk.content.len));
 

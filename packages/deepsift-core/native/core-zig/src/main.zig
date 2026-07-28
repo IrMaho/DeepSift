@@ -395,6 +395,9 @@ pub fn main() !void {
         const resolved_graph_path: ?[]const u8 = req.graphDbPath;
 
         database.loadFromFile(resolved_db_path) catch {};
+        database.buildIvf() catch |err| {
+            std.debug.print("deepsift: Warning, IVF build failed: {any}\n", .{err});
+        };
 
         var graph_modified = false;
         if (resolved_graph_path) |graphPath| {
@@ -593,6 +596,7 @@ pub fn main() !void {
                     .{},
                     .{},
                     &graph_db,
+                    database.ivf_index,
                 );
                 defer allocator.free(native_matches);
 
