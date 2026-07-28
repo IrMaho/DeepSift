@@ -19,11 +19,15 @@ Use this workflow as your step-by-step execution guide when tasked with large mo
 With your DRM tag open, every `search` and `read` command will automatically save results to the active tag.
 1. Use `--agent-format` or `--json` when you need zero-token-waste structured JSON for pure machine parsing.
 2. Run `deepsift feature "src/features/folder"` to inspect feature structure. Focus on `⭐ Core Logic` tags (`⭐ State Store`, `⚡ Handler / Controller`) at the top of the output.
-3. If output shows `💡 Pagination` with `nextCommand`, execute `nextCommand` directly to retrieve subsequent file pages.
-4. Run `deepsift search "topic" --context-lines 10` for semantic searches — results auto-saved.
-5. Run `deepsift deps "target.ts"` to trace where a file is used.
-6. Run `deepsift read "file.ts"` to read exact file contents — content auto-saved.
-5. **Manually add high-value insights you interpret from the results:**
+3. Lock agent focus if working in a subfolder: `deepsift scope lock "src/features/auth"`.
+4. Trace IPC and event messages: `deepsift wire-trace`.
+5. Check complexity heatmap: `deepsift complexity`.
+6. Run security and compliance audit: `deepsift security-scan`.
+7. If output shows `💡 Pagination` with `nextCommand`, execute `nextCommand` directly to retrieve subsequent file pages.
+8. Run `deepsift search "topic" --context-lines 10` for semantic searches — results auto-saved.
+9. Run `deepsift deps "target.ts"` to trace where a file is used.
+10. Run `deepsift read "file.ts"` to read exact file contents — content auto-saved.
+11. **Manually add high-value insights you interpret from the results:**
    ```bash
    deepsift memo add "tag" --data "Auth handler uses JWT with 24h expiry" --type "architecture_note"
    deepsift memo add "tag" --data "Found circular dependency between A.ts and B.ts" --type "finding"

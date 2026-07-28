@@ -35,6 +35,7 @@ export class NativeStore {
     private realmId?: string;
     private projectPath?: string;
     private workingDbPath: string;
+    private workingGraphDbPath?: string;
 
     constructor(dbPath: string, graphDbPath?: string, realmId?: string, projectPath?: string) {
         this.dbPath = dbPath;
@@ -55,6 +56,19 @@ export class NativeStore {
             }
         }
         
+        if (this.graphDbPath) {
+            this.workingGraphDbPath = this.graphDbPath + ".tmp";
+            if (fs.existsSync(this.graphDbPath) && !fs.existsSync(this.workingGraphDbPath)) {
+                try {
+                    const data = fs.readFileSync(this.graphDbPath);
+                    const uncompressed = zlib.gunzipSync(data);
+                    fs.writeFileSync(this.workingGraphDbPath, uncompressed);
+                } catch (e) {
+                    fs.copyFileSync(this.graphDbPath, this.workingGraphDbPath);
+                }
+            }
+        }
+
         if (!fs.existsSync(EXE_PATH)) {
             // Initialize bridge if needed
             ZigBridge.getInstance();
@@ -65,7 +79,7 @@ export class NativeStore {
         const req = {
             action,
             dbPath: this.workingDbPath,
-            graphDbPath: this.graphDbPath,
+            graphDbPath: this.workingGraphDbPath || this.graphDbPath,
             realmId: this.realmId,
             projectPath: this.projectPath,
             ...payload
@@ -75,7 +89,7 @@ export class NativeStore {
         return result;
     }
 
-    private async syncToDisk() {
+    public async syncToDisk() {
         if (fs.existsSync(this.workingDbPath)) {
             try {
                 const data = await fs.promises.readFile(this.workingDbPath);
@@ -83,6 +97,18 @@ export class NativeStore {
                 await fs.promises.writeFile(this.dbPath, compressed);
             } catch (e) {
                 console.error("Failed to compress cache.db", e);
+            }
+        }
+    }
+
+    public async syncGraphToDisk() {
+        if (this.workingGraphDbPath && this.graphDbPath && fs.existsSync(this.workingGraphDbPath)) {
+            try {
+                const data = await fs.promises.readFile(this.workingGraphDbPath);
+                const compressed = zlib.gzipSync(data);
+                await fs.promises.writeFile(this.graphDbPath, compressed);
+            } catch (e) {
+                console.error("Failed to compress graph DB", e);
             }
         }
     }
@@ -129,6 +155,35 @@ export class NativeStore {
     public async deleteFileChunks(filePath: string) {
         await this.executeAction('deleteFileChunks', { filePath });
         await this.syncToDisk();
+    }
+
+    public async addGraphNode(node: any) {
+        await this.executeAction('saveGraph', { graphNodes: [node] });
+        await this.syncGraphToDisk();
+    }
+
+    public async addGraphEdge(edge: any) {
+        await this.executeAction('saveGraph', { graphEdges: [edge] });
+        await this.syncGraphToDisk();
+    }
+
+    public async computePageRank() {
+        await this.executeAction('computePageRankNative');
+        await this.syncGraphToDisk();
+    }
+
+    public async computeCommunities() {
+        await this.executeAction('computeCommunitiesNative');
+        await this.syncGraphToDisk();
+    }
+
+    public async expandContext(startNodes: number[], depth: number = 2, hubThreshold: number = 50) {
+        const result = await this.executeAction('expandContextNative', {
+            startNodes,
+            depth,
+            hubThreshold
+        });
+        return result || [];
     }
 
     private quantizeF32ToSift(vector: Float32Array | number[]) {

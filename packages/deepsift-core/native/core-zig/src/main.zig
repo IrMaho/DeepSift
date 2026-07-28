@@ -228,6 +228,12 @@ const BitmapResponse = struct {
     data: []const u8,
 };
 
+const GraphNodesResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const db.GraphNode,
+};
+
 fn countKeywordMatches(content: []const u8, file_path: []const u8, query: []const u8) f32 {
     if (query.len == 0) return 0.0;
 
@@ -407,6 +413,16 @@ pub fn main() !void {
             }
             graph_modified = true;
             try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
+        } else if (std.mem.eql(u8, req.action, "computePageRankNative")) {
+            var graph_algos = graph.GraphAlgorithms.init(allocator, &graph_db);
+            graph_algos.computePageRank(0.85, 20) catch {};
+            graph_modified = true;
+            try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
+        } else if (std.mem.eql(u8, req.action, "computeCommunitiesNative")) {
+            var graph_algos = graph.GraphAlgorithms.init(allocator, &graph_db);
+            _ = graph_algos.computeCommunities() catch 0;
+            graph_modified = true;
+            try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
         } else if (std.mem.eql(u8, req.action, "saveMetadata")) {
             if (req.metadata) |m| {
                 try database.addMetadata(m);
@@ -577,6 +593,7 @@ pub fn main() !void {
                     top_k,
                     .{},
                     .{},
+                    &graph_db,
                 );
                 defer allocator.free(native_matches);
 
@@ -665,6 +682,44 @@ pub fn main() !void {
                 const min_w = req.threshold orelse 0.30;
                 const edges = try memo_graph.buildInsightGraphNative(allocator, nts, min_w);
                 defer allocator.free(edges);
+
+                // Phase 3: Insert notes as nodes into graph_db
+                for (nts) |note| {
+                    try graph_db.nodes.append(allocator, .{
+                        .id = try allocator.dupe(u8, note.id),
+                        .label = try allocator.dupe(u8, note.title),
+                        .source_file = try allocator.dupe(u8, note.tag),
+                        .source_location = try allocator.dupe(u8, note.status),
+                        .community = 0,
+                        .in_degree = 0,
+                        .out_degree = 0,
+                        .page_rank = 1.0,
+                    });
+                }
+
+                var id_map = std.StringHashMap(u32).init(allocator);
+                defer id_map.deinit();
+
+                for (graph_db.nodes.items, 0..) |node, i| {
+                    try id_map.put(node.id, @intCast(i));
+                }
+                
+                for (edges) |edge| {
+                    if (id_map.get(edge.source_id)) |src| {
+                        if (id_map.get(edge.target_id)) |tgt| {
+                            try graph_db.edges.append(allocator, .{
+                                .source = src,
+                                .target = tgt,
+                                .relation = "memo_insight",
+                                .confidence = "high",
+                            });
+                            graph_db.nodes.items[src].out_degree += 1;
+                            graph_db.nodes.items[tgt].in_degree += 1;
+                        }
+                    }
+                }
+                graph_modified = true;
+
                 try writeResponse(allocator, &writer.interface, NoteEdgesResponse{ .id = req_id, .data = edges });
             }
         } else if (std.mem.eql(u8, req.action, "extractL10nKeysNative")) {
@@ -700,6 +755,22 @@ pub fn main() !void {
                 const bmp = try dec_renderer.renderTextBitmapNative(allocator, cnt, w, h);
                 defer allocator.free(bmp);
                 try writeResponse(allocator, &writer.interface, BitmapResponse{ .id = req_id, .data = bmp });
+            }
+        } else if (std.mem.eql(u8, req.action, "expandContextNative")) {
+            if (req.startNodes) |nodes| {
+                const depth = req.depth orelse 2;
+                const hub_thresh = req.hubThreshold orelse 50;
+                var graph_algos = graph.GraphAlgorithms.init(allocator, &graph_db);
+                var visited_nodes = try graph_algos.bfs(nodes, depth, hub_thresh);
+                defer visited_nodes.deinit(allocator);
+
+                var results = try allocator.alloc(db.GraphNode, visited_nodes.items.len);
+                defer allocator.free(results);
+                for (visited_nodes.items, 0..) |node_idx, i| {
+                    results[i] = graph_db.nodes.items[node_idx];
+                }
+
+                try writeResponse(allocator, &writer.interface, GraphNodesResponse{ .id = req_id, .data = results });
             }
         } else {
             try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Unknown action" });

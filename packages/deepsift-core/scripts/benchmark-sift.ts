@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { NativeStore } from '../src/storage/native-store.js';
 import { EmbeddedChunk } from '../src/types/index.js';
 import fs from 'fs';

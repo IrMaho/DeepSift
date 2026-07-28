@@ -58,15 +58,86 @@ pub const GraphAlgorithms = struct {
         }
     }
 
-    /// Native Louvain-style Community Detection
+    /// Native Label Propagation Community Detection (O(V+E))
     pub fn computeCommunities(self: *Self) !u32 {
         const num_nodes = self.graph_db.nodes.items.len;
         if (num_nodes == 0) return 0;
 
         for (0..num_nodes) |i| {
-            self.graph_db.nodes.items[i].community = @intCast(i % 16);
+            self.graph_db.nodes.items[i].community = @intCast(i);
         }
-        return 16;
+
+        var adj = try self.allocator.alloc(std.ArrayList(u32), num_nodes);
+        defer {
+            for (adj) |*list| list.deinit(self.allocator);
+            self.allocator.free(adj);
+        }
+        for (0..num_nodes) |i| {
+            adj[i] = std.ArrayList(u32).empty;
+        }
+
+        for (self.graph_db.edges.items) |edge| {
+            if (edge.source < num_nodes and edge.target < num_nodes) {
+                try adj[edge.source].append(self.allocator, edge.target);
+                try adj[edge.target].append(self.allocator, edge.source);
+            }
+        }
+
+        var changed = true;
+        var iter: usize = 0;
+        const max_iter = 10;
+        
+        var rng = std.Random.DefaultPrng.init(0);
+        const random = rng.random();
+        
+        var order = try self.allocator.alloc(u32, num_nodes);
+        defer self.allocator.free(order);
+        for (0..num_nodes) |i| order[i] = @intCast(i);
+
+        var freq_map = std.AutoHashMap(u32, u32).init(self.allocator);
+        defer freq_map.deinit();
+
+        while (changed and iter < max_iter) : (iter += 1) {
+            changed = false;
+            random.shuffle(u32, order);
+
+            for (order) |i| {
+                const node_idx = i;
+                if (adj[node_idx].items.len == 0) continue;
+
+                freq_map.clearRetainingCapacity();
+                var max_freq: u32 = 0;
+                var best_comm = self.graph_db.nodes.items[node_idx].community;
+
+                for (adj[node_idx].items) |neighbor| {
+                    const comm = self.graph_db.nodes.items[neighbor].community;
+                    const res = try freq_map.getOrPutValue(comm, 0);
+                    res.value_ptr.* += 1;
+                    
+                    if (res.value_ptr.* > max_freq) {
+                        max_freq = res.value_ptr.*;
+                        best_comm = comm;
+                    } else if (res.value_ptr.* == max_freq) {
+                        if (random.boolean()) {
+                            best_comm = comm;
+                        }
+                    }
+                }
+
+                if (self.graph_db.nodes.items[node_idx].community != best_comm) {
+                    self.graph_db.nodes.items[node_idx].community = best_comm;
+                    changed = true;
+                }
+            }
+        }
+
+        var unique_comms = std.AutoHashMap(u32, void).init(self.allocator);
+        defer unique_comms.deinit();
+        for (0..num_nodes) |i| {
+            try unique_comms.put(self.graph_db.nodes.items[i].community, {});
+        }
+
+        return @intCast(unique_comms.count());
     }
 
     /// BFS from start nodes up to depth, skipping nodes with degree >= hub_threshold (unless it's a start node)

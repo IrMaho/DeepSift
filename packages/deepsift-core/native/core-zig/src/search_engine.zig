@@ -64,6 +64,7 @@ pub fn searchHybridNative(
     top_k: usize,
     bm25_cfg: BM25Config,
     rrf_cfg: RRFConfig,
+    graph_db: ?*db.GraphDatabase,
 ) ![]SearchMatch {
     if (chunks.len == 0 or query.len == 0) return &[_]SearchMatch{};
 
@@ -155,6 +156,22 @@ pub fn searchHybridNative(
         vec_ranks[m.chunk_index] = rank + 1;
     }
 
+    var pr_map: ?std.StringHashMap(f32) = null;
+    if (graph_db) |gdb| {
+        var map = std.StringHashMap(f32).init(allocator);
+        for (gdb.nodes.items) |node| {
+            if (map.get(node.source_file)) |existing| {
+                if (node.page_rank > existing) {
+                    try map.put(node.source_file, node.page_rank);
+                }
+            } else {
+                try map.put(node.source_file, node.page_rank);
+            }
+        }
+        pr_map = map;
+    }
+    defer if (pr_map) |*m| m.deinit();
+
     // 6. Calculate RRF Score
     for (matches.items) |*m| {
         const r_bm25 = @as(f32, @floatFromInt(bm25_ranks[m.chunk_index]));
@@ -163,7 +180,15 @@ pub fn searchHybridNative(
         const score_bm25 = rrf_cfg.bm25_weight / (rrf_cfg.k + r_bm25);
         const score_vec = rrf_cfg.vector_weight / (rrf_cfg.k + r_vec);
 
-        m.rrf_score = score_bm25 + score_vec;
+        var pr_boost: f32 = 1.0;
+        if (pr_map) |map| {
+            const chunk_fp = chunks[m.chunk_index].file_path;
+            if (map.get(chunk_fp)) |pr| {
+                pr_boost += pr * 10.0; // scale up page rank influence
+            }
+        }
+
+        m.rrf_score = (score_bm25 + score_vec) * pr_boost;
     }
 
     // 7. Sort by final RRF score
