@@ -41,6 +41,7 @@ const Request = struct {
     projectPath: ?[]const u8 = null,
     metadata: ?db.FileMetadata = null,
     filePath: ?[]const u8 = null,
+    filePaths: ?[][]const u8 = null,
     chunks: ?[]db.Chunk = null,
     ids: ?[][]const u8 = null,
     query: ?[]const u8 = null,
@@ -788,6 +789,20 @@ pub fn main() !void {
                 const fpath = req.filePath orelse "unknown.txt";
                 const lang = req.language orelse "text";
                 const chunks = try ast_parser.parseNative(allocator, cnt, fpath, lang);
+                defer {
+                    for (chunks) |chunk| {
+                        allocator.free(chunk.id);
+                        allocator.free(chunk.file_path);
+                        allocator.free(chunk.content);
+                        allocator.free(chunk.language);
+                    }
+                    allocator.free(chunks);
+                }
+                try writeResponse(allocator, &writer.interface, ExtractChunksResponse{ .id = req_id, .data = chunks });
+            }
+        } else if (std.mem.eql(u8, req.action, "extractChunksBulkNative")) {
+            if (req.filePaths) |fps| {
+                const chunks = try ast_parser.extractChunksBulkNative(allocator, fps, io);
                 defer {
                     for (chunks) |chunk| {
                         allocator.free(chunk.id);

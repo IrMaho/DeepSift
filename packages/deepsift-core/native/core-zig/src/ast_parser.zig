@@ -189,3 +189,88 @@ fn isConstantStart(line: []const u8) bool {
     }
     return false;
 }
+
+const BulkWorkerContext = struct {
+    allocator: std.mem.Allocator,
+    io: std.Io,
+    file_paths: [][]const u8,
+    results: std.ArrayList(ParsedChunk),
+};
+
+fn parseBulkWorker(ctx: *BulkWorkerContext) void {
+    for (ctx.file_paths) |file_path| {
+        const file = std.Io.Dir.cwd().openFile(ctx.io, file_path, .{}) catch continue;
+        defer file.close(ctx.io);
+        
+        const stat = file.stat(ctx.io) catch continue;
+        if (stat.size > 5 * 1024 * 1024) continue; // Skip files > 5MB
+        
+        const in_buf = ctx.allocator.alloc(u8, 65536) catch continue;
+        defer ctx.allocator.free(in_buf);
+        
+        var file_reader = file.reader(ctx.io, in_buf);
+        
+        const content = file_reader.interface.readAlloc(ctx.allocator, stat.size) catch continue;
+        defer ctx.allocator.free(content);
+        
+        var ext: []const u8 = "text";
+        if (std.mem.lastIndexOf(u8, file_path, ".")) |ext_idx| {
+            ext = file_path[ext_idx + 1..];
+        }
+        
+        const chunks = parseNative(ctx.allocator, content, file_path, ext) catch continue;
+        defer ctx.allocator.free(chunks); // The chunks slice is freed, but the contents are appended to results
+        
+        for (chunks) |chunk| {
+            ctx.results.append(ctx.allocator, chunk) catch {};
+        }
+    }
+}
+
+pub fn extractChunksBulkNative(allocator: std.mem.Allocator, file_paths: [][]const u8, io: std.Io) ![]ParsedChunk {
+    // CPU cores (default to 4 if we can't detect)
+    const cpu_count = std.Thread.getCpuCount() catch 4;
+    const threads_count = @max(1, cpu_count);
+    const chunk_size = (file_paths.len + threads_count - 1) / threads_count;
+    
+    var threads = std.ArrayList(std.Thread).empty;
+    defer threads.deinit(allocator);
+    
+    var contexts = std.ArrayList(*BulkWorkerContext).empty;
+    defer {
+        for (contexts.items) |ctx| {
+            ctx.results.deinit(allocator);
+            allocator.destroy(ctx);
+        }
+        contexts.deinit(allocator);
+    }
+    
+    var i: usize = 0;
+    while (i < file_paths.len) : (i += chunk_size) {
+        const end = @min(i + chunk_size, file_paths.len);
+        const slice = file_paths[i..end];
+        
+        const ctx = try allocator.create(BulkWorkerContext);
+        ctx.* = BulkWorkerContext{
+            .allocator = allocator,
+            .io = io,
+            .file_paths = slice,
+            .results = std.ArrayList(ParsedChunk).empty,
+        };
+        
+        const thread = std.Thread.spawn(.{}, parseBulkWorker, .{ctx}) catch continue;
+        threads.append(allocator, thread) catch {};
+        contexts.append(allocator, ctx) catch {};
+    }
+    
+    for (threads.items) |thread| {
+        thread.join();
+    }
+    
+    var final_results = std.ArrayList(ParsedChunk).empty;
+    for (contexts.items) |ctx| {
+        try final_results.appendSlice(allocator, ctx.results.items);
+    }
+    
+    return try final_results.toOwnedSlice(allocator);
+}

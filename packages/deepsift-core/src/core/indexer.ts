@@ -10,7 +10,6 @@
  */
 
 import { NativeStore, BatchOperation } from '../storage/native-store.js';
-import { parseAST } from '../parsers/tree-sitter-parser.js';
 import { parseSkillFile } from '../parsers/skill-parser.js';
 import { getEmbeddings } from './embedder.js';
 import { isBinaryFile } from '../utils/binary-check.js';
@@ -66,6 +65,7 @@ export class Indexer {
         let filesProcessed = 0;
         let deletedCount = 0;
         let chunksProcessed = 0;
+        let newOrUpdatedCount = 0;
         const batchOperations: any[] = [];
 
         try {
@@ -113,77 +113,99 @@ export class Indexer {
                 }
             }
 
-            const BATCH_SIZE = 5;
+            const BATCH_SIZE = 100; // Increased to 100 for bulk Zero-Copy IPC processing
             let currentFileIndex = 0;
             const totalFilesToProcess = filesToProcess.length;
 
             for (let i = 0; i < filesToProcess.length; i += BATCH_SIZE) {
                 const batchFiles = filesToProcess.slice(i, i + BATCH_SIZE);
                 
-                await Promise.all(batchFiles.map(async (file) => {
-                    currentFileIndex++;
-                    if (onProgress) {
-                        onProgress(currentFileIndex, totalFilesToProcess, "Embedding: " + path.relative(rootDir, file));
+                if (onProgress) {
+                    currentFileIndex += batchFiles.length;
+                    onProgress(currentFileIndex, totalFilesToProcess, `Bulk Zero-Copy Parsing ${batchFiles.length} files...`);
+                }
+
+                try {
+                    let allChunks: any[] = [];
+                    
+                    // Separate md files (skills) from native code files
+                    const mdFiles = batchFiles.filter(f => f.endsWith('.md'));
+                    const codeFiles = batchFiles.filter(f => !f.endsWith('.md'));
+
+                    // 1. Process Markdown files in Node (Skills/Docs)
+                    if (this.parserProfile === 'skill' || this.parserProfile === 'docs') {
+                        for (const file of mdFiles) {
+                            const content = await fs.readFile(file, 'utf-8');
+                            allChunks.push(...parseSkillFile(file, content));
+                        }
+                    } else {
+                        // If not skill profile, treat md as regular files for chunking (if we want to).
+                        codeFiles.push(...mdFiles); 
                     }
 
-                    try {
-                        const content = await fs.readFile(file, 'utf-8');
-                        const ext = path.extname(file).replace('.', '');
-                        
-                        let chunks: any[];
-                        if ((this.parserProfile === 'skill' || this.parserProfile === 'docs') && ext === 'md') {
-                            chunks = parseSkillFile(file, content);
-                        } else {
-                            const rawChunks = await this.store.extractChunksNative(content, file, ext);
-                            // Normalize Zig chunk objects to match Node CodeChunk interface if necessary,
-                            // or just map properties
-                            chunks = rawChunks.map((c: any) => ({
-                                id: c.id,
-                                filePath: c.file_path,
-                                content: c.content,
-                                startLine: c.start_line,
-                                endLine: c.end_line,
-                                type: c.type,
-                                family: c.family,
-                                language: c.language
-                            }));
-                        }
-                        
-                        const existingMeta = allMetadata.get(file);
-                        if (existingMeta) {
+                    // 2. Process Code files entirely natively in Zig (Zero-Copy Multi-Threaded)
+                    if (codeFiles.length > 0) {
+                        const rawChunks = await this.store.extractChunksBulkNative(codeFiles);
+                        const mappedChunks = rawChunks.map((c: any) => ({
+                            id: c.id,
+                            filePath: c.file_path,
+                            content: c.content,
+                            startLine: c.start_line,
+                            endLine: c.end_line,
+                            type: c.type,
+                            family: c.family,
+                            language: c.language
+                        }));
+                        allChunks.push(...mappedChunks);
+                    }
+
+                    // 3. Delete old chunks for these files
+                    for (const file of batchFiles) {
+                        if (allMetadata.has(file)) {
                             batchOperations.push({ action: 'deleteFileChunks', filePath: file });
                         }
+                    }
 
-                        if (chunks.length > 0) {
-                            const texts = chunks.map(c => c.content);
+                    // 4. Batch Embedding and Saving
+                    if (allChunks.length > 0) {
+                        // Process embeddings in smaller chunks to avoid ONNX memory overload
+                        const validChunks = allChunks.filter(c => typeof c.content === 'string' && c.content.trim().length > 0);
+                        const EMBED_BATCH = 64;
+                        for (let j = 0; j < validChunks.length; j += EMBED_BATCH) {
+                            const chunkSlice = validChunks.slice(j, j + EMBED_BATCH);
+                            const texts = chunkSlice.map(c => c.content);
                             const embeddings = await getEmbeddings(texts);
-
-                            const embeddedChunks = chunks.map((chunk, idx) => ({
+                            
+                            const embeddedChunks = chunkSlice.map((chunk, idx) => ({
                                 chunk,
                                 embedding: embeddings[idx]
                             }));
-
+                            
                             const formattedChunks = embeddedChunks.map(c => this.store.formatChunkForBatch(c));
                             batchOperations.push({ action: 'saveChunks', chunks: formattedChunks });
+                            chunksProcessed += chunkSlice.length;
                         }
+                    }
 
+                    // 5. Update Metadata
+                    for (const file of batchFiles) {
+                        const fileChunks = allChunks.filter(c => c.filePath === file);
                         batchOperations.push({
                             action: 'saveMetadata',
                             metadata: {
                                 file_path: file,
                                 file_hash: fileHashes.get(file)!,
                                 last_indexed: Date.now(),
-                                chunk_count: chunks.length
+                                chunk_count: fileChunks.length
                             }
                         });
-
                         filesProcessed++;
-                        chunksProcessed += chunks.length;
-
-                    } catch (err) {
-                        console.error(`Error processing file ${file}:`, err);
+                        newOrUpdatedCount++;
                     }
-                }));
+
+                } catch (err) {
+                    console.error("Batch processing error:", err);
+                }
             }
 
             const DB_BATCH_LIMIT = 200;

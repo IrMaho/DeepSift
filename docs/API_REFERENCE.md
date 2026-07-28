@@ -1,6 +1,6 @@
 # 📖 DeepSift Source Code API Reference
 
-Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **129 TypeScript modules** in DeepSift.
+Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **128 TypeScript modules** in DeepSift.
 
 ---
 
@@ -1017,18 +1017,6 @@ Fallback parser that splits text into simple chunks based on lines.
 
 - **Path:** `packages/deepsift-core/src/parsers/skill-parser.ts`  
 - **Description:** SKILL.md and markdown knowledge document parser for agent knowledge realms.
-
----
-
-## 📄 [`tree-sitter-parser`](file:///packages/deepsift-core/src/parsers/tree-sitter-parser.ts)
-
-- **Path:** `packages/deepsift-core/src/parsers/tree-sitter-parser.ts`  
-- **Description:** Tree-sitter AST-based multi-language code chunk extractor for semantic indexing.
-
-### Exported Symbols
-
-#### `function parseAST`
-const parsers = new Map<string, Parser>();
 
 ---
 
