@@ -157,6 +157,15 @@ export class NativeStore {
         await this.syncToDisk();
     }
 
+    public async extractChunksNative(content: string, filePath: string, language: string): Promise<any[]> {
+        const result = await this.executeAction('extractChunksNative', {
+            content,
+            filePath,
+            language
+        });
+        return result || [];
+    }
+
     public async addGraphNode(node: any) {
         await this.executeAction('saveGraph', { graphNodes: [node] });
         await this.syncGraphToDisk();

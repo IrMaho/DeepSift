@@ -130,11 +130,23 @@ export class Indexer {
                         const content = await fs.readFile(file, 'utf-8');
                         const ext = path.extname(file).replace('.', '');
                         
-                        let chunks;
+                        let chunks: any[];
                         if ((this.parserProfile === 'skill' || this.parserProfile === 'docs') && ext === 'md') {
                             chunks = parseSkillFile(file, content);
                         } else {
-                            chunks = parseAST(content, file, ext);
+                            const rawChunks = await this.store.extractChunksNative(content, file, ext);
+                            // Normalize Zig chunk objects to match Node CodeChunk interface if necessary,
+                            // or just map properties
+                            chunks = rawChunks.map((c: any) => ({
+                                id: c.id,
+                                filePath: c.file_path,
+                                content: c.content,
+                                startLine: c.start_line,
+                                endLine: c.end_line,
+                                type: c.type,
+                                family: c.family,
+                                language: c.language
+                            }));
                         }
                         
                         const existingMeta = allMetadata.get(file);

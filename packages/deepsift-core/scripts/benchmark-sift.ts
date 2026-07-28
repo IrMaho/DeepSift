@@ -74,8 +74,10 @@ async function runBenchmark() {
         console.log(`📏 Average bytes per chunk: ${(stats.size / CHUNK_COUNT).toFixed(2)} bytes/chunk`);
     }
 
-    if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
-    if (fs.existsSync(dbPath + '.tmp')) fs.unlinkSync(dbPath + '.tmp');
+    try {
+        if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
+        if (fs.existsSync(dbPath + '.tmp')) fs.unlinkSync(dbPath + '.tmp');
+    } catch (e) {}
 }
 
 runBenchmark().catch(console.error);

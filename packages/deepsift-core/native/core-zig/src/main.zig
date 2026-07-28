@@ -18,6 +18,7 @@ const dead_code = @import("dead_code.zig");
 const toon = @import("toon.zig");
 const dec_renderer = @import("dec_renderer.zig");
 const math_engine = @import("math_engine.zig");
+const ast_parser = @import("ast_parser.zig");
 const rns_posit = @import("rns_posit.zig");
 const sift_vector = @import("sift_vector.zig");
 const similarity_simd = @import("similarity_simd.zig");
@@ -44,6 +45,7 @@ const Request = struct {
     ids: ?[][]const u8 = null,
     query: ?[]const u8 = null,
     content: ?[]const u8 = null,
+    language: ?[]const u8 = null,
     symbol: ?[]const u8 = null,
     key: ?[]const u8 = null,
     value: ?[]const u8 = null,
@@ -232,6 +234,12 @@ const GraphNodesResponse = struct {
     id: ?usize = null,
     success: bool = true,
     data: []const db.GraphNode,
+};
+
+const ExtractChunksResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const ast_parser.ParsedChunk,
 };
 
 fn countKeywordMatches(content: []const u8, file_path: []const u8, query: []const u8) f32 {
@@ -774,6 +782,22 @@ pub fn main() !void {
                 }
 
                 try writeResponse(allocator, &writer.interface, GraphNodesResponse{ .id = req_id, .data = results });
+            }
+        } else if (std.mem.eql(u8, req.action, "extractChunksNative")) {
+            if (req.content) |cnt| {
+                const fpath = req.filePath orelse "unknown.txt";
+                const lang = req.language orelse "text";
+                const chunks = try ast_parser.parseNative(allocator, cnt, fpath, lang);
+                defer {
+                    for (chunks) |chunk| {
+                        allocator.free(chunk.id);
+                        allocator.free(chunk.file_path);
+                        allocator.free(chunk.content);
+                        allocator.free(chunk.language);
+                    }
+                    allocator.free(chunks);
+                }
+                try writeResponse(allocator, &writer.interface, ExtractChunksResponse{ .id = req_id, .data = chunks });
             }
         } else {
             try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Unknown action" });
