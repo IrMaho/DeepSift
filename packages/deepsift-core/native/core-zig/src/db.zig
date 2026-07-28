@@ -1,8 +1,57 @@
 const std = @import("std");
 const mem = std.mem;
+const sift_vector = @import("sift_vector.zig");
 
 pub const VECTOR_DIM: usize = 384;
 pub const VECTOR_BQ_U32_COUNT: usize = VECTOR_DIM / 32;
+
+pub const OUTLIER_COUNT: usize = sift_vector.OUTLIER_COUNT;
+pub const PACKED_NIBBLES_LEN: usize = sift_vector.PACKED_NIBBLES_LEN;
+
+pub const SiftEmbedding = struct {
+    scale: f32,
+    offset: f32,
+    outlier_indices: [OUTLIER_COUNT]u16,
+    outlier_values: [OUTLIER_COUNT]i8,
+    packed_data: [PACKED_NIBBLES_LEN]u8,
+
+    pub fn fromBQ(bq: [VECTOR_BQ_U32_COUNT]u32) SiftEmbedding {
+        var se: SiftEmbedding = undefined;
+        se.scale = 1.0;
+        se.offset = 0.0;
+        @memset(&se.outlier_indices, 0);
+        @memset(&se.outlier_values, 0);
+        @memset(&se.packed_data, 0);
+        var idx: usize = 0;
+        while (idx < OUTLIER_COUNT) : (idx += 1) {
+            se.outlier_indices[idx] = @intCast(idx);
+            const word = bq[idx / 32];
+            const bit_val: i8 = if ((word >> @intCast(idx % 32)) & 1 == 1) 7 else -7;
+            se.outlier_values[idx] = bit_val;
+        }
+        var p: usize = 0;
+        var r: usize = OUTLIER_COUNT;
+        while (r + 1 < VECTOR_DIM and p < PACKED_NIBBLES_LEN) : (r += 2) {
+            const w1 = bq[r / 32];
+            const w2 = bq[(r + 1) / 32];
+            const b1: u4 = if ((w1 >> @intCast(r % 32)) & 1 == 1) 12 else 4;
+            const b2: u4 = if ((w2 >> @intCast((r + 1) % 32)) & 1 == 1) 12 else 4;
+            se.packed_data[p] = @as(u8, b1) | (@as(u8, b2) << 4);
+            p += 1;
+        }
+        return se;
+    }
+
+    pub fn toQuantizedVector(self: *const SiftEmbedding) sift_vector.QuantizedVector {
+        return sift_vector.QuantizedVector{
+            .scale = self.scale,
+            .offset = self.offset,
+            .outlier_indices = self.outlier_indices,
+            .outlier_values = self.outlier_values,
+            .packed_data = self.packed_data,
+        };
+    }
+};
 
 pub const Chunk = struct {
     id: []const u8,
@@ -12,7 +61,7 @@ pub const Chunk = struct {
     end_line: u32,
     chunk_type: []const u8,
     language: []const u8,
-    embedding: [VECTOR_BQ_U32_COUNT]u32,
+    embedding: SiftEmbedding,
 };
 
 pub const FileMetadata = struct {
@@ -136,13 +185,11 @@ pub const Database = struct {
         defer uncompressed_data.deinit();
         const writer = &uncompressed_data.writer;
 
-        // Write Magic
-        try writer.writeAll("ZDB2");
+        try writer.writeAll("ZDB3");
 
         var pool = StringPool.init(self.allocator);
         defer pool.deinit(self.allocator);
 
-        // Pre-fill pool
         var meta_it = self.metadata.iterator();
         while (meta_it.next()) |entry| {
             _ = try pool.addOrGet(self.allocator, entry.value_ptr.file_path);
@@ -157,7 +204,6 @@ pub const Database = struct {
 
         try writeStringPool(writer, &pool);
 
-        // Write Metadata
         try writer.writeInt(u32, @intCast(self.metadata.count()), .little);
         meta_it = self.metadata.iterator();
         while (meta_it.next()) |entry| {
@@ -167,7 +213,6 @@ pub const Database = struct {
             try writer.writeInt(u32, entry.value_ptr.chunk_count, .little);
         }
 
-        // Write Chunks
         try writer.writeInt(u32, @intCast(self.chunks.items.len), .little);
         for (self.chunks.items) |chunk| {
             try writer.writeInt(u32, try pool.addOrGet(self.allocator, chunk.id), .little);
@@ -177,9 +222,13 @@ pub const Database = struct {
             try writer.writeInt(u32, chunk.end_line, .little);
             try writer.writeInt(u32, try pool.addOrGet(self.allocator, chunk.chunk_type), .little);
             try writer.writeInt(u32, try pool.addOrGet(self.allocator, chunk.language), .little);
-            for (chunk.embedding) |val| {
-                try writer.writeInt(u32, val, .little);
+            try writer.writeInt(u32, @bitCast(chunk.embedding.scale), .little);
+            try writer.writeInt(u32, @bitCast(chunk.embedding.offset), .little);
+            for (chunk.embedding.outlier_indices) |oi| {
+                try writer.writeInt(u16, oi, .little);
             }
+            try writer.writeAll(&@as([OUTLIER_COUNT]u8, @bitCast(chunk.embedding.outlier_values)));
+            try writer.writeAll(&chunk.embedding.packed_data);
         }
 
         const file = try std.Io.Dir.cwd().createFile(io, file_path, .{});
@@ -222,12 +271,66 @@ pub const Database = struct {
         
         const is_zdb1 = mem.eql(u8, &magic, "ZDB1");
         const is_zdb2 = mem.eql(u8, &magic, "ZDB2");
-        if (!is_zdb1 and !is_zdb2) return error.InvalidFormat;
+        const is_zdb3 = mem.eql(u8, &magic, "ZDB3");
+        if (!is_zdb1 and !is_zdb2 and !is_zdb3) return error.InvalidFormat;
 
         self.reset();
         const arena_alloc = self.arena.allocator();
         
-        if (is_zdb2) {
+        if (is_zdb3) {
+            var pool = try readStringPool(&data_reader, arena_alloc);
+            defer pool.deinit(arena_alloc);
+
+            const meta_count = try data_reader.takeInt(u32, .little);
+            var mi: u32 = 0;
+            while (mi < meta_count) : (mi += 1) {
+                const fpath_idx = try data_reader.takeInt(u32, .little);
+                const fhash_idx = try data_reader.takeInt(u32, .little);
+                const last_indexed = try data_reader.takeInt(i64, .little);
+                const chunk_count = try data_reader.takeInt(u32, .little);
+                try self.metadata.put(pool.items[fpath_idx], .{
+                    .file_path = pool.items[fpath_idx],
+                    .file_hash = pool.items[fhash_idx],
+                    .last_indexed = last_indexed,
+                    .chunk_count = chunk_count,
+                });
+            }
+
+            const chunk_count = try data_reader.takeInt(u32, .little);
+            try self.chunks.ensureTotalCapacity(self.allocator, chunk_count);
+            var ci: u32 = 0;
+            while (ci < chunk_count) : (ci += 1) {
+                const id_idx = try data_reader.takeInt(u32, .little);
+                const fpath_idx = try data_reader.takeInt(u32, .little);
+                const content = try readString(&data_reader, arena_alloc);
+                const start_line = try data_reader.takeInt(u32, .little);
+                const end_line = try data_reader.takeInt(u32, .little);
+                const type_idx = try data_reader.takeInt(u32, .little);
+                const lang_idx = try data_reader.takeInt(u32, .little);
+
+                var emb: SiftEmbedding = undefined;
+                emb.scale = @bitCast(try data_reader.takeInt(u32, .little));
+                emb.offset = @bitCast(try data_reader.takeInt(u32, .little));
+                for (&emb.outlier_indices) |*oi| {
+                    oi.* = try data_reader.takeInt(u16, .little);
+                }
+                var ov_raw: [OUTLIER_COUNT]u8 = undefined;
+                try data_reader.readSliceAll(&ov_raw);
+                emb.outlier_values = @bitCast(ov_raw);
+                try data_reader.readSliceAll(&emb.packed_data);
+
+                self.chunks.appendAssumeCapacity(.{
+                    .id = pool.items[id_idx],
+                    .file_path = pool.items[fpath_idx],
+                    .content = content,
+                    .start_line = start_line,
+                    .end_line = end_line,
+                    .chunk_type = pool.items[type_idx],
+                    .language = pool.items[lang_idx],
+                    .embedding = emb,
+                });
+            }
+        } else if (is_zdb2) {
             var pool = try readStringPool(&data_reader, arena_alloc);
             defer pool.deinit(arena_alloc);
 
@@ -262,8 +365,8 @@ pub const Database = struct {
                 const type_idx = try data_reader.takeInt(u32, .little);
                 const lang_idx = try data_reader.takeInt(u32, .little);
                 
-                var embedding: [VECTOR_BQ_U32_COUNT]u32 = undefined;
-                for (&embedding) |*val| {
+                var bq_embedding: [VECTOR_BQ_U32_COUNT]u32 = undefined;
+                for (&bq_embedding) |*val| {
                     val.* = try data_reader.takeInt(u32, .little);
                 }
 
@@ -275,7 +378,7 @@ pub const Database = struct {
                     .end_line = end_line,
                     .chunk_type = pool.items[type_idx],
                     .language = pool.items[lang_idx],
-                    .embedding = embedding,
+                    .embedding = SiftEmbedding.fromBQ(bq_embedding),
                 });
             }
         } else {
@@ -311,8 +414,8 @@ pub const Database = struct {
                 const chunk_type = try readString(&data_reader, arena_alloc);
                 const language = try readString(&data_reader, arena_alloc);
                 
-                var embedding: [VECTOR_BQ_U32_COUNT]u32 = undefined;
-                for (&embedding) |*val| {
+                var bq_embedding: [VECTOR_BQ_U32_COUNT]u32 = undefined;
+                for (&bq_embedding) |*val| {
                     val.* = try data_reader.takeInt(u32, .little);
                 }
 
@@ -324,7 +427,7 @@ pub const Database = struct {
                     .end_line = end_line,
                     .chunk_type = chunk_type,
                     .language = language,
-                    .embedding = embedding,
+                    .embedding = SiftEmbedding.fromBQ(bq_embedding),
                 });
             }
         }

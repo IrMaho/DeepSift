@@ -1,5 +1,6 @@
 const std = @import("std");
 const db = @import("db.zig");
+const similarity_simd = @import("similarity_simd.zig");
 
 pub const BM25Config = struct {
     k1: f32 = 1.2,
@@ -49,17 +50,17 @@ pub fn hammingDistanceSIMD(a: [db.VECTOR_BQ_U32_COUNT]u32, b: [db.VECTOR_BQ_U32_
     return dist;
 }
 
-pub fn computeVectorScore(a: [db.VECTOR_BQ_U32_COUNT]u32, b: [db.VECTOR_BQ_U32_COUNT]u32) f32 {
-    const dist = hammingDistanceSIMD(a, b);
-    const max_dim: f32 = @floatFromInt(db.VECTOR_DIM);
-    return 1.0 - (@as(f32, @floatFromInt(dist)) / max_dim);
+pub fn computeVectorScore(a: db.SiftEmbedding, b: db.SiftEmbedding) f32 {
+    const qa = a.toQuantizedVector();
+    const qb = b.toQuantizedVector();
+    return similarity_simd.computeQuantizedDotProduct(&qa, &qb);
 }
 
 pub fn searchHybridNative(
     allocator: std.mem.Allocator,
     chunks: []const db.Chunk,
     query: []const u8,
-    query_vector: ?[db.VECTOR_BQ_U32_COUNT]u32,
+    query_vector: ?db.SiftEmbedding,
     top_k: usize,
     bm25_cfg: BM25Config,
     rrf_cfg: RRFConfig,

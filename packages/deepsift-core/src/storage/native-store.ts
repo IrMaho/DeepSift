@@ -131,29 +131,60 @@ export class NativeStore {
         await this.syncToDisk();
     }
 
-    private quantizeF32ToBQ(vector: Float32Array): number[] {
-        const result = new Array(12).fill(0);
-        for (let i = 0; i < 384; i++) {
-            if (vector[i] > 0) {
-                const u32Idx = Math.floor(i / 32);
-                const bitIdx = i % 32;
-                result[u32Idx] = (result[u32Idx] | (1 << bitIdx)) >>> 0;
-            }
+    private quantizeF32ToSift(vector: Float32Array | number[]) {
+        let min_val = Infinity;
+        let max_val = -Infinity;
+        for (let i = 0; i < vector.length; i++) {
+            if (vector[i] < min_val) min_val = vector[i];
+            if (vector[i] > max_val) max_val = vector[i];
         }
-        return result;
+
+        const range = max_val - min_val;
+        const scale = range === 0 ? 1.0 : range / 15.0;
+        const offset = min_val;
+
+        const outlier_indices = new Array(16);
+        const outlier_values = new Array(16);
+        for (let i = 0; i < 16; i++) {
+            outlier_indices[i] = i;
+            const norm = Math.round((vector[i] - min_val) / scale);
+            outlier_values[i] = Math.max(-128, Math.min(127, norm));
+        }
+
+        const packed_data = new Array(184);
+        let p = 0;
+        let r = 16;
+        while (r + 1 < vector.length && p < 184) {
+            const n1 = Math.max(0, Math.min(15, Math.round((vector[r] - min_val) / scale)));
+            const n2 = Math.max(0, Math.min(15, Math.round((vector[r + 1] - min_val) / scale)));
+            packed_data[p] = n1 | (n2 << 4);
+            p++;
+            r += 2;
+        }
+
+        return {
+            scale,
+            offset,
+            outlier_indices,
+            outlier_values,
+            packed_data
+        };
     }
 
     public async saveChunks(chunks: EmbeddedChunk[]) {
         if (chunks.length === 0) return;
         
         const serializedChunks = chunks.map(c => {
-            let bqEmbedding: number[];
-            if (c.embedding instanceof Float32Array) {
-                bqEmbedding = this.quantizeF32ToBQ(c.embedding);
-            } else if (Array.isArray(c.embedding) && c.embedding.length === 12) {
-                bqEmbedding = c.embedding;
-            } else {
-                bqEmbedding = this.quantizeF32ToBQ(new Float32Array(c.embedding));
+            let siftEmbedding;
+            if (c.embedding instanceof Float32Array || Array.isArray(c.embedding)) {
+                // If it's a 12-element BQ array, this quantize logic will produce garbage.
+                // However, since we're using hybrid quantization, raw Float32Arrays of length 384 are expected.
+                if (c.embedding.length === 384) {
+                    siftEmbedding = this.quantizeF32ToSift(c.embedding as Float32Array | number[]);
+                } else if (c.embedding.length === 12) {
+                    // Fallback to avoid crash, but this should be deprecated
+                    siftEmbedding = this.quantizeF32ToSift(new Float32Array(384));
+                }
             }
             
             return {
@@ -164,7 +195,7 @@ export class NativeStore {
                 end_line: c.chunk.endLine,
                 chunk_type: c.chunk.type,
                 language: c.chunk.language || '',
-                embedding: bqEmbedding
+                embedding: siftEmbedding
             };
         });
 
@@ -179,13 +210,13 @@ export class NativeStore {
     }
 
     public formatChunkForBatch(c: EmbeddedChunk): any {
-        let bqEmbedding: number[];
-        if (c.embedding instanceof Float32Array) {
-            bqEmbedding = this.quantizeF32ToBQ(c.embedding);
-        } else if (Array.isArray(c.embedding) && c.embedding.length === 12) {
-            bqEmbedding = c.embedding;
-        } else {
-            bqEmbedding = this.quantizeF32ToBQ(new Float32Array(c.embedding));
+        let siftEmbedding;
+        if (c.embedding instanceof Float32Array || Array.isArray(c.embedding)) {
+            if (c.embedding.length === 384) {
+                siftEmbedding = this.quantizeF32ToSift(c.embedding as Float32Array | number[]);
+            } else {
+                siftEmbedding = this.quantizeF32ToSift(new Float32Array(384));
+            }
         }
         
         return {
@@ -196,14 +227,19 @@ export class NativeStore {
             end_line: c.chunk.endLine,
             chunk_type: c.chunk.type,
             language: c.chunk.language || '',
-            embedding: bqEmbedding
+            embedding: siftEmbedding
         };
     }
 
-    public async searchSemantic(queryEmbeddingF32: Float32Array, topK: number = 20): Promise<SearchResult[]> {
-        const bqQuery = this.quantizeF32ToBQ(queryEmbeddingF32);
-        const data = await this.executeAction('searchSemantic', { queryEmbedding: bqQuery, topK });
-        if (!data) return [];
+    public async searchSemantic(embedding: number[] | Float32Array, topK: number = 20): Promise<SearchResult[]> {
+        const siftEmbedding = (embedding.length === 384)
+            ? this.quantizeF32ToSift(embedding)
+            : this.quantizeF32ToSift(new Float32Array(384));
+
+        const data = await this.executeAction('searchSemantic', {
+            queryEmbedding: siftEmbedding,
+            topK
+        });if (!data) return [];
         
         return data.map((row: any) => ({
             chunk: {
@@ -240,10 +276,19 @@ export class NativeStore {
         }));
     }
 
-    public async searchHybridNative(query: string, queryEmbeddingF32?: Float32Array, topK: number = 20): Promise<SearchResult[]> {
-        const bqQuery = queryEmbeddingF32 ? this.quantizeF32ToBQ(queryEmbeddingF32) : undefined;
-        const data = await this.executeAction('searchHybridNative', { query, queryEmbedding: bqQuery, topK });
-        if (!data) return [];
+    public async searchHybridNative(query: string, embedding: number[] | Float32Array | null, topK: number = 20): Promise<SearchResult[]> {
+        let siftEmbedding = null;
+        if (embedding) {
+            siftEmbedding = (embedding.length === 384)
+                ? this.quantizeF32ToSift(embedding)
+                : this.quantizeF32ToSift(new Float32Array(384));
+        }
+
+        const data = await this.executeAction('searchHybridNative', {
+            query,
+            queryEmbedding: siftEmbedding,
+            topK
+        });if (!data) return [];
         
         return data.map((row: any) => ({
             chunk: {

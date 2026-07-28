@@ -17,6 +17,12 @@ const resource_mapper = @import("resource_mapper.zig");
 const dead_code = @import("dead_code.zig");
 const toon = @import("toon.zig");
 const dec_renderer = @import("dec_renderer.zig");
+const math_engine = @import("math_engine.zig");
+const rns_posit = @import("rns_posit.zig");
+const sift_vector = @import("sift_vector.zig");
+const similarity_simd = @import("similarity_simd.zig");
+
+const speculative_engine = @import("speculative_engine.zig");
 
 const BatchOperation = struct {
     action: []const u8,
@@ -46,7 +52,7 @@ const Request = struct {
     threshold: ?f32 = null,
     width: ?u32 = null,
     height: ?u32 = null,
-    queryEmbedding: ?[db.VECTOR_BQ_U32_COUNT]u32 = null,
+    queryEmbedding: ?db.SiftEmbedding = null,
     batch: ?[]BatchOperation = null,
     
     notes: ?[]memo_graph.NoteInfo = null,
@@ -90,7 +96,7 @@ const ChunksResponse = struct {
     data: []const db.Chunk,
 };
 
-pub const ChunkEmbedding = struct { id: []const u8, embedding: [db.VECTOR_BQ_U32_COUNT]u32 };
+pub const ChunkEmbedding = struct { id: []const u8, embedding: db.SiftEmbedding };
 const ChunkEmbeddingsResponse = struct {
     id: ?usize = null,
     success: bool = true,
@@ -311,12 +317,10 @@ fn compareRankedChunks(_: void, a: RankedChunk, b: RankedChunk) bool {
     return a.keyword_score > b.keyword_score;
 }
 
-fn hammingSimilarity(a: [db.VECTOR_BQ_U32_COUNT]u32, b: [db.VECTOR_BQ_U32_COUNT]u32) f32 {
-    var distance: u32 = 0;
-    for (0..db.VECTOR_BQ_U32_COUNT) |i| {
-        distance += @popCount(a[i] ^ b[i]);
-    }
-    return 1.0 - @as(f32, @floatFromInt(distance)) / @as(f32, @floatFromInt(db.VECTOR_DIM));
+fn siftSimilarity(a: db.SiftEmbedding, b: db.SiftEmbedding) f32 {
+    const qa = a.toQuantizedVector();
+    const qb = b.toQuantizedVector();
+    return similarity_simd.computeQuantizedDotProduct(&qa, &qb);
 }
 
 fn writeResponse(allocator: std.mem.Allocator, writer: *std.Io.Writer, value: anytype) !void {
@@ -535,7 +539,7 @@ pub fn main() !void {
                 defer results.deinit(allocator);
 
                 for (database.chunks.items, 0..) |chunk, ci| {
-                    const score = hammingSimilarity(qe, chunk.embedding);
+                    const score = siftSimilarity(qe, chunk.embedding);
                     try results.append(allocator, .{ .chunk_index = ci, .keyword_score = score });
                 }
 
