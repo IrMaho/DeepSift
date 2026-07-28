@@ -195,6 +195,7 @@ const BulkWorkerContext = struct {
     io: std.Io,
     file_paths: [][]const u8,
     results: std.ArrayList(ParsedChunk),
+    mutex: *std.Io.Mutex,
 };
 
 fn parseBulkWorker(ctx: *BulkWorkerContext) void {
@@ -205,24 +206,31 @@ fn parseBulkWorker(ctx: *BulkWorkerContext) void {
         const stat = file.stat(ctx.io) catch continue;
         if (stat.size > 5 * 1024 * 1024) continue; // Skip files > 5MB
         
-        const in_buf = ctx.allocator.alloc(u8, 65536) catch continue;
-        defer ctx.allocator.free(in_buf);
+        var temp_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+        defer temp_arena.deinit();
+        const temp_allocator = temp_arena.allocator();
         
+        const in_buf = temp_allocator.alloc(u8, 65536) catch continue;
         var file_reader = file.reader(ctx.io, in_buf);
         
-        const content = file_reader.interface.readAlloc(ctx.allocator, stat.size) catch continue;
-        defer ctx.allocator.free(content);
+        const content = file_reader.interface.readAlloc(temp_allocator, stat.size) catch continue;
         
         var ext: []const u8 = "text";
         if (std.mem.lastIndexOf(u8, file_path, ".")) |ext_idx| {
             ext = file_path[ext_idx + 1..];
         }
         
-        const chunks = parseNative(ctx.allocator, content, file_path, ext) catch continue;
-        defer ctx.allocator.free(chunks); // The chunks slice is freed, but the contents are appended to results
+        const chunks = parseNative(temp_allocator, content, file_path, ext) catch continue;
         
+        ctx.mutex.lockUncancelable(ctx.io);
+        defer ctx.mutex.unlock(ctx.io);
         for (chunks) |chunk| {
-            ctx.results.append(ctx.allocator, chunk) catch {};
+            var duplicated_chunk = chunk;
+            duplicated_chunk.id = ctx.allocator.dupe(u8, chunk.id) catch continue;
+            duplicated_chunk.file_path = ctx.allocator.dupe(u8, chunk.file_path) catch continue;
+            duplicated_chunk.content = ctx.allocator.dupe(u8, chunk.content) catch continue;
+            duplicated_chunk.language = ctx.allocator.dupe(u8, chunk.language) catch continue;
+            ctx.results.append(ctx.allocator, duplicated_chunk) catch {};
         }
     }
 }
@@ -245,6 +253,10 @@ pub fn extractChunksBulkNative(allocator: std.mem.Allocator, file_paths: [][]con
         contexts.deinit(allocator);
     }
     
+    const shared_mutex = try allocator.create(std.Io.Mutex);
+    shared_mutex.* = std.Io.Mutex.init;
+    defer allocator.destroy(shared_mutex);
+    
     var i: usize = 0;
     while (i < file_paths.len) : (i += chunk_size) {
         const end = @min(i + chunk_size, file_paths.len);
@@ -256,6 +268,7 @@ pub fn extractChunksBulkNative(allocator: std.mem.Allocator, file_paths: [][]con
             .io = io,
             .file_paths = slice,
             .results = std.ArrayList(ParsedChunk).empty,
+            .mutex = shared_mutex,
         };
         
         const thread = std.Thread.spawn(.{}, parseBulkWorker, .{ctx}) catch continue;

@@ -10,7 +10,7 @@ import { ZigBridge } from './zig-bridge.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import zlib from 'zlib';
+import { createRequire } from 'module';
 import { EmbeddedChunk, IndexMetadata, SearchResult, ChunkType } from '../types/index.js';
 
 export interface BatchOperation {
@@ -34,39 +34,46 @@ export class NativeStore {
     private graphDbPath?: string;
     private realmId?: string;
     private projectPath?: string;
-    private workingDbPath: string;
-    private workingGraphDbPath?: string;
 
     constructor(dbPath: string, graphDbPath?: string, realmId?: string, projectPath?: string) {
         this.dbPath = dbPath;
         this.graphDbPath = graphDbPath;
         this.realmId = realmId;
         this.projectPath = projectPath;
-        this.workingDbPath = dbPath + ".tmp";
-        
-        // Decompress database if exists
-        if (fs.existsSync(this.dbPath) && !fs.existsSync(this.workingDbPath)) {
+        // One-time decompression for migration
+        const uncompressFile = (src: string) => {
+            if (!fs.existsSync(src)) return;
+            // Check for gzip magic number (0x1f 0x8b)
+            const buffer = Buffer.alloc(2);
             try {
-                const data = fs.readFileSync(this.dbPath);
-                const uncompressed = zlib.gunzipSync(data);
-                fs.writeFileSync(this.workingDbPath, uncompressed);
-            } catch (e) {
-                // If it wasn't compressed, just copy it
-                fs.copyFileSync(this.dbPath, this.workingDbPath);
-            }
-        }
-        
-        if (this.graphDbPath) {
-            this.workingGraphDbPath = this.graphDbPath + ".tmp";
-            if (fs.existsSync(this.graphDbPath) && !fs.existsSync(this.workingGraphDbPath)) {
-                try {
-                    const data = fs.readFileSync(this.graphDbPath);
-                    const uncompressed = zlib.gunzipSync(data);
-                    fs.writeFileSync(this.workingGraphDbPath, uncompressed);
-                } catch (e) {
-                    fs.copyFileSync(this.graphDbPath, this.workingGraphDbPath);
+                const fd = fs.openSync(src, 'r');
+                fs.readSync(fd, buffer, 0, 2, 0);
+                fs.closeSync(fd);
+                if (buffer[0] !== 0x1f || buffer[1] !== 0x8b) {
+                    return; // Already uncompressed (or invalid)
                 }
+            } catch (e) {
+                return;
             }
+
+            console.log('[DeepSift] Migrating compressed DB to raw format for zero-copy streaming: ' + src);
+            const temp = src + ".uncompressed.tmp";
+            try {
+                const _require = createRequire(import.meta.url);
+                const zlib = _require('zlib');
+                const data = fs.readFileSync(src);
+                const uncompressed = zlib.gunzipSync(data);
+                fs.writeFileSync(temp, uncompressed);
+                fs.renameSync(temp, src);
+            } catch (e) {
+                if (fs.existsSync(temp)) fs.unlinkSync(temp);
+                console.error('[DeepSift] Failed to decompress ' + src, e);
+            }
+        };
+
+        uncompressFile(this.dbPath);
+        if (this.graphDbPath) {
+            uncompressFile(this.graphDbPath);
         }
 
         if (!fs.existsSync(EXE_PATH)) {
@@ -78,8 +85,8 @@ export class NativeStore {
     private async executeAction(action: string, payload: any = {}): Promise<any> {
         const req = {
             action,
-            dbPath: this.workingDbPath,
-            graphDbPath: this.workingGraphDbPath || this.graphDbPath,
+            dbPath: this.dbPath,
+            graphDbPath: this.graphDbPath,
             realmId: this.realmId,
             projectPath: this.projectPath,
             ...payload
@@ -90,27 +97,11 @@ export class NativeStore {
     }
 
     public async syncToDisk() {
-        if (fs.existsSync(this.workingDbPath)) {
-            try {
-                const data = await fs.promises.readFile(this.workingDbPath);
-                const compressed = zlib.gzipSync(data);
-                await fs.promises.writeFile(this.dbPath, compressed);
-            } catch (e) {
-                console.error("Failed to compress cache.db", e);
-            }
-        }
+        // No-op: Zig writes directly to the uncompressed DB file via mmap
     }
 
     public async syncGraphToDisk() {
-        if (this.workingGraphDbPath && this.graphDbPath && fs.existsSync(this.workingGraphDbPath)) {
-            try {
-                const data = await fs.promises.readFile(this.workingGraphDbPath);
-                const compressed = zlib.gzipSync(data);
-                await fs.promises.writeFile(this.graphDbPath, compressed);
-            } catch (e) {
-                console.error("Failed to compress graph DB", e);
-            }
-        }
+        // No-op: Zig writes directly to the uncompressed DB file via mmap
     }
 
     public async saveMetadata(metadata: IndexMetadata) {
