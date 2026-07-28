@@ -21,11 +21,21 @@ pub fn computeQuantizedDotProduct(
     math.unpackNibbles(&a.packed_data, &nibbles_a);
     math.unpackNibbles(&b.packed_data, &nibbles_b);
 
+    const V = @Vector(16, i8);
+    const V16 = @Vector(16, i16);
+    const V32 = @Vector(16, i32);
+
     var j: usize = 0;
-    while (j < nibbles_a.len) : (j += 1) {
-        const idx_a: u4 = @intCast(std.math.clamp(nibbles_a[j] + 8, 0, 15));
-        const idx_b: u4 = @intCast(std.math.clamp(nibbles_b[j] + 8, 0, 15));
-        int_acc += math.GLOBAL_LUT.multiplyI4(idx_a, idx_b);
+    while (j < nibbles_a.len) : (j += 16) {
+        const va: V = nibbles_a[j..][0..16].*;
+        const vb: V = nibbles_b[j..][0..16].*;
+
+        const va16: V16 = va;
+        const vb16: V16 = vb;
+        const vprod: V16 = va16 * vb16;
+        
+        const vprod32: V32 = vprod;
+        int_acc += @reduce(.Add, vprod32);
     }
 
     const float_result = @as(f32, @floatFromInt(int_acc)) * a.scale * b.scale;

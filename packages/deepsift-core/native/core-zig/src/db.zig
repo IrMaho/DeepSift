@@ -101,6 +101,8 @@ pub const Database = struct {
     arena: std.heap.ArenaAllocator,
     chunks: std.ArrayList(Chunk),
     metadata: std.StringHashMap(FileMetadata),
+    mapped_data: ?[]const u8 = null,
+    mapped_handle: ?std.os.windows.HANDLE = null,
 
     const Self = @This();
 
@@ -110,19 +112,41 @@ pub const Database = struct {
             .arena = std.heap.ArenaAllocator.init(allocator),
             .chunks = std.ArrayList(Chunk).empty,
             .metadata = std.StringHashMap(FileMetadata).init(allocator),
+            .mapped_data = null,
+            .mapped_handle = null,
         };
     }
 
     pub fn deinit(self: *Self) void {
+        self.unmapData();
         self.chunks.deinit(self.allocator);
         self.metadata.deinit();
         self.arena.deinit();
     }
 
     pub fn reset(self: *Self) void {
+        self.unmapData();
         self.chunks.clearRetainingCapacity();
         self.metadata.clearRetainingCapacity();
         _ = self.arena.reset(.retain_capacity);
+    }
+
+    extern "kernel32" fn UnmapViewOfFile(lpBaseAddress: ?*const anyopaque) callconv(.winapi) i32;
+    extern "kernel32" fn CreateFileW(lpFileName: [*:0]const u16, dwDesiredAccess: u32, dwShareMode: u32, lpSecurityAttributes: ?*anyopaque, dwCreationDisposition: u32, dwFlagsAndAttributes: u32, hTemplateFile: ?*anyopaque) callconv(.winapi) *anyopaque;
+    extern "kernel32" fn GetFileSizeEx(hFile: *anyopaque, lpFileSize: *u64) callconv(.winapi) i32;
+    extern "kernel32" fn CreateFileMappingW(hFile: *anyopaque, lpFileMappingAttributes: ?*anyopaque, flProtect: u32, dwMaximumSizeHigh: u32, dwMaximumSizeLow: u32, lpName: ?[*:0]const u16) callconv(.winapi) ?*anyopaque;
+    extern "kernel32" fn MapViewOfFile(hFileMappingObject: *anyopaque, dwDesiredAccess: u32, dwFileOffsetHigh: u32, dwFileOffsetLow: u32, dwNumberOfBytesToMap: usize) callconv(.winapi) ?*anyopaque;
+    extern "kernel32" fn CloseHandle(hObject: *anyopaque) callconv(.winapi) i32;
+
+    fn unmapData(self: *Self) void {
+        if (self.mapped_data) |data| {
+            if (@import("builtin").os.tag == .windows) {
+                _ = UnmapViewOfFile(data.ptr);
+            } else {
+                std.posix.munmap(@alignCast(data));
+            }
+            self.mapped_data = null;
+        }
     }
 
     fn writeString(writer: anytype, str: []const u8) !void {
@@ -130,11 +154,42 @@ pub const Database = struct {
         try writer.writeAll(str);
     }
 
-    fn readString(reader: anytype, alloc: mem.Allocator) ![]const u8 {
+    const MemReader = struct {
+        buffer: []const u8,
+        pos: usize,
+        pub fn takeInt(self: *MemReader, comptime T: type, endian: std.builtin.Endian) !T {
+            const size = @sizeOf(T);
+            if (self.pos + size > self.buffer.len) return error.EndOfStream;
+            const slice = self.buffer[self.pos .. self.pos + size];
+            self.pos += size;
+            return std.mem.readInt(T, slice[0..size], endian);
+        }
+        pub fn readNoEof(self: *MemReader, buf: []u8) !void {
+            if (self.pos + buf.len > self.buffer.len) return error.EndOfStream;
+            @memcpy(buf, self.buffer[self.pos .. self.pos + buf.len]);
+            self.pos += buf.len;
+        }
+        pub fn readSliceAll(self: *MemReader, buf: []u8) !void {
+            return self.readNoEof(buf);
+        }
+        pub fn readStringZeroCopy(self: *MemReader) ![]const u8 {
+            const len = try self.takeInt(u32, .little);
+            if (self.pos + len > self.buffer.len) return error.EndOfStream;
+            const slice = self.buffer[self.pos .. self.pos + len];
+            self.pos += len;
+            return slice;
+        }
+    };
+
+    fn readStringPool(reader: *MemReader, allocator: mem.Allocator) !std.ArrayList([]const u8) {
         const len = try reader.takeInt(u32, .little);
-        const buf = try alloc.alloc(u8, len);
-        try reader.readSliceAll(buf);
-        return buf;
+        var pool = std.ArrayList([]const u8).empty;
+        var i: u32 = 0;
+        while (i < len) : (i += 1) {
+            const s = try reader.readStringZeroCopy();
+            try pool.append(allocator, s);
+        }
+        return pool;
     }
 
     const StringPool = struct {
@@ -167,17 +222,6 @@ pub const Database = struct {
         for (pool.list.items) |s| {
             try writeString(writer, s);
         }
-    }
-
-    fn readStringPool(reader: anytype, allocator: mem.Allocator) !std.ArrayList([]const u8) {
-        const len = try reader.takeInt(u32, .little);
-        var pool = std.ArrayList([]const u8).empty;
-        var i: u32 = 0;
-        while (i < len) : (i += 1) {
-            const s = try readString(reader, allocator);
-            try pool.append(allocator, s);
-        }
-        return pool;
     }
 
     pub fn saveToFile(self: *Self, io: anytype, file_path: []const u8) !void {
@@ -241,40 +285,53 @@ pub const Database = struct {
         try file_writer.flush();
     }
 
-    pub fn loadFromFile(self: *Self, io: anytype, file_path: []const u8) !void {
-        const file = std.Io.Dir.cwd().openFile(io, file_path, .{}) catch |err| {
-            if (err == error.FileNotFound) return;
-            return err;
-        };
-        defer file.close(io);
+    fn mapFile(self: *Self, file_path: []const u8) ![]const u8 {
+        if (@import("builtin").os.tag == .windows) {
+            const path_w = try std.unicode.utf8ToUtf16LeAllocZ(self.allocator, file_path);
+            defer self.allocator.free(path_w);
+            const handle = CreateFileW(path_w.ptr, 0x80000000, 1, null, 3, 128, null); // GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL
+            if (handle == @as(*anyopaque, @ptrFromInt(std.math.maxInt(usize)))) return error.FileNotFound; // INVALID_HANDLE_VALUE
+            defer _ = CloseHandle(handle);
+            
+            var file_size: u64 = 0;
+            _ = GetFileSizeEx(handle, &file_size);
+            if (file_size == 0) return &[_]u8{};
 
-        std.debug.print("db: Opened file.\n", .{});
-        const stat = try file.stat(io);
-        if (stat.size == 0) return;
-        std.debug.print("db: File size {d}\n", .{stat.size});
+            const map_handle = CreateFileMappingW(handle, null, 2, 0, 0, null); // PAGE_READONLY
+            if (map_handle == null) return error.MappingFailed;
+            defer _ = CloseHandle(map_handle.?);
+            
+            const ptr = MapViewOfFile(map_handle.?, 4, 0, 0, 0); // FILE_MAP_READ
+            if (ptr == null) return error.MappingFailed;
+            return @as([*]const u8, @ptrCast(ptr.?))[0..file_size];
+        } else {
+            const fd = try std.posix.open(file_path, .{ .ACCMODE = .RDONLY }, 0);
+            defer std.posix.close(fd);
+            const stat = try std.posix.fstat(fd);
+            if (stat.size == 0) return &[_]u8{};
+            const ptr = try std.posix.mmap(null, @intCast(stat.size), std.posix.PROT.READ, .{ .TYPE = .SHARED }, fd, 0);
+            return ptr[0..@intCast(stat.size)];
+        }
+    }
 
-        const in_buf = try self.allocator.alloc(u8, 1024 * 1024 * 64); defer self.allocator.free(in_buf);
-        var file_reader = file.reader(io, in_buf);
-
-        var uncompressed = std.Io.Writer.Allocating.init(self.allocator);
-        defer uncompressed.deinit();
-
-        _ = file_reader.interface.streamRemaining(&uncompressed.writer) catch |err| {
-            std.debug.print("db: Read error: {any}\n", .{err});
-        };
-
-        var data_reader: std.Io.Reader = .fixed(uncompressed.written());
+    pub fn loadFromFile(self: *Self, file_path: []const u8) !void {
+        self.reset();
+        
+        const mapped_data = try self.mapFile(file_path);
+        if (mapped_data.len == 0) return;
+        self.mapped_data = mapped_data;
+        
+        var data_reader = MemReader{ .buffer = mapped_data, .pos = 0 };
 
         // Read Magic
         var magic: [4]u8 = undefined;
-        try data_reader.readSliceAll(&magic);
+        try data_reader.readNoEof(&magic);
         
         const is_zdb1 = mem.eql(u8, &magic, "ZDB1");
         const is_zdb2 = mem.eql(u8, &magic, "ZDB2");
         const is_zdb3 = mem.eql(u8, &magic, "ZDB3");
         if (!is_zdb1 and !is_zdb2 and !is_zdb3) return error.InvalidFormat;
 
-        self.reset();
         const arena_alloc = self.arena.allocator();
         
         if (is_zdb3) {
@@ -302,7 +359,7 @@ pub const Database = struct {
             while (ci < chunk_count) : (ci += 1) {
                 const id_idx = try data_reader.takeInt(u32, .little);
                 const fpath_idx = try data_reader.takeInt(u32, .little);
-                const content = try readString(&data_reader, arena_alloc);
+                const content = try data_reader.readStringZeroCopy();
                 const start_line = try data_reader.takeInt(u32, .little);
                 const end_line = try data_reader.takeInt(u32, .little);
                 const type_idx = try data_reader.takeInt(u32, .little);
@@ -359,7 +416,7 @@ pub const Database = struct {
             while (j < chunk_count) : (j += 1) {
                 const id_idx = try data_reader.takeInt(u32, .little);
                 const fpath_idx = try data_reader.takeInt(u32, .little);
-                const content = try readString(&data_reader, arena_alloc);
+                const content = try data_reader.readStringZeroCopy();
                 const start_line = try data_reader.takeInt(u32, .little);
                 const end_line = try data_reader.takeInt(u32, .little);
                 const type_idx = try data_reader.takeInt(u32, .little);
@@ -387,8 +444,8 @@ pub const Database = struct {
             const meta_count = try data_reader.takeInt(u32, .little);
             var i: u32 = 0;
             while (i < meta_count) : (i += 1) {
-                const fpath = try readString(&data_reader, arena_alloc);
-                const fhash = try readString(&data_reader, arena_alloc);
+                const fpath = try data_reader.readStringZeroCopy();
+                const fhash = try data_reader.readStringZeroCopy();
                 const last_indexed = try data_reader.takeInt(i64, .little);
                 const chunk_count = try data_reader.takeInt(u32, .little);
                 
@@ -406,13 +463,13 @@ pub const Database = struct {
             
             var j: u32 = 0;
             while (j < chunk_count) : (j += 1) {
-                const id = try readString(&data_reader, arena_alloc);
-                const fpath = try readString(&data_reader, arena_alloc);
-                const content = try readString(&data_reader, arena_alloc);
+                const id = try data_reader.readStringZeroCopy();
+                const fpath = try data_reader.readStringZeroCopy();
+                const content = try data_reader.readStringZeroCopy();
                 const start_line = try data_reader.takeInt(u32, .little);
                 const end_line = try data_reader.takeInt(u32, .little);
-                const chunk_type = try readString(&data_reader, arena_alloc);
-                const language = try readString(&data_reader, arena_alloc);
+                const chunk_type = try data_reader.readStringZeroCopy();
+                const language = try data_reader.readStringZeroCopy();
                 
                 var bq_embedding: [VECTOR_BQ_U32_COUNT]u32 = undefined;
                 for (&bq_embedding) |*val| {

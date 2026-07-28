@@ -394,13 +394,12 @@ pub fn main() !void {
         const resolved_db_path: []const u8 = req.dbPath;
         const resolved_graph_path: ?[]const u8 = req.graphDbPath;
 
-        database.loadFromFile(io, resolved_db_path) catch {};
+        database.loadFromFile(resolved_db_path) catch {};
 
         var graph_modified = false;
         if (resolved_graph_path) |graphPath| {
             graph_db.loadFromFile(io, graphPath) catch {};
         }
-
         var modified = false;
 
         if (std.mem.eql(u8, req.action, "saveGraph")) {
