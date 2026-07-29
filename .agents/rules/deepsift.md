@@ -207,8 +207,7 @@ You have access to **DeepSift**, a powerful local semantic search engine and cod
 | `deepsift resolve (r)` | **ARCHITECTURE & INTELLIGENCE:** Resolves import paths and export symbols — finds where any identifier is defined across the workspace. |
 | `deepsift resolve-error` | **REFACTORING & SELF-HEALING:** Analyzes a TypeScript compiler error message and suggests targeted fixes with code snippets. |
 | `deepsift i18n-extract` | **SECURITY & DIAGNOSTICS:** Scans codebase for hardcoded display strings and generates an i18n key-value extraction report. |
-| `deepsift learn` | **ARCHITECTURE & INTELLIGENCE:** Runs adaptive project pattern learning — mines naming conventions, token vocabularies, and architectural signals. |
-| `deepsift diag` | **SECURITY & DIAGNOSTICS:** Runs a full system diagnostics report covering Node version, embedding model, SQLite health, and config state. |
+| `deepsift diag "problems.json"` | **SECURITY & DIAGNOSTICS:** Read IDE problem diagnostics with context snippets. |
 | `deepsift com` | **UTILITIES & DASHBOARD:** Executes any arbitrary shell command from within the DeepSift context — output is compressed, cached, and searchable in history. |
 | `deepsift clean (c)` | **UTILITIES & DASHBOARD:** Cleans and prunes stored history logs — removes old search and command result cache files. |
 

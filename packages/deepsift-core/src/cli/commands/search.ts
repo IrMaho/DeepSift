@@ -107,13 +107,15 @@ export async function searchCommand(
 }
 
 /**
- * AST & Path Token fallback matcher executed when vector search yields no direct hits.
+ * @param projectPath The root directory to scan.
+ * @param query The exact string to locate.
+ * @returns Array of fallback matches.
  */
-function astSymbolFallback(projectPath: string, rawQuery: string): Array<{ file: string; line: number; snippet: string; score: number }> {
-    const matches: Array<{ file: string; line: number; snippet: string; score: number }> = [];
+export function astSymbolFallback(projectPath: string, query: string): { file: string, line: number, snippet: string, score: number }[] {
+    const matches: { file: string, line: number, snippet: string, score: number }[] = [];
     const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.deepsift', 'coverage', '.dart_tool', 'venv', '.venv', 'site-packages']);
 
-    const queryClean = rawQuery.trim();
+    const queryClean = query.trim();
     const queryLower = queryClean.toLowerCase();
     const tokens = queryClean.includes(' ') 
         ? queryClean.split(/\s+/).map(t => t.toLowerCase()).filter(t => t.length >= 2)

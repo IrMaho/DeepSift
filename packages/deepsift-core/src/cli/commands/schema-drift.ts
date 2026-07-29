@@ -12,15 +12,27 @@ import { printResult, OutputFormat } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';
 import { normalizePath } from '../../utils/outline.js';
 
-function extractEntities(content: string): { name: string, fields: string[] }[] {
-    const entities: { name: string, fields: string[] }[] = [];
+export interface FieldMeta {
+    name: string;
+    type: string;
+    isOptional: boolean;
+}
+
+export interface EntityMeta {
+    name: string;
+    fields: FieldMeta[];
+    block: string;
+}
+
+export function extractEntities(content: string): EntityMeta[] {
+    const entities: EntityMeta[] = [];
     const blockRegex = /(?:interface|class|type|struct)\s+([A-Za-z0-9_]+)[^{]*\{([^}]*)\}/g;
     let match;
     
     while ((match = blockRegex.exec(content)) !== null) {
         const name = match[1];
         const block = match[2];
-        const fields: string[] = [];
+        const fields: FieldMeta[] = [];
         
         const lines = block.split('\n');
         for (const line of lines) {
@@ -28,40 +40,44 @@ function extractEntities(content: string): { name: string, fields: string[] }[] 
             if (!clean || clean.startsWith('//') || clean.startsWith('/*')) continue;
             
             // TS/JS: fieldName: type or fieldName?: type
-            const tsMatch = clean.match(/^([A-Za-z0-9_]+)\s*\??\s*:/);
+            const tsMatch = clean.match(/^([A-Za-z0-9_]+)\s*(\?)?\s*:\s*([^;]+)/);
             if (tsMatch) {
-                fields.push(tsMatch[1]);
+                fields.push({ name: tsMatch[1], isOptional: !!tsMatch[2], type: tsMatch[3].trim() });
                 continue;
             }
             // Go/Dart/Java: Type fieldName;
-            const cLikeMatch = clean.match(/^[A-Za-z0-9_<>\[\]\?]+\s+([A-Za-z0-9_]+)\s*;/);
+            const cLikeMatch = clean.match(/^([A-Za-z0-9_<>\[\]\?]+)\s+([A-Za-z0-9_]+)\s*;/);
             if (cLikeMatch) {
-                fields.push(cLikeMatch[1]);
+                fields.push({ name: cLikeMatch[2], isOptional: cLikeMatch[1].includes('?'), type: cLikeMatch[1] });
                 continue;
             }
             // SQL/Prisma: fieldName Type ...
-            const prismaMatch = clean.match(/^([A-Za-z0-9_]+)\s+[A-Za-z0-9_\[\]\?]+/);
+            const prismaMatch = clean.match(/^([A-Za-z0-9_]+)\s+([A-Za-z0-9_\[\]\?]+)/);
             if (prismaMatch && !['PRIMARY', 'FOREIGN', 'UNIQUE', 'CONSTRAINT', '@@', 'model'].some(k => prismaMatch[1].toUpperCase().includes(k))) {
-                fields.push(prismaMatch[1]);
+                fields.push({ name: prismaMatch[1], isOptional: prismaMatch[2].includes('?'), type: prismaMatch[2] });
             }
         }
         
         if (fields.length > 0) {
-            entities.push({ name, fields });
+            entities.push({ name, fields, block });
         }
     }
     
     return entities;
 }
 
-function getBaseName(name: string): string {
+export function getBaseName(name: string): string {
     return name.replace(/(DTO|Model|Schema|Entity|Type|Interface|Config|Response|Request)$/i, '');
 }
 
-export async function schemaDriftCommand(projectPath: string, format: OutputFormat = 'markdown'): Promise<void> {
-    const lines: string[] = [];
-    lines.push(`# 🔄 DOM & Schema Drift Synchronization Audit\n`);
+export interface DriftReport {
+    baseName: string;
+    field: FieldMeta;
+    missingIn: { file: string; name: string; fullPath: string }[];
+    existsIn: { file: string; name: string; fullPath: string }[];
+}
 
+export function detectSchemaDrifts(projectPath: string): { reports: DriftReport[], schemasCount: number } {
     const schemas: Array<{ file: string, type: string, fullPath: string }> = [];
 
     function scan(dir: string) {
@@ -85,10 +101,8 @@ export async function schemaDriftCommand(projectPath: string, format: OutputForm
 
     scan(projectPath);
     
-    lines.push(`Discovered **${schemas.length}** schema and config definitions across workspace.\n`);
-    
     // Group entities
-    const entityGroups: Record<string, { file: string, name: string, fields: string[] }[]> = {};
+    const entityGroups: Record<string, { file: string, name: string, fields: FieldMeta[], fullPath: string }[]> = {};
     
     for (const schema of schemas) {
         try {
@@ -104,7 +118,8 @@ export async function schemaDriftCommand(projectPath: string, format: OutputForm
                 entityGroups[baseName].push({
                     file: schema.file,
                     name: ent.name,
-                    fields: ent.fields
+                    fields: ent.fields,
+                    fullPath: schema.fullPath
                 });
             }
         } catch (e) {
@@ -112,43 +127,68 @@ export async function schemaDriftCommand(projectPath: string, format: OutputForm
         }
     }
     
-    let foundDrift = false;
+    const reports: DriftReport[] = [];
     
     for (const [baseName, occurrences] of Object.entries(entityGroups)) {
         if (occurrences.length < 2) continue; // Needs to exist in at least 2 places to drift
         
         // Find union of all fields
-        const allFields = new Set<string>();
-        occurrences.forEach(occ => occ.fields.forEach(f => allFields.add(f)));
+        const allFieldsMap = new Map<string, FieldMeta>();
+        occurrences.forEach(occ => occ.fields.forEach(f => {
+            if (!allFieldsMap.has(f.name)) allFieldsMap.set(f.name, f);
+        }));
         
-        const driftReports: string[] = [];
-        
-        for (const field of allFields) {
-            const hasField = occurrences.filter(o => o.fields.includes(field));
-            const missingField = occurrences.filter(o => !o.fields.includes(field));
+        for (const [fieldName, fieldMeta] of allFieldsMap.entries()) {
+            const hasField = occurrences.filter(o => o.fields.some(f => f.name === fieldName));
+            const missingField = occurrences.filter(o => !o.fields.some(f => f.name === fieldName));
             
             // If some have it and some don't, it's a drift!
             if (hasField.length > 0 && missingField.length > 0) {
-                const hasNames = hasField.map(h => `\`${h.name}\` (${h.file})`).join(', ');
-                const missingNames = missingField.map(m => `\`${m.name}\` (${m.file})`).join(', ');
-                driftReports.push(`- 🔴 Field **\`${field}\`** exists in ${hasNames} BUT is missing in ${missingNames}`);
+                reports.push({
+                    baseName,
+                    field: fieldMeta,
+                    missingIn: missingField.map(m => ({ file: m.file, name: m.name, fullPath: m.fullPath })),
+                    existsIn: hasField.map(h => ({ file: h.file, name: h.name, fullPath: h.fullPath }))
+                });
             }
-        }
-        
-        if (driftReports.length > 0) {
-            foundDrift = true;
-            lines.push(`### ⚠️ Schema Drift detected in \`${baseName}\` Entity:`);
-            lines.push(...driftReports);
-            lines.push('');
         }
     }
     
-    if (!foundDrift) {
+    return { reports, schemasCount: schemas.length };
+}
+
+export async function schemaDriftCommand(projectPath: string, format: OutputFormat = 'markdown'): Promise<void> {
+    const lines: string[] = [];
+    lines.push(`# 🔄 DOM & Schema Drift Synchronization Audit\n`);
+
+    const { reports, schemasCount } = detectSchemaDrifts(projectPath);
+    
+    lines.push(`Discovered **${schemasCount}** schema and config definitions across workspace.\n`);
+    
+    if (reports.length > 0) {
+        // Group by base name for rendering
+        const groupedReports = reports.reduce((acc, report) => {
+            if (!acc[report.baseName]) acc[report.baseName] = [];
+            acc[report.baseName].push(report);
+            return acc;
+        }, {} as Record<string, DriftReport[]>);
+
+        for (const [baseName, baseReports] of Object.entries(groupedReports)) {
+            lines.push(`### ⚠️ Schema Drift detected in \`${baseName}\` Entity:`);
+            for (const r of baseReports) {
+                const hasNames = r.existsIn.map(h => `\`${h.name}\` (${h.file})`).join(', ');
+                const missingNames = r.missingIn.map(m => `\`${m.name}\` (${m.file})`).join(', ');
+                lines.push(`- 🔴 Field **\`${r.field.name}\`** exists in ${hasNames} BUT is missing in ${missingNames}`);
+            }
+            lines.push('');
+        }
+    } else {
         lines.push(`✅ **No schema drift detected!** All cross-boundary interfaces and models are perfectly synchronized.`);
     }
 
     lines.push(`\n> [!NOTE]`);
     lines.push(`> Always update backend API mappings and server definitions whenever client DOM selectors or database schemas change.`);
+    lines.push(`> 💡 **Tip:** Use \`deepsift patch-drift\` to automatically fix these missing fields!`);
 
     const outputText = lines.join('\n');
     await saveSearchLog(projectPath, ['[SchemaDrift]'], outputText, { skipVisuals: true });

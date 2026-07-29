@@ -76,6 +76,27 @@ export function resolveCommand(projectPath: string, token: string, format: Outpu
             return;
         }
     }
-
-    printResult(`Token "${token}" not found in any cached dictionary.`, format);
+    printResult(`Token "${token}" not found in any cached dictionary. Fallback to codebase scanning...`, format);
+    
+    // Import dynamically to avoid circular dependencies if any
+    import('./search.js').then(({ astSymbolFallback }) => {
+        const fallbackMatches = astSymbolFallback(projectPath, token);
+        if (fallbackMatches.length > 0) {
+            let result: string;
+            if (format === 'json') {
+                result = JSON.stringify({ query: token, matches: fallbackMatches, source: 'codebase-scan' });
+            } else {
+                const lines = fallbackMatches.slice(0, 10).map(m => `  📄 ${m.file}:${m.line} → ${m.snippet}`).join('\n');
+                result = `🔍 AST matches for "${token}" in codebase:\n${lines}`;
+                if (fallbackMatches.length > 10) {
+                    result += `\n  ... (+${fallbackMatches.length - 10} more matches)`;
+                }
+            }
+            printResult(result, format);
+        } else {
+            printResult(`Token "${token}" completely unknown across the workspace.`, format);
+        }
+    }).catch(err => {
+        printResult(`Token "${token}" not found and fallback scan failed: ${err.message}`, format);
+    });
 }

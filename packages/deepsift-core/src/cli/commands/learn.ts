@@ -14,8 +14,9 @@ import fs from 'fs';
 import path from 'path';
 
 export async function learnCommand(projectPath: string, target: string): Promise<void> {
+    if (!target) target = 'patterns';
     if (target !== 'patterns') {
-        printError(`Unknown target for scan: ${target}. Try 'deepsift scan patterns'.`);
+        printError('Unknown target: ' + target + '. Usage: deepsift learn');
         return;
     }
 

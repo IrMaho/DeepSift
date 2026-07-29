@@ -1,6 +1,6 @@
 # 📖 DeepSift Source Code API Reference
 
-Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **128 TypeScript modules** in DeepSift.
+Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **129 TypeScript modules** in DeepSift.
 
 ---
 
@@ -598,6 +598,13 @@ Consolidates directory trees, Central God Nodes, feature summaries, and AST outl
 
 ---
 
+## 📄 [`patch-drift`](file:///packages/deepsift-core/src/cli/commands/patch-drift.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/patch-drift.ts`  
+- **Description:** Auto-heals schema drift by automatically injecting missing fields.
+
+---
+
 ## 📄 [`pipe`](file:///packages/deepsift-core/src/cli/commands/pipe.ts)
 
 - **Path:** `packages/deepsift-core/src/cli/commands/pipe.ts`  
@@ -704,6 +711,9 @@ Executes vector semantic search, BM25 lexical retrieval, Graphify PageRank boost
 
 #### `function searchCommand`
 Executes the `deepsift search` command across single or multiple queries.
+
+#### `function astSymbolFallback`
+Exported symbol.
 
 ---
 

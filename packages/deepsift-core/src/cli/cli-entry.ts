@@ -42,8 +42,9 @@ import { clonesCommand } from './commands/clones.js';
 import { doctorCommand } from './commands/doctor.js';
 import { decodeCommand } from './commands/decode.js';
 import { testmapCommand } from './commands/testmap.js';
-import { refactorRenameCommand, refactorExtractCommand } from './commands/refactor.js';
+import { refactorRenameCommand, refactorExtractCommand, refactorGuideCommand } from './commands/refactor.js';
 import { schemaDriftCommand } from './commands/schema-drift.js';
+import { patchDriftCommand } from './commands/patch-drift.js';
 import { deadCodeCommand } from './commands/dead-code.js';
 import { autoHealCommand } from './commands/auto-heal.js';
 import { cfgCommand } from './commands/cfg.js';
@@ -62,6 +63,7 @@ import { launchWebDashboard } from '../ui/web-dashboard.js';
 import { impactCommand } from './commands/impact.js';
 import { planUiCommand } from './commands/plan-ui.js';
 import { docgenCommand } from './commands/docgen.js';
+import { learnCommand } from './commands/learn.js';
 import { QAGenerator } from '../analyzers/qa-generator.js';
 import { GitChurnMiner } from '../analyzers/git-churn-miner.js';
 import { terminateWorkers } from '../core/embedder.js';
@@ -136,9 +138,32 @@ const HELP_TEXT = `
   doctor                        Diagnostics and onboarding status report for AI agents
   decode "token"                Decompress and decode a DEC_v2 visual token
   testmap                       Source-to-test mapping report and untested module audit
-  refactor <rename|extract>     AST-safe symbol renaming or function extraction
+  refactor <rename|extract|guide> AST-safe symbol renaming, extraction or god node decomposition
   check-schema-drift            Audit schema & DOM config synchronization between frontend/backend
+  patch-drift                   Auto-heal schema drifts by injecting missing fields natively
   find-dead-code                Detect unreferenced and dead code exports across codebase
+  wire-trace                    Trace cross-environment IPC message flows (postMessage, WebSockets)
+  security-scan                 Scan for Sandbox leaks (e.g. window, document) and hardcoded secrets
+  check-layers                  Validate clean architecture boundaries and illegal imports
+  complexity                    Cognitive Complexity heatmap for codebase risk analysis
+  impact "symbol"               Predict blast radius and breaking changes before modification
+  git-churn                     Combine git commit frequency with complexity to find hot-spots
+  gen-test "file"               Auto-generate Vitest/Jest mock suites
+  gen-mock "Type"               AST-based mock data generator for TypeScript interfaces
+  expand-type "Type"            Unroll and resolve nested TypeScript types completely
+  i18n-extract                  Extract hardcoded UI strings for localization
+  zoom "path"                   Smart cluster drill-down to analyze specific omitted folders
+  plan-ui "request"             Generate visual UI specs layout, token palettes, spacing
+  docgen                        Generate and synchronize complete Markdown documentation suite
+  ui                            Launch local interactive Web Dashboard visualization on port 3333
+  start                         Starts the DeepSift MCP server for IDE integrations
+  scope                         Set or display active workspace search boundary
+  edit, e                       In-place file editor applying structured line-range replacements
+  sed                           Stream editor for targeted in-place text substitution
+  pipe, p                       Read DeepSift input from stdin for shell pipelines
+  executive-summary             Generate high-level executive summary report
+  gen-adr                       Generate an Architecture Decision Record (ADR) Markdown template
+  learn                         Learn from workflow and generate a reusable agent skill
   patch "patch.json"            Apply code injections directly to the codebase with high confidence (TOON-Patch format)
   memo <action>                 Dynamic Research Memory (DRM) — Persistent research note-taking
                                   open "name"         Create a new research tag
@@ -556,9 +581,10 @@ async function main() {
 
             case 'diag':
                 if (commandArgs.length === 0) {
-                    throw new Error('Please provide a path to a problems JSON file.\nUsage: deepsift diag "problems.json"');
+                    await doctorCommand(projectPath, format);
+                } else {
+                    await diagCommand(projectPath, commandArgs[0], format, compress);
                 }
-                await diagCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
             case 'com':
@@ -627,6 +653,14 @@ async function main() {
                 await doctorCommand(projectPath, format);
                 break;
 
+            case 'learn':
+                await learnCommand(projectPath, commandArgs[0] || '');
+                break;
+
+            case 'learn':
+                await learnCommand(projectPath, commandArgs[0] || '');
+                break;
+
             case 'decode':
                 if (commandArgs.length === 0) {
                     throw new Error('Please provide a compressed token.\nUsage: deepsift decode "<token>"');
@@ -649,14 +683,20 @@ async function main() {
                     refactorRenameCommand(projectPath, commandArgs[1], commandArgs[2], format);
                 } else if (commandArgs[0] === 'extract') {
                     refactorExtractCommand(projectPath, commandArgs[1], commandArgs[3] || 'extractedFunction', format);
+                } else if (commandArgs[0] === 'guide') {
+                    refactorGuideCommand(projectPath, commandArgs[1], format);
                 } else {
-                    throw new Error('Usage: deepsift refactor rename <old> <new> OR deepsift refactor extract <file:lines> --name <func>');
+                    throw new Error('Usage: deepsift refactor rename <old> <new> OR deepsift refactor extract <file:lines> --name <func> OR deepsift refactor guide <file>');
                 }
                 break;
 
             case 'schema-drift':
             case 'check-schema-drift':
                 await schemaDriftCommand(projectPath, format);
+                break;
+
+            case 'patch-drift':
+                await patchDriftCommand(projectPath, format);
                 break;
 
             case 'docgen':
