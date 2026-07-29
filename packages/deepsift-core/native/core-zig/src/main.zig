@@ -177,6 +177,12 @@ const CoverageResponse = struct {
     data: []const test_analyzer.CoverageInfo,
 };
 
+const CalltreeResultsResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const ast_parser.CalltreeResult,
+};
+
 const CallTreeResponse = struct {
     id: ?usize = null,
     success: bool = true,
@@ -813,6 +819,21 @@ pub fn main() !void {
                     allocator.free(chunks);
                 }
                 try writeResponse(allocator, &writer.interface, ExtractChunksResponse{ .id = req_id, .data = chunks });
+            }
+        } else if (std.mem.eql(u8, req.action, "extractCalltreeBulkNative")) {
+            if (req.filePaths) |fps| {
+                if (req.symbol) |sym| {
+                    const results = try ast_parser.extractCalltreeBulkNative(allocator, fps, sym, io);
+                    defer {
+                        for (results) |res| {
+                            allocator.free(res.file_path);
+                            allocator.free(res.snippet);
+                            allocator.free(res.role);
+                        }
+                        allocator.free(results);
+                    }
+                    try writeResponse(allocator, &writer.interface, CalltreeResultsResponse{ .id = req_id, .data = results });
+                }
             }
         } else {
             try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Unknown action" });

@@ -15,6 +15,8 @@ import { saveSearchLog } from '../../utils/history.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 import { normalizePath } from '../../utils/outline.js';
 
+import { RealmRouter } from '../../core/realm-router.js';
+
 /**
  * Executes the `deepsift calltree` command to trace call graphs and event channels.
  * 
@@ -38,86 +40,94 @@ export async function calltreeCommand(
     const lines: string[] = [];
     const cleanSymbol = symbol.replace(/['"]/g, '').trim();
 
-    lines.push(`# 🌳 Call Graph & Event Traversal for: \`${cleanSymbol}\`\n`);
+    lines.push(`# 🌳 Call Graph & State Mutation Matrix for: \`${cleanSymbol}\`\n`);
     if (filterPath) {
         lines.push(`*(Filtered by path: \`${filterPath}\`)*\n`);
     }
 
     const callers: Array<{ file: string, line: number, snippet: string }> = [];
     const callees: Array<{ file: string, line: number, snippet: string }> = [];
+    const selectors: Array<{ file: string, line: number, snippet: string }> = [];
+    const mutators: Array<{ file: string, line: number, snippet: string }> = [];
     const eventSenders: Array<{ file: string, line: number, snippet: string }> = [];
     const eventHandlers: Array<{ file: string, line: number, snippet: string }> = [];
 
-    const isEventPattern = /[\-_:A-Z0-9]/i.test(cleanSymbol);
-
-    function searchInDir(dir: string) {
+    const router = new RealmRouter(projectPath);
+    const store = router.getStore('code');
+    
+    // Instead of doing regex in JS, gather files and use Zig Native AST
+    const filePaths: string[] = [];
+    
+    function collectFiles(dir: string) {
         if (!fs.existsSync(dir)) return;
         const items = fs.readdirSync(dir, { withFileTypes: true });
         for (const item of items) {
             if (item.name.startsWith('.') || ['node_modules', 'dist', 'build', '.deepsift'].includes(item.name)) continue;
             const fullPath = path.join(dir, item.name);
             if (item.isDirectory()) {
-                searchInDir(fullPath);
+                collectFiles(fullPath);
             } else {
                 const ext = path.extname(item.name);
                 if (['.ts', '.js', '.dart', '.py', '.java', '.go', '.cpp', '.tsx', '.jsx'].includes(ext)) {
-                    try {
-                        const content = fs.readFileSync(fullPath, 'utf8');
-                        const fileLines = content.split('\n');
-                        fileLines.forEach((l, idx) => {
-                            if (l.includes(cleanSymbol) || l.includes(symbol)) {
-                                const rel = normalizePath(path.relative(projectPath, fullPath));
-                                if (filterPath) {
-                                    const normFilter = normalizePath(filterPath).toLowerCase();
-                                    if (!rel.toLowerCase().includes(normFilter)) return;
-                                }
-
-                                const lineSnippet = l.trim();
-                                if (lineSnippet.length > 120) return;
-
-                                const isSender = /(?:postMessage|dispatch|emit|sendMessage|broadcast|ws\.send)\s*\(/i.test(lineSnippet) ||
-                                                 /(?:type|action|event)\s*:\s*['"][^'"]*$/i.test(lineSnippet);
-
-                                const isHandler = /(?:onmessage|addEventListener|case\s+['"]|msg\.type|action\.type|\.on\s*\()/i.test(lineSnippet);
-
-                                if (isSender && !isHandler) {
-                                    eventSenders.push({ file: rel, line: idx + 1, snippet: lineSnippet });
-                                } else if (isHandler) {
-                                    eventHandlers.push({ file: rel, line: idx + 1, snippet: lineSnippet });
-                                } else if (l.match(new RegExp(`\\b(function|const|let|var|def|class|interface|type)\\s+${cleanSymbol}\\b`)) || l.includes(`def ${cleanSymbol}`)) {
-                                    callees.push({ file: rel, line: idx + 1, snippet: lineSnippet });
-                                } else {
-                                    callers.push({ file: rel, line: idx + 1, snippet: lineSnippet });
-                                }
-                            }
-                        });
-                    } catch {}
+                    filePaths.push(fullPath);
                 }
             }
         }
     }
-
-    searchInDir(projectPath);
+    collectFiles(projectPath);
+    
+    const results = await store.extractCalltreeBulkNative(filePaths, cleanSymbol);
+    
+    for (const r of results) {
+        const rel = normalizePath(path.relative(projectPath, r.file_path));
+        if (filterPath) {
+            const normFilter = normalizePath(filterPath).toLowerCase();
+            if (!rel.toLowerCase().includes(normFilter)) continue;
+        }
+        
+        const data = { file: rel, line: r.line, snippet: r.snippet };
+        if (r.role === 'selector') selectors.push(data);
+        else if (r.role === 'mutator') mutators.push(data);
+        else if (r.role === 'callee') callees.push(data);
+        else if (r.role === 'event_sender') eventSenders.push(data);
+        else if (r.role === 'event_handler') eventHandlers.push(data);
+        else callers.push(data);
+    }
+    
+    if (mutators.length > 0 || selectors.length > 0) {
+        lines.push(`## 🔄 State Mutation Matrix (Zustand/Redux/Provider)`);
+        
+        lines.push(`### 🔴 State Mutators (Dispatchers / Setters):`);
+        if (mutators.length > 0) {
+            mutators.forEach(m => lines.push(`- 📄 **${m.file}:${m.line}**: \`${m.snippet}\``));
+        } else {
+            lines.push(`- No state mutators detected.`);
+        }
+        lines.push('');
+        
+        lines.push(`### 🟢 State Selectors (Readers / Subscribers):`);
+        if (selectors.length > 0) {
+            selectors.forEach(s => lines.push(`- 📄 **${s.file}:${s.line}**: \`${s.snippet}\``));
+        } else {
+            lines.push(`- No state selectors detected.`);
+        }
+        lines.push('');
+    }
 
     if (eventSenders.length > 0 || eventHandlers.length > 0) {
-        lines.push(`## ⚡ Event-Driven Message Link Trace (\`postMessage\` / Redux / Events)`);
-        lines.push(`*Linked event producers (senders) and handlers (receivers) across UI and Sandbox/Backend environments:*\n`);
+        lines.push(`## ⚡ Event-Driven Message Link Trace (\`postMessage\` / Events)`);
         
-        lines.push(`### 📤 Event Senders / Producers (UI Environment):`);
+        lines.push(`### 📤 Event Senders / Producers:`);
         if (eventSenders.length > 0) {
-            eventSenders.forEach(s => {
-                lines.push(`- 📄 **${s.file}:${s.line}**: \`${s.snippet}\``);
-            });
+            eventSenders.forEach(s => lines.push(`- 📄 **${s.file}:${s.line}**: \`${s.snippet}\``));
         } else {
             lines.push(`- No direct event senders detected.`);
         }
         lines.push('');
 
-        lines.push(`### 📥 Event Handlers / Listeners (Core Sandbox):`);
+        lines.push(`### 📥 Event Handlers / Listeners:`);
         if (eventHandlers.length > 0) {
-            eventHandlers.forEach(h => {
-                lines.push(`- 🎯 **${h.file}:${h.line}**: \`${h.snippet}\``);
-            });
+            eventHandlers.forEach(h => lines.push(`- 🎯 **${h.file}:${h.line}**: \`${h.snippet}\``));
         } else {
             lines.push(`- No direct event handlers detected.`);
         }

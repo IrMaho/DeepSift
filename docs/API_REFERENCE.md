@@ -1,6 +1,6 @@
 # 📖 DeepSift Source Code API Reference
 
-Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **129 TypeScript modules** in DeepSift.
+Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **128 TypeScript modules** in DeepSift.
 
 ---
 
@@ -221,13 +221,6 @@ Auditor that performs CWE security analysis, sandbox isolation checks, and secre
 
 - **Path:** `packages/deepsift-core/src/analyzers/wire-tracer.ts`  
 - **Description:** Cross-environment IPC and postMessage wire trace analyzer for event channel mapping.
-
----
-
-## 📄 [`ast_test_dummy`](file:///packages/deepsift-core/src/ast_test_dummy.ts)
-
-- **Path:** `packages/deepsift-core/src/ast_test_dummy.ts`  
-- **Description:** TypeScript source module.
 
 ---
 

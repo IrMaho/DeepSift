@@ -164,6 +164,14 @@ export class NativeStore {
         return result || [];
     }
 
+    public async extractCalltreeBulkNative(filePaths: string[], symbol: string): Promise<any[]> {
+        const result = await this.executeAction('extractCalltreeBulkNative', {
+            filePaths,
+            symbol
+        });
+        return result || [];
+    }
+
     public async addGraphNode(node: any) {
         await this.executeAction('saveGraph', { graphNodes: [node] });
         await this.syncGraphToDisk();
