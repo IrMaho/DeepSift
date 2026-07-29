@@ -185,14 +185,8 @@ fn walkCalltreeNode(
             if (start < end and end <= content.len) {
                 const name_str = content[start..end];
                 if (std.mem.eql(u8, name_str, symbol)) {
-                    // Check if it's an arrow function
-                    const value_node = c.ts_node_child_by_field_name(node, "value", 5);
-                    if (!c.ts_node_is_null(value_node)) {
-                        const val_type = std.mem.span(c.ts_node_type(value_node));
-                        if (std.mem.eql(u8, val_type, "arrow_function")) {
-                            role = "callee";
-                        }
-                    }
+                    // Whether it's an arrow function or a call_expression (like Zustand create), it's the callee definition.
+                    role = "callee";
                 }
             }
         }
