@@ -71,7 +71,7 @@ pub const TarjanSCC = struct {
             var scc = std.ArrayList(u32).empty;
             var w: u32 = undefined;
             while (true) {
-                w = self.stack.pop();
+                w = self.stack.pop() orelse break;
                 try self.on_stack.put(w, false);
                 try scc.append(self.allocator, w);
                 if (w == v) break;

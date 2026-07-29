@@ -502,7 +502,16 @@ export class NativeStore {
         }));
     }
 
-    public close() {
+    
+  public async extractCycleNative(): Promise<string[]> {
+    return this.executeAction('extractCycleNative');
+  }
+
+  public async extractTaintNative(symbol: string): Promise<string[]> {
+    return this.executeAction('extractTaintNative', { symbol });
+  }
+
+  public close() {
         // No-op for the native store, as the process exits after each request.
     }
 

@@ -14,6 +14,8 @@ import { indexCommand } from './commands/index-cmd.js';
 import { statusCommand } from './commands/status.js';
 import { archCommand } from './commands/arch.js';
 import { depsCommand } from './commands/deps.js';
+import { cycleCommand } from './commands/cycle.js';
+import { taintCommand } from './commands/taint.js';
 import { featureCommand } from './commands/feature.js';
 import { historyCommand, cleanHistoryCommand, drillCommand } from './commands/history.js';
 import { initCommand } from './commands/init.js';
@@ -510,6 +512,15 @@ async function main() {
                 break;
             }
 
+            case 'cycle':
+                await cycleCommand(projectPath);
+                break;
+            case 'taint':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a symbol.\nUsage: deepsift taint "symbol"');
+                }
+                await taintCommand(commandArgs[0], projectPath);
+                break;
             case 'deps':
             case 'd':
                 if (commandArgs.length === 0) {

@@ -98,6 +98,8 @@ const Request = struct {
     targetDim: ?u32 = null,
 };
 
+const StringArrayResponse = struct { id: ?usize = null, success: bool = true, data: [][]const u8 };
+
 const ResponseOk = struct {
     id: ?usize = null,
     success: bool = true,
@@ -1011,6 +1013,41 @@ pub fn main() !void {
                     .original_file = try database.allocator.dupe(u8, req.filePath.?),
                 });
                 try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
+            }
+        } else if (std.mem.eql(u8, req.action, "extractCycleNative")) {
+            var scc = cycle.TarjanSCC.init(allocator, &graph_db);
+            defer scc.deinit();
+            try scc.findCycles();
+            var cycles_arr = std.ArrayList([]const u8).empty;
+            defer {
+                for (cycles_arr.items) |itm| allocator.free(itm);
+                cycles_arr.deinit(allocator);
+            }
+            
+            for (scc.sccs.items) |cycle_nodes| {
+                if (cycle_nodes.items.len > 1) {
+                    var cycle_str = std.ArrayList(u8).empty;
+                    defer cycle_str.deinit(allocator);
+                    
+                    for (cycle_nodes.items, 0..) |node_idx, i| {
+                        const node_id = graph_db.nodes.items[node_idx].id;
+                        if (i > 0) try cycle_str.appendSlice(allocator, " -> ");
+                        try cycle_str.appendSlice(allocator, node_id);
+                    }
+                    try cycle_str.appendSlice(allocator, " -> ");
+                    try cycle_str.appendSlice(allocator, graph_db.nodes.items[cycle_nodes.items[0]].id);
+                    
+                    try cycles_arr.append(allocator, try cycle_str.toOwnedSlice(allocator));
+                }
+            }
+            
+            try writeResponse(allocator, &writer.interface, StringArrayResponse{ .id = req_id, .data = cycles_arr.items });
+        } else if (std.mem.eql(u8, req.action, "extractTaintNative")) {
+            if (req.symbol) |sym| {
+                var taintAnalyzer = taint.TaintAnalysis{ .allocator = allocator, .graph = &graph_db };
+                const sinks = try taintAnalyzer.traceTaint(sym);
+                defer allocator.free(sinks);
+                try writeResponse(allocator, &writer.interface, StringArrayResponse{ .id = req_id, .data = sinks });
             }
         } else if (std.mem.eql(u8, req.action, "searchLatentCodeNative")) {
             if (req.query) |q| {

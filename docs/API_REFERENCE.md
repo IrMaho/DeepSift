@@ -1,6 +1,6 @@
 # 📖 DeepSift Source Code API Reference
 
-Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **129 TypeScript modules** in DeepSift.
+Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **131 TypeScript modules** in DeepSift.
 
 ---
 
@@ -379,6 +379,13 @@ Scans files for structural code duplicates, copy-paste clusters, and block-level
 
 ---
 
+## 📄 [`cycle`](file:///packages/deepsift-core/src/cli/commands/cycle.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/cycle.ts`  
+- **Description:** TypeScript source module.
+
+---
+
 ## 📄 [`dead-code`](file:///packages/deepsift-core/src/cli/commands/dead-code.ts)
 
 - **Path:** `packages/deepsift-core/src/cli/commands/dead-code.ts`  
@@ -747,6 +754,13 @@ Exported symbol.
 
 #### `function statusCommand`
 Retrieves database state, total indexed files, chunk counts, and indexing timestamps.
+
+---
+
+## 📄 [`taint`](file:///packages/deepsift-core/src/cli/commands/taint.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/taint.ts`  
+- **Description:** TypeScript source module.
 
 ---
 
