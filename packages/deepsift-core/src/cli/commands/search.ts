@@ -191,7 +191,7 @@ export function astSymbolFallback(projectPath: string, query: string): { file: s
 async function executeSingleSearch(router: RealmRouter, projectPath: string, query: string, format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
     const rawResults = await router.searchAllRealms({ query, topK: options.limit || 15, filterPath: options.filterPath }, targetRealms);
     console.log("[DEBUG] rawResults length: " + rawResults.length + ", first score: " + (rawResults.length > 0 ? rawResults[0].score : "N/A"));
-    const results = rawResults.filter(r => r.score >= 0.15);
+    const results = rawResults.filter(r => r.score >= 0.02);
 
     if (results.length === 0) {
         const fallbackMatches = astSymbolFallback(projectPath, query.trim());

@@ -350,7 +350,7 @@ export class NativeStore {
         }));
     }
 
-    public async searchHybridNative(query: string, embedding: number[] | Float32Array | null, topK: number = 20): Promise<SearchResult[]> {
+    public async searchHybridNative(query: string, embedding: number[] | Float32Array | null, topK: number = 20, filterPath?: string): Promise<SearchResult[]> {
         let siftEmbedding = null;
         if (embedding) {
             siftEmbedding = (embedding.length === 384)
@@ -361,7 +361,8 @@ export class NativeStore {
         const data = await this.executeAction('searchHybridNative', {
             query,
             queryEmbedding: siftEmbedding,
-            topK
+            topK,
+            filterPath
         });if (!data) return [];
         
         return data.map((row: any) => ({

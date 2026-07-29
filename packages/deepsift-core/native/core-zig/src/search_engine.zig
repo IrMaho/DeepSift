@@ -164,6 +164,7 @@ pub fn searchHybridNative(
     rrf_cfg: RRFConfig,
     graph_db: ?*db.GraphDatabase,
     ivf_idx: ?*@import("ivf.zig").IVFIndex,
+    filter_path: ?[]const u8,
 ) ![]SearchMatch {
     if (chunks.len == 0 or query.len == 0) return &[_]SearchMatch{};
 
@@ -249,11 +250,17 @@ pub fn searchHybridNative(
         try candidate_indices.ensureTotalCapacity(allocator, candidate_set.count());
         var set_it = candidate_set.keyIterator();
         while (set_it.next()) |key| {
+            if (filter_path) |fp| {
+                if (std.mem.indexOf(u8, chunks[key.*].file_path, fp) == null) continue;
+            }
             candidate_indices.appendAssumeCapacity(key.*);
         }
     } else {
         try candidate_indices.ensureTotalCapacity(allocator, chunks.len);
         for (0..chunks.len) |ci| {
+            if (filter_path) |fp| {
+                if (std.mem.indexOf(u8, chunks[ci].file_path, fp) == null) continue;
+            }
             candidate_indices.appendAssumeCapacity(ci);
         }
     }
@@ -460,6 +467,20 @@ pub fn searchHybridNative(
             raw_score *= 1.5;
         } else if (std.mem.eql(u8, c_type, "import")) {
             raw_score *= 0.1;
+        }
+
+        const is_json = std.mem.endsWith(u8, chunk_file, ".json") or std.mem.endsWith(u8, chunk_file, ".arb") or std.mem.indexOf(u8, chunk_file, "i18n") != null;
+        if (is_json) {
+            const has_i18n = containsInsensitive(query, "translation") or containsInsensitive(query, "i18n") or containsInsensitive(query, "locale");
+            if (!has_i18n) {
+                raw_score *= 0.05;
+            }
+        }
+
+        if (std.mem.endsWith(u8, chunk_file, ".types.ts") or std.mem.endsWith(u8, chunk_file, ".d.ts")) {
+            raw_score *= 0.8;
+        } else if (std.mem.endsWith(u8, chunk_file, ".tsx") or std.mem.endsWith(u8, chunk_file, ".ts")) {
+            raw_score *= 1.2;
         }
 
         const content_len = chunk_content.len;

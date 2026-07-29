@@ -350,7 +350,7 @@ async function main() {
                 const noVisual = commandArgs.includes('--no-visual') || commandArgs.includes('--plain') || format === 'plain' || !compress;
                 
                 let filterPath: string | undefined;
-                const includeIdx = commandArgs.findIndex(arg => arg === '--include' || arg === '-i');
+                const includeIdx = commandArgs.findIndex(arg => arg === '--include' || arg === '-i' || arg === '--path' || arg === '--scope');
                 if (includeIdx !== -1 && commandArgs[includeIdx + 1]) {
                     filterPath = commandArgs[includeIdx + 1];
                 }
@@ -377,7 +377,7 @@ async function main() {
 
                 const searchQueries = commandArgs.filter((arg, idx) => {
                     if (arg.startsWith('-')) return false;
-                    if (idx > 0 && (commandArgs[idx - 1] === '--include' || commandArgs[idx - 1] === '-i')) return false;
+                    if (idx > 0 && (commandArgs[idx - 1] === '--include' || commandArgs[idx - 1] === '-i' || commandArgs[idx - 1] === '--path' || commandArgs[idx - 1] === '--scope')) return false;
                     if (idx > 0 && (commandArgs[idx - 1] === '--context-lines' || commandArgs[idx - 1] === '-C')) return false;
                     if (idx > 0 && commandArgs[idx - 1] === '--realm') return false;
                     if (idx > 0 && (commandArgs[idx - 1] === '--limit' || commandArgs[idx - 1] === '-l')) return false;

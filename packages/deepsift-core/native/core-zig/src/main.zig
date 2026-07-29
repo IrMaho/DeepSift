@@ -70,6 +70,7 @@ const Request = struct {
     height: ?u32 = null,
     queryEmbedding: ?db.SiftEmbedding = null,
     batch: ?[]BatchOperation = null,
+    filterPath: ?[]const u8 = null,
     
     notes: ?[]memo_graph.NoteInfo = null,
     symbols: ?[]dead_code.SymbolUsage = null,
@@ -763,6 +764,7 @@ pub fn main(init: std.process.Init) !void {
                     .{},
                     &graph_db,
                     database.ivf_index,
+                    req.filterPath,
                 );
                 defer allocator.free(native_matches);
 
