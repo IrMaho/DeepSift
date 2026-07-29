@@ -36,6 +36,23 @@ This directory contains the absolute truth and authoritative manuals for operati
    - Bootstrap (empty file) protocol
    - Quantum Observer Effect (Isolated States)
 
+7. **[07-advanced-refactoring-manual.md](07-advanced-refactoring-manual.md)**
+   - Direct file mutations (`sed`, `edit`)
+   - Structural Clones & DRY Audits (`clones`)
+   - Architectural Refactoring Surgeons (`refactor`, `impact`, `calltree`, `cfg`)
+
+8. **[08-security-and-diagnostics-manual.md](08-security-and-diagnostics-manual.md)**
+   - Security & Compliance Auditor (`security-scan`)
+   - Agent Diagnostics & Self-Healing (`doctor`)
+   - Complexity & Git Churn Hotspots (`complexity`, `git-churn`)
+   - Automated Testing (`testmap`, `gen-test`, `gen-mock`)
+
+9. **[09-utilities-and-dashboard-manual.md](09-utilities-and-dashboard-manual.md)**
+   - Local Web Dashboard (`ui`)
+   - Core Indexing & Watchers (`index`, `watch`, `status`)
+   - History & Decoders (`history`, `drill`, `decode`)
+   - Scope & Zoom Context Controls (`scope`, `zoom`)
+
 ---
 
 ### 🚨 Critical AI Directive
