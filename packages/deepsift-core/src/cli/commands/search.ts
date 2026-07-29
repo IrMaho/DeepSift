@@ -190,35 +190,25 @@ export function astSymbolFallback(projectPath: string, query: string): { file: s
  */
 async function executeSingleSearch(router: RealmRouter, projectPath: string, query: string, format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
     const rawResults = await router.searchAllRealms({ query, topK: options.limit || 15, filterPath: options.filterPath }, targetRealms);
-    console.log("[DEBUG] rawResults length: " + rawResults.length + ", first score: " + (rawResults.length > 0 ? rawResults[0].score : "N/A"));
-    const results = rawResults.filter(r => r.score >= 0.02);
+    
+    const results = rawResults;
 
     if (results.length === 0) {
         const fallbackMatches = astSymbolFallback(projectPath, query.trim());
-        if (fallbackMatches.length > 0) {
+        
+        if (fallbackMatches.length > 0 && format !== 'json') {
             const fileMap = new Map<string, number>();
             fallbackMatches.forEach(m => fileMap.set(m.file, (fileMap.get(m.file) || 0) + 1));
 
-            let fallbackText = `ℹ Primary vector search deferred. AST & Path Matcher found **${fallbackMatches.length}** relevant code references for \`${query}\` across **${fileMap.size}** files:\n\n`;
-            fallbackMatches.slice(0, 10).forEach(m => {
+            let fallbackText = `ℹ AST & Path Matcher found **${fallbackMatches.length}** relevant code references across **${fileMap.size}** files:\n`;
+            fallbackMatches.slice(0, 5).forEach(m => {
                 fallbackText += `  - 📄 **${m.file}:${m.line}**: \`${m.snippet.substring(0, 75)}\`\n`;
             });
-            if (fallbackMatches.length > 10) {
-                fallbackText += `  - ... (+${fallbackMatches.length - 10} more matches)\n`;
-            }
-            fallbackText += `\n💡 **Tip**: Run \`deepsift search "${query}" --sync\` to force vector index synchronization.`;
-            printResult(fallbackText, format);
-            return;
+            console.log(fallbackText);
+        } else {
+            const hint = `No relevant code found for: "${query}"\n\n💡 **Search Tips:**\n- Try shorter, more specific keywords (e.g. "auth handler")\n- Use \`deepsift arch\` for high-level project structure\n- Use \`grep_search\` for exact text/variable name matches`;
+            printResult(hint, format);
         }
-
-        const hint = `No relevant code found for: "${query}"
-
-💡 **Search Tips:**
-- Try shorter, more specific keywords (e.g. "auth handler" instead of "what are the main features")
-- Use \`deepsift arch\` for high-level project structure
-- Use \`deepsift analyze "src/path"\` for deep dives into specific folders
-- Use \`grep_search\` for exact text/variable name matches`;
-        printResult(hint, format);
         return;
     }
 

@@ -89,6 +89,37 @@ export async function parseWithAst(content: string, filePath: string, language: 
             // Do not emit duplicate ranges
             const rangeKey = `${startLine}-${endLine}`;
             
+            // Extract identifiers and comments as context for vector embedding
+            const identifiers = new Set<string>();
+            const comments = new Set<string>();
+            
+            function collectMetadata(n: any) {
+                if (n.type === 'identifier' || n.type === 'property_identifier' || n.type === 'type_identifier' || n.type === 'class_declaration' || n.type === 'function_declaration') {
+                    if (n.text && n.text.length > 2) {
+                        identifiers.add(n.text);
+                    }
+                }
+                if (n.type === 'comment' || n.type === 'document_comment' || n.type === 'jsdoc') {
+                    if (n.text) {
+                        comments.add(n.text.replace(/[\/*]/g, '').trim());
+                    }
+                }
+                for (let i = 0; i < n.childCount; i++) {
+                    collectMetadata(n.child(i));
+                }
+            }
+            collectMetadata(node);
+            
+            let metaContext = '';
+            if (identifiers.size > 0 || comments.size > 0) {
+                const idList = Array.from(identifiers).filter(id => !['const', 'let', 'var', 'function', 'class', 'interface', 'type'].includes(id));
+                metaContext = `\n/* DEEPSIFT CONTEXT:\nIdentifiers: ${idList.join(', ')}`;
+                if (comments.size > 0) {
+                    metaContext += `\nComments: ${Array.from(comments).join(' ')}`;
+                }
+                metaContext += `\n*/`;
+            }
+            
             // Large classes should be broken down into methods, not kept as a single chunk
             if (type === 'class' && lineCount > 50) {
                 if (!seenRanges.has(rangeKey)) {
@@ -97,7 +128,7 @@ export async function parseWithAst(content: string, filePath: string, language: 
                     chunks.push({
                         id: crypto.randomUUID(),
                         filePath,
-                        content: chunkContent + '\n  // ... (Class body chunked separately)',
+                        content: chunkContent + '\n  // ... (Class body chunked separately)' + metaContext,
                         startLine,
                         endLine: Math.min(startLine + 10, endLine),
                         type,
@@ -117,7 +148,7 @@ export async function parseWithAst(content: string, filePath: string, language: 
                 chunks.push({
                     id: crypto.randomUUID(),
                     filePath,
-                    content: chunkContent,
+                    content: chunkContent + metaContext,
                     startLine,
                     endLine,
                     type: type!,

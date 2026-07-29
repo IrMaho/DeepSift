@@ -463,24 +463,22 @@ pub fn searchHybridNative(
         }
 
         const c_type = chunks[m.chunk_index].chunk_type;
-        if (std.mem.eql(u8, c_type, "function") or std.mem.eql(u8, c_type, "class") or std.mem.eql(u8, c_type, "interface") or std.mem.eql(u8, c_type, "type")) {
-            raw_score *= 1.5;
-        } else if (std.mem.eql(u8, c_type, "import")) {
-            raw_score *= 0.1;
-        }
+        const is_logic_chunk = std.mem.eql(u8, c_type, "function") or std.mem.eql(u8, c_type, "class") or std.mem.eql(u8, c_type, "method");
+        const is_import = std.mem.eql(u8, c_type, "import");
 
-        const is_json = std.mem.endsWith(u8, chunk_file, ".json") or std.mem.endsWith(u8, chunk_file, ".arb") or std.mem.indexOf(u8, chunk_file, "i18n") != null;
+        const is_type_file = std.mem.endsWith(u8, chunk_file, ".types.ts") or std.mem.endsWith(u8, chunk_file, ".d.ts") or std.mem.indexOf(u8, chunk_file, "/types/") != null;
+        const is_json = std.mem.endsWith(u8, chunk_file, ".json") or std.mem.endsWith(u8, chunk_file, ".arb") or std.mem.indexOf(u8, chunk_file, "i18n") != null or std.mem.endsWith(u8, chunk_file, ".yaml") or std.mem.endsWith(u8, chunk_file, ".md");
+        
         if (is_json) {
-            const has_i18n = containsInsensitive(query, "translation") or containsInsensitive(query, "i18n") or containsInsensitive(query, "locale");
-            if (!has_i18n) {
-                raw_score *= 0.05;
-            }
+            raw_score *= 0.05;
+        } else if (is_type_file) {
+            raw_score *= 0.35;
+        } else if (is_logic_chunk) {
+            raw_score *= 1.6;
         }
 
-        if (std.mem.endsWith(u8, chunk_file, ".types.ts") or std.mem.endsWith(u8, chunk_file, ".d.ts")) {
-            raw_score *= 0.8;
-        } else if (std.mem.endsWith(u8, chunk_file, ".tsx") or std.mem.endsWith(u8, chunk_file, ".ts")) {
-            raw_score *= 1.2;
+        if (is_import) {
+            raw_score *= 0.1;
         }
 
         const content_len = chunk_content.len;
