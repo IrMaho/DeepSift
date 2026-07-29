@@ -43,18 +43,19 @@ function parseToonPatch(content: string): PatchPayload {
     let currentType: 'search' | 'line' = 'search';
 
     for (const line of lines) {
+        // 1. Dictionary Match: [key: value, key2: value2]
         if (line.trim().startsWith('[') && line.trim().endsWith(']') && Object.keys(dictionary).length === 0 && files.length === 0) {
             const dictStr = line.trim().slice(1, -1);
-            if (dictStr) {
+            if (dictStr.includes(':')) {
                 const pairs = dictStr.split(/,\s*(?=[^,\s]+:)/);
                 for (const pair of pairs) {
-                    const colonIdx = pair.indexOf(':');
-                    if (colonIdx !== -1) {
-                        dictionary[pair.slice(0, colonIdx).trim()] = pair.slice(colonIdx + 1).trim();
+                    const [key, ...valParts] = pair.split(':');
+                    if (key && valParts.length > 0) {
+                        dictionary[key.trim()] = valParts.join(':').trim();
                     }
                 }
+                continue;
             }
-            continue;
         }
 
         if (line.startsWith('📄')) {
@@ -248,7 +249,7 @@ export async function editCommand(
             if (startIdx < 0 || endIdx >= lines.length || startIdx > endIdx) return match;
             
             const copiedLines = lines.slice(startIdx, endIdx + 1);
-            return copiedLines.map(l => indent + l).join('\n');
+            return copiedLines.map(l => l.trim().length === 0 ? l : indent + l).join('\n');
         });
 
         // 2. Resolve Inline Clipboard
@@ -333,13 +334,13 @@ export async function editCommand(
                 const startIdx = startLine - 1;
                 const endIdx = endLine - 1;
 
-                if (startIdx < 0 || startIdx >= fileLines.length || endIdx >= fileLines.length || startIdx > endIdx) {
+                if (startIdx < 0 || startIdx > fileLines.length || endIdx > fileLines.length || startIdx > endIdx) {
                     errors.push(`[Warning] Invalid line range ${startLine}-${endLine} in ${filePatch.file}`);
                     continue;
                 }
 
                 if (edit.type === 'search' || edit.search) {
-                    const searchStr = expandText(edit.search || '', false);
+                    const searchStr = expandText(edit.search || '', false).replace(/\r\n/g, '\n');
                     const chunk = fileLines.slice(startIdx, endIdx + 1).join('\n');
                     if (chunk.includes(searchStr)) {
                         const newChunk = chunk.split(searchStr).join(replaceStr);
@@ -376,7 +377,7 @@ export async function editCommand(
                     }
                     continue;
                 }
-                const searchStr = expandText(edit.search, false);
+                const searchStr = expandText(edit.search, false).replace(/\r\n/g, '\n');
                 const replaceStr = expandText(edit.replace);
 
                 if (fileContent.includes(searchStr)) {

@@ -42,25 +42,42 @@ export async function sedCommand(
     }
 
     let isRegex = false;
+    let isLiteral = false;
     let regexObj: RegExp | null = null;
     let regexFlags = options.all ? 'g' : '';
 
     if (pattern.startsWith('/') && pattern.lastIndexOf('/') > 0) {
-        const lastSlash = pattern.lastIndexOf('/');
-        const source = pattern.substring(1, lastSlash);
-        const flagsStr = pattern.substring(lastSlash + 1);
-        isRegex = true;
-        
-        // merge flags
-        const flagsSet = new Set((flagsStr + regexFlags).split(''));
-        regexFlags = Array.from(flagsSet).join('');
-        
-        regexObj = new RegExp(source, regexFlags);
-    } else if (options.all) {
-        // Escaped raw string pattern
+        let lastSlash = -1;
+        for (let i = pattern.length - 1; i > 0; i--) {
+            if (pattern[i] === '/' && pattern[i - 1] !== '\\') {
+                lastSlash = i;
+                break;
+            }
+        }
+        if (lastSlash > 0) {
+            const source = pattern.substring(1, lastSlash);
+            const flagsStr = pattern.substring(lastSlash + 1);
+            isRegex = true;
+            
+            const validFlags = ['g', 'i', 'm', 's', 'u', 'y'];
+            const flagsSet = new Set((flagsStr + regexFlags).split('').filter(f => validFlags.includes(f)));
+            regexFlags = Array.from(flagsSet).join('');
+            
+            try {
+                regexObj = new RegExp(source, regexFlags);
+            } catch (e: any) {
+                printError(`Invalid regex pattern: ${e.message}`);
+                return;
+            }
+        }
+    } 
+    
+    if (!isRegex && options.all) {
         const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         regexObj = new RegExp(escaped, regexFlags);
-        isRegex = true;
+        isLiteral = true;
+    } else if (!isRegex) {
+        isLiteral = true;
     }
 
     let filesEdited = 0;
@@ -72,17 +89,20 @@ export async function sedCommand(
             let newContent = content;
             let count = 0;
 
-            if (isRegex && regexObj) {
-                // To count occurrences, we can use match
+            if (regexObj) {
                 const matches = content.match(regexObj);
                 if (matches) {
-                    count = matches.length;
-                    newContent = content.replace(regexObj, replacement);
+                    count = regexObj.global ? matches.length : 1;
+                    if (isLiteral) {
+                        newContent = content.replace(regexObj, () => replacement);
+                    } else {
+                        newContent = content.replace(regexObj, replacement);
+                    }
                 }
             } else {
                 if (content.includes(pattern)) {
                     count = 1;
-                    newContent = content.replace(pattern, replacement);
+                    newContent = content.replace(pattern, () => replacement);
                 }
             }
 

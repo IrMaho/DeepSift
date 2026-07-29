@@ -1,0 +1,7 @@
+      line 1
+
+      line 3
+replaced 4 and 5
+line 4
+line 5
+line 6
