@@ -45,14 +45,30 @@ export interface SearchOptions {
  * await searchCommand(process.cwd(), ['authentication store'], 'markdown', { limit: 10 });
  * ```
  */
+import { fileURLToPath } from 'url';
+
 export async function searchCommand(
     projectPath: string, 
     queries: string[], 
     format: OutputFormat, 
     options: SearchOptions = {}
 ): Promise<void> {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const zigExePath = path.resolve(__dirname, '..', '..', '..', 'bin', 'deepsift-math.exe');
+    try {
+        const { execSync } = await import('child_process');
+        const queryArgs = queries.map(q => `"${q}"`).join(' ');
+        const output = execSync(`"${zigExePath}" search ${queryArgs}`, { cwd: projectPath, encoding: 'utf-8' });
+        printResult(output, format);
+        return;
+    } catch (e: any) {
+        const out = e.stdout ? e.stdout.toString() : e.message;
+        printResult(out, format);
+        return;
+    }
+
     const router = new RealmRouter(projectPath);
-    const targetRealms = options.allRealms ? undefined : (options.realm ? options.realm.split(',').map(r => r.trim()) : undefined);
+    const targetRealms = options.allRealms ? undefined : (options.realm ? options.realm!.split(',').map(r => r.trim()) : undefined);
 
     if (!options.skipSync) {
         const realmsToSync = targetRealms || ['code'];

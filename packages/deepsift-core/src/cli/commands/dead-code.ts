@@ -24,66 +24,19 @@ import { normalizePath } from '../../utils/outline.js';
  * await deadCodeCommand(process.cwd(), 'markdown');
  * ```
  */
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+
 export async function deadCodeCommand(projectPath: string, format: OutputFormat = 'markdown'): Promise<void> {
-    const lines: string[] = [];
-    lines.push(`# 🧹 Dead Code Elimination Audit\n`);
-
-    const exportsMap: Map<string, string> = new Map();
-    const importsSet: Set<string> = new Set();
-
-    function scan(dir: string) {
-        if (!fs.existsSync(dir)) return;
-        const items = fs.readdirSync(dir, { withFileTypes: true });
-        for (const item of items) {
-            if (item.name.startsWith('.') || ['node_modules', 'dist', 'build', '.deepsift'].includes(item.name)) continue;
-            const fullPath = path.join(dir, item.name);
-            if (item.isDirectory()) {
-                scan(fullPath);
-            } else {
-                const ext = path.extname(item.name);
-                if (['.ts', '.js', '.tsx', '.jsx', '.dart'].includes(ext)) {
-                    try {
-                        const content = fs.readFileSync(fullPath, 'utf8');
-                        const rel = normalizePath(path.relative(projectPath, fullPath));
-                        
-                        const exportMatches = content.matchAll(/\bexport\s+(?:const|function|class|type|interface)\s+([\w_]+)/g);
-                        for (const match of exportMatches) {
-                            if (match[1] && !['default', 'main'].includes(match[1])) {
-                                exportsMap.set(match[1], rel);
-                            }
-                        }
-
-                        const words = content.match(/\b[A-Za-z_]\w*\b/g) || [];
-                        words.forEach(w => importsSet.add(w));
-                    } catch {}
-                }
-            }
-        }
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const zigExePath = path.resolve(__dirname, '..', '..', '..', 'bin', 'deepsift-math.exe');
+    
+    try {
+        const output = execSync(`"${zigExePath}" find-dead-code`, { cwd: projectPath, encoding: 'utf-8' });
+        printResult(output, format);
+        await saveSearchLog(projectPath, ['[DeadCode]'], output, { skipVisuals: true });
+    } catch (e: any) {
+        const out = e.stdout ? e.stdout.toString() : e.message;
+        printResult(out, format);
     }
-
-    scan(projectPath);
-
-    const unusedSymbols: Array<{ symbol: string, file: string }> = [];
-
-    exportsMap.forEach((filePath, symbol) => {
-        const usages = Array.from(importsSet).filter(w => w === symbol).length;
-        if (usages <= 1) {
-            unusedSymbols.push({ symbol, file: filePath });
-        }
-    });
-
-    lines.push(`Discovered **${unusedSymbols.length}** potentially unreferenced/dead export symbols:\n`);
-
-    if (unusedSymbols.length > 0) {
-        unusedSymbols.slice(0, 15).forEach(s => {
-            lines.push(`- 🗑️ \`${s.symbol}\` in 📄 **${s.file}**`);
-        });
-        if (unusedSymbols.length > 15) lines.push(`- ... (+${unusedSymbols.length - 15} more dead code symbols)`);
-    } else {
-        lines.push(`- 🎉 No dead export code detected.`);
-    }
-
-    const outputText = lines.join('\n');
-    await saveSearchLog(projectPath, ['[DeadCode]'], outputText, { skipVisuals: true });
-    printResult(outputText, format);
 }

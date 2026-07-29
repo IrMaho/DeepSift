@@ -391,11 +391,6 @@ Scans files for structural code duplicates, copy-paste clusters, and block-level
 - **Path:** `packages/deepsift-core/src/cli/commands/dead-code.ts`  
 - **Description:** Dead Code Elimination & Unreferenced Export Audit Command.
 
-### Exported Symbols
-
-#### `function deadCodeCommand`
-Scans exported symbols, classes, functions, and interfaces to identify unused or dead code.
-
 ---
 
 ## 📄 [`decode`](file:///packages/deepsift-core/src/cli/commands/decode.ts)
