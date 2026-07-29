@@ -32,8 +32,71 @@ const BlockType = enum {
 };
 
 pub fn parseNative(allocator: std.mem.Allocator, content: []const u8, file_path: []const u8, language: []const u8) ![]ParsedChunk {
+    if (!std.mem.eql(u8, language, "ts") and !std.mem.eql(u8, language, "tsx") and !std.mem.eql(u8, language, "js") and !std.mem.eql(u8, language, "jsx") and !std.mem.eql(u8, language, "typescript") and !std.mem.eql(u8, language, "javascript")) {
+        return parseRawChunks(allocator, content, file_path, language);
+    }
     const ast_treesitter = @import("ast_treesitter.zig");
-    return ast_treesitter.parseWithTreeSitter(allocator, content, file_path, language);
+    const chunks = try ast_treesitter.parseWithTreeSitter(allocator, content, file_path, language);
+    if (chunks.len == 0) {
+        return parseRawChunks(allocator, content, file_path, language);
+    }
+    return chunks;
+}
+
+fn parseRawChunks(allocator: std.mem.Allocator, content: []const u8, file_path: []const u8, language: []const u8) ![]ParsedChunk {
+    var chunks = std.ArrayList(ParsedChunk).empty;
+    defer chunks.deinit(allocator);
+
+    var lines = std.ArrayList([]const u8).empty;
+    defer lines.deinit(allocator);
+
+    var it = std.mem.splitSequence(u8, content, "\n");
+    while (it.next()) |line| {
+        try lines.append(allocator, line);
+    }
+
+    if (lines.items.len == 0) return try chunks.toOwnedSlice(allocator);
+
+    const chunk_size: usize = 50;
+    const overlap: usize = 10;
+    
+    var i: usize = 0;
+    while (i < lines.items.len) {
+        const end = @min(i + chunk_size, lines.items.len);
+        
+        var chunk_content = std.ArrayList(u8).empty;
+        defer chunk_content.deinit(allocator);
+        for (lines.items[i..end]) |l| {
+            try chunk_content.appendSlice(allocator, l);
+            try chunk_content.appendSlice(allocator, "\n");
+        }
+        
+        const chunk_text = try chunk_content.toOwnedSlice(allocator);
+        
+        const hash = std.hash.Wyhash.hash(0, chunk_text);
+        const hash_str = try std.fmt.allocPrint(allocator, "{x}", .{hash});
+        
+        const basename = std.fs.path.basename(file_path);
+        const id = try std.fmt.allocPrint(allocator, "{s}_{d}", .{basename, i + 1});
+
+        try chunks.append(allocator, .{
+            .id = id,
+            .file_path = try allocator.dupe(u8, file_path),
+            .content = chunk_text,
+            .start_line = @intCast(i + 1),
+            .end_line = @intCast(end),
+            .type = try allocator.dupe(u8, "text"),
+            .family = try allocator.dupe(u8, "raw"),
+            .language = try allocator.dupe(u8, language),
+            .merkle_hash = hash_str,
+            .is_state_mutator = false,
+        });
+        
+        if (i + chunk_size >= lines.items.len) break;
+        i += chunk_size - overlap;
+    }
+
+    return try chunks.toOwnedSlice(allocator);
 }
 
 const BulkWorkerContext = struct {

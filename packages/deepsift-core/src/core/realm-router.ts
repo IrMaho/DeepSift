@@ -79,12 +79,24 @@ export class RealmRouter {
             try {
                 const results = await this.searchRealm(rid, query);
                 allResults.push(...results);
-            } catch {
+            } catch (e) {
+                console.error(`[DEBUG] Error in searchRealm for ${rid}:`, e);
                 // skip realm
             }
         }
 
         allResults.sort((a, b) => b.score - a.score);
+        
+        // Normalize across all realms to 0-1 range
+        if (allResults.length > 0) {
+            const maxScore = allResults[0].score;
+            if (maxScore > 0) {
+                for (const r of allResults) {
+                    r.score = r.score / maxScore;
+                }
+            }
+        }
+
         const topK = query.topK || 10;
         return allResults.slice(0, topK);
     }

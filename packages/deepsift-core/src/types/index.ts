@@ -30,6 +30,8 @@ export interface EmbeddedChunk {
 export interface SearchResult {
     chunk: CodeChunk;
     score: number;
+    bm25Score?: number;
+    vectorScore?: number;
     matchType: 'semantic' | 'keyword' | 'hybrid' | 'relaxed_keyword';
 }
 

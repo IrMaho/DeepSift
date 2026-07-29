@@ -53,20 +53,6 @@ export async function searchCommand(
     format: OutputFormat, 
     options: SearchOptions = {}
 ): Promise<void> {
-    const __dirname = path.dirname(fileURLToPath(import.meta.url));
-    const zigExePath = path.resolve(__dirname, '..', '..', '..', 'bin', 'deepsift-math.exe');
-    try {
-        const { execSync } = await import('child_process');
-        const queryArgs = queries.map(q => `"${q}"`).join(' ');
-        const output = execSync(`"${zigExePath}" search ${queryArgs}`, { cwd: projectPath, encoding: 'utf-8' });
-        printResult(output, format);
-        return;
-    } catch (e: any) {
-        const out = e.stdout ? e.stdout.toString() : e.message;
-        printResult(out, format);
-        return;
-    }
-
     const router = new RealmRouter(projectPath);
     const targetRealms = options.allRealms ? undefined : (options.realm ? options.realm!.split(',').map(r => r.trim()) : undefined);
 
@@ -204,6 +190,7 @@ export function astSymbolFallback(projectPath: string, query: string): { file: s
  */
 async function executeSingleSearch(router: RealmRouter, projectPath: string, query: string, format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
     const rawResults = await router.searchAllRealms({ query, topK: 5, filterPath: options.filterPath }, targetRealms);
+    console.log("[DEBUG] rawResults length: " + rawResults.length + ", first score: " + (rawResults.length > 0 ? rawResults[0].score : "N/A"));
     const results = rawResults.filter(r => r.score >= 0.15);
 
     if (results.length === 0) {
@@ -257,7 +244,10 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
             }
         }
         
-        return `${i + 1}. [${res.realmId}] [${res.chunk.filePath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)}, match: ${res.matchType})\n   Type: ${res.chunk.type}\n   \`\`\`${res.chunk.language}\n${contentToDisplay}\n   \`\`\``;
+        const debugScores = (res.bm25Score !== undefined && res.vectorScore !== undefined) 
+            ? `, bm25: ${res.bm25Score.toFixed(3)}, vec: ${res.vectorScore.toFixed(3)}` 
+            : ``;
+        return `${i + 1}. [${res.realmId}] [${res.chunk.filePath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)}${debugScores}, match: ${res.matchType})\n   Type: ${res.chunk.type}\n   \`\`\`${res.chunk.language}\n${contentToDisplay}\n   \`\`\``;
     }).join('\n\n');
 
     const injector = new ContextInjector(projectPath);
@@ -315,7 +305,8 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
 
     for (let i = 0; i < queries.length; i++) {
         const query = queries[i];
-        const rawResults = await router.searchAllRealms({ query, topK: 5, filterPath: options.filterPath }, targetRealms);
+        let parsedTypes = undefined;
+        const rawResults = await router.searchAllRealms({ query, topK: options.limit || 20, filterType: parsedTypes, filterPath: options.filterPath }, targetRealms);
         const results = rawResults.filter(r => r.score >= 0.15);
 
         combinedOutput += `## Query ${i + 1}: "${query}"\n`;

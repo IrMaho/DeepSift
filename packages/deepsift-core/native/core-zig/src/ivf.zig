@@ -79,20 +79,20 @@ pub const IVFIndex = struct {
         return a.score > b.score;
     }
     
-    pub fn searchNearestClusters(self: *IVFIndex, query_vec: *const @import("sift_vector.zig").QuantizedVector, nprobe: usize) ![]ClusterScore {
-        var scores = try std.ArrayList(ClusterScore).initCapacity(self.allocator, self.centroids.items.len);
-        defer scores.deinit(self.allocator);
+    pub fn searchNearestClusters(self: *IVFIndex, req_alloc: std.mem.Allocator, query_vec: *const @import("sift_vector.zig").QuantizedVector, nprobe: usize) ![]ClusterScore {
+        var scores = try std.ArrayList(ClusterScore).initCapacity(req_alloc, self.centroids.items.len);
+        defer scores.deinit(req_alloc);
         
         for (self.centroids.items, 0..) |*centroid, idx| {
             const c_vec = centroid.embedding.toQuantizedVector();
             const score = similarity_simd.computeQuantizedDotProduct(query_vec, &c_vec);
-            try scores.append(self.allocator, .{ .centroid_idx = idx, .score = score });
+            try scores.append(req_alloc, .{ .centroid_idx = idx, .score = score });
         }
         
         std.mem.sort(ClusterScore, scores.items, {}, compareClusterScore);
         
         const return_count = @min(nprobe, scores.items.len);
-        const result = try self.allocator.alloc(ClusterScore, return_count);
+        const result = try req_alloc.alloc(ClusterScore, return_count);
         @memcpy(result, scores.items[0..return_count]);
         return result;
     }

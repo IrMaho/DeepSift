@@ -322,6 +322,8 @@ export class NativeStore {
                 language: row.language
             },
             score: row.score,
+            bm25Score: row.bm25Score,
+            vectorScore: row.vectorScore,
             matchType: row.matchType || 'semantic'
         }));
     }
@@ -342,6 +344,8 @@ export class NativeStore {
                 language: row.language
             },
             score: row.score,
+            bm25Score: row.bm25Score,
+            vectorScore: row.vectorScore,
             matchType: row.matchType || 'keyword'
         }));
     }
@@ -371,6 +375,8 @@ export class NativeStore {
                 language: row.language
             },
             score: row.score,
+            bm25Score: row.bm25Score,
+            vectorScore: row.vectorScore,
             matchType: row.matchType || 'hybrid-native'
         }));
     }
