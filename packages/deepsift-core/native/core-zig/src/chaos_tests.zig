@@ -1,5 +1,5 @@
 const std = @import("std");
-const Graph = @import("graph.zig").Graph;
+const Graph = @import("simple_graph.zig").Graph;
 const VirtualRouter = @import("virtual_router.zig").VirtualRouter;
 const FFITracker = @import("ffi_tracker.zig").FFITracker;
 const CleanArchLinter = @import("clean_arch_linter.zig").CleanArchLinter;

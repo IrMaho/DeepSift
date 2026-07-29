@@ -1,5 +1,5 @@
 const std = @import("std");
-const Graph = @import("graph.zig").Graph;
+const Graph = @import("simple_graph.zig").Graph;
 
 pub const RefactorCost = enum { S, M, L, XL };
 

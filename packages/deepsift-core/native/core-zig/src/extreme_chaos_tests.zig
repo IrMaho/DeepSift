@@ -5,7 +5,7 @@ const AutoHealMachine = @import("auto_heal.zig").AutoHealMachine;
 const DECv3 = @import("dec_v3.zig").DECv3;
 const CostEstimator = @import("refactor_cost.zig").CostEstimator;
 const RefactorCost = @import("refactor_cost.zig").RefactorCost;
-const Graph = @import("graph.zig").Graph;
+const Graph = @import("simple_graph.zig").Graph;
 
 // ==============================================
 // 1. TPRReporter TESTS (Test-to-Production Ratio)
