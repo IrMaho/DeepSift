@@ -11,6 +11,7 @@
 
 import { NativeStore, BatchOperation } from '../storage/native-store.js';
 import { parseSkillFile } from '../parsers/skill-parser.js';
+import { parseWithAst } from '../parsers/ast-chunker.js';
 import { getEmbeddings } from './embedder.js';
 import { isBinaryFile } from '../utils/binary-check.js';
 import * as crypto from 'crypto';
@@ -143,20 +144,27 @@ export class Indexer {
                         codeFiles.push(...mdFiles); 
                     }
 
-                    // 2. Process Code files entirely natively in Zig (Zero-Copy Multi-Threaded)
+                    // 2. Process Code Files (AST for TS/JS, Native for others)
                     if (codeFiles.length > 0) {
-                        const rawChunks = await this.store.extractChunksBulkNative(codeFiles);
-                        const mappedChunks = rawChunks.map((c: any) => ({
-                            id: c.id,
-                            filePath: c.file_path,
-                            content: c.content,
-                            startLine: c.start_line,
-                            endLine: c.end_line,
-                            type: c.type,
-                            family: c.family,
-                            language: c.language
-                        }));
-                        allChunks.push(...mappedChunks);
+                        const astChunks: any[] = [];
+                        for (const file of codeFiles) {
+                            if (file.endsWith('.ts') || file.endsWith('.js') || file.endsWith('.tsx') || file.endsWith('.jsx')) {
+                                const content = await fs.readFile(file, 'utf-8');
+                                const ext = path.extname(file).replace('.', '');
+                                try {
+                                    const chunks = await parseWithAst(content, file, ext);
+                                    astChunks.push(...chunks);
+                                } catch (err) {
+                                    console.error(`[DeepSift] Failed to parse AST for ${file}:`, err);
+                                    const rawChunks = await this.store.extractChunksBulkNative([file]);
+                                    astChunks.push(...rawChunks.map((c:any)=>({id:c.id,filePath:c.file_path,content:c.content,startLine:c.start_line,endLine:c.end_line,type:c.type,family:c.family,language:c.language})));
+                                }
+                            } else {
+                                const rawChunks = await this.store.extractChunksBulkNative([file]);
+                                astChunks.push(...rawChunks.map((c:any)=>({id:c.id,filePath:c.file_path,content:c.content,startLine:c.start_line,endLine:c.end_line,type:c.type,family:c.family,language:c.language})));
+                            }
+                        }
+                        allChunks.push(...astChunks);
                     }
 
                     // 3. Delete old chunks for these files

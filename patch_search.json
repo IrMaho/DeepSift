@@ -1,0 +1,11 @@
+[
+  {
+    "file": "packages/deepsift-core/src/cli/commands/search.ts",
+    "edits": [
+      {
+        "search": "    const rawResults = await router.searchAllRealms({ query, topK: 5, filterPath: options.filterPath }, targetRealms);",
+        "replace": "    const rawResults = await router.searchAllRealms({ query, topK: options.limit || 15, filterPath: options.filterPath }, targetRealms);"
+      }
+    ]
+  }
+]

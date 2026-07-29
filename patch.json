@@ -1,0 +1,11 @@
+[
+  {
+    "file": "packages/deepsift-core/native/core-zig/src/search_engine.zig",
+    "edits": [
+      {
+        "search": "        if (isDefinitionChunk(chunk_content)) {\r\n            raw_score *= 1.3;\r\n        }",
+        "replace": "        if (isDefinitionChunk(chunk_content)) {\r\n            raw_score *= 1.3;\r\n        }\r\n\r\n        const c_type = chunks[m.chunk_index].chunk_type;\r\n        if (std.mem.eql(u8, c_type, \"function\") or std.mem.eql(u8, c_type, \"class\") or std.mem.eql(u8, c_type, \"interface\") or std.mem.eql(u8, c_type, \"type\")) {\r\n            raw_score *= 1.5;\r\n        } else if (std.mem.eql(u8, c_type, \"import\")) {\r\n            raw_score *= 0.1;\r\n        }"
+      }
+    ]
+  }
+]

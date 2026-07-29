@@ -189,7 +189,7 @@ export function astSymbolFallback(projectPath: string, query: string): { file: s
  * Handles single query vector and BM25 search.
  */
 async function executeSingleSearch(router: RealmRouter, projectPath: string, query: string, format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
-    const rawResults = await router.searchAllRealms({ query, topK: 5, filterPath: options.filterPath }, targetRealms);
+    const rawResults = await router.searchAllRealms({ query, topK: options.limit || 15, filterPath: options.filterPath }, targetRealms);
     console.log("[DEBUG] rawResults length: " + rawResults.length + ", first score: " + (rawResults.length > 0 ? rawResults[0].score : "N/A"));
     const results = rawResults.filter(r => r.score >= 0.15);
 
@@ -324,7 +324,7 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
             continue;
         }
 
-        results.slice(0, 5).forEach((res, idx) => {
+        results.slice(0, options.limit || 5).forEach((res, idx) => {
             const key = `${res.realmId}:${res.chunk.filePath}:${res.chunk.startLine}`;
             allResultsMap.set(key, res);
             combinedOutput += `${idx + 1}. [${res.realmId}] [${res.chunk.filePath}:${res.chunk.startLine}-${res.chunk.endLine}] (score: ${res.score.toFixed(3)})\n   \`\`\`${res.chunk.language}\n${res.chunk.content.substring(0, 200)}...\n   \`\`\`\n`;
@@ -347,7 +347,7 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
     }
 
     const allResArray = Array.from(allResultsMap.values());
-    const topFiles = allResArray.slice(0, 5).map(r =>
+    const topFiles = allResArray.slice(0, options.limit || 5).map(r =>
         `[${r.realmId}] ${r.chunk.filePath}:${r.chunk.startLine}-${r.chunk.endLine}`
     );
     const memoCtx: AutoSaveContext = {

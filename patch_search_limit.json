@@ -1,0 +1,15 @@
+[
+  {
+    "file": "packages/deepsift-core/src/cli/commands/search.ts",
+    "edits": [
+      {
+        "search": "        results.slice(0, 5).forEach((res, idx) => {",
+        "replace": "        results.slice(0, options.limit || 5).forEach((res, idx) => {"
+      },
+      {
+        "search": "    const allResArray = Array.from(allResultsMap.values());\n    const topFiles = allResArray.slice(0, 5).map(r =>",
+        "replace": "    const allResArray = Array.from(allResultsMap.values());\n    const topFiles = allResArray.slice(0, options.limit || 5).map(r =>"
+      }
+    ]
+  }
+]

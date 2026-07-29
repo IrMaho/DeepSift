@@ -558,7 +558,9 @@ pub fn main(init: std.process.Init) !void {
         const resolved_db_path: []const u8 = req.dbPath;
         const resolved_graph_path: ?[]const u8 = req.graphDbPath;
 
-        database.loadFromFile(resolved_db_path) catch {};
+        database.loadFromFile(resolved_db_path) catch |err| {
+            std.debug.print("Failed to load from file {s}: {any}\n", .{resolved_db_path, err});
+        };
         database.buildIvf() catch |err| {
             std.debug.print("deepsift: Warning, IVF build failed: {any}\n", .{err});
         };
@@ -1175,7 +1177,9 @@ pub fn main(init: std.process.Init) !void {
         try writer.flush();
 
         if (modified) {
-            database.saveToFile(io, resolved_db_path) catch {};
+            database.saveToFile(io, resolved_db_path) catch |err| {
+                std.debug.print("Failed to save to file {s}: {any}\n", .{resolved_db_path, err});
+            };
         }
         
         if (graph_modified) {

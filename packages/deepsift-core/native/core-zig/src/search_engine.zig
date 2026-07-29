@@ -314,6 +314,15 @@ pub fn searchHybridNative(
             vec_score = computeVectorScore(q_vec, chunk.embedding);
         }
 
+        if (std.mem.eql(u8, chunk.chunk_type, "class") or
+            std.mem.eql(u8, chunk.chunk_type, "function") or
+            std.mem.eql(u8, chunk.chunk_type, "interface") or
+            std.mem.eql(u8, chunk.chunk_type, "type") or
+            std.mem.eql(u8, chunk.chunk_type, "component")) {
+            bm25_score *= 1.5;
+            vec_score *= 1.2;
+        }
+
         try matches.append(allocator, .{
             .chunk_index = ci,
             .bm25_score = bm25_score,
@@ -444,6 +453,13 @@ pub fn searchHybridNative(
 
         if (isDefinitionChunk(chunk_content)) {
             raw_score *= 1.3;
+        }
+
+        const c_type = chunks[m.chunk_index].chunk_type;
+        if (std.mem.eql(u8, c_type, "function") or std.mem.eql(u8, c_type, "class") or std.mem.eql(u8, c_type, "interface") or std.mem.eql(u8, c_type, "type")) {
+            raw_score *= 1.5;
+        } else if (std.mem.eql(u8, c_type, "import")) {
+            raw_score *= 0.1;
         }
 
         const content_len = chunk_content.len;

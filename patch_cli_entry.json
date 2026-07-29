@@ -1,0 +1,19 @@
+[
+  {
+    "file": "packages/deepsift-core/src/cli/cli-entry.ts",
+    "edits": [
+      {
+        "search": "                let searchRealm: string | undefined = undefined;\n                const searchRealmIdx = commandArgs.indexOf('--realm');\n                if (searchRealmIdx !== -1 && searchRealmIdx + 1 < commandArgs.length) {\n                    searchRealm = commandArgs[searchRealmIdx + 1];\n                }",
+        "replace": "                let searchRealm: string | undefined = undefined;\n                const searchRealmIdx = commandArgs.indexOf('--realm');\n                if (searchRealmIdx !== -1 && searchRealmIdx + 1 < commandArgs.length) {\n                    searchRealm = commandArgs[searchRealmIdx + 1];\n                }\n\n                let searchLimit: number | undefined;\n                const searchLimitIdx = commandArgs.findIndex(arg => arg === '--limit' || arg === '-l');\n                if (searchLimitIdx !== -1 && commandArgs[searchLimitIdx + 1]) {\n                    searchLimit = parseInt(commandArgs[searchLimitIdx + 1], 10);\n                    if (isNaN(searchLimit)) searchLimit = undefined;\n                }"
+      },
+      {
+        "search": "                    if (idx > 0 && commandArgs[idx - 1] === '--realm') return false;\n                    return true;",
+        "replace": "                    if (idx > 0 && commandArgs[idx - 1] === '--realm') return false;\n                    if (idx > 0 && (commandArgs[idx - 1] === '--limit' || commandArgs[idx - 1] === '-l')) return false;\n                    return true;"
+      },
+      {
+        "search": "                    realm: searchRealm,\n                    allRealms: allRealmsSearch,\n                    noVisual\n                });",
+        "replace": "                    realm: searchRealm,\n                    allRealms: allRealmsSearch,\n                    noVisual,\n                    limit: searchLimit\n                });"
+      }
+    ]
+  }
+]

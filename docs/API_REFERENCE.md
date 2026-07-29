@@ -1,6 +1,6 @@
 # 📖 DeepSift Source Code API Reference
 
-Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **131 TypeScript modules** in DeepSift.
+Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **133 TypeScript modules** in DeepSift.
 
 ---
 
@@ -850,6 +850,13 @@ Scans workspace files, generates AST chunks, computes vector embeddings,
 
 ---
 
+## 📄 [`reranker`](file:///packages/deepsift-core/src/core/reranker.ts)
+
+- **Path:** `packages/deepsift-core/src/core/reranker.ts`  
+- **Description:** TypeScript source module.
+
+---
+
 ## 📄 [`searcher`](file:///packages/deepsift-core/src/core/searcher.ts)
 
 - **Path:** `packages/deepsift-core/src/core/searcher.ts`  
@@ -1007,6 +1014,13 @@ Coordinates research tag tracking, entry insertion, semantic querying,
 
 - **Path:** `packages/deepsift-core/src/memo/note-processor.ts`  
 - **Description:** Research note preprocessor for content normalization and type classification.
+
+---
+
+## 📄 [`ast-chunker`](file:///packages/deepsift-core/src/parsers/ast-chunker.ts)
+
+- **Path:** `packages/deepsift-core/src/parsers/ast-chunker.ts`  
+- **Description:** TypeScript source module.
 
 ---
 

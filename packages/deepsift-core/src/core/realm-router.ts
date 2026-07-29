@@ -87,16 +87,6 @@ export class RealmRouter {
 
         allResults.sort((a, b) => b.score - a.score);
         
-        // Normalize across all realms to 0-1 range
-        if (allResults.length > 0) {
-            const maxScore = allResults[0].score;
-            if (maxScore > 0) {
-                for (const r of allResults) {
-                    r.score = r.score / maxScore;
-                }
-            }
-        }
-
         const topK = query.topK || 10;
         return allResults.slice(0, topK);
     }

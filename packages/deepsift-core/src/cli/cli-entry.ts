@@ -368,11 +368,19 @@ async function main() {
                     searchRealm = commandArgs[searchRealmIdx + 1];
                 }
 
+                let searchLimit: number | undefined;
+                const searchLimitIdx = commandArgs.findIndex(arg => arg === '--limit' || arg === '-l');
+                if (searchLimitIdx !== -1 && commandArgs[searchLimitIdx + 1]) {
+                    searchLimit = parseInt(commandArgs[searchLimitIdx + 1], 10);
+                    if (isNaN(searchLimit)) searchLimit = undefined;
+                }
+
                 const searchQueries = commandArgs.filter((arg, idx) => {
                     if (arg.startsWith('-')) return false;
                     if (idx > 0 && (commandArgs[idx - 1] === '--include' || commandArgs[idx - 1] === '-i')) return false;
                     if (idx > 0 && (commandArgs[idx - 1] === '--context-lines' || commandArgs[idx - 1] === '-C')) return false;
                     if (idx > 0 && commandArgs[idx - 1] === '--realm') return false;
+                    if (idx > 0 && (commandArgs[idx - 1] === '--limit' || commandArgs[idx - 1] === '-l')) return false;
                     return true;
                 });
                 
@@ -387,7 +395,8 @@ async function main() {
                     contextLines,
                     realm: searchRealm,
                     allRealms: allRealmsSearch,
-                    noVisual
+                    noVisual,
+                    limit: searchLimit
                 });
                 break;
 
