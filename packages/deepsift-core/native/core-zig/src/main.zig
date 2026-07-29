@@ -1,4 +1,17 @@
 const std = @import("std");
+const cycle = @import("cycle.zig");
+const testmap = @import("testmap.zig");
+const taint = @import("taint.zig");
+const schema = @import("schema.zig");
+const clones_mod = @import("clones.zig");
+const complexity = @import("complexity.zig");
+const conventions = @import("conventions.zig");
+const realms = @import("realms.zig");
+const pagination = @import("pagination.zig");
+const adr_generator = @import("adr_generator.zig");
+const figma = @import("figma.zig");
+const llm = @import("llm.zig");
+
 const db = @import("db.zig");
 const graph = @import("graph.zig");
 const realm_mod = @import("realm.zig");
