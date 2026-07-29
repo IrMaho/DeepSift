@@ -174,6 +174,8 @@ export async function editCommand(
 
     let patchData: FileEdit[] = [];
     let dictionary: Record<string, string> | undefined;
+    let originalJsonError: any = null;
+
     try {
         const parsedData = JSON.parse(content);
         if (Array.isArray(parsedData)) {
@@ -182,20 +184,24 @@ export async function editCommand(
             patchData = parsedData.files;
             dictionary = parsedData.dictionary;
         } else {
-            throw new Error('Invalid JSON schema');
+            throw new Error('JSON format is invalid: expected array or object with "files" array');
         }
     } catch (e: any) {
+        originalJsonError = e;
         // Fallback to TOON-Patch custom parser if JSON parsing fails
         try {
             const parsedToon = parseToonPatch(content);
             patchData = parsedToon.files;
             dictionary = parsedToon.dictionary;
         } catch (err: any) {
-            throw new Error(`Failed to parse patch file as JSON or TOON format: ${err.message}`);
+            throw new Error(`Failed to parse patch file as JSON (${originalJsonError.message}) or TOON format (${err.message})`);
         }
     }
 
     if (patchData.length === 0) {
+        if (originalJsonError) {
+            throw new Error(`Patch file contains no valid file edits. Original JSON error: ${originalJsonError.message}`);
+        }
         throw new Error('Patch file contains no valid file edits.');
     }
 

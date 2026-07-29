@@ -98,10 +98,18 @@ pub const GraphEdge = struct {
 };
 
 
+pub const LatentCode = struct {
+    id: []const u8,
+    content: []const u8,
+    deleted_at: i64,
+    original_file: []const u8,
+};
+
 pub const Database = struct {
     allocator: mem.Allocator,
     arena: std.heap.ArenaAllocator,
     chunks: std.ArrayList(Chunk),
+    latent_chunks: std.ArrayList(LatentCode),
     metadata: std.StringHashMap(FileMetadata),
     mapped_data: ?[]const u8 = null,
     mapped_handle: ?std.os.windows.HANDLE = null,
@@ -114,6 +122,7 @@ pub const Database = struct {
             .allocator = allocator,
             .arena = std.heap.ArenaAllocator.init(allocator),
             .chunks = std.ArrayList(Chunk).empty,
+            .latent_chunks = std.ArrayList(LatentCode).empty,
             .metadata = std.StringHashMap(FileMetadata).init(allocator),
             .mapped_data = null,
             .mapped_handle = null,
@@ -128,6 +137,7 @@ pub const Database = struct {
             self.allocator.destroy(idx);
         }
         self.chunks.deinit(self.allocator);
+        self.latent_chunks.deinit(self.allocator);
         self.metadata.deinit();
         self.arena.deinit();
     }
@@ -140,6 +150,7 @@ pub const Database = struct {
             self.ivf_index = null;
         }
         self.chunks.clearRetainingCapacity();
+        self.latent_chunks.clearRetainingCapacity();
         self.metadata.clearRetainingCapacity();
         _ = self.arena.reset(.retain_capacity);
     }

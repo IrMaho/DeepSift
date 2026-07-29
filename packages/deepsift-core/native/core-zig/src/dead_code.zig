@@ -37,8 +37,19 @@ pub fn findDeadCodeNative(
             }
         }
 
+        // Exclude entry points from dead code logic
+        var is_entry_point = false;
+        if (std.mem.endsWith(u8, sym.file_path, "App.tsx") or
+            std.mem.endsWith(u8, sym.file_path, "index.ts") or
+            std.mem.endsWith(u8, sym.file_path, "index.tsx") or
+            std.mem.endsWith(u8, sym.file_path, "main.tsx") or
+            std.mem.endsWith(u8, sym.file_path, "code.ts") or
+            std.mem.endsWith(u8, sym.file_path, "ui.html")) {
+            is_entry_point = true;
+        }
+
         // If only defined once (usage count == 1) or zero external references
-        if (total_uses <= 1) {
+        if (total_uses <= 1 and !is_entry_point) {
             try dead_list.append(allocator, .{
                 .symbol_name = try allocator.dupe(u8, sym.name),
                 .file_path = try allocator.dupe(u8, sym.file_path),

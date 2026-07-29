@@ -12,6 +12,8 @@ pub const ParsedChunk = struct {
     type: []const u8,
     family: []const u8,
     language: []const u8,
+    merkle_hash: []const u8,
+    is_state_mutator: bool,
 };
 
 pub const CalltreeResult = struct {
@@ -74,6 +76,8 @@ fn parseBulkWorker(ctx: *BulkWorkerContext) void {
             duplicated_chunk.file_path = ctx.allocator.dupe(u8, chunk.file_path) catch continue;
             duplicated_chunk.content = ctx.allocator.dupe(u8, chunk.content) catch continue;
             duplicated_chunk.language = ctx.allocator.dupe(u8, chunk.language) catch continue;
+            duplicated_chunk.merkle_hash = ctx.allocator.dupe(u8, chunk.merkle_hash) catch continue;
+            duplicated_chunk.is_state_mutator = chunk.is_state_mutator;
             ctx.results.append(ctx.allocator, duplicated_chunk) catch {};
         }
     }

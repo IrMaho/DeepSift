@@ -76,6 +76,16 @@ fn walkNode(
             
             if (trimmed.len > 0) {
                 const id = try std.fmt.allocPrint(allocator, "{s}_{d}", .{std.fs.path.basename(file_path), start_point.row + 1});
+                const hash = std.hash.Wyhash.hash(0, trimmed);
+                const hash_str = try std.fmt.allocPrint(allocator, "{x}", .{hash});
+                
+                var is_state_mutator = false;
+                if (std.mem.indexOf(u8, trimmed, "setState") != null or 
+                    std.mem.indexOf(u8, trimmed, "dispatch") != null or
+                    std.mem.indexOf(u8, trimmed, "produce") != null or
+                    std.mem.indexOf(u8, trimmed, "useStore") != null) {
+                    is_state_mutator = true;
+                }
                 
                 try chunks.append(allocator, .{
                     .id = id,
@@ -86,6 +96,8 @@ fn walkNode(
                     .type = type_str,
                     .family = family_str,
                     .language = try allocator.dupe(u8, language),
+                    .merkle_hash = hash_str,
+                    .is_state_mutator = is_state_mutator,
                 });
             }
         }

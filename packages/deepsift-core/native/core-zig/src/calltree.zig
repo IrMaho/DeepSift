@@ -31,10 +31,24 @@ pub fn analyzeCallTreeNative(allocator: std.mem.Allocator, content: []const u8, 
             }
         }
 
-        // Check if line references target symbol
-        if (std.mem.indexOf(u8, trimmed, target_symbol) != null) {
+        // Check if line references target symbol directly
+        var is_direct_match = std.mem.indexOf(u8, trimmed, target_symbol) != null;
+        var is_ipc_message = false;
+        
+        // Feature #2: Cross-Language Event Message Tracer (Heuristic)
+        // Check if this line is emitting an event (e.g. type: 'target_symbol')
+        if (!is_direct_match) {
+             if (std.mem.indexOf(u8, trimmed, "type: '") != null or std.mem.indexOf(u8, trimmed, "type: \"") != null) {
+                 if (std.mem.indexOf(u8, trimmed, target_symbol) != null) {
+                     is_ipc_message = true;
+                     is_direct_match = true;
+                 }
+             }
+        }
+
+        if (is_direct_match) {
             var kind: []const u8 = "call";
-            if (std.mem.indexOf(u8, trimmed, "postMessage") != null or std.mem.indexOf(u8, trimmed, "onmessage") != null) {
+            if (is_ipc_message or std.mem.indexOf(u8, trimmed, "postMessage") != null or std.mem.indexOf(u8, trimmed, "onmessage") != null) {
                 kind = "event_message";
             } else if (std.mem.indexOf(u8, trimmed, "dispatch") != null) {
                 kind = "state_dispatch";

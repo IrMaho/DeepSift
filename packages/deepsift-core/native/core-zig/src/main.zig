@@ -67,8 +67,22 @@ const Request = struct {
     graphNodes: ?[]db.GraphNode = null,
     graphEdges: ?[]db.GraphEdge = null,
     startNodes: ?[]u32 = null,
+    targetNodeId: ?[]const u8 = null,
     depth: ?u32 = null,
     hubThreshold: ?u32 = null,
+    complexities: ?[]f32 = null,
+    churnCounts: ?[]u32 = null,
+    idString: ?[]const u8 = null,
+    maxTokens: ?u32 = null,
+    numShards: ?u32 = null,
+    realmWeight: ?f32 = null,
+    messages: ?[][]const u8 = null,
+    authors: ?[][]const u8 = null,
+    lineCounts: ?[]u32 = null,
+    currentModel: ?[]const u8 = null,
+    targetModel: ?[]const u8 = null,
+    currentDim: ?u32 = null,
+    targetDim: ?u32 = null,
 };
 
 const ResponseOk = struct {
@@ -151,6 +165,12 @@ const WalkResponse = struct {
     id: ?usize = null,
     success: bool = true,
     data: []const walker.FileWalkInfo,
+};
+
+const BlastRadiusResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const graph.GraphAlgorithms.BlastImpact,
 };
 
 const SimilarityResponse = struct {
@@ -247,6 +267,109 @@ const ExtractChunksResponse = struct {
     id: ?usize = null,
     success: bool = true,
     data: []const ast_parser.ParsedChunk,
+};
+
+const StringResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const u8,
+};
+
+const churn_mod = @import("churn.zig");
+const ChurnRiskResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const churn_mod.ChurnRisk,
+};
+
+const LatentCodeResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const db.LatentCode,
+};
+
+const layer_guard = @import("layer_guard.zig");
+const LayerViolationResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const layer_guard.LayerViolation,
+};
+
+const context_window = @import("context_window.zig");
+const TokenBudgetResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const context_window.TokenBudget,
+};
+
+const refactor_surgeon = @import("refactor_surgeon.zig");
+const GodNodeSplitResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const refactor_surgeon.GodNodeSplit,
+};
+
+const spectral_clone = @import("spectral_clone.zig");
+const SpectralCloneResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const spectral_clone.SpectralClone,
+};
+
+const type_resolver = @import("type_resolver.zig");
+const TypeBoundResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const type_resolver.TypeBound,
+};
+
+const bridge_mapper = @import("bridge_mapper.zig");
+const BridgeLinkResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const bridge_mapper.BridgeLink,
+};
+
+const commit_classifier = @import("commit_classifier.zig");
+const CommitIntentResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const commit_classifier.CommitIntent,
+};
+
+const index_shard = @import("index_shard.zig");
+const IndexShardResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const index_shard.IndexShard,
+};
+
+const realm_fusion = @import("realm_fusion.zig");
+const RealmFusionResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const realm_fusion.RealmFusionResult,
+};
+
+const embedding_hotswap = @import("embedding_hotswap.zig");
+const HotSwapResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: embedding_hotswap.HotSwapStatus,
+};
+
+const holographic = @import("holographic.zig");
+const Holographic3DResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const holographic.DepNode3D,
+};
+
+const code_archaeology = @import("code_archaeology.zig");
+const BlameBlockResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const code_archaeology.BlameBlock,
 };
 
 fn countKeywordMatches(content: []const u8, file_path: []const u8, query: []const u8) f32 {
@@ -790,6 +913,31 @@ pub fn main() !void {
 
                 try writeResponse(allocator, &writer.interface, GraphNodesResponse{ .id = req_id, .data = results });
             }
+        } else if (std.mem.eql(u8, req.action, "calculateBlastRadiusNative")) {
+            if (req.targetNodeId) |target_id_str| {
+                const depth = req.depth orelse 3;
+                var target_idx: ?u32 = null;
+                for (graph_db.nodes.items, 0..) |n, i| {
+                    if (std.mem.eql(u8, n.id, target_id_str)) {
+                        target_idx = @intCast(i);
+                        break;
+                    }
+                }
+                if (target_idx) |idx| {
+                    var graph_algos = graph.GraphAlgorithms.init(allocator, &graph_db);
+                    var impacts = try graph_algos.calculateBlastRadius(idx, depth);
+                    defer impacts.deinit(allocator);
+
+                    const res_data = try allocator.alloc(graph.GraphAlgorithms.BlastImpact, impacts.items.len);
+                    defer allocator.free(res_data);
+                    for (impacts.items, 0..) |imp, i| {
+                        res_data[i] = imp;
+                    }
+                    try writeResponse(allocator, &writer.interface, BlastRadiusResponse{ .id = req_id, .data = res_data });
+                } else {
+                    try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Node ID not found" });
+                }
+            }
         } else if (std.mem.eql(u8, req.action, "extractChunksNative")) {
             if (req.content) |cnt| {
                 const fpath = req.filePath orelse "unknown.txt";
@@ -801,6 +949,7 @@ pub fn main() !void {
                         allocator.free(chunk.file_path);
                         allocator.free(chunk.content);
                         allocator.free(chunk.language);
+                        allocator.free(chunk.merkle_hash);
                     }
                     allocator.free(chunks);
                 }
@@ -815,10 +964,52 @@ pub fn main() !void {
                         allocator.free(chunk.file_path);
                         allocator.free(chunk.content);
                         allocator.free(chunk.language);
+                        allocator.free(chunk.merkle_hash);
                     }
                     allocator.free(chunks);
                 }
                 try writeResponse(allocator, &writer.interface, ExtractChunksResponse{ .id = req_id, .data = chunks });
+            }
+        } else if (std.mem.eql(u8, req.action, "minifyNative")) {
+            if (req.content) |cnt| {
+                const minify = @import("minify.zig");
+                const minified = try minify.minifyCodeNative(allocator, cnt);
+                defer allocator.free(minified);
+                try writeResponse(allocator, &writer.interface, StringResponse{ .id = req_id, .data = minified });
+            }
+        } else if (std.mem.eql(u8, req.action, "churnRiskNative")) {
+            if (req.filePaths != null and req.complexities != null and req.churnCounts != null) {
+                const risks = try churn_mod.calculateGitChurnRisk(allocator, req.filePaths.?, req.complexities.?, req.churnCounts.?);
+                defer {
+                    for (risks) |risk| {
+                        allocator.free(risk.file_path);
+                    }
+                    allocator.free(risks);
+                }
+                try writeResponse(allocator, &writer.interface, ChurnRiskResponse{ .id = req_id, .data = risks });
+            }
+        } else if (std.mem.eql(u8, req.action, "storeLatentCodeNative")) {
+            if (req.idString != null and req.content != null and req.filePath != null) {
+                const ts: i64 = @intCast(database.latent_chunks.items.len);
+                try database.latent_chunks.append(database.allocator, .{
+                    .id = try database.allocator.dupe(u8, req.idString.?),
+                    .content = try database.allocator.dupe(u8, req.content.?),
+                    .deleted_at = ts,
+                    .original_file = try database.allocator.dupe(u8, req.filePath.?),
+                });
+                try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
+            }
+        } else if (std.mem.eql(u8, req.action, "searchLatentCodeNative")) {
+            if (req.query) |q| {
+                var matches = std.ArrayList(db.LatentCode).empty;
+                defer matches.deinit(allocator);
+                
+                for (database.latent_chunks.items) |lc| {
+                    if (std.mem.indexOf(u8, lc.content, q) != null or std.mem.indexOf(u8, lc.original_file, q) != null) {
+                        try matches.append(allocator, lc);
+                    }
+                }
+                try writeResponse(allocator, &writer.interface, LatentCodeResponse{ .id = req_id, .data = matches.items });
             }
         } else if (std.mem.eql(u8, req.action, "extractCalltreeBulkNative")) {
             if (req.filePaths) |fps| {
@@ -834,6 +1025,85 @@ pub fn main() !void {
                     }
                     try writeResponse(allocator, &writer.interface, CalltreeResultsResponse{ .id = req_id, .data = results });
                 }
+            }
+        } else if (std.mem.eql(u8, req.action, "detectLayerViolationsNative")) {
+            const violations = try layer_guard.detectLayerViolations(allocator, graph_db.edges.items, graph_db.nodes.items);
+            defer allocator.free(violations);
+            try writeResponse(allocator, &writer.interface, LayerViolationResponse{ .id = req_id, .data = violations });
+        } else if (std.mem.eql(u8, req.action, "computeTokenBudgetsNative")) {
+            if (req.filePaths != null and req.contents != null) {
+                const max_tokens = req.maxTokens orelse 128000;
+                const budgets = try context_window.computeTokenBudgets(allocator, req.filePaths.?, req.contents.?, max_tokens);
+                defer allocator.free(budgets);
+                try writeResponse(allocator, &writer.interface, TokenBudgetResponse{ .id = req_id, .data = budgets });
+            }
+        } else if (std.mem.eql(u8, req.action, "analyzeGodNodesNative")) {
+            const hub_t = req.hubThreshold orelse 10;
+            const splits = try refactor_surgeon.analyzeGodNodes(allocator, graph_db.nodes.items, graph_db.edges.items, hub_t);
+            defer allocator.free(splits);
+            try writeResponse(allocator, &writer.interface, GodNodeSplitResponse{ .id = req_id, .data = splits });
+        } else if (std.mem.eql(u8, req.action, "detectSpectralClonesNative")) {
+            if (req.filePaths != null and req.contents != null) {
+                const thresh = req.threshold orelse 0.6;
+                const clones = try spectral_clone.detectSpectralClones(allocator, req.filePaths.?, req.contents.?, thresh);
+                defer allocator.free(clones);
+                try writeResponse(allocator, &writer.interface, SpectralCloneResponse{ .id = req_id, .data = clones });
+            }
+        } else if (std.mem.eql(u8, req.action, "extractTypeBoundsNative")) {
+            if (req.content) |cnt| {
+                const fpath = req.filePath orelse "unknown";
+                const bounds = try type_resolver.extractTypeBounds(allocator, cnt, fpath);
+                defer {
+                    for (bounds) |b| {
+                        allocator.free(b.symbol);
+                        allocator.free(b.file_path);
+                        allocator.free(b.constraint);
+                    }
+                    allocator.free(bounds);
+                }
+                try writeResponse(allocator, &writer.interface, TypeBoundResponse{ .id = req_id, .data = bounds });
+            }
+        } else if (std.mem.eql(u8, req.action, "detectBridgesNative")) {
+            if (req.content) |cnt| {
+                const fpath = req.filePath orelse "unknown";
+                const links = try bridge_mapper.detectBridges(allocator, cnt, fpath);
+                defer {
+                    for (links) |link| {
+                        allocator.free(link.source_file);
+                        allocator.free(link.target_ref);
+                    }
+                    allocator.free(links);
+                }
+                try writeResponse(allocator, &writer.interface, BridgeLinkResponse{ .id = req_id, .data = links });
+            }
+        } else if (std.mem.eql(u8, req.action, "classifyCommitsNative")) {
+            if (req.messages) |msgs| {
+                const intents = try commit_classifier.classifyCommits(allocator, msgs);
+                defer allocator.free(intents);
+                try writeResponse(allocator, &writer.interface, CommitIntentResponse{ .id = req_id, .data = intents });
+            }
+        } else if (std.mem.eql(u8, req.action, "computeShardsNative")) {
+            const total: u32 = @intCast(database.chunks.items.len);
+            const num_shards = req.numShards orelse 4;
+            const shards = try index_shard.computeShards(allocator, total, num_shards);
+            defer allocator.free(shards);
+            try writeResponse(allocator, &writer.interface, IndexShardResponse{ .id = req_id, .data = shards });
+        } else if (std.mem.eql(u8, req.action, "checkModelCompatibilityNative")) {
+            const cur_model = req.currentModel orelse "unknown";
+            const tgt_model = req.targetModel orelse "unknown";
+            const cur_dim = req.currentDim orelse 64;
+            const tgt_dim = req.targetDim orelse 64;
+            const status = embedding_hotswap.checkModelCompatibility(cur_dim, tgt_dim, cur_model, tgt_model);
+            try writeResponse(allocator, &writer.interface, HotSwapResponse{ .id = req_id, .data = status });
+        } else if (std.mem.eql(u8, req.action, "computeLayout3DNative")) {
+            const layout = try holographic.computeLayout3D(allocator, graph_db.nodes.items, graph_db.edges.items);
+            defer allocator.free(layout);
+            try writeResponse(allocator, &writer.interface, Holographic3DResponse{ .id = req_id, .data = layout });
+        } else if (std.mem.eql(u8, req.action, "analyzeOwnershipNative")) {
+            if (req.filePaths != null and req.authors != null and req.lineCounts != null) {
+                const blocks = try code_archaeology.analyzeOwnership(allocator, req.filePaths.?, req.authors.?, req.lineCounts.?);
+                defer allocator.free(blocks);
+                try writeResponse(allocator, &writer.interface, BlameBlockResponse{ .id = req_id, .data = blocks });
             }
         } else {
             try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Unknown action" });

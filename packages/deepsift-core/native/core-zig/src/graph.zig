@@ -192,6 +192,57 @@ pub const GraphAlgorithms = struct {
         return result;
     }
 
+    pub const BlastImpact = struct {
+        node_idx: u32,
+        risk_score: f32,
+        depth: u32,
+    };
+
+    /// Feature #12: Predictive Impact Radar (Calculate blast radius of breaking changes)
+    pub fn calculateBlastRadius(self: *Self, target_node_idx: u32, max_depth: u32) !std.ArrayList(BlastImpact) {
+        var visited = std.AutoHashMap(u32, void).init(self.allocator);
+        defer visited.deinit();
+
+        var impacts = std.ArrayList(BlastImpact).empty;
+        
+        var frontier = std.ArrayList(u32).empty;
+        defer frontier.deinit(self.allocator);
+
+        try visited.put(target_node_idx, {});
+        try frontier.append(self.allocator, target_node_idx);
+
+        var current_depth: u32 = 1;
+        while (current_depth <= max_depth and frontier.items.len > 0) : (current_depth += 1) {
+            var next_frontier = std.ArrayList(u32).empty;
+            
+            for (frontier.items) |node_idx| {
+                // Find all INBOUND edges to node_idx (edges where target == node_idx)
+                for (self.graph_db.edges.items) |edge| {
+                    if (edge.target == node_idx) {
+                        const caller = edge.source;
+                        if (!visited.contains(caller)) {
+                            try visited.put(caller, {});
+                            try next_frontier.append(self.allocator, caller);
+                            
+                            const pr = self.graph_db.nodes.items[caller].page_rank;
+                            const risk = pr * (1.0 / @as(f32, @floatFromInt(current_depth)));
+                            try impacts.append(self.allocator, .{
+                                .node_idx = caller,
+                                .risk_score = risk,
+                                .depth = current_depth,
+                            });
+                        }
+                    }
+                }
+            }
+            
+            frontier.deinit(self.allocator);
+            frontier = next_frontier;
+        }
+
+        return impacts;
+    }
+
     /// Trigram index implementation
     pub const TrigramIndex = struct {
         allocator: std.mem.Allocator,
