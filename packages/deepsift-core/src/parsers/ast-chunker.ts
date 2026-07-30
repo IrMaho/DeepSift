@@ -82,6 +82,13 @@ export async function parseWithAst(content: string, filePath: string, language: 
             case 'import_declaration':
             case 'use_declaration':
                 type = 'import';
+                semanticKind = 4;
+                isImportant = true;
+                break;
+            case 'object':
+            case 'dictionary':
+            case 'array':
+                type = 'block';
                 semanticKind = 3;
                 isImportant = true;
                 break;
@@ -117,6 +124,7 @@ export async function parseWithAst(content: string, filePath: string, language: 
             const identifiers = new Set<string>();
             const comments = new Set<string>();
             let astOperators = 0;
+            let stringCount = 0;
             
             function collectMetadata(n: any) {
                 if (n.type === 'identifier' || n.type === 'property_identifier' || n.type === 'type_identifier' || n.type === 'class_declaration' || n.type === 'function_declaration') {
@@ -127,6 +135,9 @@ export async function parseWithAst(content: string, filePath: string, language: 
                 const opTypes = ['+', '-', '*', '/', '==', '===', '!=', '!==', '>', '<', '>=', '<=', '&&', '||', '=', '+=', '-=', '++', '--', 'call_expression', 'if_statement', 'for_statement', 'while_statement', 'return_statement', 'await_expression'];
                 if (opTypes.includes(n.type)) {
                     astOperators++;
+                }
+                if (n.type === 'string' || n.type === 'string_literal' || n.type === 'template_string' || n.type === 'jsx_text' || n.type === 'pair') {
+                    stringCount++;
                 }
                 if (n.type === 'comment' || n.type === 'document_comment' || n.type === 'jsdoc') {
                     if (n.text) {
@@ -149,7 +160,7 @@ export async function parseWithAst(content: string, filePath: string, language: 
                 metaContext += `\n*/`;
             }
 
-            const astDensity = astOperators / (identifiers.size + 1);
+            const astDensity = astOperators / (identifiers.size + stringCount + 1);
             if (semanticKind === 0 && identifiers.size > 0) {
                 semanticKind = (astDensity > 0.15) ? 1 : 2;
             }

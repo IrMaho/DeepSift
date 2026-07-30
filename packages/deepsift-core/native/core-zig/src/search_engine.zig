@@ -398,21 +398,6 @@ pub fn searchHybridNative(
     }
     defer if (pr_map) |*m| m.deinit();
 
-    var w_bm25 = rrf_cfg.bm25_weight;
-    var w_vec = rrf_cfg.vector_weight;
-    var k_bm25 = rrf_cfg.k;
-    var k_vec = rrf_cfg.k;
-
-    if (term_count < 4) {
-        w_bm25 = 0.70;
-        w_vec = 0.30;
-        k_bm25 = 20.0;
-    } else {
-        w_bm25 = 0.30;
-        w_vec = 0.70;
-        k_vec = 30.0;
-    }
-
     var max_raw_score: f32 = 0.0;
 
     for (matches.items) |*m| {
@@ -421,9 +406,31 @@ pub fn searchHybridNative(
 
         const r_bm25 = @as(f32, @floatFromInt(r_bm25_val));
         const r_vec = @as(f32, @floatFromInt(r_vec_val));
+        
+        const chunk_content = chunks[m.chunk_index].content;
+        const chunk_file = chunks[m.chunk_index].file_path;
+        const matched_terms = countMatchedTerms(chunk_content, chunk_file, terms_list.items);
+        const match_ratio = if (term_count > 0) @as(f32, @floatFromInt(matched_terms)) / @as(f32, @floatFromInt(term_count)) else 0.0;
 
-        const score_bm25 = w_bm25 / (k_bm25 + r_bm25);
-        const score_vec = w_vec / (k_vec + r_vec);
+        // Adaptive Score Fusion in RRF based on Exact Identifier Match
+        var local_w_bm25: f32 = 0.5;
+        var local_w_vec: f32 = 0.5;
+        
+        if (term_count >= 4) {
+            if (match_ratio > 0.3) {
+                local_w_bm25 = 0.75;
+                local_w_vec = 0.25;
+            } else {
+                local_w_bm25 = 0.25;
+                local_w_vec = 0.75;
+            }
+        } else {
+            local_w_bm25 = 0.8;
+            local_w_vec = 0.2;
+        }
+
+        const score_bm25 = local_w_bm25 / (rrf_cfg.k + r_bm25);
+        const score_vec = local_w_vec / (rrf_cfg.k + r_vec);
 
         var raw_score = score_bm25 + score_vec;
 
@@ -434,10 +441,6 @@ pub fn searchHybridNative(
             }
         }
 
-        const chunk_content = chunks[m.chunk_index].content;
-        const chunk_file = chunks[m.chunk_index].file_path;
-
-        const matched_terms = countMatchedTerms(chunk_content, chunk_file, terms_list.items);
         if (term_count > 1 and matched_terms > 0) {
             const coverage = @as(f32, @floatFromInt(matched_terms)) / @as(f32, @floatFromInt(term_count));
             if (coverage >= 1.0) {
@@ -465,22 +468,19 @@ pub fn searchHybridNative(
         const semantic_kind = chunk.semantic_kind;
         const ast_density = chunk.ast_density;
 
+        // Boost logic-heavy chunks agnostic to folder structure
+        raw_score *= (1.0 + ast_density);
+
         const is_explicit_intent = c_type.len > 0 and containsInsensitive(query, c_type);
 
-        // Core Domain Boost
-        if (containsInsensitive(chunk_file, "domain/") or containsInsensitive(chunk_file, "services/") or containsInsensitive(chunk_file, "core/") or containsInsensitive(chunk_file, "utils/")) {
-            raw_score *= 1.5;
-        }
-
-        // i18n Hard Filter Penalty
-        if (std.mem.endsWith(u8, chunk_file, ".json") or std.mem.endsWith(u8, chunk_file, ".arb") or containsInsensitive(chunk_file, "i18n") or containsInsensitive(chunk_file, "locales")) {
-            const is_explicit_i18n = containsInsensitive(query, "translation") or containsInsensitive(query, "i18n") or containsInsensitive(query, "locale") or containsInsensitive(query, "dictionary");
-            if (!is_explicit_i18n) {
+        if (semantic_kind == 3) {
+            // KIND_DATA (data, translations, configs)
+            const is_explicit_data = containsInsensitive(query, "translation") or containsInsensitive(query, "i18n") or containsInsensitive(query, "locale") or containsInsensitive(query, "dictionary") or containsInsensitive(query, "config") or containsInsensitive(query, "json");
+            if (!is_explicit_data) {
                 raw_score *= 0.01;
+            } else {
+                raw_score *= 0.8;
             }
-        } else if (semantic_kind == 3) {
-            // KIND_DATA (json, translations, config) - fallback
-            raw_score *= 0.05;
         } else if (semantic_kind == 2) {
             // KIND_TYPE_DEF (interface, struct, type)
             if (is_explicit_intent) {
