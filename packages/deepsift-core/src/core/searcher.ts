@@ -39,20 +39,28 @@ export class Searcher {
     public async search(searchQuery: SearchQuery): Promise<SearchResult[]> {
         const { query, topK = 10, filterType, filterPath } = searchQuery;
         
+        // Query Essence Extractor (Vector Search Pre-processor)
+        let coreVectorQuery = query;
+        const vectorStopWords = ['implementation', 'logic for', 'how to', 'where is', 'for', 'logic', 'implementation of'];
+        for (const word of vectorStopWords) {
+            coreVectorQuery = coreVectorQuery.replace(new RegExp(`\\b${word}\\b`, 'gi'), '').trim();
+        }
+        if (coreVectorQuery.length === 0) coreVectorQuery = query;
+
         let candidates: SearchResult[] = [];
         
-        const queryVectorF32 = await getEmbedding(query);
+        const queryVectorF32 = await getEmbedding(coreVectorQuery);
         const hybridNativeRaw = await this.store.searchHybridNative(query, queryVectorF32, 400);
         if (hybridNativeRaw && hybridNativeRaw.length > 0) {
-            candidates = this.filterResults(hybridNativeRaw, filterType, filterPath);
+            candidates = this.filterResults(hybridNativeRaw, query, filterType, filterPath);
         }
         
         if (candidates.length === 0) {
             const keywordResultsRaw = await this.store.searchKeyword(query, 50);
-            const keywordResults = this.filterResults(keywordResultsRaw, filterType, filterPath);
+            const keywordResults = this.filterResults(keywordResultsRaw, query, filterType, filterPath);
 
             const semanticResultsRaw = await this.store.searchSemantic(queryVectorF32, 50);
-            const semanticResults = this.filterResults(semanticResultsRaw, filterType, filterPath);
+            const semanticResults = this.filterResults(semanticResultsRaw, query, filterType, filterPath);
 
             let structuralWeights: Map<string, number> | undefined;
             try {
@@ -74,7 +82,7 @@ export class Searcher {
 
                 for (const token of tokens) {
                     const subKw = await this.store.searchKeyword(token, 20);
-                    const filteredSubKw = this.filterResults(subKw, filterType, filterPath);
+                    const filteredSubKw = this.filterResults(subKw, query, filterType, filterPath);
 
                     for (const item of filteredSubKw) {
                         const existing = relaxedResultsMap.get(item.chunk.id);
@@ -159,11 +167,23 @@ export class Searcher {
         }
     }
 
-    private filterResults(results: SearchResult[], types?: ChunkType[], pathSubstring?: string): SearchResult[] {
+    private filterResults(results: SearchResult[], query: string, types?: ChunkType[], pathSubstring?: string): SearchResult[] {
         return results.filter(res => {
             if (types && types.length > 0 && !types.includes(res.chunk.type)) return false;
             if (pathSubstring && !res.chunk.filePath.includes(pathSubstring)) return false;
             return true;
+        }).map(res => {
+            const pathLower = res.chunk.filePath.toLowerCase();
+            const queryLower = query.toLowerCase();
+            
+            // i18n Hard Filter Penalty
+            if (pathLower.endsWith('.json') || pathLower.endsWith('.arb') || pathLower.includes('i18n') || pathLower.includes('locales')) {
+                const isExplicitI18n = queryLower.includes('translation') || queryLower.includes('i18n') || queryLower.includes('locale') || queryLower.includes('dictionary');
+                if (!isExplicitI18n) {
+                    res.score *= 0.01;
+                }
+            }
+            return res;
         });
     }
 }

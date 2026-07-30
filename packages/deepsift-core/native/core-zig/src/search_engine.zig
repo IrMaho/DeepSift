@@ -467,8 +467,19 @@ pub fn searchHybridNative(
 
         const is_explicit_intent = c_type.len > 0 and containsInsensitive(query, c_type);
 
-        if (semantic_kind == 3) {
-            // KIND_DATA (json, translations, config)
+        // Core Domain Boost
+        if (containsInsensitive(chunk_file, "domain/") or containsInsensitive(chunk_file, "services/") or containsInsensitive(chunk_file, "core/") or containsInsensitive(chunk_file, "utils/")) {
+            raw_score *= 1.5;
+        }
+
+        // i18n Hard Filter Penalty
+        if (std.mem.endsWith(u8, chunk_file, ".json") or std.mem.endsWith(u8, chunk_file, ".arb") or containsInsensitive(chunk_file, "i18n") or containsInsensitive(chunk_file, "locales")) {
+            const is_explicit_i18n = containsInsensitive(query, "translation") or containsInsensitive(query, "i18n") or containsInsensitive(query, "locale") or containsInsensitive(query, "dictionary");
+            if (!is_explicit_i18n) {
+                raw_score *= 0.01;
+            }
+        } else if (semantic_kind == 3) {
+            // KIND_DATA (json, translations, config) - fallback
             raw_score *= 0.05;
         } else if (semantic_kind == 2) {
             // KIND_TYPE_DEF (interface, struct, type)

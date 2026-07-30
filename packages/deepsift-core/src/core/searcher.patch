@@ -1,0 +1,46 @@
+--- packages/deepsift-core/src/core/searcher.ts
++++ packages/deepsift-core/src/core/searcher.ts
+@@ -37,18 +37,34 @@
+     public async search(searchQuery: SearchQuery): Promise<SearchResult[]> {
+         const { query, topK = 10, filterType, filterPath } = searchQuery;
+         
++        // Query Essence Extractor (Vector Search Pre-processor)
++        let coreVectorQuery = query;
++        const vectorStopWords = ['implementation', 'logic for', 'how to', 'where is', 'for', 'logic', 'implementation of'];
++        for (const word of vectorStopWords) {
++            coreVectorQuery = coreVectorQuery.replace(new RegExp(\\b\\\b, 'gi'), '').trim();
++        }
++        if (coreVectorQuery.length === 0) coreVectorQuery = query;
++
+         let candidates: SearchResult[] = [];
+         
+-        const queryVectorF32 = await getEmbedding(query);
++        const queryVectorF32 = await getEmbedding(coreVectorQuery);
+         const hybridNativeRaw = await this.store.searchHybridNative(query, queryVectorF32, 400);
+         if (hybridNativeRaw && hybridNativeRaw.length > 0) {
+             candidates = this.filterResults(hybridNativeRaw, filterType, filterPath);
+         }
+         
+         if (candidates.length === 0) {
+             const keywordResultsRaw = await this.store.searchKeyword(query, 50);
+             const keywordResults = this.filterResults(keywordResultsRaw, filterType, filterPath);
+ 
+             const semanticResultsRaw = await this.store.searchSemantic(queryVectorF32, 50);
+             const semanticResults = this.filterResults(semanticResultsRaw, filterType, filterPath);
+ 
+@@ -156,7 +172,17 @@
+ 
+     private filterResults(results: SearchResult[], types?: ChunkType[], pathSubstring?: string): SearchResult[] {
+         return results.filter(res => {
+             if (types && types.length > 0 && !types.includes(res.chunk.type)) return false;
+             if (pathSubstring && !res.chunk.filePath.includes(pathSubstring)) return false;
+             return true;
+-        });
++        }).map(res => {
++            // i18n / .json hard filter penalty
++            const pathLower = res.chunk.filePath.toLowerCase();
++            // @ts-ignore - 'query' is not in scope here natively if we don't pass it, so we'll do this inline in search() or pass it
++            return res;
++        });
+     }
+ }
