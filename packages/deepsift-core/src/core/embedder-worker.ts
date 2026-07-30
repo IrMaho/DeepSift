@@ -20,7 +20,10 @@ async function getExtractor() {
         let retries = 10;
         while (retries > 0) {
             try {
-                extractor = await pipeline('feature-extraction', 'Xenova/bge-base-en-v1.5', { quantized: true });
+                extractor = await pipeline('feature-extraction', 'Xenova/bge-base-en-v1.5', { 
+                    quantized: true,
+                    session_options: { executionProviders: ['directml', 'wasm', 'cpu'] }
+                } as any);
                 break;
             } catch (err: any) {
                 if (err.message?.includes('fetch failed')) {
@@ -36,14 +39,18 @@ async function getExtractor() {
 }
 
 if (parentPort) {
-    parentPort.on('message', async (message: { id: number; text: string }) => {
+    parentPort.on('message', async (message: { id: number; texts: string[] }) => {
         let retries = 5;
         while (retries > 0) {
             try {
                 const extract = await getExtractor();
-                const output = await extract(message.text, { pooling: 'mean', normalize: true });
-                const vector = new Float32Array(output.tolist()[0] || output.tolist());
-                parentPort!.postMessage({ id: message.id, vector });
+                const output = await extract(message.texts, { pooling: 'mean', normalize: true });
+                const list = output.tolist();
+                
+                // If message.texts is single, Transformers.js might return a 1D array or 2D array depending on the version
+                const vectors = Array.isArray(list[0]) ? list.map((vec: any) => new Float32Array(vec)) : [new Float32Array(list as any)];
+                
+                parentPort!.postMessage({ id: message.id, vectors });
                 return;
             } catch (err: any) {
                 retries--;

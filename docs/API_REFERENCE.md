@@ -820,11 +820,8 @@ Maps postMessage, EventEmitters, WebSocket, and IPC message channels between env
 
 ### Exported Symbols
 
-#### `function getEmbedding`
-const __filename = fileURLToPath(import.meta.url);
-
 #### `function getEmbeddings`
-Generates embeddings for an array of texts asynchronously and in parallel.
+const __filename = fileURLToPath(import.meta.url);
 
 #### `function terminateWorkers`
 Terminate all running worker threads.
