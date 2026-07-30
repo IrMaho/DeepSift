@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub const VECTOR_DIM: usize = 384;
+pub const VECTOR_DIM: usize = 768;
 pub const OUTLIER_COUNT: usize = 16;
 pub const PACKED_NIBBLES_LEN: usize = (VECTOR_DIM - OUTLIER_COUNT) / 2;
 

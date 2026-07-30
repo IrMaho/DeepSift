@@ -4,7 +4,7 @@ const math = @import("math_engine.zig");
 const sift_vector = @import("sift_vector.zig");
 const ivf = @import("ivf.zig");
 
-pub const VECTOR_DIM: usize = 384;
+pub const VECTOR_DIM: usize = 768;
 pub const VECTOR_BQ_U32_COUNT: usize = VECTOR_DIM / 32;
 
 pub const OUTLIER_COUNT: usize = sift_vector.OUTLIER_COUNT;

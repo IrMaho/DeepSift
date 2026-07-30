@@ -16,7 +16,7 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const NUM_WORKERS = Math.max(1, os.cpus().length - 1);
+const NUM_WORKERS = Math.min(2, Math.max(1, os.cpus().length - 1));
 const workerJs = path.join(__dirname, 'embedder-worker.js');
 const workerTs = path.join(__dirname, 'embedder-worker.ts');
 const workerPath = fs.existsSync(workerJs) ? workerJs : (fs.existsSync(workerTs) ? workerTs : workerJs);
@@ -25,8 +25,25 @@ let workers: Worker[] = [];
 let nextWorkerIndex = 0;
 let initialized = false;
 
-function initWorkers() {
+let initPromise: Promise<void> | null = null;
+
+async function doInitWorkers() {
     if (initialized) return;
+    try {
+        console.log('[DeepSift] Pre-downloading embedding model on main thread...');
+        const { pipeline, env } = await import('@xenova/transformers');
+        
+        // Use mirror if fetch fails due to network restrictions
+        if (env.remoteHost === 'https://huggingface.co') {
+            env.remoteHost = 'https://hf-mirror.com';
+        }
+
+        await pipeline('feature-extraction', 'Xenova/bge-base-en-v1.5', { quantized: true });
+        console.log('[DeepSift] Embedding model cached. Starting workers...');
+    } catch (err) {
+        console.warn('[DeepSift] Failed to pre-download model, workers will attempt to download:', err);
+    }
+    
     for (let i = 0; i < NUM_WORKERS; i++) {
         const worker = new Worker(workerPath);
         worker.on('error', (err) => {
@@ -37,6 +54,13 @@ function initWorkers() {
     }
     initialized = true;
     setupWorkerListeners();
+}
+
+function initWorkers(): Promise<void> {
+    if (!initPromise) {
+        initPromise = doInitWorkers();
+    }
+    return initPromise;
 }
 
 // Map to track pending requests
@@ -67,11 +91,27 @@ function setupWorkerListeners() {
  * @returns A promise resolving to a 384-dimensional Float32Array
  */
 export async function getEmbedding(text: string): Promise<Float32Array> {
-    initWorkers();
+    await initWorkers();
     if (workers.length === 0) {
-        // Fallback to sync if no workers
-        const { embed } = await import('@ternlight/base');
-        return embed(text);
+        let retries = 5;
+        while (retries > 0) {
+            try {
+                const { pipeline, env } = await import('@xenova/transformers');
+                if (env.remoteHost === 'https://huggingface.co') {
+                    env.remoteHost = 'https://hf-mirror.com';
+                }
+                const extract = await pipeline('feature-extraction', 'Xenova/bge-base-en-v1.5', { quantized: true });
+                const output = await extract(text, { pooling: 'mean', normalize: true });
+                return new Float32Array(output.tolist()[0] || output.tolist());
+            } catch (err: any) {
+                retries--;
+                if (retries === 0) {
+                    throw err;
+                }
+                await new Promise(r => setTimeout(r, 1000 + Math.random() * 2000));
+            }
+        }
+        throw new Error('Unreachable');
     }
 
     return new Promise((resolve, reject) => {

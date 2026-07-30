@@ -137,10 +137,8 @@ export class Searcher {
             // We map SearchResult to { content: string } for the Reranker
             // Add a critical prefix to bridge the Semantic Gap for code definitions
             const rerankerPayload = topCandidates.map(c => {
-                const fileName = path.basename(c.chunk.filePath);
-                const prefix = `This is the implementation of the ${c.chunk.type} in ${fileName}:\n`;
                 return {
-                    content: prefix + c.chunk.content,
+                    content: c.chunk.content,
                     original: c
                 };
             });

@@ -312,7 +312,17 @@ pub fn searchHybridNative(
             if (f_q > 0) {
                 const num = f_q * (bm25_cfg.k1 + 1.0);
                 const denom = f_q + bm25_cfg.k1 * (1.0 - bm25_cfg.b + bm25_cfg.b * (doc_len / avgdl));
-                bm25_score += idf * (num / denom);
+                
+                var term_score = idf * (num / denom);
+                if (countTermFrequency(chunk.chunk_type, term) > 0) {
+                    term_score *= 2.0;
+                } else if (std.mem.indexOf(u8, chunk.content, "DEEPSIFT CONTEXT:")) |start| {
+                    const meta_content = chunk.content[start..];
+                    if (countTermFrequency(meta_content, term) > 0) {
+                        term_score *= 2.0;
+                    }
+                }
+                bm25_score += term_score;
             }
         }
 

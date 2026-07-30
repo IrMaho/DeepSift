@@ -221,10 +221,10 @@ export class NativeStore {
             outlier_values[i] = Math.max(-128, Math.min(127, norm));
         }
 
-        const packed_data = new Array(184);
+        const packed_data = new Array(376);
         let p = 0;
         let r = 16;
-        while (r + 1 < vector.length && p < 184) {
+        while (r + 1 < vector.length && p < 376) {
             const n1 = Math.max(0, Math.min(15, Math.round((vector[r] - min_val) / scale)));
             const n2 = Math.max(0, Math.min(15, Math.round((vector[r + 1] - min_val) / scale)));
             packed_data[p] = n1 | (n2 << 4);
@@ -249,11 +249,11 @@ export class NativeStore {
             if (c.embedding instanceof Float32Array || Array.isArray(c.embedding)) {
                 // If it's a 12-element BQ array, this quantize logic will produce garbage.
                 // However, since we're using hybrid quantization, raw Float32Arrays of length 384 are expected.
-                if (c.embedding.length === 384) {
+                if (c.embedding.length === 768) {
                     siftEmbedding = this.quantizeF32ToSift(c.embedding as Float32Array | number[]);
-                } else if (c.embedding.length === 12) {
+                } else if (c.embedding.length === 12 || c.embedding.length === 24) {
                     // Fallback to avoid crash, but this should be deprecated
-                    siftEmbedding = this.quantizeF32ToSift(new Float32Array(384));
+                    siftEmbedding = this.quantizeF32ToSift(new Float32Array(768));
                 }
             }
             
@@ -284,10 +284,10 @@ export class NativeStore {
     public formatChunkForBatch(c: EmbeddedChunk): any {
         let siftEmbedding;
         if (c.embedding instanceof Float32Array || Array.isArray(c.embedding)) {
-            if (c.embedding.length === 384) {
+            if (c.embedding.length === 768) {
                 siftEmbedding = this.quantizeF32ToSift(c.embedding as Float32Array | number[]);
             } else {
-                siftEmbedding = this.quantizeF32ToSift(new Float32Array(384));
+                siftEmbedding = this.quantizeF32ToSift(new Float32Array(768));
             }
         }
         

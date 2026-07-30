@@ -230,10 +230,13 @@ export async function parseWithAst(content: string, filePath: string, language: 
                 startLine,
                 endLine,
                 type: 'block',
-                language
+                language,
+                semanticKind: 3
             });
         }
     }
+    
+    tree.delete();
     
     return chunks;
 }
