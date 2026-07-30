@@ -63,6 +63,8 @@ pub const Chunk = struct {
     end_line: u32,
     chunk_type: []const u8,
     language: []const u8,
+    semantic_kind: u8 = 0,
+    ast_density: f32 = 0.0,
     embedding: SiftEmbedding,
 };
 
@@ -268,7 +270,7 @@ pub const Database = struct {
         defer uncompressed_data.deinit();
         const writer = &uncompressed_data.writer;
 
-        try writer.writeAll("ZDB3");
+        try writer.writeAll("ZDB4");
 
         var pool = StringPool.init(self.allocator);
         defer pool.deinit(self.allocator);
@@ -305,6 +307,8 @@ pub const Database = struct {
             try writer.writeInt(u32, chunk.end_line, .little);
             try writer.writeInt(u32, try pool.addOrGet(self.allocator, chunk.chunk_type), .little);
             try writer.writeInt(u32, try pool.addOrGet(self.allocator, chunk.language), .little);
+            try writer.writeInt(u8, chunk.semantic_kind, .little);
+            try writer.writeInt(u32, @bitCast(chunk.ast_density), .little);
             try writer.writeInt(u32, @bitCast(chunk.embedding.scale), .little);
             try writer.writeInt(u32, @bitCast(chunk.embedding.offset), .little);
             for (chunk.embedding.outlier_indices) |oi| {
@@ -369,11 +373,12 @@ pub const Database = struct {
         const is_zdb1 = mem.eql(u8, &magic, "ZDB1");
         const is_zdb2 = mem.eql(u8, &magic, "ZDB2");
         const is_zdb3 = mem.eql(u8, &magic, "ZDB3");
-        if (!is_zdb1 and !is_zdb2 and !is_zdb3) return error.InvalidFormat;
+        const is_zdb4 = mem.eql(u8, &magic, "ZDB4");
+        if (!is_zdb1 and !is_zdb2 and !is_zdb3 and !is_zdb4) return error.InvalidFormat;
 
         const arena_alloc = self.arena.allocator();
         
-        if (is_zdb3) {
+        if (is_zdb3 or is_zdb4) {
             var pool = try readStringPool(&data_reader, arena_alloc);
             defer pool.deinit(arena_alloc);
 
@@ -404,6 +409,14 @@ pub const Database = struct {
                 const type_idx = try data_reader.takeInt(u32, .little);
                 const lang_idx = try data_reader.takeInt(u32, .little);
 
+                var s_kind: u8 = 0;
+                var a_dens: f32 = 0.0;
+                
+                if (is_zdb4) {
+                    s_kind = try data_reader.takeInt(u8, .little);
+                    a_dens = @bitCast(try data_reader.takeInt(u32, .little));
+                }
+
                 var emb: SiftEmbedding = undefined;
                 emb.scale = @bitCast(try data_reader.takeInt(u32, .little));
                 emb.offset = @bitCast(try data_reader.takeInt(u32, .little));
@@ -423,6 +436,8 @@ pub const Database = struct {
                     .end_line = end_line,
                     .chunk_type = pool.items[type_idx],
                     .language = pool.items[lang_idx],
+                    .semantic_kind = s_kind,
+                    .ast_density = a_dens,
                     .embedding = emb,
                 });
             }

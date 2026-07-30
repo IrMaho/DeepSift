@@ -1,0 +1,71 @@
+--- packages/deepsift-core/native/core-zig/src/db.zig
++++ packages/deepsift-core/native/core-zig/src/db.zig
+@@ -62,6 +62,8 @@
+     end_line: u32,
+     chunk_type: []const u8,
+     language: []const u8,
++    semantic_kind: u8 = 0,
++    ast_density: f32 = 0.0,
+     embedding: SiftEmbedding,
+ };
+ 
+@@ -275,7 +277,7 @@
+         defer uncompressed_data.deinit();
+         const writer = &uncompressed_data.writer;
+ 
+-        try writer.writeAll("ZDB3");
++        try writer.writeAll("ZDB4");
+ 
+         var pool = StringPool.init(self.allocator);
+         defer pool.deinit(self.allocator);
+@@ -311,6 +313,8 @@
+             try writer.writeInt(u32, chunk.end_line, .little);
+             try writer.writeInt(u32, try pool.addOrGet(self.allocator, chunk.chunk_type), .little);
+             try writer.writeInt(u32, try pool.addOrGet(self.allocator, chunk.language), .little);
++            try writer.writeInt(u8, chunk.semantic_kind, .little);
++            try writer.writeInt(u32, @bitCast(chunk.ast_density), .little);
+             try writer.writeInt(u32, @bitCast(chunk.embedding.scale), .little);
+             try writer.writeInt(u32, @bitCast(chunk.embedding.offset), .little);
+             for (chunk.embedding.outlier_indices) |oi| {
+@@ -370,12 +374,67 @@
+         const is_zdb1 = mem.eql(u8, &magic, "ZDB1");
+         const is_zdb2 = mem.eql(u8, &magic, "ZDB2");
+         const is_zdb3 = mem.eql(u8, &magic, "ZDB3");
+-        if (!is_zdb1 and !is_zdb2 and !is_zdb3) return error.InvalidFormat;
++        const is_zdb4 = mem.eql(u8, &magic, "ZDB4");
++        if (!is_zdb1 and !is_zdb2 and !is_zdb3 and !is_zdb4) return error.InvalidFormat;
+ 
+         const arena_alloc = self.arena.allocator();
+         
+-        if (is_zdb3) {
++        if (is_zdb4 or is_zdb3) {
+             var pool = try readStringPool(&data_reader, arena_alloc);
+             defer pool.deinit(arena_alloc);
+ 
+             const meta_count = try data_reader.takeInt(u32, .little);
+             var mi: u32 = 0;
+             while (mi < meta_count) : (mi += 1) {
+@@ -410,6 +469,14 @@
+                 const end_line = try data_reader.takeInt(u32, .little);
+                 const type_idx = try data_reader.takeInt(u32, .little);
+                 const lang_idx = try data_reader.takeInt(u32, .little);
++
++                var s_kind: u8 = 0;
++                var a_dens: f32 = 0.0;
++                
++                if (is_zdb4) {
++                    s_kind = try data_reader.takeInt(u8, .little);
++                    a_dens = @bitCast(try data_reader.takeInt(u32, .little));
++                }
+ 
+                 var emb: SiftEmbedding = undefined;
+                 emb.scale = @bitCast(try data_reader.takeInt(u32, .little));
+@@ -428,6 +495,8 @@
+                     .end_line = end_line,
+                     .chunk_type = pool.items[type_idx],
+                     .language = pool.items[lang_idx],
++                    .semantic_kind = s_kind,
++                    .ast_density = a_dens,
+                     .embedding = emb,
+                 });
+             }

@@ -400,19 +400,17 @@ pub fn searchHybridNative(
 
     var w_bm25 = rrf_cfg.bm25_weight;
     var w_vec = rrf_cfg.vector_weight;
+    var k_bm25 = rrf_cfg.k;
+    var k_vec = rrf_cfg.k;
 
-    if (term_count == 1) {
+    if (term_count < 4) {
         w_bm25 = 0.70;
         w_vec = 0.30;
-    } else if (term_count == 2) {
-        w_bm25 = 0.55;
-        w_vec = 0.45;
-    } else if (term_count >= 5) {
+        k_bm25 = 20.0;
+    } else {
         w_bm25 = 0.30;
         w_vec = 0.70;
-    } else {
-        w_bm25 = 0.45;
-        w_vec = 0.55;
+        k_vec = 30.0;
     }
 
     var max_raw_score: f32 = 0.0;
@@ -424,8 +422,8 @@ pub fn searchHybridNative(
         const r_bm25 = @as(f32, @floatFromInt(r_bm25_val));
         const r_vec = @as(f32, @floatFromInt(r_vec_val));
 
-        const score_bm25 = w_bm25 / (rrf_cfg.k + r_bm25);
-        const score_vec = w_vec / (rrf_cfg.k + r_vec);
+        const score_bm25 = w_bm25 / (k_bm25 + r_bm25);
+        const score_vec = w_vec / (k_vec + r_vec);
 
         var raw_score = score_bm25 + score_vec;
 
@@ -462,22 +460,32 @@ pub fn searchHybridNative(
             raw_score *= 1.3;
         }
 
-        const c_type = chunks[m.chunk_index].chunk_type;
-        const is_logic_chunk = std.mem.eql(u8, c_type, "function") or std.mem.eql(u8, c_type, "class") or std.mem.eql(u8, c_type, "method");
-        const is_import = std.mem.eql(u8, c_type, "import");
+        const chunk = chunks[m.chunk_index];
+        const c_type = chunk.chunk_type;
+        const semantic_kind = chunk.semantic_kind;
+        const ast_density = chunk.ast_density;
 
-        const is_type_file = std.mem.endsWith(u8, chunk_file, ".types.ts") or std.mem.endsWith(u8, chunk_file, ".d.ts") or std.mem.indexOf(u8, chunk_file, "/types/") != null;
-        const is_json = std.mem.endsWith(u8, chunk_file, ".json") or std.mem.endsWith(u8, chunk_file, ".arb") or std.mem.indexOf(u8, chunk_file, "i18n") != null or std.mem.endsWith(u8, chunk_file, ".yaml") or std.mem.endsWith(u8, chunk_file, ".md");
-        
-        if (is_json) {
+        const is_explicit_intent = c_type.len > 0 and containsInsensitive(query, c_type);
+
+        if (semantic_kind == 3) {
+            // KIND_DATA (json, translations, config)
             raw_score *= 0.05;
-        } else if (is_type_file) {
-            raw_score *= 0.35;
-        } else if (is_logic_chunk) {
-            raw_score *= 1.6;
+        } else if (semantic_kind == 2) {
+            // KIND_TYPE_DEF (interface, struct, type)
+            if (is_explicit_intent) {
+                raw_score *= 1.8;
+            } else {
+                raw_score *= 0.35;
+            }
+        } else if (semantic_kind == 1) {
+            // KIND_LOGIC (functions, methods)
+            raw_score *= (1.4 + (ast_density * 0.2));
+            if (is_explicit_intent) {
+                raw_score *= 1.5;
+            }
         }
 
-        if (is_import) {
+        if (std.mem.eql(u8, c_type, "import")) {
             raw_score *= 0.1;
         }
 

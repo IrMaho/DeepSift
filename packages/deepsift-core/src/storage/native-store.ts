@@ -265,6 +265,8 @@ export class NativeStore {
                 end_line: c.chunk.endLine,
                 chunk_type: c.chunk.type,
                 language: c.chunk.language || '',
+                semantic_kind: c.chunk.semanticKind || 0,
+                ast_density: c.chunk.astDensity || 0.0,
                 embedding: siftEmbedding
             };
         });
@@ -297,6 +299,8 @@ export class NativeStore {
             end_line: c.chunk.endLine,
             chunk_type: c.chunk.type,
             language: c.chunk.language || '',
+            semantic_kind: c.chunk.semanticKind || 0,
+            ast_density: c.chunk.astDensity || 0.0,
             embedding: siftEmbedding
         };
     }

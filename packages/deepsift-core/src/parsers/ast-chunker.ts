@@ -49,25 +49,40 @@ export async function parseWithAst(content: string, filePath: string, language: 
     function traverse(node: any) {
         let type: ChunkType | null = null;
         let isImportant = false;
+        let semanticKind = 0;
         
         switch (node.type) {
             case 'function_declaration':
             case 'method_definition':
             case 'arrow_function':
+            case 'function':
+            case 'method':
                 type = 'function';
+                semanticKind = 1;
                 isImportant = true;
                 break;
             case 'class_declaration':
+            case 'class_definition':
+            case 'class':
                 type = 'class';
+                semanticKind = 1;
                 isImportant = true;
                 break;
             case 'interface_declaration':
             case 'type_alias_declaration':
+            case 'struct_item':
+            case 'type_definition':
+            case 'type_declaration':
+            case 'interface_item':
                 type = 'config';
+                semanticKind = 2;
                 isImportant = true;
                 break;
             case 'import_statement':
+            case 'import_declaration':
+            case 'use_declaration':
                 type = 'import';
+                semanticKind = 3;
                 isImportant = true;
                 break;
         }
@@ -77,7 +92,16 @@ export async function parseWithAst(content: string, filePath: string, language: 
             const text = node.text;
             if (text.includes('=>') && (text.includes('const ') || text.includes('let '))) {
                 type = 'function';
+                semanticKind = 1;
                 isImportant = true;
+            }
+        }
+        
+        if (isImportant && type === 'function') {
+            const firstLine = node.text.split('\n')[0] || '';
+            if (/\b(use[A-Z][a-zA-Z0-9_]*)\b/.test(firstLine)) {
+                type = 'hook_definition' as any;
+                semanticKind = 1;
             }
         }
         
@@ -92,12 +116,17 @@ export async function parseWithAst(content: string, filePath: string, language: 
             // Extract identifiers and comments as context for vector embedding
             const identifiers = new Set<string>();
             const comments = new Set<string>();
+            let astOperators = 0;
             
             function collectMetadata(n: any) {
                 if (n.type === 'identifier' || n.type === 'property_identifier' || n.type === 'type_identifier' || n.type === 'class_declaration' || n.type === 'function_declaration') {
                     if (n.text && n.text.length > 2) {
                         identifiers.add(n.text);
                     }
+                }
+                const opTypes = ['+', '-', '*', '/', '==', '===', '!=', '!==', '>', '<', '>=', '<=', '&&', '||', '=', '+=', '-=', '++', '--', 'call_expression', 'if_statement', 'for_statement', 'while_statement', 'return_statement', 'await_expression'];
+                if (opTypes.includes(n.type)) {
+                    astOperators++;
                 }
                 if (n.type === 'comment' || n.type === 'document_comment' || n.type === 'jsdoc') {
                     if (n.text) {
@@ -119,6 +148,11 @@ export async function parseWithAst(content: string, filePath: string, language: 
                 }
                 metaContext += `\n*/`;
             }
+
+            const astDensity = astOperators / (identifiers.size + 1);
+            if (semanticKind === 0 && identifiers.size > 0) {
+                semanticKind = (astDensity > 0.15) ? 1 : 2;
+            }
             
             // Large classes should be broken down into methods, not kept as a single chunk
             if (type === 'class' && lineCount > 50) {
@@ -132,7 +166,9 @@ export async function parseWithAst(content: string, filePath: string, language: 
                         startLine,
                         endLine: Math.min(startLine + 10, endLine),
                         type,
-                        language
+                        language,
+                        semanticKind,
+                        astDensity
                     });
                 }
                 for (let i = 0; i < node.childCount; i++) {
@@ -152,7 +188,9 @@ export async function parseWithAst(content: string, filePath: string, language: 
                     startLine,
                     endLine,
                     type: type!,
-                    language
+                    language,
+                    semanticKind,
+                    astDensity
                 });
             }
             

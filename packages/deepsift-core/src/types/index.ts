@@ -8,7 +8,7 @@
  */
 import { ChunkFamily } from './dna-types.js';
 
-export type ChunkType = 'function' | 'class' | 'import' | 'config' | 'block' | 'comment';
+export type ChunkType = string | 'function' | 'class' | 'import' | 'config' | 'block' | 'comment' | 'hook_definition';
 
 export interface CodeChunk {
     id: string;
@@ -19,6 +19,8 @@ export interface CodeChunk {
     type: ChunkType;
     family?: ChunkFamily;
     language: string;
+    semanticKind?: number;
+    astDensity?: number;
     metadata?: Record<string, string>;
 }
 
