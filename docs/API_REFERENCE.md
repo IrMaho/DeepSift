@@ -828,7 +828,7 @@ Maps postMessage, EventEmitters, WebSocket, and IPC message channels between env
 ### Exported Symbols
 
 #### `function getEmbeddings`
-const __filename = fileURLToPath(import.meta.url);
+function normalizeL2(vector: Float32Array): Float32Array {
 
 #### `function terminateWorkers`
 Terminate all running worker threads.

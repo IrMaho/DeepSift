@@ -10,8 +10,20 @@ import { Worker } from 'worker_threads';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
-
 import fs from 'fs';
+
+function normalizeL2(vector: Float32Array): Float32Array {
+    let sumOfSquares = 0;
+    for (let i = 0; i < vector.length; i++) {
+        sumOfSquares += vector[i] * vector[i];
+    }
+    const magnitude = Math.sqrt(sumOfSquares);
+    if (magnitude < 1e-10) return vector;
+    for (let i = 0; i < vector.length; i++) {
+        vector[i] /= magnitude;
+    }
+    return vector;
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -111,9 +123,10 @@ export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
                     quantized: true,
                     session_options: { executionProviders: ['directml', 'wasm', 'cpu'] }
                 } as any);
-                const output = await extract(texts, { pooling: 'mean', normalize: true });
+                const output = await extract(texts, { pooling: 'mean', normalize: false });
                 const list = output.tolist();
-                return Array.isArray(list[0]) ? list.map((vec: any) => new Float32Array(vec)) : [new Float32Array(list as any)];
+                const raw = Array.isArray(list[0]) ? list.map((vec: any) => new Float32Array(vec)) : [new Float32Array(list as any)];
+                return raw.map(normalizeL2);
             } catch (err: any) {
                 retries--;
                 if (retries === 0) {

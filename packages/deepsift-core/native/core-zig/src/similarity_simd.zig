@@ -39,5 +39,6 @@ pub fn computeQuantizedDotProduct(
     }
 
     const float_result = @as(f32, @floatFromInt(int_acc)) * a.scale * b.scale;
-    return float_result + (a.offset * b.offset);
+    const raw_score = float_result + (a.offset * b.offset);
+    return std.math.clamp(raw_score, -1.0, 1.0);
 }

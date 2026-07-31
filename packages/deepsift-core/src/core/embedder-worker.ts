@@ -10,6 +10,19 @@ import './disable-sharp.js';
 import { parentPort } from 'worker_threads';
 import { pipeline, env } from '@xenova/transformers';
 
+function normalizeL2(vector: Float32Array): Float32Array {
+    let sumOfSquares = 0;
+    for (let i = 0; i < vector.length; i++) {
+        sumOfSquares += vector[i] * vector[i];
+    }
+    const magnitude = Math.sqrt(sumOfSquares);
+    if (magnitude < 1e-10) return vector;
+    for (let i = 0; i < vector.length; i++) {
+        vector[i] /= magnitude;
+    }
+    return vector;
+}
+
 if (env.remoteHost === 'https://huggingface.co') {
     env.remoteHost = 'https://hf-mirror.com';
 }
@@ -45,11 +58,11 @@ if (parentPort) {
         while (retries > 0) {
             try {
                 const extract = await getExtractor();
-                const output = await extract(message.texts, { pooling: 'mean', normalize: true });
+                const output = await extract(message.texts, { pooling: 'mean', normalize: false });
                 const list = output.tolist();
                 
-                // If message.texts is single, Transformers.js might return a 1D array or 2D array depending on the version
-                const vectors = Array.isArray(list[0]) ? list.map((vec: any) => new Float32Array(vec)) : [new Float32Array(list as any)];
+                const raw = Array.isArray(list[0]) ? list.map((vec: any) => new Float32Array(vec)) : [new Float32Array(list as any)];
+                const vectors = raw.map(normalizeL2);
                 
                 parentPort!.postMessage({ id: message.id, vectors });
                 return;
