@@ -32,7 +32,12 @@
       "linux",
       "macos",
       "web",
-      "public"
+      "public",
+      "vendor",
+      "outputs",
+      "mocks",
+      "fixtures",
+      ".changeset"
     ],
     "includeExtensions": [
       ".md",

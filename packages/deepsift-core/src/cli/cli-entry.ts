@@ -237,7 +237,7 @@ async function main() {
     try {
         switch (command) {
             case 'init':
-                await initCommand(projectPath);
+                await initCommand(projectPath, commandArgs.includes('--reset'));
                 break;
 
             case 'start':

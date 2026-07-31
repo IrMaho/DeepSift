@@ -6,6 +6,7 @@
  * @category Core Search & Discovery
  * @since 1.0.2
  */
+import './disable-sharp.js';
 import { parentPort } from 'worker_threads';
 import { pipeline, env } from '@xenova/transformers';
 

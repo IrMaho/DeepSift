@@ -1,8 +1,13 @@
 {
-    "private":  true,
-    "name":  "deepsift-monorepo",
-    "version":  "1.0.0",
-    "scripts":  {
-                    "dev:core":  "pnpm --filter deepsift dev"
-                }
+  "private": true,
+  "name": "deepsift-monorepo",
+  "version": "1.0.0",
+  "scripts": {
+    "dev:core": "pnpm --filter deepsift dev"
+  },
+  "pnpm": {
+    "approvedBuilds": {
+      "sharp": true
+    }
+  }
 }

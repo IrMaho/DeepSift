@@ -24,7 +24,7 @@ const __dirname = path.dirname(__filename);
 const SYSTEM_IGNORED_DIRS = new Set([
     'node_modules', '.git', '.deepsift', '.idea', '.vscode', '.gradle',
     '.dart_tool', 'coverage', '.next', '.cache', '.zig-cache', 'zig-out',
-    '.mcp_search_outputs'
+    '.mcp_search_outputs', '.changeset'
 ]);
 
 const RECOMMENDED_SRC_NAMES = new Set([
@@ -35,7 +35,8 @@ const RECOMMENDED_SRC_NAMES = new Set([
 
 const ASSET_OR_BUILD_NAMES = new Set([
     'dist', 'build', 'assets', 'public', 'icon_temp', 'ver', 'coverage',
-    'out', 'release', 'bin', 'obj', 'temp', 'tmp', 'scratch'
+    'out', 'release', 'bin', 'obj', 'temp', 'tmp', 'scratch', 'vendor',
+    'outputs', 'mocks', 'fixtures'
 ]);
 
 const CODE_EXTENSIONS = new Set([
@@ -265,8 +266,14 @@ function interactiveKeyboardCheckbox(
     });
 }
 
-async function runInteractiveConfigWizard(projectPath: string) {
+async function runInteractiveConfigWizard(projectPath: string, reset: boolean) {
     if (!process.stdin.isTTY) {
+        return;
+    }
+
+    const configPath = path.join(projectPath, 'deepsift.config.json');
+    if (fs.existsSync(configPath) && !reset) {
+        printInfo('Using existing deepsift.config.json (Use --reset to reconfigure)');
         return;
     }
 
@@ -400,11 +407,11 @@ function runZigBuild(zigDir: string, binDir: string, binPath: string, ext: strin
     }
 }
 
-export async function initCommand(projectPath: string) {
+export async function initCommand(projectPath: string, reset: boolean = false) {
     compileZigOnDemand();
     printInfo(`Initializing DeepSift for: ${projectPath}`);
 
-    await runInteractiveConfigWizard(projectPath);
+    await runInteractiveConfigWizard(projectPath, reset);
 
     const deepsiftDir = path.join(projectPath, '.deepsift');
     const outputsDir = path.join(deepsiftDir, 'outputs');
@@ -470,15 +477,32 @@ export async function initCommand(projectPath: string) {
         }
     }
 
-    printInfo('Running index...');
+    printInfo('Running intelligent index (GPU Accelerated if available)...');
     let dnaNeedsUpdate = true;
     try {
         const store = new NativeStore(getDbPath(projectPath));
         const indexer = new Indexer(store);
+        const startTime = Date.now();
         const stats = await indexer.indexProject(projectPath, false, (current, total, file) => {
-            const msg = `Indexing: ${current}/${total} files (Processing: ${file})`;
-            const termWidth = process.stdout.columns || 80;
-            const displayMsg = msg.length > termWidth ? msg.substring(0, termWidth - 4) + '...)' : msg;
+            const now = Date.now();
+            const elapsed = Math.floor((now - startTime) / 1000);
+            const percent = total > 0 ? Math.floor((current / total) * 100) : 0;
+            const itemsPerSec = elapsed > 0 ? Math.floor(current / elapsed) : 0;
+            const eta = itemsPerSec > 0 ? Math.floor((total - current) / itemsPerSec) : 0;
+            
+            const barLength = 20;
+            const filled = Math.floor((percent / 100) * barLength);
+            const empty = barLength - filled;
+            const bar = '█'.repeat(filled) + '░'.repeat(empty);
+
+            const formatTime = (s: number) => `${Math.floor(s / 60)}m ${s % 60}s`;
+            
+            const fileName = file.length > 30 ? '...' + file.slice(-27) : file;
+            const hw = process.platform === 'win32' ? 'GPU' : 'CPU';
+            const msg = `\x1b[36mIndexing (${hw}) 🚀\x1b[0m [${bar}] ${percent}% | \x1b[33mTime:\x1b[0m ${formatTime(elapsed)} | \x1b[33mETA:\x1b[0m ${formatTime(eta)} | \x1b[32m${current}/${total}\x1b[0m | \x1b[90m${fileName}\x1b[0m`;
+            
+            const termWidth = process.stdout.columns || 100;
+            const displayMsg = msg.length > termWidth ? msg.substring(0, termWidth - 4) + '...\x1b[0m' : msg;
             
             readline.clearLine(process.stdout, 0);
             readline.cursorTo(process.stdout, 0);

@@ -16,7 +16,8 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const NUM_WORKERS = Math.max(1, os.cpus().length - 1);
+// Limit workers to 2 to prevent GPU/DirectML Out-Of-Memory (OOM) on systems with many cores
+const NUM_WORKERS = Math.min(2, Math.max(1, os.cpus().length - 1));
 const workerJs = path.join(__dirname, 'embedder-worker.js');
 const workerTs = path.join(__dirname, 'embedder-worker.ts');
 const workerPath = fs.existsSync(workerJs) ? workerJs : (fs.existsSync(workerTs) ? workerTs : workerJs);
@@ -31,6 +32,7 @@ async function doInitWorkers() {
     if (initialized) return;
     try {
         console.log('[DeepSift] Pre-downloading embedding model on main thread...');
+        await import('./disable-sharp.js');
         const { pipeline, env } = await import('@xenova/transformers');
         
         // Use mirror if fetch fails due to network restrictions
@@ -124,7 +126,7 @@ export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
     }
 
     const results: Float32Array[] = [];
-    const BATCH_SIZE = 100; // Process chunks at a time in bulk
+    const BATCH_SIZE = 16; // Reduced to 16 to prevent DirectML/GPU out-of-memory (OOM) errors during FusedMatMul
     
     for (let i = 0; i < texts.length; i += BATCH_SIZE) {
         const batch = texts.slice(i, i + BATCH_SIZE);
