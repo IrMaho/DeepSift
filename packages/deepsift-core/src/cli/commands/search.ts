@@ -31,6 +31,7 @@ export interface SearchOptions {
     allRealms?: boolean;
     noVisual?: boolean;
     limit?: number;
+    fast?: boolean;
 }
 
 /**

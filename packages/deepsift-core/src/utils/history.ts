@@ -74,19 +74,24 @@ export async function saveSearchLog(projectPath: string, queries: string[], resu
     if (options?.skipVisuals) {
         indexEntry += `*Result saved to text file: \`${filename}\` (Visuals skipped to save tokens)*\n\n`;
     } else {
-        try {
-            const { pages } = renderTextToImages(fileContent, { reflow: true });
-            pages.forEach((page: any, idx: number) => {
-                const imgName = `search_${timestamp}_${hash}_page_${idx}.png`;
-                const imgPath = path.join(outputsDir, imgName);
-                fs.writeFileSync(imgPath, page.png);
-                indexEntry += `![${imgName}](${imgName})\n\n`;
-                generatedImages.push(imgPath);
-            });
-        } catch (e: any) {
-            console.error('DeepSift Native rendering failed, fallback to text reference:', e.message);
-            indexEntry += `*Rendering failed. Result saved to text file: \`${filename}\`*\n\n`;
-        }
+        indexEntry += `*Result saved to text file: \`${filename}\`*\n\n`;
+        setImmediate(() => {
+            try {
+                const { pages } = renderTextToImages(fileContent, { reflow: true });
+                let asyncEntry = '';
+                pages.forEach((page: any, idx: number) => {
+                    const imgName = `search_${timestamp}_${hash}_page_${idx}.png`;
+                    const imgPath = path.join(outputsDir, imgName);
+                    fs.writeFileSync(imgPath, page.png);
+                    asyncEntry += `![${imgName}](${imgName})\n\n`;
+                });
+                if (asyncEntry && fs.existsSync(indexPath)) {
+                    fs.appendFileSync(indexPath, asyncEntry, 'utf8');
+                }
+            } catch (e: any) {
+                console.error('DeepSift Native async rendering failed:', e.message);
+            }
+        });
     }
 
     const indexPath = path.join(outputsDir, 'INDEX.md');

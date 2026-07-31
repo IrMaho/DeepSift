@@ -128,28 +128,30 @@ export class Searcher {
             }
         }
         
-        // Ensure candidates are sorted by their initial scores before truncation
         candidates.sort((a, b) => b.score - a.score);
-        const topCandidates = candidates.slice(0, 150); // Get top 50 for Reranker
-        
-        // Cross-Encoder Reranking
+
+        const topScore = candidates[0]?.score || 0;
+        if (searchQuery.fast || searchQuery.skipRerank || topScore >= 0.50) {
+            return candidates.slice(0, topK);
+        }
+
+        const topCandidates = candidates.slice(0, Math.min(15, candidates.length));
+
         try {
-            // We map SearchResult to { content: string } for the Reranker
-            // Add a critical prefix to bridge the Semantic Gap for code definitions
             const rerankerPayload = topCandidates.map(c => {
                 return {
                     content: c.chunk.content,
                     original: c
                 };
             });
-            
+
             const { Reranker } = await import('./reranker.js');
             const reranked = await Reranker.rerank(query, rerankerPayload, topK);
-            
+
             return reranked.map(r => ({
                 ...r.original,
-                score: r.crossScore, // Replace with the highly accurate cross score
-                matchType: 'hybrid' 
+                score: r.crossScore,
+                matchType: 'hybrid'
             }));
         } catch (err) {
             console.error("[DeepSift] Reranking failed, falling back to basic scoring.", err);

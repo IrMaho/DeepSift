@@ -224,13 +224,13 @@ pub fn searchHybridNative(
     var candidate_set = std.AutoHashMap(usize, void).init(allocator);
     defer candidate_set.deinit();
 
-    const use_ivf = false;
+    var use_ivf = false;
 
     if (ivf_idx) |idx| {
         if (query_vector != null and idx.is_built and idx.centroids.items.len > 0) {
             const q_vec = query_vector.?.toQuantizedVector();
             const n_centroids = idx.centroids.items.len;
-            const nprobe = @min(n_centroids, @max(@as(usize, 20), n_centroids / 4));
+            const nprobe = @min(n_centroids, @as(usize, 16));
 
             const top_clusters = try idx.searchNearestClusters(allocator, &q_vec, nprobe);
             defer allocator.free(top_clusters);
@@ -247,7 +247,7 @@ pub fn searchHybridNative(
             }
 
             if (candidate_set.count() > 0) {
-                // use_ivf = true;
+                use_ivf = true;
             }
         }
     }

@@ -49,6 +49,8 @@ export interface SearchQuery {
     topK?: number;
     filterType?: ChunkType[];
     filterPath?: string;
+    fast?: boolean;
+    skipRerank?: boolean;
 }
 
 export interface IndexStatus {
