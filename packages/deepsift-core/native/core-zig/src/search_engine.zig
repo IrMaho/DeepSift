@@ -493,22 +493,26 @@ pub fn searchHybridNative(
         const ast_density = chunk.ast_density;
 
         // Boost logic-heavy chunks agnostic to folder structure
-        raw_score *= (1.0 + ast_density);
+        raw_score *= (1.0 + (ast_density * 2.0));
 
         const is_explicit_intent = c_type.len > 0 and containsInsensitive(query, c_type);
 
-        if (semantic_kind == 3) {
-            // KIND_DATA (data, translations, configs)
-            const is_explicit_data = containsInsensitive(query, "translation") or containsInsensitive(query, "i18n") or containsInsensitive(query, "locale") or containsInsensitive(query, "dictionary") or containsInsensitive(query, "config") or containsInsensitive(query, "json");
+        const is_json_or_html = std.mem.endsWith(u8, chunk_file, ".json") or std.mem.endsWith(u8, chunk_file, ".html");
+        const is_type_file = std.mem.endsWith(u8, chunk_file, ".types.ts") or std.mem.endsWith(u8, chunk_file, ".d.ts");
+        const is_explicit_type_query = containsInsensitive(query, "type") or containsInsensitive(query, "types") or containsInsensitive(query, "interface") or containsInsensitive(query, "definition");
+
+        if (semantic_kind == 3 or is_json_or_html) {
+            // KIND_DATA (data, translations, configs, html)
+            const is_explicit_data = containsInsensitive(query, "translation") or containsInsensitive(query, "i18n") or containsInsensitive(query, "locale") or containsInsensitive(query, "dictionary") or containsInsensitive(query, "config") or containsInsensitive(query, "json") or containsInsensitive(query, "html") or containsInsensitive(query, "ui");
             if (!is_explicit_data) {
                 raw_score *= 0.01;
             } else {
                 raw_score *= 0.8;
             }
-        } else if (semantic_kind == 2) {
+        } else if (semantic_kind == 2 or is_type_file) {
             // KIND_TYPE_DEF (interface, struct, type)
-            if (is_explicit_intent) {
-                raw_score *= 1.8;
+            if (is_explicit_intent or is_explicit_type_query) {
+                raw_score *= 3.0;
             } else {
                 raw_score *= 0.35;
             }
