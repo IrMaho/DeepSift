@@ -1,6 +1,6 @@
 # 📖 DeepSift Source Code API Reference
 
-Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **133 TypeScript modules** in DeepSift.
+Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **134 TypeScript modules** in DeepSift.
 
 ---
 
@@ -803,6 +803,13 @@ Maps postMessage, EventEmitters, WebSocket, and IPC message channels between env
 
 - **Path:** `packages/deepsift-core/src/core/context-injector.ts`  
 - **Description:** Context injection engine that auto-prepends architectural rules before search results.
+
+---
+
+## 📄 [`disable-sharp`](file:///packages/deepsift-core/src/core/disable-sharp.ts)
+
+- **Path:** `packages/deepsift-core/src/core/disable-sharp.ts`  
+- **Description:** TypeScript source module.
 
 ---
 

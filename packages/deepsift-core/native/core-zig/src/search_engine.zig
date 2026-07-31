@@ -322,6 +322,12 @@ pub fn searchHybridNative(
                         term_score *= 2.0;
                     }
                 }
+                
+                const basename = extractBasename(chunk.file_path);
+                if (containsNormalized(basename, term)) {
+                    term_score *= 5.0; // Massive boost for filename match
+                }
+                
                 bm25_score += term_score;
             }
         }
@@ -338,6 +344,14 @@ pub fn searchHybridNative(
             std.mem.eql(u8, chunk.chunk_type, "component")) {
             bm25_score *= 1.5;
             vec_score *= 1.2;
+        }
+
+        const basename = extractBasename(chunk.file_path);
+        for (terms_list.items) |term| {
+            if (containsNormalized(basename, term)) {
+                vec_score *= 1.5;
+                break;
+            }
         }
 
         try matches.append(allocator, .{

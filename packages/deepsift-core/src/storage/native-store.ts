@@ -213,15 +213,15 @@ export class NativeStore {
         const scale = range === 0 ? 1.0 : range / 15.0;
         const offset = min_val;
 
-        const outlier_indices = new Array(16);
-        const outlier_values = new Array(16);
+        const outlier_indices = new Array(16).fill(0);
+        const outlier_values = new Array(16).fill(0);
         for (let i = 0; i < 16; i++) {
             outlier_indices[i] = i;
             const norm = Math.round((vector[i] - min_val) / scale);
             outlier_values[i] = Math.max(-128, Math.min(127, norm));
         }
 
-        const packed_data = new Array(376);
+        const packed_data = new Array(376).fill(0);
         let p = 0;
         let r = 16;
         while (r + 1 < vector.length && p < 376) {
@@ -357,9 +357,9 @@ export class NativeStore {
     public async searchHybridNative(query: string, embedding: number[] | Float32Array | null, topK: number = 20, filterPath?: string): Promise<SearchResult[]> {
         let siftEmbedding = null;
         if (embedding) {
-            siftEmbedding = (embedding.length === 384)
+            siftEmbedding = (embedding.length === 768)
                 ? this.quantizeF32ToSift(embedding)
-                : this.quantizeF32ToSift(new Float32Array(384));
+                : this.quantizeF32ToSift(new Float32Array(768).fill(0));
         }
 
         const data = await this.executeAction('searchHybridNative', {
