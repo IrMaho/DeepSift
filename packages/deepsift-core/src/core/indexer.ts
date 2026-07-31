@@ -148,40 +148,43 @@ export class Indexer {
                 }
             }
 
-            const BATCH_SIZE = 100; // Increased to 100 for bulk Zero-Copy IPC processing
-            let currentFileIndex = 0;
+            const BATCH_SIZE = 100;
             const totalFilesToProcess = filesToProcess.length;
 
             for (let i = 0; i < filesToProcess.length; i += BATCH_SIZE) {
                 const batchFiles = filesToProcess.slice(i, i + BATCH_SIZE);
-                
-                if (onProgress) {
-                    currentFileIndex += batchFiles.length;
-                    onProgress(currentFileIndex, totalFilesToProcess, `Bulk Zero-Copy Parsing ${batchFiles.length} files...`);
-                }
+                const batchBaseIndex = i;
+                const batchFilesCount = batchFiles.length;
 
                 try {
                     let allChunks: any[] = [];
                     
-                    // Separate md files (skills) from native code files
                     const mdFiles = batchFiles.filter(f => f.endsWith('.md'));
                     const codeFiles = batchFiles.filter(f => !f.endsWith('.md'));
 
-                    // 1. Process Markdown files in Node (Skills/Docs)
+                    let parsedCount = 0;
                     if (this.parserProfile === 'skill' || this.parserProfile === 'docs') {
                         for (const file of mdFiles) {
+                            parsedCount++;
+                            if (onProgress) {
+                                const currentProgress = batchBaseIndex + (parsedCount / batchFilesCount) * 0.05 * batchFilesCount;
+                                onProgress(currentProgress, totalFilesToProcess, path.relative(rootDir, file));
+                            }
                             const content = await fs.readFile(file, 'utf-8');
                             allChunks.push(...parseSkillFile(file, content));
                         }
                     } else {
-                        // If not skill profile, treat md as regular files for chunking (if we want to).
                         codeFiles.push(...mdFiles); 
                     }
 
-                    // 2. Process Code Files (AST for TS/JS, Native for others)
                     if (codeFiles.length > 0) {
                         const astChunks: any[] = [];
                         for (const file of codeFiles) {
+                            parsedCount++;
+                            if (onProgress) {
+                                const currentProgress = batchBaseIndex + (parsedCount / batchFilesCount) * 0.05 * batchFilesCount;
+                                onProgress(currentProgress, totalFilesToProcess, path.relative(rootDir, file));
+                            }
                             if (file.endsWith('.ts') || file.endsWith('.js') || file.endsWith('.tsx') || file.endsWith('.jsx')) {
                                 const content = await fs.readFile(file, 'utf-8');
                                 const ext = path.extname(file).replace('.', '');
@@ -201,20 +204,23 @@ export class Indexer {
                         allChunks.push(...astChunks);
                     }
 
-                    // 3. Delete old chunks for these files
                     for (const file of batchFiles) {
                         if (allMetadata.has(file)) {
                             batchOperations.push({ action: 'deleteFileChunks', filePath: file });
                         }
                     }
 
-                    // 4. Batch Embedding and Saving
-                    if (allChunks.length > 0) {
-                        // Process embeddings in smaller chunks to avoid ONNX memory overload
-                        const validChunks = allChunks.filter(c => typeof c.content === 'string' && c.content.trim().length > 0);
-                        const EMBED_BATCH = 64;
+                    const validChunks = allChunks.filter(c => typeof c.content === 'string' && c.content.trim().length > 0);
+                    if (validChunks.length > 0) {
+                        const EMBED_BATCH = 16;
                         for (let j = 0; j < validChunks.length; j += EMBED_BATCH) {
                             const chunkSlice = validChunks.slice(j, j + EMBED_BATCH);
+                            const embedFraction = (j + chunkSlice.length) / validChunks.length;
+                            const currentProgress = batchBaseIndex + (0.05 + 0.95 * embedFraction) * batchFilesCount;
+                            if (onProgress) {
+                                const currentFile = chunkSlice[0]?.filePath ? path.relative(rootDir, chunkSlice[0].filePath) : `Embedding chunks (${j + chunkSlice.length}/${validChunks.length})`;
+                                onProgress(currentProgress, totalFilesToProcess, currentFile);
+                            }
                             const texts = chunkSlice.map(c => c.content);
                             const embeddings = await getEmbeddings(texts);
                             
@@ -226,6 +232,10 @@ export class Indexer {
                             const formattedChunks = embeddedChunks.map(c => this.store.formatChunkForBatch(c));
                             batchOperations.push({ action: 'saveChunks', chunks: formattedChunks });
                             chunksProcessed += chunkSlice.length;
+                        }
+                    } else {
+                        if (onProgress) {
+                            onProgress(batchBaseIndex + batchFilesCount, totalFilesToProcess, `Processed ${batchFilesCount} files`);
                         }
                     }
 

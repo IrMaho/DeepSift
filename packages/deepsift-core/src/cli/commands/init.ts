@@ -445,7 +445,6 @@ export async function initCommand(projectPath: string, reset: boolean = false) {
     if (fs.existsSync(imageSrcPath)) fs.copyFileSync(imageSrcPath, imageDestPath);
     else if (fs.existsSync(fallbackImageSrcPath)) fs.copyFileSync(fallbackImageSrcPath, imageDestPath);
 
-    // Inject Skill
     const skillsDir = path.join(projectPath, '.agents', 'skills', 'deepsift-mastery');
     if (!fs.existsSync(skillsDir)) fs.mkdirSync(skillsDir, { recursive: true });
     const skillFilePath = path.join(skillsDir, 'SKILL.md');
@@ -455,7 +454,6 @@ export async function initCommand(projectPath: string, reset: boolean = false) {
         printSuccess('Injected DeepSift mastery skill → .agents/skills/deepsift-mastery/SKILL.md');
     }
 
-    // Inject Workflow
     const workflowsDir = path.join(projectPath, '.agents', 'workflows');
     if (!fs.existsSync(workflowsDir)) fs.mkdirSync(workflowsDir, { recursive: true });
     const workflowFilePath = path.join(workflowsDir, 'deepsift.md');
@@ -465,11 +463,9 @@ export async function initCommand(projectPath: string, reset: boolean = false) {
         printSuccess('Injected DeepSift workflow → .agents/workflows/deepsift.md');
     }
 
-    // Inject Documentation
     const docsDir = path.join(projectPath, '.deepsift', 'docs');
     if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
 
-    // Inject comprehensive manuals from templates/doc/
     const docFiles = getTemplateDirFiles('doc');
     for (const file of docFiles) {
         const destPath = path.join(docsDir, file.name);
@@ -488,12 +484,13 @@ export async function initCommand(projectPath: string, reset: boolean = false) {
         const stats = await indexer.indexProject(projectPath, false, (current, total, file) => {
             const now = Date.now();
             const elapsed = Math.floor((now - startTime) / 1000);
-            const percent = total > 0 ? Math.floor((current / total) * 100) : 0;
+            const percentRatio = total > 0 ? (current / total) * 100 : 0;
+            const percent = percentRatio.toFixed(2);
             const itemsPerSec = elapsed > 0 ? Math.floor(current / elapsed) : 0;
             const eta = itemsPerSec > 0 ? Math.floor((total - current) / itemsPerSec) : 0;
             
             const barLength = 20;
-            const filled = Math.floor((percent / 100) * barLength);
+            const filled = Math.floor((percentRatio / 100) * barLength);
             const empty = barLength - filled;
             const bar = '█'.repeat(filled) + '░'.repeat(empty);
 
@@ -501,7 +498,8 @@ export async function initCommand(projectPath: string, reset: boolean = false) {
             
             const fileName = file.length > 30 ? '...' + file.slice(-27) : file;
             const hw = process.platform === 'win32' ? 'GPU' : 'CPU';
-            const msg = `\x1b[36mIndexing (${hw}) 🚀\x1b[0m [${bar}] ${percent}% | \x1b[33mTime:\x1b[0m ${formatTime(elapsed)} | \x1b[33mETA:\x1b[0m ${formatTime(eta)} | \x1b[32m${current}/${total}\x1b[0m | \x1b[90m${fileName}\x1b[0m`;
+            const displayCurrent = Math.floor(current);
+            const msg = `\x1b[36mIndexing (${hw}) 🚀\x1b[0m [${bar}] ${percent}% | \x1b[33mTime:\x1b[0m ${formatTime(elapsed)} | \x1b[33mETA:\x1b[0m ${formatTime(eta)} | \x1b[32m${displayCurrent}/${total}\x1b[0m | \x1b[90m${fileName}\x1b[0m`;
             
             const termWidth = process.stdout.columns || 100;
             const displayMsg = msg.length > termWidth ? msg.substring(0, termWidth - 4) + '...\x1b[0m' : msg;
@@ -510,10 +508,9 @@ export async function initCommand(projectPath: string, reset: boolean = false) {
             readline.cursorTo(process.stdout, 0);
             process.stdout.write(displayMsg);
         });
-        process.stdout.write('\n'); // newline after progress
+        process.stdout.write('\n');
         printSuccess(`Index complete: ${stats.files} files processed, ${stats.chunks} chunks.`);
         
-        // Check if DNA exists
         const dnaExists = fs.existsSync(path.join(projectPath, '.deepsift', 'project-dna.json'));
         if (dnaExists && stats.newOrUpdated === 0 && stats.deleted === 0) {
             dnaNeedsUpdate = false;
@@ -532,6 +529,7 @@ export async function initCommand(projectPath: string, reset: boolean = false) {
     } else {
         printSuccess('DNA is already up-to-date. Skipping DNA generation.');
     }
+
 
     printSuccess('DeepSift is ready! The AI agent can now use terminal commands to search your codebase.');
     printInfo('Tell your AI agent: "Use deepsift commands to search and understand this codebase"');
