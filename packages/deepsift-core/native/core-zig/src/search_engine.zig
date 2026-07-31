@@ -76,7 +76,7 @@ fn containsNormalized(haystack: []const u8, needle: []const u8) bool {
     if (needle.len == 0) return false;
     var norm_haystack: [256]u8 = undefined;
     var norm_needle: [256]u8 = undefined;
-    
+
     var h_len: usize = 0;
     for (haystack) |c| {
         if (c != '-' and c != '_' and c != '.') {
@@ -86,7 +86,7 @@ fn containsNormalized(haystack: []const u8, needle: []const u8) bool {
             }
         }
     }
-    
+
     var n_len: usize = 0;
     for (needle) |c| {
         if (c != '-' and c != '_' and c != '.') {
@@ -96,9 +96,9 @@ fn containsNormalized(haystack: []const u8, needle: []const u8) bool {
             }
         }
     }
-    
+
     if (n_len == 0 or h_len < n_len) return false;
-    
+
     var i: usize = 0;
     while (i + n_len <= h_len) : (i += 1) {
         var match = true;
@@ -148,7 +148,7 @@ fn matchesFilterPath(file_path: []const u8, filter: []const u8) bool {
             var ext_part: ?[]const u8 = null;
             if (std.mem.indexOf(u8, rule, "|")) |idx| {
                 path_part = rule[0..idx];
-                ext_part = rule[idx + 1..];
+                ext_part = rule[idx + 1 ..];
             }
 
             const match_path = if (path_part.len > 0) std.mem.indexOf(u8, file_path, path_part) != null else true;
@@ -321,7 +321,7 @@ pub fn searchHybridNative(
             if (f_q > 0) {
                 const num = f_q * (bm25_cfg.k1 + 1.0);
                 const denom = f_q + bm25_cfg.k1 * (1.0 - bm25_cfg.b + bm25_cfg.b * (doc_len / avgdl));
-                
+
                 var term_score = idf * (num / denom);
                 if (countTermFrequency(chunk.chunk_type, term) > 0) {
                     term_score *= 2.0;
@@ -331,12 +331,12 @@ pub fn searchHybridNative(
                         term_score *= 2.0;
                     }
                 }
-                
+
                 const basename = extractBasename(chunk.file_path);
                 if (containsNormalized(basename, term)) {
                     term_score *= 5.0; // Massive boost for filename match
                 }
-                
+
                 bm25_score += term_score;
             }
         }
@@ -350,7 +350,8 @@ pub fn searchHybridNative(
             std.mem.eql(u8, chunk.chunk_type, "function") or
             std.mem.eql(u8, chunk.chunk_type, "interface") or
             std.mem.eql(u8, chunk.chunk_type, "type") or
-            std.mem.eql(u8, chunk.chunk_type, "component")) {
+            std.mem.eql(u8, chunk.chunk_type, "component"))
+        {
             bm25_score *= 1.5;
             vec_score *= 1.2;
         }
@@ -439,7 +440,7 @@ pub fn searchHybridNative(
 
         const r_bm25 = @as(f32, @floatFromInt(r_bm25_val));
         const r_vec = @as(f32, @floatFromInt(r_vec_val));
-        
+
         const chunk_content = chunks[m.chunk_index].content;
         const chunk_file = chunks[m.chunk_index].file_path;
         const matched_terms = countMatchedTerms(chunk_content, chunk_file, terms_list.items);
@@ -448,7 +449,7 @@ pub fn searchHybridNative(
         // Adaptive Score Fusion in RRF based on Exact Identifier Match
         var local_w_bm25: f32 = 0.5;
         var local_w_vec: f32 = 0.5;
-        
+
         if (term_count >= 4) {
             if (match_ratio > 0.3) {
                 local_w_bm25 = 0.75;
@@ -501,9 +502,9 @@ pub fn searchHybridNative(
         raw_score *= (1.0 + (ast_density * 2.0));
 
         const is_explicit_intent = (c_type.len > 0 and containsInsensitive(query, c_type)) or
-            containsInsensitive(query, "type") or 
-            containsInsensitive(query, "types") or 
-            containsInsensitive(query, "interface") or 
+            containsInsensitive(query, "type") or
+            containsInsensitive(query, "types") or
+            containsInsensitive(query, "interface") or
             containsInsensitive(query, "definition") or
             containsInsensitive(query, "schema") or
             containsInsensitive(query, "struct");
@@ -522,7 +523,6 @@ pub fn searchHybridNative(
             }
         }
 
-
         if (std.mem.eql(u8, c_type, "import")) {
             raw_score *= 0.1;
         }
@@ -537,6 +537,15 @@ pub fn searchHybridNative(
         const is_explicit_translation = containsInsensitive(query, "translation") or containsInsensitive(query, "i18n") or containsInsensitive(query, "locale");
 
         if ((semantic_kind == 3 or std.mem.eql(u8, c_type, "text")) and !is_explicit_translation) {
+            raw_score *= 0.01;
+        }
+
+        const line_breaks = countTermFrequency(chunk_content, "\n");
+        const avg_line_length = if (line_breaks > 0) chunk_content.len / line_breaks else chunk_content.len;
+
+        const is_minified_or_bundle = (avg_line_length > 180) or (chunk_content.len > 25000 and line_breaks < 100);
+
+        if (is_minified_or_bundle) {
             raw_score *= 0.01;
         }
 
