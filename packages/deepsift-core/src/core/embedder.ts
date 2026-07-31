@@ -84,15 +84,50 @@ function setupWorkerListeners() {
     });
 }
 
+// Global Content-Addressable Vector Cache (Zero-Loss Exact String Hash Cache)
+const embeddingCache = new Map<string, Float32Array>();
+const MAX_CACHE_SIZE = 15000;
+
+function cacheVector(text: string, vector: Float32Array) {
+    if (embeddingCache.size >= MAX_CACHE_SIZE) {
+        // Evict oldest 20% entries when capacity is reached
+        const keysToEvict = Array.from(embeddingCache.keys()).slice(0, 3000);
+        for (const k of keysToEvict) {
+            embeddingCache.delete(k);
+        }
+    }
+    embeddingCache.set(text, vector);
+}
+
 /**
  * Generates an embedding for a given text asynchronously using worker threads.
+ * Uses Content-Addressable Caching and Length-Sorted Batching for zero-loss speedup.
  * 
- * @param text The input text to embed
- * @returns A promise resolving to a 384-dimensional Float32Array
+ * @param texts The input texts to embed
+ * @returns A promise resolving to 384-dimensional Float32Arrays
  */
 export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
+    if (texts.length === 0) return [];
     await initWorkers();
     
+    const results: Float32Array[] = new Array(texts.length);
+    const uncachedIndices: number[] = [];
+
+    // 1. Check exact content cache
+    for (let i = 0; i < texts.length; i++) {
+        const text = texts[i];
+        const cached = embeddingCache.get(text);
+        if (cached) {
+            results[i] = cached;
+        } else {
+            uncachedIndices.push(i);
+        }
+    }
+
+    if (uncachedIndices.length === 0) {
+        return results;
+    }
+
     // Fallback if no workers available
     if (workers.length === 0) {
         let retries = 5;
@@ -106,10 +141,17 @@ export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
                     quantized: true,
                     session_options: { executionProviders: ['directml', 'wasm', 'cpu'] }
                 } as any);
-                const output = await extract(texts, { pooling: 'mean', normalize: false });
+                const uncachedTexts = uncachedIndices.map(idx => texts[idx]);
+                const output = await extract(uncachedTexts, { pooling: 'mean', normalize: false });
                 const list = output.tolist();
                 const raw = Array.isArray(list[0]) ? list.map((vec: any) => new Float32Array(vec)) : [new Float32Array(list as any)];
-                return raw.map(normalizeL2);
+                const norm = raw.map(normalizeL2);
+                uncachedIndices.forEach((origIdx, i) => {
+                    const vec = norm[i];
+                    cacheVector(texts[origIdx], vec);
+                    results[origIdx] = vec;
+                });
+                return results;
             } catch (err: any) {
                 retries--;
                 if (retries === 0) {
@@ -121,11 +163,15 @@ export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
         throw new Error('Unreachable');
     }
 
+    // 2. Length-Sorted Batching: Sort uncached items by length to minimize zero-padding matrix computation
+    const sortedUncachedIndices = uncachedIndices.slice().sort((a, b) => texts[a].length - texts[b].length);
+
     const BATCH_SIZE = 32;
-    const batchPromises: Promise<Float32Array[]>[] = [];
+    const batchPromises: { indices: number[]; promise: Promise<Float32Array[]> }[] = [];
     
-    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
-        const batch = texts.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < sortedUncachedIndices.length; i += BATCH_SIZE) {
+        const batchIndices = sortedUncachedIndices.slice(i, i + BATCH_SIZE);
+        const batchTexts = batchIndices.map(idx => texts[idx]);
         const id = nextId++;
         const p = new Promise<Float32Array[]>((resolve, reject) => {
             pendingRequests.set(id, { resolve, reject });
@@ -134,15 +180,21 @@ export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
         const worker = workers[nextWorkerIndex];
         nextWorkerIndex = (nextWorkerIndex + 1) % workers.length;
         
-        worker.postMessage({ id, texts: batch });
-        batchPromises.push(p);
+        worker.postMessage({ id, texts: batchTexts });
+        batchPromises.push({ indices: batchIndices, promise: p });
     }
     
-    const batchResultsArray = await Promise.all(batchPromises);
-    const results: Float32Array[] = [];
-    for (const resBatch of batchResultsArray) {
-        results.push(...resBatch);
-    }
+    const batchResultsArray = await Promise.all(batchPromises.map(b => b.promise));
+    
+    // 3. Store vectors into final results and update cache
+    batchPromises.forEach((batchItem, batchIdx) => {
+        const resBatch = batchResultsArray[batchIdx];
+        batchItem.indices.forEach((origIdx, itemIdx) => {
+            const vec = resBatch[itemIdx];
+            cacheVector(texts[origIdx], vec);
+            results[origIdx] = vec;
+        });
+    });
     
     return results;
 }
@@ -159,4 +211,5 @@ export function terminateWorkers() {
     workers.forEach(w => w.terminate());
     workers = [];
     initialized = false;
+    embeddingCache.clear();
 }
