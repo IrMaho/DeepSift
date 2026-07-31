@@ -77,6 +77,14 @@ export class Indexer {
             const allMetadata = forceReindex ? new Map() : await this.store.getAllMetadata();
 
             const filesToProcess: string[] = [];
+            const fileHashesJsonPath = path.join(rootDir, '.deepsift', 'file-hashes.json');
+            let savedHashes: Record<string, string> = {};
+            if (!forceReindex) {
+                try {
+                    const data = (await import('fs')).readFileSync(fileHashesJsonPath, 'utf-8');
+                    savedHashes = JSON.parse(data);
+                } catch (e) {}
+            }
             const fileHashes = new Map<string, string>();
             const currentFilesSet = new Set(allFiles);
 
@@ -104,7 +112,12 @@ export class Indexer {
                     fileHashes.set(file, hash);
 
                     const existingMeta = allMetadata.get(file);
-                    if (!forceReindex && existingMeta && existingMeta.fileHash === hash) {
+                    const savedHash = savedHashes[file];
+                    if (!forceReindex && (savedHash === hash || (existingMeta && existingMeta.fileHash === hash))) {
+                        continue;
+                    }
+                    savedHashes[file] = hash;
+                    if (false) {
                         continue;
                     }
 
@@ -230,6 +243,13 @@ export class Indexer {
             }
             
             if (filesProcessed > 0 || deletedCount > 0 || forceReindex) {
+                try {
+                    for (const f of Object.keys(savedHashes)) {
+                        if (!currentFilesSet.has(f)) delete savedHashes[f];
+                    }
+                    (await import('fs')).mkdirSync(path.dirname(fileHashesJsonPath), { recursive: true });
+                    (await import('fs')).writeFileSync(fileHashesJsonPath, JSON.stringify(savedHashes, null, 2), 'utf-8');
+                } catch (e) { console.error('Failed to save file-hashes.json', e); }
                 if (onProgress) {
                     onProgress(totalFilesToProcess, totalFilesToProcess, "Building dependency graph...");
                 }

@@ -103,6 +103,7 @@ const HELP_TEXT = `
                                     --include, -i <path>  Only search within path
                                     --sync                Synchronize index before searching (skipped by default)
                                     --verbose, -v         Show file indexing progress
+  sync-hashes                   Fast-generate file-hashes.json for previously indexed projects without running a full AST re-index
   index [--force]               Index/re-index the project
                                   Options:
                                     --verbose, -v         Show files being processed
@@ -452,6 +453,31 @@ async function main() {
                 }
                 await editCommand(projectPath, commandArgs[0], format);
                 break;
+
+            
+            case 'sync-hashes': {
+                const { unifiedWalk } = await import('../core/unified-walker.js');
+                const cryptoSync = await import('crypto');
+                const fsSync = await import('fs');
+                const fileHashesJsonPath = path.join(projectPath, '.deepsift', 'file-hashes.json');
+                console.log('Generating file-hashes.json...');
+                const walkResultSync = await unifiedWalk(projectPath);
+                let newHashes: Record<string, string> = {};
+                let count = 0;
+                for (const file of walkResultSync.allFiles) {
+                    try {
+                        const stat = fsSync.statSync(file);
+                        if (stat.size > 1024 * 1024) continue;
+                        const fileContent = fsSync.readFileSync(file, 'utf-8');
+                        newHashes[file] = cryptoSync.createHash('md5').update(fileContent).digest('hex');
+                        count++;
+                    } catch(e) {}
+                }
+                fsSync.mkdirSync(path.dirname(fileHashesJsonPath), { recursive: true });
+                fsSync.writeFileSync(fileHashesJsonPath, JSON.stringify(newHashes, null, 2), 'utf-8');
+                console.log(`✅ file-hashes.json successfully generated with ${count} files without re-indexing!`);
+                break;
+            }
 
             case 'index':
             case 'i':
