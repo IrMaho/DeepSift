@@ -15,7 +15,15 @@ import path from 'path';
  * We use the optimized version provided by @ternlight/base.
  */
 export function calculateCosineSimilarity(a: Float32Array, b: Float32Array): number {
-    return cosineSim(a, b);
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+    for (let i = 0; i < a.length; i++) {
+        dotProduct += a[i] * b[i];
+        normA += a[i] * a[i];
+        normB += b[i] * b[i];
+    }
+    return normA === 0 || normB === 0 ? 0 : dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
 /**
@@ -103,8 +111,8 @@ function getZigBinaryPath(): string | null {
  * Maps values > 0.0 to 1 and <= 0.0 to 0.
  */
 export function quantizeF32ToBQ(vector: Float32Array): Buffer {
-    const buffer = Buffer.alloc(48); // 12 * 4 bytes = 48 bytes
-    for (let i = 0; i < 384; i++) {
+    const buffer = Buffer.alloc(96); // 12 * 8 bytes = 96 bytes
+    for (let i = 0; i < 768; i++) {
         if (vector[i] > 0) {
             const byteIdx = Math.floor(i / 8);
             const bitIdx = i % 8;
@@ -128,7 +136,7 @@ export function calculateHammingSimilarityBatch(
         // Fallback to TS
         return candidates.map(c => {
             let distance = 0;
-            for (let i = 0; i < 48; i++) {
+            for (let i = 0; i < 96; i++) {
                 let xor = queryVector[i] ^ c.embedding[i];
                 while (xor > 0) {
                     distance += xor & 1;
@@ -137,14 +145,14 @@ export function calculateHammingSimilarityBatch(
             }
             return {
                 id: c.id,
-                score: 1.0 - (distance / 384.0)
+                score: 1.0 - (distance / 768.0)
             };
         });
     }
 
     try {
-        const headerSize = 4 + 48 + 4;
-        const recordSize = 4 + 48;
+        const headerSize = 4 + 96 + 4;
+        const recordSize = 4 + 96;
         const totalSize = headerSize + candidates.length * recordSize;
         const buffer = Buffer.alloc(totalSize);
 
@@ -152,14 +160,14 @@ export function calculateHammingSimilarityBatch(
         // Write topK
         buffer.writeUInt32LE(topK, offset); offset += 4;
         // Write queryVector
-        queryVector.copy(buffer, offset); offset += 48;
+        queryVector.copy(buffer, offset); offset += 96;
         // Write numChunks
         buffer.writeUInt32LE(candidates.length, offset); offset += 4;
 
         // Write candidates
         for (let i = 0; i < candidates.length; i++) {
             buffer.writeUInt32LE(i, offset); offset += 4;
-            candidates[i].embedding.copy(buffer, offset); offset += 48;
+            candidates[i].embedding.copy(buffer, offset); offset += 96;
         }
 
         // Execute Zig binary synchronously
@@ -183,7 +191,7 @@ export function calculateHammingSimilarityBatch(
         console.error("Zig math binary execution failed, falling back to TS:", err);
         return candidates.map(c => {
             let distance = 0;
-            for (let i = 0; i < 48; i++) {
+            for (let i = 0; i < 96; i++) {
                 let xor = queryVector[i] ^ c.embedding[i];
                 while (xor > 0) {
                     distance += xor & 1;
@@ -192,7 +200,7 @@ export function calculateHammingSimilarityBatch(
             }
             return {
                 id: c.id,
-                score: 1.0 - (distance / 384.0)
+                score: 1.0 - (distance / 768.0)
             };
         });
     }

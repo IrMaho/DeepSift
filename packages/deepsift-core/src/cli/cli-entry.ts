@@ -14,10 +14,12 @@ import { indexCommand } from './commands/index-cmd.js';
 import { statusCommand } from './commands/status.js';
 import { archCommand } from './commands/arch.js';
 import { depsCommand } from './commands/deps.js';
+import { cycleCommand } from './commands/cycle.js';
+import { taintCommand } from './commands/taint.js';
 import { featureCommand } from './commands/feature.js';
 import { historyCommand, cleanHistoryCommand, drillCommand } from './commands/history.js';
 import { initCommand } from './commands/init.js';
-
+import { syncIgnoreCommand } from './commands/sync-ignore.js';
 import { watchCommand } from './commands/watch.js';
 import { configCommand } from './commands/config.js';
 import { dnaCommand } from './commands/dna.js';
@@ -42,8 +44,9 @@ import { clonesCommand } from './commands/clones.js';
 import { doctorCommand } from './commands/doctor.js';
 import { decodeCommand } from './commands/decode.js';
 import { testmapCommand } from './commands/testmap.js';
-import { refactorRenameCommand, refactorExtractCommand } from './commands/refactor.js';
+import { refactorRenameCommand, refactorExtractCommand, refactorGuideCommand } from './commands/refactor.js';
 import { schemaDriftCommand } from './commands/schema-drift.js';
+import { patchDriftCommand } from './commands/patch-drift.js';
 import { deadCodeCommand } from './commands/dead-code.js';
 import { autoHealCommand } from './commands/auto-heal.js';
 import { cfgCommand } from './commands/cfg.js';
@@ -62,6 +65,7 @@ import { launchWebDashboard } from '../ui/web-dashboard.js';
 import { impactCommand } from './commands/impact.js';
 import { planUiCommand } from './commands/plan-ui.js';
 import { docgenCommand } from './commands/docgen.js';
+import { learnCommand } from './commands/learn.js';
 import { QAGenerator } from '../analyzers/qa-generator.js';
 import { GitChurnMiner } from '../analyzers/git-churn-miner.js';
 import { terminateWorkers } from '../core/embedder.js';
@@ -99,6 +103,8 @@ const HELP_TEXT = `
                                     --include, -i <path>  Only search within path
                                     --sync                Synchronize index before searching (skipped by default)
                                     --verbose, -v         Show file indexing progress
+  sync-hashes                   Fast-generate file-hashes.json for previously indexed projects without running a full AST re-index
+  sync-ignore                   Differentially purge ignored files and index new files based on updated .deepsiftignore (<500ms)
   index [--force]               Index/re-index the project
                                   Options:
                                     --verbose, -v         Show files being processed
@@ -136,9 +142,32 @@ const HELP_TEXT = `
   doctor                        Diagnostics and onboarding status report for AI agents
   decode "token"                Decompress and decode a DEC_v2 visual token
   testmap                       Source-to-test mapping report and untested module audit
-  refactor <rename|extract>     AST-safe symbol renaming or function extraction
+  refactor <rename|extract|guide> AST-safe symbol renaming, extraction or god node decomposition
   check-schema-drift            Audit schema & DOM config synchronization between frontend/backend
+  patch-drift                   Auto-heal schema drifts by injecting missing fields natively
   find-dead-code                Detect unreferenced and dead code exports across codebase
+  wire-trace                    Trace cross-environment IPC message flows (postMessage, WebSockets)
+  security-scan                 Scan for Sandbox leaks (e.g. window, document) and hardcoded secrets
+  check-layers                  Validate clean architecture boundaries and illegal imports
+  complexity                    Cognitive Complexity heatmap for codebase risk analysis
+  impact "symbol"               Predict blast radius and breaking changes before modification
+  git-churn                     Combine git commit frequency with complexity to find hot-spots
+  gen-test "file"               Auto-generate Vitest/Jest mock suites
+  gen-mock "Type"               AST-based mock data generator for TypeScript interfaces
+  expand-type "Type"            Unroll and resolve nested TypeScript types completely
+  i18n-extract                  Extract hardcoded UI strings for localization
+  zoom "path"                   Smart cluster drill-down to analyze specific omitted folders
+  plan-ui "request"             Generate visual UI specs layout, token palettes, spacing
+  docgen                        Generate and synchronize complete Markdown documentation suite
+  ui                            Launch local interactive Web Dashboard visualization on port 3333
+  start                         Starts the DeepSift MCP server for IDE integrations
+  scope                         Set or display active workspace search boundary
+  edit, e                       In-place file editor applying structured line-range replacements
+  sed                           Stream editor for targeted in-place text substitution
+  pipe, p                       Read DeepSift input from stdin for shell pipelines
+  executive-summary             Generate high-level executive summary report
+  gen-adr                       Generate an Architecture Decision Record (ADR) Markdown template
+  learn                         Learn from workflow and generate a reusable agent skill
   patch "patch.json"            Apply code injections directly to the codebase with high confidence (TOON-Patch format)
   memo <action>                 Dynamic Research Memory (DRM) — Persistent research note-taking
                                   open "name"         Create a new research tag
@@ -210,7 +239,7 @@ async function main() {
     try {
         switch (command) {
             case 'init':
-                await initCommand(projectPath);
+                await initCommand(projectPath, commandArgs.includes('--reset'));
                 break;
 
             case 'start':
@@ -323,7 +352,7 @@ async function main() {
                 const noVisual = commandArgs.includes('--no-visual') || commandArgs.includes('--plain') || format === 'plain' || !compress;
                 
                 let filterPath: string | undefined;
-                const includeIdx = commandArgs.findIndex(arg => arg === '--include' || arg === '-i');
+                const includeIdx = commandArgs.findIndex(arg => arg === '--include' || arg === '-i' || arg === '--path' || arg === '--scope');
                 if (includeIdx !== -1 && commandArgs[includeIdx + 1]) {
                     filterPath = commandArgs[includeIdx + 1];
                 }
@@ -341,11 +370,19 @@ async function main() {
                     searchRealm = commandArgs[searchRealmIdx + 1];
                 }
 
+                let searchLimit: number | undefined;
+                const searchLimitIdx = commandArgs.findIndex(arg => arg === '--limit' || arg === '-l');
+                if (searchLimitIdx !== -1 && commandArgs[searchLimitIdx + 1]) {
+                    searchLimit = parseInt(commandArgs[searchLimitIdx + 1], 10);
+                    if (isNaN(searchLimit)) searchLimit = undefined;
+                }
+
                 const searchQueries = commandArgs.filter((arg, idx) => {
                     if (arg.startsWith('-')) return false;
-                    if (idx > 0 && (commandArgs[idx - 1] === '--include' || commandArgs[idx - 1] === '-i')) return false;
+                    if (idx > 0 && (commandArgs[idx - 1] === '--include' || commandArgs[idx - 1] === '-i' || commandArgs[idx - 1] === '--path' || commandArgs[idx - 1] === '--scope')) return false;
                     if (idx > 0 && (commandArgs[idx - 1] === '--context-lines' || commandArgs[idx - 1] === '-C')) return false;
                     if (idx > 0 && commandArgs[idx - 1] === '--realm') return false;
+                    if (idx > 0 && (commandArgs[idx - 1] === '--limit' || commandArgs[idx - 1] === '-l')) return false;
                     return true;
                 });
                 
@@ -360,7 +397,8 @@ async function main() {
                     contextLines,
                     realm: searchRealm,
                     allRealms: allRealmsSearch,
-                    noVisual
+                    noVisual,
+                    limit: searchLimit
                 });
                 break;
 
@@ -381,11 +419,31 @@ async function main() {
                 break;
 
             case 'sed': {
-                throw new Error('This feature is temporarily disabled by user request.');
+                const searchIdx = commandArgs.indexOf('--search');
+                const replaceIdx = commandArgs.indexOf('--replace');
+                
+                if (searchIdx === -1 || replaceIdx === -1) {
+                    throw new Error('Usage: deepsift sed <file_pattern> --search "text" --replace "replacement"');
+                }
+                
+                const searchStr = commandArgs[searchIdx + 1];
+                const replaceStr = commandArgs[replaceIdx + 1];
+                
+                const filePatterns = commandArgs.slice(0, searchIdx).filter(arg => !arg.startsWith('-'));
+                
+                const sedOptions = {
+                    all: commandArgs.includes('--all') || commandArgs.includes('-a'),
+                    dryRun: commandArgs.includes('--dry-run')
+                };
+                
+                const { sedCommand } = await import('./commands/sed.js');
+                await sedCommand(searchStr, replaceStr, filePatterns, sedOptions);
+                break;
             }
 
             case 'pipe': {
-                throw new Error('This feature is temporarily disabled by user request.');
+                const { pipeCommand } = await import('./commands/pipe.js');
+                throw new Error('Pipe command argument parsing is not yet implemented in CLI.');
             }
 
             case 'edit':
@@ -396,6 +454,35 @@ async function main() {
                 }
                 await editCommand(projectPath, commandArgs[0], format);
                 break;
+
+            case 'sync-ignore':
+                const verboseSync = commandArgs.includes('--verbose') || commandArgs.includes('-v');
+                await syncIgnoreCommand(projectPath, { format, verbose: verboseSync });
+                break;
+
+            case 'sync-hashes': {
+                const { unifiedWalk } = await import('../core/unified-walker.js');
+                const cryptoSync = await import('crypto');
+                const fsSync = await import('fs');
+                const fileHashesJsonPath = path.join(projectPath, '.deepsift', 'file-hashes.json');
+                console.log('Generating file-hashes.json...');
+                const walkResultSync = await unifiedWalk(projectPath);
+                let newHashes: Record<string, string> = {};
+                let count = 0;
+                for (const file of walkResultSync.allFiles) {
+                    try {
+                        const stat = fsSync.statSync(file);
+                        if (stat.size > 1024 * 1024) continue;
+                        const fileContent = fsSync.readFileSync(file, 'utf-8');
+                        newHashes[file] = cryptoSync.createHash('md5').update(fileContent).digest('hex');
+                        count++;
+                    } catch(e) {}
+                }
+                fsSync.mkdirSync(path.dirname(fileHashesJsonPath), { recursive: true });
+                fsSync.writeFileSync(fileHashesJsonPath, JSON.stringify(newHashes, null, 2), 'utf-8');
+                console.log(`✅ file-hashes.json successfully generated with ${count} files without re-indexing!`);
+                break;
+            }
 
             case 'index':
             case 'i':
@@ -465,6 +552,15 @@ async function main() {
                 break;
             }
 
+            case 'cycle':
+                await cycleCommand(projectPath);
+                break;
+            case 'taint':
+                if (commandArgs.length === 0) {
+                    throw new Error('Please provide a symbol.\nUsage: deepsift taint "symbol"');
+                }
+                await taintCommand(commandArgs[0], projectPath);
+                break;
             case 'deps':
             case 'd':
                 if (commandArgs.length === 0) {
@@ -556,9 +652,10 @@ async function main() {
 
             case 'diag':
                 if (commandArgs.length === 0) {
-                    throw new Error('Please provide a path to a problems JSON file.\nUsage: deepsift diag "problems.json"');
+                    await doctorCommand(projectPath, format);
+                } else {
+                    await diagCommand(projectPath, commandArgs[0], format, compress);
                 }
-                await diagCommand(projectPath, commandArgs[0], format, compress);
                 break;
 
             case 'com':
@@ -627,6 +724,14 @@ async function main() {
                 await doctorCommand(projectPath, format);
                 break;
 
+            case 'learn':
+                await learnCommand(projectPath, commandArgs[0] || '');
+                break;
+
+            case 'learn':
+                await learnCommand(projectPath, commandArgs[0] || '');
+                break;
+
             case 'decode':
                 if (commandArgs.length === 0) {
                     throw new Error('Please provide a compressed token.\nUsage: deepsift decode "<token>"');
@@ -649,14 +754,20 @@ async function main() {
                     refactorRenameCommand(projectPath, commandArgs[1], commandArgs[2], format);
                 } else if (commandArgs[0] === 'extract') {
                     refactorExtractCommand(projectPath, commandArgs[1], commandArgs[3] || 'extractedFunction', format);
+                } else if (commandArgs[0] === 'guide') {
+                    refactorGuideCommand(projectPath, commandArgs[1], format);
                 } else {
-                    throw new Error('Usage: deepsift refactor rename <old> <new> OR deepsift refactor extract <file:lines> --name <func>');
+                    throw new Error('Usage: deepsift refactor rename <old> <new> OR deepsift refactor extract <file:lines> --name <func> OR deepsift refactor guide <file>');
                 }
                 break;
 
             case 'schema-drift':
             case 'check-schema-drift':
                 await schemaDriftCommand(projectPath, format);
+                break;
+
+            case 'patch-drift':
+                await patchDriftCommand(projectPath, format);
                 break;
 
             case 'docgen':

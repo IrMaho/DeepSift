@@ -79,12 +79,14 @@ export class RealmRouter {
             try {
                 const results = await this.searchRealm(rid, query);
                 allResults.push(...results);
-            } catch {
+            } catch (e) {
+                console.error(`[DEBUG] Error in searchRealm for ${rid}:`, e);
                 // skip realm
             }
         }
 
         allResults.sort((a, b) => b.score - a.score);
+        
         const topK = query.topK || 10;
         return allResults.slice(0, topK);
     }

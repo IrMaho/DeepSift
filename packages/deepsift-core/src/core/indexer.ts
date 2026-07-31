@@ -10,8 +10,8 @@
  */
 
 import { NativeStore, BatchOperation } from '../storage/native-store.js';
-import { parseAST } from '../parsers/tree-sitter-parser.js';
 import { parseSkillFile } from '../parsers/skill-parser.js';
+import { parseWithAst } from '../parsers/ast-chunker.js';
 import { getEmbeddings } from './embedder.js';
 import { isBinaryFile } from '../utils/binary-check.js';
 import * as crypto from 'crypto';
@@ -66,16 +66,46 @@ export class Indexer {
         let filesProcessed = 0;
         let deletedCount = 0;
         let chunksProcessed = 0;
+        let newOrUpdatedCount = 0;
         const batchOperations: any[] = [];
 
         try {
             const { unifiedWalk } = await import('./unified-walker.js');
             const walkResult = await unifiedWalk(rootDir);
-            const allFiles = walkResult.allFiles;
+            let allFiles = walkResult.allFiles;
             
-            const allMetadata = forceReindex ? new Map() : await this.store.getAllMetadata();
+            try {
+                const ignoreLib = (await import('ignore')).default;
+                const ig = ignoreLib();
+                ig.add(['node_modules', 'dist', 'build', 'out', 'web-remote', '*.min.js', '*.bundle.js']);
+                
+                try {
+                    const gitignorePath = path.join(rootDir, '.gitignore');
+                    const gitignoreContent = await fs.readFile(gitignorePath, 'utf-8');
+                    ig.add(gitignoreContent);
+                } catch (e) {}
+
+                try {
+                    const dsignorePath = path.join(rootDir, '.deepsiftignore');
+                    const dsignoreContent = await fs.readFile(dsignorePath, 'utf-8');
+                    ig.add(dsignoreContent);
+                } catch (e) {}
+
+                allFiles = allFiles.filter((file: string) => {
+                    const relPath = path.relative(rootDir, file);
+                    return !ig.ignores(relPath);
+                });
+            } catch(e) {}
+            
+            const allMetadata = await this.store.getAllMetadata();
 
             const filesToProcess: string[] = [];
+            const fileHashesJsonPath = path.join(rootDir, '.deepsift', 'file-hashes.json');
+            let savedHashes: Record<string, string> = {};
+            try {
+                const data = (await import('fs')).readFileSync(fileHashesJsonPath, 'utf-8');
+                savedHashes = JSON.parse(data);
+            } catch (e) {}
             const fileHashes = new Map<string, string>();
             const currentFilesSet = new Set(allFiles);
 
@@ -103,7 +133,12 @@ export class Indexer {
                     fileHashes.set(file, hash);
 
                     const existingMeta = allMetadata.get(file);
-                    if (!forceReindex && existingMeta && existingMeta.fileHash === hash) {
+                    const savedHash = savedHashes[file];
+                    if (savedHash === hash || (existingMeta && existingMeta.fileHash === hash)) {
+                        continue;
+                    }
+                    savedHashes[file] = hash;
+                    if (false) {
                         continue;
                     }
 
@@ -113,65 +148,116 @@ export class Indexer {
                 }
             }
 
-            const BATCH_SIZE = 5;
-            let currentFileIndex = 0;
+            const BATCH_SIZE = 100;
             const totalFilesToProcess = filesToProcess.length;
 
             for (let i = 0; i < filesToProcess.length; i += BATCH_SIZE) {
                 const batchFiles = filesToProcess.slice(i, i + BATCH_SIZE);
-                
-                await Promise.all(batchFiles.map(async (file) => {
-                    currentFileIndex++;
-                    if (onProgress) {
-                        onProgress(currentFileIndex, totalFilesToProcess, "Embedding: " + path.relative(rootDir, file));
+                const batchBaseIndex = i;
+                const batchFilesCount = batchFiles.length;
+
+                try {
+                    let allChunks: any[] = [];
+                    
+                    const mdFiles = batchFiles.filter(f => f.endsWith('.md'));
+                    const codeFiles = batchFiles.filter(f => !f.endsWith('.md'));
+
+                    let parsedCount = 0;
+                    if (this.parserProfile === 'skill' || this.parserProfile === 'docs') {
+                        for (const file of mdFiles) {
+                            parsedCount++;
+                            if (onProgress) {
+                                const currentProgress = batchBaseIndex + (parsedCount / batchFilesCount) * 0.05 * batchFilesCount;
+                                onProgress(currentProgress, totalFilesToProcess, path.relative(rootDir, file));
+                            }
+                            const content = await fs.readFile(file, 'utf-8');
+                            allChunks.push(...parseSkillFile(file, content));
+                        }
+                    } else {
+                        codeFiles.push(...mdFiles); 
                     }
 
-                    try {
-                        const content = await fs.readFile(file, 'utf-8');
-                        const ext = path.extname(file).replace('.', '');
-                        
-                        let chunks;
-                        if ((this.parserProfile === 'skill' || this.parserProfile === 'docs') && ext === 'md') {
-                            chunks = parseSkillFile(file, content);
-                        } else {
-                            chunks = parseAST(content, file, ext);
+                    if (codeFiles.length > 0) {
+                        const astChunks: any[] = [];
+                        for (const file of codeFiles) {
+                            parsedCount++;
+                            if (onProgress) {
+                                const currentProgress = batchBaseIndex + (parsedCount / batchFilesCount) * 0.05 * batchFilesCount;
+                                onProgress(currentProgress, totalFilesToProcess, path.relative(rootDir, file));
+                            }
+                            if (file.endsWith('.ts') || file.endsWith('.js') || file.endsWith('.tsx') || file.endsWith('.jsx')) {
+                                const content = await fs.readFile(file, 'utf-8');
+                                const ext = path.extname(file).replace('.', '');
+                                try {
+                                    const chunks = await parseWithAst(content, file, ext);
+                                    astChunks.push(...chunks);
+                                } catch (err) {
+                                    console.error(`[DeepSift] Failed to parse AST for ${file}:`, err);
+                                    const rawChunks = await this.store.extractChunksBulkNative([file]);
+                                    astChunks.push(...rawChunks.map((c:any)=>({id:c.id,filePath:c.file_path,content:c.content,startLine:c.start_line,endLine:c.end_line,type:c.type,family:c.family,language:c.language,semanticKind:3})));
+                                }
+                            } else {
+                                const rawChunks = await this.store.extractChunksBulkNative([file]);
+                                astChunks.push(...rawChunks.map((c:any)=>({id:c.id,filePath:c.file_path,content:c.content,startLine:c.start_line,endLine:c.end_line,type:c.type,family:c.family,language:c.language,semanticKind:3})));
+                            }
                         }
-                        
-                        const existingMeta = allMetadata.get(file);
-                        if (existingMeta) {
+                        allChunks.push(...astChunks);
+                    }
+
+                    for (const file of batchFiles) {
+                        if (allMetadata.has(file)) {
                             batchOperations.push({ action: 'deleteFileChunks', filePath: file });
                         }
+                    }
 
-                        if (chunks.length > 0) {
-                            const texts = chunks.map(c => c.content);
+                    const validChunks = allChunks.filter(c => typeof c.content === 'string' && c.content.trim().length > 0);
+                    if (validChunks.length > 0) {
+                        const EMBED_BATCH = 16;
+                        for (let j = 0; j < validChunks.length; j += EMBED_BATCH) {
+                            const chunkSlice = validChunks.slice(j, j + EMBED_BATCH);
+                            const embedFraction = (j + chunkSlice.length) / validChunks.length;
+                            const currentProgress = batchBaseIndex + (0.05 + 0.95 * embedFraction) * batchFilesCount;
+                            if (onProgress) {
+                                const currentFile = chunkSlice[0]?.filePath ? path.relative(rootDir, chunkSlice[0].filePath) : `Embedding chunks (${j + chunkSlice.length}/${validChunks.length})`;
+                                onProgress(currentProgress, totalFilesToProcess, currentFile);
+                            }
+                            const texts = chunkSlice.map(c => c.content);
                             const embeddings = await getEmbeddings(texts);
-
-                            const embeddedChunks = chunks.map((chunk, idx) => ({
+                            
+                            const embeddedChunks = chunkSlice.map((chunk, idx) => ({
                                 chunk,
                                 embedding: embeddings[idx]
                             }));
-
+                            
                             const formattedChunks = embeddedChunks.map(c => this.store.formatChunkForBatch(c));
                             batchOperations.push({ action: 'saveChunks', chunks: formattedChunks });
+                            chunksProcessed += chunkSlice.length;
                         }
+                    } else {
+                        if (onProgress) {
+                            onProgress(batchBaseIndex + batchFilesCount, totalFilesToProcess, `Processed ${batchFilesCount} files`);
+                        }
+                    }
 
+                    // 5. Update Metadata
+                    for (const file of batchFiles) {
+                        const fileChunks = allChunks.filter(c => c.filePath === file);
                         batchOperations.push({
                             action: 'saveMetadata',
                             metadata: {
                                 file_path: file,
                                 file_hash: fileHashes.get(file)!,
                                 last_indexed: Date.now(),
-                                chunk_count: chunks.length
+                                chunk_count: fileChunks.length
                             }
                         });
-
                         filesProcessed++;
-                        chunksProcessed += chunks.length;
-
-                    } catch (err) {
-                        console.error(`Error processing file ${file}:`, err);
+                        newOrUpdatedCount++;
                     }
-                }));
+
+                } catch (err) {
+                    console.error("Batch processing error:", err);
+                }
             }
 
             const DB_BATCH_LIMIT = 200;
@@ -188,6 +274,13 @@ export class Indexer {
             }
             
             if (filesProcessed > 0 || deletedCount > 0 || forceReindex) {
+                try {
+                    for (const f of Object.keys(savedHashes)) {
+                        if (!currentFilesSet.has(f)) delete savedHashes[f];
+                    }
+                    (await import('fs')).mkdirSync(path.dirname(fileHashesJsonPath), { recursive: true });
+                    (await import('fs')).writeFileSync(fileHashesJsonPath, JSON.stringify(savedHashes, null, 2), 'utf-8');
+                } catch (e) { console.error('Failed to save file-hashes.json', e); }
                 if (onProgress) {
                     onProgress(totalFilesToProcess, totalFilesToProcess, "Building dependency graph...");
                 }

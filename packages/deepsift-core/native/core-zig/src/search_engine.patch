@@ -1,0 +1,80 @@
+--- packages/deepsift-core/native/core-zig/src/search_engine.zig
++++ packages/deepsift-core/native/core-zig/src/search_engine.zig
+@@ -402,17 +402,6 @@
+     }
+     defer if (pr_map) |*m| m.deinit();
+ 
+-    var w_bm25 = rrf_cfg.bm25_weight;
+-    var w_vec = rrf_cfg.vector_weight;
+-    var k_bm25 = rrf_cfg.k;
+-    var k_vec = rrf_cfg.k;
+-
+-    if (term_count < 4) {
+-        w_bm25 = 0.70;
+-        w_vec = 0.30;
+-        k_bm25 = 20.0;
+-    } else {
+-        w_bm25 = 0.30;
+-        w_vec = 0.70;
+-        k_vec = 30.0;
+-    }
+-
+     var max_raw_score: f32 = 0.0;
+ 
+     for (matches.items) |*m| {
+@@ -420,11 +409,24 @@
+         const r_vec_val = vec_rank_map.get(m.chunk_index) orelse match_count;
+ 
+         const r_bm25 = @as(f32, @floatFromInt(r_bm25_val));
+         const r_vec = @as(f32, @floatFromInt(r_vec_val));
++        
++        const chunk_content = chunks[m.chunk_index].content;
++        const chunk_file = chunks[m.chunk_index].file_path;
++        const matched_terms = countMatchedTerms(chunk_content, chunk_file, terms_list.items);
++        const match_ratio = if (term_count > 0) @as(f32, @floatFromInt(matched_terms)) / @as(f32, @floatFromInt(term_count)) else 0.0;
++
++        // Adaptive Score Fusion in RRF based on Exact Identifier Match
++        var local_w_bm25: f32 = 0.5;
++        var local_w_vec: f32 = 0.5;
++        
++        if (term_count >= 4) {
++            if (match_ratio > 0.3) {
++                local_w_bm25 = 0.75;
++                local_w_vec = 0.25;
++            } else {
++                local_w_bm25 = 0.25;
++                local_w_vec = 0.75;
++            }
++        } else {
++            local_w_bm25 = 0.8;
++            local_w_vec = 0.2;
++        }
+ 
+-        const score_bm25 = w_bm25 / (k_bm25 + r_bm25);
+-        const score_vec = w_vec / (k_vec + r_vec);
++        const score_bm25 = local_w_bm25 / (rrf_cfg.k + r_bm25);
++        const score_vec = local_w_vec / (rrf_cfg.k + r_vec);
+ 
+         var raw_score = score_bm25 + score_vec;
+ 
+@@ -436,10 +438,6 @@
+             }
+         }
+ 
+-        const chunk_content = chunks[m.chunk_index].content;
+-        const chunk_file = chunks[m.chunk_index].file_path;
+-
+-        const matched_terms = countMatchedTerms(chunk_content, chunk_file, terms_list.items);
+         if (term_count > 1 and matched_terms > 0) {
+             const coverage = @as(f32, @floatFromInt(matched_terms)) / @as(f32, @floatFromInt(term_count));
+             if (coverage >= 1.0) {
+@@ -460,6 +458,9 @@
+         const semantic_kind = chunk.semantic_kind;
+         const ast_density = chunk.ast_density;
+ 
++        // Boost logic-heavy chunks agnostic to folder structure
++        raw_score *= (1.0 + ast_density);
++
+         const is_explicit_intent = c_type.len > 0 and containsInsensitive(query, c_type);
+ 
+         if (semantic_kind == 3) {

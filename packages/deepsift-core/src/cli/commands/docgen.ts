@@ -406,34 +406,25 @@ function syncAgentDirectives(projectPath: string, commands: CliCommandMetadata[]
     const templateFile = path.join(projectPath, 'packages', 'deepsift-core', 'templates', 'agent-instructions.md');
     const agentRuleFile = path.join(projectPath, '.agents', 'rules', 'deepsift.md');
 
-    const directiveHeader = `---
-trigger: always_on
----
+    const commandsTable = `## 🛠 Available DeepSift Commands (${commands.length} Commands)\n\n| Command | Description |\n|---|---|\n${commands.map(c => `| \`deepsift ${c.name}${c.aliases.length ? ' (' + c.aliases.join(', ') + ')' : ''}\` | **${c.category.toUpperCase()}:** ${c.summary} |`).join('\n')}\n`;
 
-# 🔍 DeepSift Visual Directive & Mastery (AUTOMATED SYNC)
+    const updateFileWithTable = (filePath: string) => {
+        if (!fs.existsSync(filePath)) return;
+        let content = fs.readFileSync(filePath, 'utf-8');
+        
+        const regex = /(## 🛠 Available DeepSift Commands[^\n]*\n(?:.|\n)*?)(?=\n---|\n## )/;
+        
+        if (regex.test(content)) {
+            content = content.replace(regex, commandsTable);
+            fs.writeFileSync(filePath, content, 'utf-8');
+        } else {
+            // If the marker isn't found, we don't overwrite the whole file to prevent destroying instructions.
+            // Just append or ignore. For now, we do nothing to preserve safety.
+        }
+    };
 
-You have access to **DeepSift**, a powerful local semantic search engine and codebase manipulation toolset.
-
-## 🛠 Available DeepSift Commands (${commands.length} Commands)
-
-| Command | Description |
-|---|---|
-${commands.map(c => `| \`deepsift ${c.name}${c.aliases.length ? ' (' + c.aliases.join(', ') + ')' : ''}\` | **${c.category.toUpperCase()}:** ${c.summary} |`).join('\n')}
-
-## 📋 ABSOLUTE & NON-NEGOTIABLE USAGE RULES
-1. **🔍 SMART SEARCH STRATEGY:** Start with \`deepsift search "query"\` for conceptual questions.
-2. **📖 PRE-EDIT READING:** Before editing ANY file, read exact lines with \`deepsift read "file:start-end"\`.
-3. **✏️ EDITING MANDATE:** Apply code changes using \`deepsift patch "patch.json"\` or native replace tools.
-4. **🧠 DRM RESEARCH MEMORY:** Use \`deepsift memo open "tag"\` and \`deepsift memo add\` to track active research notes.
-5. **📚 DOCUMENTATION GENERATION:** Run \`deepsift docgen\` whenever adding new features to update all documentation automatically.
-`;
-
-    if (fs.existsSync(path.dirname(templateFile))) {
-        fs.writeFileSync(templateFile, directiveHeader, 'utf-8');
-    }
-    if (fs.existsSync(path.dirname(agentRuleFile))) {
-        fs.writeFileSync(agentRuleFile, directiveHeader, 'utf-8');
-    }
+    updateFileWithTable(templateFile);
+    updateFileWithTable(agentRuleFile);
 }
 
 /**

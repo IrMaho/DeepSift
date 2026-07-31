@@ -1,5 +1,6 @@
 const std = @import("std");
 const db = @import("db.zig");
+const similarity_simd = @import("similarity_simd.zig");
 
 pub const SimilarityPair = struct {
     chunk_a_id: []const u8,
@@ -18,8 +19,6 @@ pub fn computeSimilarityMatrixNative(
     var pairs = std.ArrayList(SimilarityPair).empty;
     defer pairs.deinit(allocator);
 
-    const max_dim: f32 = @floatFromInt(db.VECTOR_DIM);
-
     for (0..chunks.len) |i| {
         for (i + 1..chunks.len) |j| {
             const ca = chunks[i];
@@ -28,12 +27,10 @@ pub fn computeSimilarityMatrixNative(
             // Skip if same file
             if (std.mem.eql(u8, ca.file_path, cb.file_path)) continue;
 
-            var dist: u32 = 0;
-            inline for (0..db.VECTOR_BQ_U32_COUNT) |k| {
-                dist += @popCount(ca.embedding[k] ^ cb.embedding[k]);
-            }
+            const qa = ca.embedding.toQuantizedVector();
+            const qb = cb.embedding.toQuantizedVector();
+            const sim = similarity_simd.computeQuantizedDotProduct(&qa, &qb);
 
-            const sim = 1.0 - (@as(f32, @floatFromInt(dist)) / max_dim);
             if (sim >= threshold) {
                 try pairs.append(allocator, .{
                     .chunk_a_id = try allocator.dupe(u8, ca.id),

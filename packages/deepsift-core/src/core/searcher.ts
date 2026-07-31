@@ -6,6 +6,7 @@
  * @category Core Search & Discovery
  * @since 1.0.0
  */
+import path from 'path';
 import { NativeStore } from '../storage/native-store.js';
 import { getEmbedding } from './embedder.js';
 import { applyRRF } from '../utils/similarity.js';
@@ -38,105 +39,122 @@ export class Searcher {
     public async search(searchQuery: SearchQuery): Promise<SearchResult[]> {
         const { query, topK = 10, filterType, filterPath } = searchQuery;
         
-        const queryVectorF32 = await getEmbedding(query);
-        const hybridNativeRaw = await this.store.searchHybridNative(query, queryVectorF32, topK * 2);
-        if (hybridNativeRaw && hybridNativeRaw.length > 0) {
-            const filtered = this.filterResults(hybridNativeRaw, filterType, filterPath);
-            if (filtered.length > 0) {
-                return filtered.slice(0, topK);
-            }
-        }
-
-        const keywordResultsRaw = await this.store.searchKeyword(query, topK * 2);
-        const keywordResults = this.filterResults(keywordResultsRaw, filterType, filterPath);
-
-        const semanticResultsRaw = await this.store.searchSemantic(queryVectorF32, topK * 2);
-        const semanticResults = this.filterResults(semanticResultsRaw, filterType, filterPath);
-
-        // Calculate Structural Weights from DNA
-        let structuralWeights: Map<string, number> | undefined;
-        try {
-            const dna = await loadDNA(process.cwd());
-            if (dna && dna.architecture && dna.architecture.coreFiles) {
-                structuralWeights = new Map<string, number>();
-                dna.architecture.coreFiles.forEach((f: string) => structuralWeights!.set(f, 1.5));
-            }
-        } catch (e) {
-            // Ignore if DNA is not available
-        }
-
-        // 3. Reciprocal Rank Fusion (Hybrid) with structural weights
-        const combined = applyRRF(semanticResults, keywordResults, 60, structuralWeights);
+        let candidates: SearchResult[] = [];
         
-        if (combined.length > 0 && combined[0].score >= 0.20) {
-            return combined.slice(0, topK);
+        const queryVectorF32 = await getEmbedding(query);
+        const hybridNativeRaw = await this.store.searchHybridNative(query, queryVectorF32, 400);
+        if (hybridNativeRaw && hybridNativeRaw.length > 0) {
+            candidates = this.filterResults(hybridNativeRaw, filterType, filterPath);
         }
+        
+        if (candidates.length === 0) {
+            const keywordResultsRaw = await this.store.searchKeyword(query, 50);
+            const keywordResults = this.filterResults(keywordResultsRaw, filterType, filterPath);
 
-        // 4. Smart Query Relaxation & Sub-term Keyword Matching
-        const tokens = Searcher.tokenizeQuery(query);
-        if (tokens.length >= 2) {
-            const relaxedResultsMap = new Map<string, SearchResult>();
+            const semanticResultsRaw = await this.store.searchSemantic(queryVectorF32, 50);
+            const semanticResults = this.filterResults(semanticResultsRaw, filterType, filterPath);
 
-            for (const token of tokens) {
-                const subKw = await this.store.searchKeyword(token, topK * 2);
-                const filteredSubKw = this.filterResults(subKw, filterType, filterPath);
-
-                for (const item of filteredSubKw) {
-                    const existing = relaxedResultsMap.get(item.chunk.id);
-                    if (existing) {
-                        existing.score += 0.25;
-                    } else {
-                        relaxedResultsMap.set(item.chunk.id, {
-                            ...item,
-                            score: 0.35,
-                            matchType: 'relaxed_keyword'
-                        });
-                    }
+            let structuralWeights: Map<string, number> | undefined;
+            try {
+                const dna = await loadDNA(process.cwd());
+                if (dna && dna.architecture && dna.architecture.coreFiles) {
+                    structuralWeights = new Map<string, number>();
+                    dna.architecture.coreFiles.forEach((f: string) => structuralWeights!.set(f, 1.5));
                 }
+            } catch (e) {
+                // Ignore if DNA is not available
             }
 
-            // Path & Token Alignment Bonus
-            for (const res of relaxedResultsMap.values()) {
-                const filePathLower = res.chunk.filePath.toLowerCase();
-                const contentLower = res.chunk.content.toLowerCase();
-                let matchedTokenCount = 0;
+            const combined = applyRRF(semanticResults, keywordResults, 60, structuralWeights);
+            candidates = combined;
 
-                for (const t of tokens) {
-                    if (filePathLower.includes(t)) {
-                        res.score += 0.40;
-                        matchedTokenCount++;
-                    } else if (contentLower.includes(t)) {
-                        res.score += 0.15;
-                        matchedTokenCount++;
+            const tokens = Searcher.tokenizeQuery(query);
+            if (tokens.length >= 2) {
+                const relaxedResultsMap = new Map<string, SearchResult>();
+
+                for (const token of tokens) {
+                    const subKw = await this.store.searchKeyword(token, 20);
+                    const filteredSubKw = this.filterResults(subKw, filterType, filterPath);
+
+                    for (const item of filteredSubKw) {
+                        const existing = relaxedResultsMap.get(item.chunk.id);
+                        if (existing) {
+                            existing.score += 0.10;
+                        } else {
+                            relaxedResultsMap.set(item.chunk.id, {
+                                ...item,
+                                score: 0.15,
+                                matchType: 'relaxed_keyword'
+                            });
+                        }
                     }
                 }
 
-                if (matchedTokenCount === tokens.length) {
-                    res.score += 0.50; // All query tokens matched!
+                // Path & Token Alignment Bonus (Reduced weights to prevent BM25 UI Bias)
+                for (const res of relaxedResultsMap.values()) {
+                    const filePathLower = res.chunk.filePath.toLowerCase();
+                    const contentLower = res.chunk.content.toLowerCase();
+                    let matchedTokenCount = 0;
+
+                    for (const t of tokens) {
+                        if (filePathLower.includes(t)) {
+                            res.score += 0.50; // High bonus for path matches
+                            matchedTokenCount++;
+                        } else if (contentLower.includes(t)) {
+                            res.score += 0.10; // Medium bonus for content matches
+                            matchedTokenCount++;
+                        }
+                    }
+
+                    if (matchedTokenCount === tokens.length) {
+                        res.score += 0.50; // High bonus for full match
+                    }
+                }
+
+                const relaxedSorted = Array.from(relaxedResultsMap.values());
+                if (relaxedSorted.length > 0) {
+                    const merged = [...combined, ...relaxedSorted];
+                    const seenIds = new Set<string>();
+                    const deduplicated: SearchResult[] = [];
+
+                    for (const item of merged) {
+                        if (!seenIds.has(item.chunk.id)) {
+                            seenIds.add(item.chunk.id);
+                            deduplicated.push(item);
+                        }
+                    }
+                    candidates = deduplicated;
                 }
             }
-
-            const relaxedSorted = Array.from(relaxedResultsMap.values()).sort((a, b) => b.score - a.score);
+        }
+        
+        // Ensure candidates are sorted by their initial scores before truncation
+        candidates.sort((a, b) => b.score - a.score);
+        const topCandidates = candidates.slice(0, 150); // Get top 50 for Reranker
+        
+        // Cross-Encoder Reranking
+        try {
+            // We map SearchResult to { content: string } for the Reranker
+            // Add a critical prefix to bridge the Semantic Gap for code definitions
+            const rerankerPayload = topCandidates.map(c => {
+                return {
+                    content: c.chunk.content,
+                    original: c
+                };
+            });
             
-            // Combine primary and relaxed results if primary was non-empty
-            if (relaxedSorted.length > 0) {
-                const merged = [...combined, ...relaxedSorted];
-                const seenIds = new Set<string>();
-                const deduplicated: SearchResult[] = [];
-
-                for (const item of merged) {
-                    if (!seenIds.has(item.chunk.id)) {
-                        seenIds.add(item.chunk.id);
-                        deduplicated.push(item);
-                    }
-                }
-
-                deduplicated.sort((a, b) => b.score - a.score);
-                return deduplicated.slice(0, topK);
-            }
+            const { Reranker } = await import('./reranker.js');
+            const reranked = await Reranker.rerank(query, rerankerPayload, topK);
+            
+            return reranked.map(r => ({
+                ...r.original,
+                score: r.crossScore, // Replace with the highly accurate cross score
+                matchType: 'hybrid' 
+            }));
+        } catch (err) {
+            console.error("[DeepSift] Reranking failed, falling back to basic scoring.", err);
+            return topCandidates.slice(0, topK);
         }
-
-        return combined.slice(0, topK);
     }
 
     private filterResults(results: SearchResult[], types?: ChunkType[], pathSubstring?: string): SearchResult[] {

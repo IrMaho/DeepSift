@@ -79,3 +79,40 @@ export function refactorExtractCommand(
     fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
     printSuccess(`Extracted lines ${startLine}-${endLine} in \`${normalizePath(parts[0])}\` into new function \`${newFuncName}()\`.`);
 }
+
+export function refactorGuideCommand(
+    projectPath: string,
+    targetFile: string,
+    format: OutputFormat = 'markdown'
+): void {
+    const filePath = path.resolve(projectPath, targetFile);
+    if (!fs.existsSync(filePath)) {
+        printResult(`File not found: ${filePath}`, format);
+        return;
+    }
+
+    const report = `# 🗺️ God Node Decomposition Roadmap
+
+Target File: \`${normalizePath(targetFile)}\`
+
+## 🧠 Architectural Assessment
+This file appears to be a God Node carrying multiple responsibilities. Based on Clean Architecture principles, here is the recommended decomposition strategy:
+
+### Phase 1: Separation of Concerns (SoC)
+1. **Extract State Management**: Move internal \`useState\`/Zustand logic into a custom hook (e.g., \`use${path.parse(targetFile).name}Store\`).
+2. **Isolate Domain Logic**: Extract purely functional data transformations into a \`${path.parse(targetFile).name}.service.ts\` file.
+3. **Component Splitting**: Break the massive render method into smaller, pure presentational components.
+
+### Phase 2: Dependency Injection
+- Do not import heavy HTTP clients directly. Inject them as services or rely on \`useQuery\` hooks.
+- Decouple hardcoded UI strings (use i18n extraction).
+
+### Phase 3: Action Plan
+- Run \`deepsift i18n-extract\` to secure strings.
+- Run \`deepsift refactor extract <file:lines> --name <sub_component>\` for large JSX blocks.
+
+> Tip: Start with Phase 1 to significantly reduce cognitive complexity without breaking existing tests.
+`;
+    printResult(report, format);
+}
+

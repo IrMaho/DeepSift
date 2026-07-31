@@ -1,4 +1,17 @@
 const std = @import("std");
+const cycle = @import("cycle.zig");
+const testmap = @import("testmap.zig");
+const taint = @import("taint.zig");
+const schema = @import("schema.zig");
+const clones_mod = @import("clones.zig");
+const complexity = @import("complexity.zig");
+const conventions = @import("conventions.zig");
+const realms = @import("realms.zig");
+const pagination = @import("pagination.zig");
+const adr_generator = @import("adr_generator.zig");
+const figma = @import("figma.zig");
+const llm = @import("llm.zig");
+
 const db = @import("db.zig");
 const graph = @import("graph.zig");
 const realm_mod = @import("realm.zig");
@@ -17,6 +30,13 @@ const resource_mapper = @import("resource_mapper.zig");
 const dead_code = @import("dead_code.zig");
 const toon = @import("toon.zig");
 const dec_renderer = @import("dec_renderer.zig");
+const math_engine = @import("math_engine.zig");
+const ast_parser = @import("ast_parser.zig");
+const rns_posit = @import("rns_posit.zig");
+const sift_vector = @import("sift_vector.zig");
+const similarity_simd = @import("similarity_simd.zig");
+
+const speculative_engine = @import("speculative_engine.zig");
 
 const BatchOperation = struct {
     action: []const u8,
@@ -34,10 +54,12 @@ const Request = struct {
     projectPath: ?[]const u8 = null,
     metadata: ?db.FileMetadata = null,
     filePath: ?[]const u8 = null,
+    filePaths: ?[][]const u8 = null,
     chunks: ?[]db.Chunk = null,
     ids: ?[][]const u8 = null,
     query: ?[]const u8 = null,
     content: ?[]const u8 = null,
+    language: ?[]const u8 = null,
     symbol: ?[]const u8 = null,
     key: ?[]const u8 = null,
     value: ?[]const u8 = null,
@@ -46,8 +68,9 @@ const Request = struct {
     threshold: ?f32 = null,
     width: ?u32 = null,
     height: ?u32 = null,
-    queryEmbedding: ?[db.VECTOR_BQ_U32_COUNT]u32 = null,
+    queryEmbedding: ?db.SiftEmbedding = null,
     batch: ?[]BatchOperation = null,
+    filterPath: ?[]const u8 = null,
     
     notes: ?[]memo_graph.NoteInfo = null,
     symbols: ?[]dead_code.SymbolUsage = null,
@@ -58,9 +81,25 @@ const Request = struct {
     graphNodes: ?[]db.GraphNode = null,
     graphEdges: ?[]db.GraphEdge = null,
     startNodes: ?[]u32 = null,
+    targetNodeId: ?[]const u8 = null,
     depth: ?u32 = null,
     hubThreshold: ?u32 = null,
+    complexities: ?[]f32 = null,
+    churnCounts: ?[]u32 = null,
+    idString: ?[]const u8 = null,
+    maxTokens: ?u32 = null,
+    numShards: ?u32 = null,
+    realmWeight: ?f32 = null,
+    messages: ?[][]const u8 = null,
+    authors: ?[][]const u8 = null,
+    lineCounts: ?[]u32 = null,
+    currentModel: ?[]const u8 = null,
+    targetModel: ?[]const u8 = null,
+    currentDim: ?u32 = null,
+    targetDim: ?u32 = null,
 };
+
+const StringArrayResponse = struct { id: ?usize = null, success: bool = true, data: [][]const u8 };
 
 const ResponseOk = struct {
     id: ?usize = null,
@@ -90,7 +129,7 @@ const ChunksResponse = struct {
     data: []const db.Chunk,
 };
 
-pub const ChunkEmbedding = struct { id: []const u8, embedding: [db.VECTOR_BQ_U32_COUNT]u32 };
+pub const ChunkEmbedding = struct { id: []const u8, embedding: db.SiftEmbedding };
 const ChunkEmbeddingsResponse = struct {
     id: ?usize = null,
     success: bool = true,
@@ -117,6 +156,8 @@ const SearchMatch = struct {
     type: []const u8,
     language: []const u8,
     score: f32,
+    bm25Score: f32 = 0.0,
+    vectorScore: f32 = 0.0,
     matchType: []const u8,
 };
 
@@ -144,6 +185,12 @@ const WalkResponse = struct {
     data: []const walker.FileWalkInfo,
 };
 
+const BlastRadiusResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const graph.GraphAlgorithms.BlastImpact,
+};
+
 const SimilarityResponse = struct {
     id: ?usize = null,
     success: bool = true,
@@ -166,6 +213,12 @@ const CoverageResponse = struct {
     id: ?usize = null,
     success: bool = true,
     data: []const test_analyzer.CoverageInfo,
+};
+
+const CalltreeResultsResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const ast_parser.CalltreeResult,
 };
 
 const CallTreeResponse = struct {
@@ -220,6 +273,121 @@ const BitmapResponse = struct {
     id: ?usize = null,
     success: bool = true,
     data: []const u8,
+};
+
+const GraphNodesResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const db.GraphNode,
+};
+
+const ExtractChunksResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const ast_parser.ParsedChunk,
+};
+
+const StringResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const u8,
+};
+
+const churn_mod = @import("churn.zig");
+const ChurnRiskResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const churn_mod.ChurnRisk,
+};
+
+const LatentCodeResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const db.LatentCode,
+};
+
+const layer_guard = @import("layer_guard.zig");
+const LayerViolationResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const layer_guard.LayerViolation,
+};
+
+const context_window = @import("context_window.zig");
+const TokenBudgetResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const context_window.TokenBudget,
+};
+
+const refactor_surgeon = @import("refactor_surgeon.zig");
+const GodNodeSplitResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const refactor_surgeon.GodNodeSplit,
+};
+
+const spectral_clone = @import("spectral_clone.zig");
+const SpectralCloneResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const spectral_clone.SpectralClone,
+};
+
+const type_resolver = @import("type_resolver.zig");
+const TypeBoundResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const type_resolver.TypeBound,
+};
+
+const bridge_mapper = @import("bridge_mapper.zig");
+const BridgeLinkResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const bridge_mapper.BridgeLink,
+};
+
+const commit_classifier = @import("commit_classifier.zig");
+const CommitIntentResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const commit_classifier.CommitIntent,
+};
+
+const index_shard = @import("index_shard.zig");
+const IndexShardResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const index_shard.IndexShard,
+};
+
+const realm_fusion = @import("realm_fusion.zig");
+const RealmFusionResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const realm_fusion.RealmFusionResult,
+};
+
+const embedding_hotswap = @import("embedding_hotswap.zig");
+const HotSwapResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: embedding_hotswap.HotSwapStatus,
+};
+
+const holographic = @import("holographic.zig");
+const Holographic3DResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const holographic.DepNode3D,
+};
+
+const code_archaeology = @import("code_archaeology.zig");
+const BlameBlockResponse = struct {
+    id: ?usize = null,
+    success: bool = true,
+    data: []const code_archaeology.BlameBlock,
 };
 
 fn countKeywordMatches(content: []const u8, file_path: []const u8, query: []const u8) f32 {
@@ -311,12 +479,10 @@ fn compareRankedChunks(_: void, a: RankedChunk, b: RankedChunk) bool {
     return a.keyword_score > b.keyword_score;
 }
 
-fn hammingSimilarity(a: [db.VECTOR_BQ_U32_COUNT]u32, b: [db.VECTOR_BQ_U32_COUNT]u32) f32 {
-    var distance: u32 = 0;
-    for (0..db.VECTOR_BQ_U32_COUNT) |i| {
-        distance += @popCount(a[i] ^ b[i]);
-    }
-    return 1.0 - @as(f32, @floatFromInt(distance)) / @as(f32, @floatFromInt(db.VECTOR_DIM));
+fn siftSimilarity(a: db.SiftEmbedding, b: db.SiftEmbedding) f32 {
+    const qa = a.toQuantizedVector();
+    const qb = b.toQuantizedVector();
+    return similarity_simd.computeQuantizedDotProduct(&qa, &qb);
 }
 
 fn writeResponse(allocator: std.mem.Allocator, writer: *std.Io.Writer, value: anytype) !void {
@@ -326,13 +492,12 @@ fn writeResponse(allocator: std.mem.Allocator, writer: *std.Io.Writer, value: an
     try writer.writeAll("\n"); // Add newline to ensure flushed stream
 }
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
     const allocator = std.heap.page_allocator;
 
     var threaded_io = std.Io.Threaded.init(allocator, .{});
     defer threaded_io.deinit();
     const io = threaded_io.io();
-
     var in_buf: [65536]u8 = undefined;
     const stdin = std.Io.File.stdin();
     var reader = stdin.reader(io, &in_buf);
@@ -340,6 +505,16 @@ pub fn main() !void {
     var out_buf: [65536]u8 = undefined;
     const stdout = std.Io.File.stdout();
     var writer = stdout.writer(io, &out_buf);
+
+    var args_iter = try std.process.Args.Iterator.initAllocator(init.minimal.args, allocator);
+    defer args_iter.deinit();
+    _ = args_iter.next(); // skip exe
+    
+    if (args_iter.next()) |cmd| {
+        if (std.mem.eql(u8, cmd, "server")) {
+            // we start the server loop below
+        }
+    }
 
     var database = db.Database.init(allocator);
     defer database.deinit();
@@ -384,13 +559,17 @@ pub fn main() !void {
         const resolved_db_path: []const u8 = req.dbPath;
         const resolved_graph_path: ?[]const u8 = req.graphDbPath;
 
-        database.loadFromFile(io, resolved_db_path) catch {};
+        database.loadFromFile(resolved_db_path) catch |err| {
+            std.debug.print("Failed to load from file {s}: {any}\n", .{resolved_db_path, err});
+        };
+        database.buildIvf() catch |err| {
+            std.debug.print("deepsift: Warning, IVF build failed: {any}\n", .{err});
+        };
 
         var graph_modified = false;
         if (resolved_graph_path) |graphPath| {
             graph_db.loadFromFile(io, graphPath) catch {};
         }
-
         var modified = false;
 
         if (std.mem.eql(u8, req.action, "saveGraph")) {
@@ -401,6 +580,16 @@ pub fn main() !void {
             if (req.graphEdges) |edges| {
                 try graph_db.edges.appendSlice(allocator, edges);
             }
+            graph_modified = true;
+            try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
+        } else if (std.mem.eql(u8, req.action, "computePageRankNative")) {
+            var graph_algos = graph.GraphAlgorithms.init(allocator, &graph_db);
+            graph_algos.computePageRank(0.85, 20) catch {};
+            graph_modified = true;
+            try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
+        } else if (std.mem.eql(u8, req.action, "computeCommunitiesNative")) {
+            var graph_algos = graph.GraphAlgorithms.init(allocator, &graph_db);
+            _ = graph_algos.computeCommunities() catch 0;
             graph_modified = true;
             try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
         } else if (std.mem.eql(u8, req.action, "saveMetadata")) {
@@ -535,7 +724,7 @@ pub fn main() !void {
                 defer results.deinit(allocator);
 
                 for (database.chunks.items, 0..) |chunk, ci| {
-                    const score = hammingSimilarity(qe, chunk.embedding);
+                    const score = siftSimilarity(qe, chunk.embedding);
                     try results.append(allocator, .{ .chunk_index = ci, .keyword_score = score });
                 }
 
@@ -573,6 +762,9 @@ pub fn main() !void {
                     top_k,
                     .{},
                     .{},
+                    &graph_db,
+                    database.ivf_index,
+                    req.filterPath,
                 );
                 defer allocator.free(native_matches);
 
@@ -590,6 +782,8 @@ pub fn main() !void {
                         .type = c.chunk_type,
                         .language = c.language,
                         .score = m.rrf_score,
+                        .bm25Score = m.bm25_score,
+                        .vectorScore = m.vector_score,
                         .matchType = "hybrid-native",
                     };
                 }
@@ -661,6 +855,44 @@ pub fn main() !void {
                 const min_w = req.threshold orelse 0.30;
                 const edges = try memo_graph.buildInsightGraphNative(allocator, nts, min_w);
                 defer allocator.free(edges);
+
+                // Phase 3: Insert notes as nodes into graph_db
+                for (nts) |note| {
+                    try graph_db.nodes.append(allocator, .{
+                        .id = try allocator.dupe(u8, note.id),
+                        .label = try allocator.dupe(u8, note.title),
+                        .source_file = try allocator.dupe(u8, note.tag),
+                        .source_location = try allocator.dupe(u8, note.status),
+                        .community = 0,
+                        .in_degree = 0,
+                        .out_degree = 0,
+                        .page_rank = 1.0,
+                    });
+                }
+
+                var id_map = std.StringHashMap(u32).init(allocator);
+                defer id_map.deinit();
+
+                for (graph_db.nodes.items, 0..) |node, i| {
+                    try id_map.put(node.id, @intCast(i));
+                }
+                
+                for (edges) |edge| {
+                    if (id_map.get(edge.source_id)) |src| {
+                        if (id_map.get(edge.target_id)) |tgt| {
+                            try graph_db.edges.append(allocator, .{
+                                .source = src,
+                                .target = tgt,
+                                .relation = "memo_insight",
+                                .confidence = "high",
+                            });
+                            graph_db.nodes.items[src].out_degree += 1;
+                            graph_db.nodes.items[tgt].in_degree += 1;
+                        }
+                    }
+                }
+                graph_modified = true;
+
                 try writeResponse(allocator, &writer.interface, NoteEdgesResponse{ .id = req_id, .data = edges });
             }
         } else if (std.mem.eql(u8, req.action, "extractL10nKeysNative")) {
@@ -697,6 +929,249 @@ pub fn main() !void {
                 defer allocator.free(bmp);
                 try writeResponse(allocator, &writer.interface, BitmapResponse{ .id = req_id, .data = bmp });
             }
+        } else if (std.mem.eql(u8, req.action, "expandContextNative")) {
+            if (req.startNodes) |nodes| {
+                const depth = req.depth orelse 2;
+                const hub_thresh = req.hubThreshold orelse 50;
+                var graph_algos = graph.GraphAlgorithms.init(allocator, &graph_db);
+                var visited_nodes = try graph_algos.bfs(nodes, depth, hub_thresh);
+                defer visited_nodes.deinit(allocator);
+
+                var results = try allocator.alloc(db.GraphNode, visited_nodes.items.len);
+                defer allocator.free(results);
+                for (visited_nodes.items, 0..) |node_idx, i| {
+                    results[i] = graph_db.nodes.items[node_idx];
+                }
+
+                try writeResponse(allocator, &writer.interface, GraphNodesResponse{ .id = req_id, .data = results });
+            }
+        } else if (std.mem.eql(u8, req.action, "calculateBlastRadiusNative")) {
+            if (req.targetNodeId) |target_id_str| {
+                const depth = req.depth orelse 3;
+                var target_idx: ?u32 = null;
+                for (graph_db.nodes.items, 0..) |n, i| {
+                    if (std.mem.eql(u8, n.id, target_id_str)) {
+                        target_idx = @intCast(i);
+                        break;
+                    }
+                }
+                if (target_idx) |idx| {
+                    var graph_algos = graph.GraphAlgorithms.init(allocator, &graph_db);
+                    var impacts = try graph_algos.calculateBlastRadius(idx, depth);
+                    defer impacts.deinit(allocator);
+
+                    const res_data = try allocator.alloc(graph.GraphAlgorithms.BlastImpact, impacts.items.len);
+                    defer allocator.free(res_data);
+                    for (impacts.items, 0..) |imp, i| {
+                        res_data[i] = imp;
+                    }
+                    try writeResponse(allocator, &writer.interface, BlastRadiusResponse{ .id = req_id, .data = res_data });
+                } else {
+                    try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Node ID not found" });
+                }
+            }
+        } else if (std.mem.eql(u8, req.action, "extractChunksNative")) {
+            if (req.content) |cnt| {
+                const fpath = req.filePath orelse "unknown.txt";
+                const lang = req.language orelse "text";
+                const chunks = try ast_parser.parseNative(allocator, cnt, fpath, lang);
+                defer {
+                    for (chunks) |chunk| {
+                        allocator.free(chunk.id);
+                        allocator.free(chunk.file_path);
+                        allocator.free(chunk.content);
+                        allocator.free(chunk.language);
+                        allocator.free(chunk.merkle_hash);
+                    }
+                    allocator.free(chunks);
+                }
+                try writeResponse(allocator, &writer.interface, ExtractChunksResponse{ .id = req_id, .data = chunks });
+            }
+        } else if (std.mem.eql(u8, req.action, "extractChunksBulkNative")) {
+            if (req.filePaths) |fps| {
+                const chunks = try ast_parser.extractChunksBulkNative(allocator, fps, io);
+                defer {
+                    for (chunks) |chunk| {
+                        allocator.free(chunk.id);
+                        allocator.free(chunk.file_path);
+                        allocator.free(chunk.content);
+                        allocator.free(chunk.language);
+                        allocator.free(chunk.merkle_hash);
+                    }
+                    allocator.free(chunks);
+                }
+                try writeResponse(allocator, &writer.interface, ExtractChunksResponse{ .id = req_id, .data = chunks });
+            }
+        } else if (std.mem.eql(u8, req.action, "minifyNative")) {
+            if (req.content) |cnt| {
+                const minify = @import("minify.zig");
+                const minified = try minify.minifyCodeNative(allocator, cnt);
+                defer allocator.free(minified);
+                try writeResponse(allocator, &writer.interface, StringResponse{ .id = req_id, .data = minified });
+            }
+        } else if (std.mem.eql(u8, req.action, "churnRiskNative")) {
+            if (req.filePaths != null and req.complexities != null and req.churnCounts != null) {
+                const risks = try churn_mod.calculateGitChurnRisk(allocator, req.filePaths.?, req.complexities.?, req.churnCounts.?);
+                defer {
+                    for (risks) |risk| {
+                        allocator.free(risk.file_path);
+                    }
+                    allocator.free(risks);
+                }
+                try writeResponse(allocator, &writer.interface, ChurnRiskResponse{ .id = req_id, .data = risks });
+            }
+        } else if (std.mem.eql(u8, req.action, "storeLatentCodeNative")) {
+            if (req.idString != null and req.content != null and req.filePath != null) {
+                const ts: i64 = @intCast(database.latent_chunks.items.len);
+                try database.latent_chunks.append(database.allocator, .{
+                    .id = try database.allocator.dupe(u8, req.idString.?),
+                    .content = try database.allocator.dupe(u8, req.content.?),
+                    .deleted_at = ts,
+                    .original_file = try database.allocator.dupe(u8, req.filePath.?),
+                });
+                try writeResponse(allocator, &writer.interface, ResponseOk{ .id = req_id });
+            }
+        } else if (std.mem.eql(u8, req.action, "extractCycleNative")) {
+            var scc = cycle.TarjanSCC.init(allocator, &graph_db);
+            defer scc.deinit();
+            try scc.findCycles();
+            var cycles_arr = std.ArrayList([]const u8).empty;
+            defer {
+                for (cycles_arr.items) |itm| allocator.free(itm);
+                cycles_arr.deinit(allocator);
+            }
+            
+            for (scc.sccs.items) |cycle_nodes| {
+                if (cycle_nodes.items.len > 1) {
+                    var cycle_str = std.ArrayList(u8).empty;
+                    defer cycle_str.deinit(allocator);
+                    
+                    for (cycle_nodes.items, 0..) |node_idx, i| {
+                        const node_id = graph_db.nodes.items[node_idx].id;
+                        if (i > 0) try cycle_str.appendSlice(allocator, " -> ");
+                        try cycle_str.appendSlice(allocator, node_id);
+                    }
+                    try cycle_str.appendSlice(allocator, " -> ");
+                    try cycle_str.appendSlice(allocator, graph_db.nodes.items[cycle_nodes.items[0]].id);
+                    
+                    try cycles_arr.append(allocator, try cycle_str.toOwnedSlice(allocator));
+                }
+            }
+            
+            try writeResponse(allocator, &writer.interface, StringArrayResponse{ .id = req_id, .data = cycles_arr.items });
+        } else if (std.mem.eql(u8, req.action, "extractTaintNative")) {
+            if (req.symbol) |sym| {
+                var taintAnalyzer = taint.TaintAnalysis{ .allocator = allocator, .graph = &graph_db };
+                const sinks = try taintAnalyzer.traceTaint(sym);
+                defer allocator.free(sinks);
+                try writeResponse(allocator, &writer.interface, StringArrayResponse{ .id = req_id, .data = sinks });
+            }
+        } else if (std.mem.eql(u8, req.action, "searchLatentCodeNative")) {
+            if (req.query) |q| {
+                var matches = std.ArrayList(db.LatentCode).empty;
+                defer matches.deinit(allocator);
+                
+                for (database.latent_chunks.items) |lc| {
+                    if (std.mem.indexOf(u8, lc.content, q) != null or std.mem.indexOf(u8, lc.original_file, q) != null) {
+                        try matches.append(allocator, lc);
+                    }
+                }
+                try writeResponse(allocator, &writer.interface, LatentCodeResponse{ .id = req_id, .data = matches.items });
+            }
+        } else if (std.mem.eql(u8, req.action, "extractCalltreeBulkNative")) {
+            if (req.filePaths) |fps| {
+                if (req.symbol) |sym| {
+                    const results = try ast_parser.extractCalltreeBulkNative(allocator, fps, sym, io);
+                    defer {
+                        for (results) |res| {
+                            allocator.free(res.file_path);
+                            allocator.free(res.snippet);
+                            allocator.free(res.role);
+                        }
+                        allocator.free(results);
+                    }
+                    try writeResponse(allocator, &writer.interface, CalltreeResultsResponse{ .id = req_id, .data = results });
+                }
+            }
+        } else if (std.mem.eql(u8, req.action, "detectLayerViolationsNative")) {
+            const violations = try layer_guard.detectLayerViolations(allocator, graph_db.edges.items, graph_db.nodes.items);
+            defer allocator.free(violations);
+            try writeResponse(allocator, &writer.interface, LayerViolationResponse{ .id = req_id, .data = violations });
+        } else if (std.mem.eql(u8, req.action, "computeTokenBudgetsNative")) {
+            if (req.filePaths != null and req.contents != null) {
+                const max_tokens = req.maxTokens orelse 128000;
+                const budgets = try context_window.computeTokenBudgets(allocator, req.filePaths.?, req.contents.?, max_tokens);
+                defer allocator.free(budgets);
+                try writeResponse(allocator, &writer.interface, TokenBudgetResponse{ .id = req_id, .data = budgets });
+            }
+        } else if (std.mem.eql(u8, req.action, "analyzeGodNodesNative")) {
+            const hub_t = req.hubThreshold orelse 10;
+            const splits = try refactor_surgeon.analyzeGodNodes(allocator, graph_db.nodes.items, graph_db.edges.items, hub_t);
+            defer allocator.free(splits);
+            try writeResponse(allocator, &writer.interface, GodNodeSplitResponse{ .id = req_id, .data = splits });
+        } else if (std.mem.eql(u8, req.action, "detectSpectralClonesNative")) {
+            if (req.filePaths != null and req.contents != null) {
+                const thresh = req.threshold orelse 0.6;
+                const clones = try spectral_clone.detectSpectralClones(allocator, req.filePaths.?, req.contents.?, thresh);
+                defer allocator.free(clones);
+                try writeResponse(allocator, &writer.interface, SpectralCloneResponse{ .id = req_id, .data = clones });
+            }
+        } else if (std.mem.eql(u8, req.action, "extractTypeBoundsNative")) {
+            if (req.content) |cnt| {
+                const fpath = req.filePath orelse "unknown";
+                const bounds = try type_resolver.extractTypeBounds(allocator, cnt, fpath);
+                defer {
+                    for (bounds) |b| {
+                        allocator.free(b.symbol);
+                        allocator.free(b.file_path);
+                        allocator.free(b.constraint);
+                    }
+                    allocator.free(bounds);
+                }
+                try writeResponse(allocator, &writer.interface, TypeBoundResponse{ .id = req_id, .data = bounds });
+            }
+        } else if (std.mem.eql(u8, req.action, "detectBridgesNative")) {
+            if (req.content) |cnt| {
+                const fpath = req.filePath orelse "unknown";
+                const links = try bridge_mapper.detectBridges(allocator, cnt, fpath);
+                defer {
+                    for (links) |link| {
+                        allocator.free(link.source_file);
+                        allocator.free(link.target_ref);
+                    }
+                    allocator.free(links);
+                }
+                try writeResponse(allocator, &writer.interface, BridgeLinkResponse{ .id = req_id, .data = links });
+            }
+        } else if (std.mem.eql(u8, req.action, "classifyCommitsNative")) {
+            if (req.messages) |msgs| {
+                const intents = try commit_classifier.classifyCommits(allocator, msgs);
+                defer allocator.free(intents);
+                try writeResponse(allocator, &writer.interface, CommitIntentResponse{ .id = req_id, .data = intents });
+            }
+        } else if (std.mem.eql(u8, req.action, "computeShardsNative")) {
+            const total: u32 = @intCast(database.chunks.items.len);
+            const num_shards = req.numShards orelse 4;
+            const shards = try index_shard.computeShards(allocator, total, num_shards);
+            defer allocator.free(shards);
+            try writeResponse(allocator, &writer.interface, IndexShardResponse{ .id = req_id, .data = shards });
+        } else if (std.mem.eql(u8, req.action, "checkModelCompatibilityNative")) {
+            const cur_model = req.currentModel orelse "unknown";
+            const tgt_model = req.targetModel orelse "unknown";
+            const cur_dim = req.currentDim orelse 64;
+            const tgt_dim = req.targetDim orelse 64;
+            const status = embedding_hotswap.checkModelCompatibility(cur_dim, tgt_dim, cur_model, tgt_model);
+            try writeResponse(allocator, &writer.interface, HotSwapResponse{ .id = req_id, .data = status });
+        } else if (std.mem.eql(u8, req.action, "computeLayout3DNative")) {
+            const layout = try holographic.computeLayout3D(allocator, graph_db.nodes.items, graph_db.edges.items);
+            defer allocator.free(layout);
+            try writeResponse(allocator, &writer.interface, Holographic3DResponse{ .id = req_id, .data = layout });
+        } else if (std.mem.eql(u8, req.action, "analyzeOwnershipNative")) {
+            if (req.filePaths != null and req.authors != null and req.lineCounts != null) {
+                const blocks = try code_archaeology.analyzeOwnership(allocator, req.filePaths.?, req.authors.?, req.lineCounts.?);
+                defer allocator.free(blocks);
+                try writeResponse(allocator, &writer.interface, BlameBlockResponse{ .id = req_id, .data = blocks });
+            }
         } else {
             try writeResponse(allocator, &writer.interface, ResponseError{ .id = req_id, .message = "Unknown action" });
         }
@@ -704,7 +1179,9 @@ pub fn main() !void {
         try writer.flush();
 
         if (modified) {
-            database.saveToFile(io, resolved_db_path) catch {};
+            database.saveToFile(io, resolved_db_path) catch |err| {
+                std.debug.print("Failed to save to file {s}: {any}\n", .{resolved_db_path, err});
+            };
         }
         
         if (graph_modified) {

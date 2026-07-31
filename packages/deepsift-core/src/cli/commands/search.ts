@@ -45,6 +45,8 @@ export interface SearchOptions {
  * await searchCommand(process.cwd(), ['authentication store'], 'markdown', { limit: 10 });
  * ```
  */
+import { fileURLToPath } from 'url';
+
 export async function searchCommand(
     projectPath: string, 
     queries: string[], 
@@ -52,7 +54,7 @@ export async function searchCommand(
     options: SearchOptions = {}
 ): Promise<void> {
     const router = new RealmRouter(projectPath);
-    const targetRealms = options.allRealms ? undefined : (options.realm ? options.realm.split(',').map(r => r.trim()) : undefined);
+    const targetRealms = options.allRealms ? undefined : (options.realm ? options.realm!.split(',').map(r => r.trim()) : undefined);
 
     if (!options.skipSync) {
         const realmsToSync = targetRealms || ['code'];
@@ -107,13 +109,15 @@ export async function searchCommand(
 }
 
 /**
- * AST & Path Token fallback matcher executed when vector search yields no direct hits.
+ * @param projectPath The root directory to scan.
+ * @param query The exact string to locate.
+ * @returns Array of fallback matches.
  */
-function astSymbolFallback(projectPath: string, rawQuery: string): Array<{ file: string; line: number; snippet: string; score: number }> {
-    const matches: Array<{ file: string; line: number; snippet: string; score: number }> = [];
+export function astSymbolFallback(projectPath: string, query: string): { file: string, line: number, snippet: string, score: number }[] {
+    const matches: { file: string, line: number, snippet: string, score: number }[] = [];
     const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.deepsift', 'coverage', '.dart_tool', 'venv', '.venv', 'site-packages']);
 
-    const queryClean = rawQuery.trim();
+    const queryClean = query.trim();
     const queryLower = queryClean.toLowerCase();
     const tokens = queryClean.includes(' ') 
         ? queryClean.split(/\s+/).map(t => t.toLowerCase()).filter(t => t.length >= 2)
@@ -185,35 +189,26 @@ function astSymbolFallback(projectPath: string, rawQuery: string): Array<{ file:
  * Handles single query vector and BM25 search.
  */
 async function executeSingleSearch(router: RealmRouter, projectPath: string, query: string, format: OutputFormat, options: SearchOptions, targetRealms?: string[]) {
-    const rawResults = await router.searchAllRealms({ query, topK: 5, filterPath: options.filterPath }, targetRealms);
-    const results = rawResults.filter(r => r.score >= 0.15);
+    const rawResults = await router.searchAllRealms({ query, topK: options.limit || 15, filterPath: options.filterPath }, targetRealms);
+    
+    const results = rawResults;
 
     if (results.length === 0) {
         const fallbackMatches = astSymbolFallback(projectPath, query.trim());
-        if (fallbackMatches.length > 0) {
+        
+        if (fallbackMatches.length > 0 && format !== 'json') {
             const fileMap = new Map<string, number>();
             fallbackMatches.forEach(m => fileMap.set(m.file, (fileMap.get(m.file) || 0) + 1));
 
-            let fallbackText = `ℹ Primary vector search deferred. AST & Path Matcher found **${fallbackMatches.length}** relevant code references for \`${query}\` across **${fileMap.size}** files:\n\n`;
-            fallbackMatches.slice(0, 10).forEach(m => {
+            let fallbackText = `ℹ AST & Path Matcher found **${fallbackMatches.length}** relevant code references across **${fileMap.size}** files:\n`;
+            fallbackMatches.slice(0, 5).forEach(m => {
                 fallbackText += `  - 📄 **${m.file}:${m.line}**: \`${m.snippet.substring(0, 75)}\`\n`;
             });
-            if (fallbackMatches.length > 10) {
-                fallbackText += `  - ... (+${fallbackMatches.length - 10} more matches)\n`;
-            }
-            fallbackText += `\n💡 **Tip**: Run \`deepsift search "${query}" --sync\` to force vector index synchronization.`;
-            printResult(fallbackText, format);
-            return;
+            console.log(fallbackText);
+        } else {
+            const hint = `No relevant code found for: "${query}"\n\n💡 **Search Tips:**\n- Try shorter, more specific keywords (e.g. "auth handler")\n- Use \`deepsift arch\` for high-level project structure\n- Use \`grep_search\` for exact text/variable name matches`;
+            printResult(hint, format);
         }
-
-        const hint = `No relevant code found for: "${query}"
-
-💡 **Search Tips:**
-- Try shorter, more specific keywords (e.g. "auth handler" instead of "what are the main features")
-- Use \`deepsift arch\` for high-level project structure
-- Use \`deepsift analyze "src/path"\` for deep dives into specific folders
-- Use \`grep_search\` for exact text/variable name matches`;
-        printResult(hint, format);
         return;
     }
 
@@ -239,7 +234,10 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
             }
         }
         
-        return `${i + 1}. [${res.realmId}] [${res.chunk.filePath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)}, match: ${res.matchType})\n   Type: ${res.chunk.type}\n   \`\`\`${res.chunk.language}\n${contentToDisplay}\n   \`\`\``;
+        const debugScores = (res.bm25Score !== undefined && res.vectorScore !== undefined) 
+            ? `, bm25: ${res.bm25Score.toFixed(3)}, vec: ${res.vectorScore.toFixed(3)}` 
+            : ``;
+        return `${i + 1}. [${res.realmId}] [${res.chunk.filePath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)}${debugScores}, match: ${res.matchType})\n   Type: ${res.chunk.type}\n   \`\`\`${res.chunk.language}\n${contentToDisplay}\n   \`\`\``;
     }).join('\n\n');
 
     const injector = new ContextInjector(projectPath);
@@ -297,7 +295,8 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
 
     for (let i = 0; i < queries.length; i++) {
         const query = queries[i];
-        const rawResults = await router.searchAllRealms({ query, topK: 5, filterPath: options.filterPath }, targetRealms);
+        let parsedTypes = undefined;
+        const rawResults = await router.searchAllRealms({ query, topK: options.limit || 20, filterType: parsedTypes, filterPath: options.filterPath }, targetRealms);
         const results = rawResults.filter(r => r.score >= 0.15);
 
         combinedOutput += `## Query ${i + 1}: "${query}"\n`;
@@ -315,7 +314,7 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
             continue;
         }
 
-        results.slice(0, 5).forEach((res, idx) => {
+        results.slice(0, options.limit || 5).forEach((res, idx) => {
             const key = `${res.realmId}:${res.chunk.filePath}:${res.chunk.startLine}`;
             allResultsMap.set(key, res);
             combinedOutput += `${idx + 1}. [${res.realmId}] [${res.chunk.filePath}:${res.chunk.startLine}-${res.chunk.endLine}] (score: ${res.score.toFixed(3)})\n   \`\`\`${res.chunk.language}\n${res.chunk.content.substring(0, 200)}...\n   \`\`\`\n`;
@@ -338,7 +337,7 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
     }
 
     const allResArray = Array.from(allResultsMap.values());
-    const topFiles = allResArray.slice(0, 5).map(r =>
+    const topFiles = allResArray.slice(0, options.limit || 5).map(r =>
         `[${r.realmId}] ${r.chunk.filePath}:${r.chunk.startLine}-${r.chunk.endLine}`
     );
     const memoCtx: AutoSaveContext = {

@@ -24,7 +24,7 @@ const __dirname = path.dirname(__filename);
 const SYSTEM_IGNORED_DIRS = new Set([
     'node_modules', '.git', '.deepsift', '.idea', '.vscode', '.gradle',
     '.dart_tool', 'coverage', '.next', '.cache', '.zig-cache', 'zig-out',
-    '.mcp_search_outputs'
+    '.mcp_search_outputs', '.changeset'
 ]);
 
 const RECOMMENDED_SRC_NAMES = new Set([
@@ -35,7 +35,8 @@ const RECOMMENDED_SRC_NAMES = new Set([
 
 const ASSET_OR_BUILD_NAMES = new Set([
     'dist', 'build', 'assets', 'public', 'icon_temp', 'ver', 'coverage',
-    'out', 'release', 'bin', 'obj', 'temp', 'tmp', 'scratch'
+    'out', 'release', 'bin', 'obj', 'temp', 'tmp', 'scratch', 'vendor',
+    'outputs', 'mocks', 'fixtures'
 ]);
 
 const CODE_EXTENSIONS = new Set([
@@ -265,8 +266,14 @@ function interactiveKeyboardCheckbox(
     });
 }
 
-async function runInteractiveConfigWizard(projectPath: string) {
+async function runInteractiveConfigWizard(projectPath: string, reset: boolean) {
     if (!process.stdin.isTTY) {
+        return;
+    }
+
+    const configPath = path.join(projectPath, 'deepsift.config.json');
+    if (fs.existsSync(configPath) && !reset) {
+        printInfo('Using existing deepsift.config.json (Use --reset to reconfigure)');
         return;
     }
 
@@ -400,11 +407,11 @@ function runZigBuild(zigDir: string, binDir: string, binPath: string, ext: strin
     }
 }
 
-export async function initCommand(projectPath: string) {
+export async function initCommand(projectPath: string, reset: boolean = false) {
     compileZigOnDemand();
     printInfo(`Initializing DeepSift for: ${projectPath}`);
 
-    await runInteractiveConfigWizard(projectPath);
+    await runInteractiveConfigWizard(projectPath, reset);
 
     const deepsiftDir = path.join(projectPath, '.deepsift');
     const outputsDir = path.join(deepsiftDir, 'outputs');
@@ -415,6 +422,8 @@ export async function initCommand(projectPath: string) {
 
     const gitignorePath = path.join(projectPath, '.gitignore');
     injectGitignoreEntry(gitignorePath);
+    
+    injectDeepsiftIgnore(projectPath);
 
     const agentsDir = path.join(projectPath, '.agents', 'rules');
     if (!fs.existsSync(agentsDir)) {
@@ -436,7 +445,6 @@ export async function initCommand(projectPath: string) {
     if (fs.existsSync(imageSrcPath)) fs.copyFileSync(imageSrcPath, imageDestPath);
     else if (fs.existsSync(fallbackImageSrcPath)) fs.copyFileSync(fallbackImageSrcPath, imageDestPath);
 
-    // Inject Skill
     const skillsDir = path.join(projectPath, '.agents', 'skills', 'deepsift-mastery');
     if (!fs.existsSync(skillsDir)) fs.mkdirSync(skillsDir, { recursive: true });
     const skillFilePath = path.join(skillsDir, 'SKILL.md');
@@ -446,7 +454,6 @@ export async function initCommand(projectPath: string) {
         printSuccess('Injected DeepSift mastery skill → .agents/skills/deepsift-mastery/SKILL.md');
     }
 
-    // Inject Workflow
     const workflowsDir = path.join(projectPath, '.agents', 'workflows');
     if (!fs.existsSync(workflowsDir)) fs.mkdirSync(workflowsDir, { recursive: true });
     const workflowFilePath = path.join(workflowsDir, 'deepsift.md');
@@ -456,11 +463,9 @@ export async function initCommand(projectPath: string) {
         printSuccess('Injected DeepSift workflow → .agents/workflows/deepsift.md');
     }
 
-    // Inject Documentation
     const docsDir = path.join(projectPath, '.deepsift', 'docs');
     if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
 
-    // Inject comprehensive manuals from templates/doc/
     const docFiles = getTemplateDirFiles('doc');
     for (const file of docFiles) {
         const destPath = path.join(docsDir, file.name);
@@ -470,24 +475,42 @@ export async function initCommand(projectPath: string) {
         }
     }
 
-    printInfo('Running index...');
+    printInfo('Running intelligent index (GPU Accelerated if available)...');
     let dnaNeedsUpdate = true;
     try {
         const store = new NativeStore(getDbPath(projectPath));
         const indexer = new Indexer(store);
+        const startTime = Date.now();
         const stats = await indexer.indexProject(projectPath, false, (current, total, file) => {
-            const msg = `Indexing: ${current}/${total} files (Processing: ${file})`;
-            const termWidth = process.stdout.columns || 80;
-            const displayMsg = msg.length > termWidth ? msg.substring(0, termWidth - 4) + '...)' : msg;
+            const now = Date.now();
+            const elapsed = Math.floor((now - startTime) / 1000);
+            const percentRatio = total > 0 ? (current / total) * 100 : 0;
+            const percent = percentRatio.toFixed(2);
+            const itemsPerSec = elapsed > 0 ? Math.floor(current / elapsed) : 0;
+            const eta = itemsPerSec > 0 ? Math.floor((total - current) / itemsPerSec) : 0;
+            
+            const barLength = 20;
+            const filled = Math.floor((percentRatio / 100) * barLength);
+            const empty = barLength - filled;
+            const bar = '█'.repeat(filled) + '░'.repeat(empty);
+
+            const formatTime = (s: number) => `${Math.floor(s / 60)}m ${s % 60}s`;
+            
+            const fileName = file.length > 30 ? '...' + file.slice(-27) : file;
+            const hw = process.platform === 'win32' ? 'GPU' : 'CPU';
+            const displayCurrent = Math.floor(current);
+            const msg = `\x1b[36mIndexing (${hw}) 🚀\x1b[0m [${bar}] ${percent}% | \x1b[33mTime:\x1b[0m ${formatTime(elapsed)} | \x1b[33mETA:\x1b[0m ${formatTime(eta)} | \x1b[32m${displayCurrent}/${total}\x1b[0m | \x1b[90m${fileName}\x1b[0m`;
+            
+            const termWidth = process.stdout.columns || 100;
+            const displayMsg = msg.length > termWidth ? msg.substring(0, termWidth - 4) + '...\x1b[0m' : msg;
             
             readline.clearLine(process.stdout, 0);
             readline.cursorTo(process.stdout, 0);
             process.stdout.write(displayMsg);
         });
-        process.stdout.write('\n'); // newline after progress
+        process.stdout.write('\n');
         printSuccess(`Index complete: ${stats.files} files processed, ${stats.chunks} chunks.`);
         
-        // Check if DNA exists
         const dnaExists = fs.existsSync(path.join(projectPath, '.deepsift', 'project-dna.json'));
         if (dnaExists && stats.newOrUpdated === 0 && stats.deleted === 0) {
             dnaNeedsUpdate = false;
@@ -507,6 +530,7 @@ export async function initCommand(projectPath: string) {
         printSuccess('DNA is already up-to-date. Skipping DNA generation.');
     }
 
+
     printSuccess('DeepSift is ready! The AI agent can now use terminal commands to search your codebase.');
     printInfo('Tell your AI agent: "Use deepsift commands to search and understand this codebase"');
 }
@@ -522,5 +546,32 @@ function injectGitignoreEntry(gitignorePath: string) {
     } else {
         fs.writeFileSync(gitignorePath, `# DeepSift local cache\n${entry}\n`);
         printSuccess('Created .gitignore with .deepsift/ entry');
+    }
+}
+function injectDeepsiftIgnore(projectPath: string) {
+    const dsignorePath = path.join(projectPath, '.deepsiftignore');
+    const defaultIgnores = `
+node_modules/
+dist/
+build/
+out/
+web-remote/
+.dart_tool/
+*.min.js
+*.bundle.js
+*.map
+`;
+
+    let content = defaultIgnores.trim() + '\n';
+    
+    const gitignorePath = path.join(projectPath, '.gitignore');
+    if (fs.existsSync(gitignorePath)) {
+        content += '\n# Imported from .gitignore\n';
+        content += fs.readFileSync(gitignorePath, 'utf-8');
+    }
+
+    if (!fs.existsSync(dsignorePath)) {
+        fs.writeFileSync(dsignorePath, content, 'utf-8');
+        printSuccess('Created .deepsiftignore with default exclusions and .gitignore sync');
     }
 }

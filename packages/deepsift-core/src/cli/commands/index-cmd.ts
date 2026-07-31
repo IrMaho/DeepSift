@@ -59,11 +59,12 @@ export async function indexCommand(projectPath: string, options: IndexOptions) {
                         return m > 0 ? `${m}m${sec}s` : `${sec}s`;
                     };
 
-                    const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+                    const percent = total > 0 ? ((current / total) * 100).toFixed(2) : '0.00';
                     
                     const shortFile = file.length > 35 ? '...' + file.substring(file.length - 35) : file;
                     
-                    const msg = `[${realmId}] ⏳ ${percent}% | ${current}/${total} files | Elapsed: ${formatTime(elapsedSec)} | ETA: ${formatTime(etaSec)} | ${shortFile}`;
+                    const displayCurrent = Math.floor(current);
+                    const msg = `[${realmId}] ⏳ ${percent}% | ${displayCurrent}/${total} files | Elapsed: ${formatTime(elapsedSec)} | ETA: ${formatTime(etaSec)} | ${shortFile}`;
                     
                     const termWidth = process.stdout.columns || 80;
                     const displayMsg = msg.length > termWidth ? msg.substring(0, termWidth - 1) : msg;

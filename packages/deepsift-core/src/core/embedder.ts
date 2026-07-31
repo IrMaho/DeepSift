@@ -10,13 +10,26 @@ import { Worker } from 'worker_threads';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
-
 import fs from 'fs';
+
+function normalizeL2(vector: Float32Array): Float32Array {
+    let sumOfSquares = 0;
+    for (let i = 0; i < vector.length; i++) {
+        sumOfSquares += vector[i] * vector[i];
+    }
+    const magnitude = Math.sqrt(sumOfSquares);
+    if (magnitude < 1e-10) return vector;
+    for (let i = 0; i < vector.length; i++) {
+        vector[i] /= magnitude;
+    }
+    return vector;
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const NUM_WORKERS = Math.max(1, os.cpus().length - 1);
+// Limit workers to 2 to prevent GPU/DirectML Out-Of-Memory (OOM) on systems with many cores
+const NUM_WORKERS = Math.min(2, Math.max(1, os.cpus().length - 1));
 const workerJs = path.join(__dirname, 'embedder-worker.js');
 const workerTs = path.join(__dirname, 'embedder-worker.ts');
 const workerPath = fs.existsSync(workerJs) ? workerJs : (fs.existsSync(workerTs) ? workerTs : workerJs);
@@ -25,8 +38,29 @@ let workers: Worker[] = [];
 let nextWorkerIndex = 0;
 let initialized = false;
 
-function initWorkers() {
+let initPromise: Promise<void> | null = null;
+
+async function doInitWorkers() {
     if (initialized) return;
+    try {
+        console.log('[DeepSift] Pre-downloading embedding model on main thread...');
+        await import('./disable-sharp.js');
+        const { pipeline, env } = await import('@xenova/transformers');
+        
+        // Use mirror if fetch fails due to network restrictions
+        if (env.remoteHost === 'https://huggingface.co') {
+            env.remoteHost = 'https://hf-mirror.com';
+        }
+
+        await pipeline('feature-extraction', 'Xenova/bge-base-en-v1.5', { 
+            quantized: true,
+            session_options: { executionProviders: ['directml', 'wasm', 'cpu'] }
+        } as any);
+        console.log('[DeepSift] Embedding model cached. Starting workers...');
+    } catch (err) {
+        console.warn('[DeepSift] Failed to pre-download model, workers will attempt to download:', err);
+    }
+    
     for (let i = 0; i < NUM_WORKERS; i++) {
         const worker = new Worker(workerPath);
         worker.on('error', (err) => {
@@ -39,21 +73,28 @@ function initWorkers() {
     setupWorkerListeners();
 }
 
+function initWorkers(): Promise<void> {
+    if (!initPromise) {
+        initPromise = doInitWorkers();
+    }
+    return initPromise;
+}
+
 // Map to track pending requests
 let nextId = 0;
-const pendingRequests = new Map<number, { resolve: (val: Float32Array) => void; reject: (err: any) => void }>();
+const pendingRequests = new Map<number, { resolve: (val: Float32Array[]) => void; reject: (err: any) => void }>();
 
 // Listeners for worker messages
 function setupWorkerListeners() {
     workers.forEach(worker => {
-        worker.on('message', (response: { id: number; vector?: Float32Array; error?: string }) => {
+        worker.on('message', (response: { id: number; vectors?: Float32Array[]; error?: string }) => {
             const req = pendingRequests.get(response.id);
             if (req) {
                 pendingRequests.delete(response.id);
                 if (response.error) {
                     req.reject(new Error(response.error));
-                } else if (response.vector) {
-                    req.resolve(response.vector);
+                } else if (response.vectors) {
+                    req.resolve(response.vectors);
                 }
             }
         });
@@ -66,42 +107,61 @@ function setupWorkerListeners() {
  * @param text The input text to embed
  * @returns A promise resolving to a 384-dimensional Float32Array
  */
-export async function getEmbedding(text: string): Promise<Float32Array> {
-    initWorkers();
+export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
+    await initWorkers();
+    
+    // Fallback if no workers available
     if (workers.length === 0) {
-        // Fallback to sync if no workers
-        const { embed } = await import('@ternlight/base');
-        return embed(text);
+        let retries = 5;
+        while (retries > 0) {
+            try {
+                const { pipeline, env } = await import('@xenova/transformers');
+                if (env.remoteHost === 'https://huggingface.co') {
+                    env.remoteHost = 'https://hf-mirror.com';
+                }
+                const extract = await pipeline('feature-extraction', 'Xenova/bge-base-en-v1.5', { 
+                    quantized: true,
+                    session_options: { executionProviders: ['directml', 'wasm', 'cpu'] }
+                } as any);
+                const output = await extract(texts, { pooling: 'mean', normalize: false });
+                const list = output.tolist();
+                const raw = Array.isArray(list[0]) ? list.map((vec: any) => new Float32Array(vec)) : [new Float32Array(list as any)];
+                return raw.map(normalizeL2);
+            } catch (err: any) {
+                retries--;
+                if (retries === 0) {
+                    throw err;
+                }
+                await new Promise(r => setTimeout(r, 1000 + Math.random() * 2000));
+            }
+        }
+        throw new Error('Unreachable');
     }
 
-    return new Promise((resolve, reject) => {
+    const results: Float32Array[] = [];
+    const BATCH_SIZE = 16; // Reduced to 16 to prevent DirectML/GPU out-of-memory (OOM) errors during FusedMatMul
+    
+    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+        const batch = texts.slice(i, i + BATCH_SIZE);
         const id = nextId++;
-        pendingRequests.set(id, { resolve, reject });
+        const p = new Promise<Float32Array[]>((resolve, reject) => {
+            pendingRequests.set(id, { resolve, reject });
+        });
         
         const worker = workers[nextWorkerIndex];
         nextWorkerIndex = (nextWorkerIndex + 1) % workers.length;
         
-        worker.postMessage({ id, text });
-    });
-}
-
-/**
- * Generates embeddings for an array of texts asynchronously and in parallel.
- * 
- * @param texts Array of input texts
- * @returns A promise resolving to an array of Float32Array embeddings
- */
-export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
-    const results: Float32Array[] = [];
-    const BATCH_SIZE = 50; // Process 50 chunks at a time to prevent memory/IPC overload
-    
-    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
-        const batch = texts.slice(i, i + BATCH_SIZE);
-        const batchResults = await Promise.all(batch.map(text => getEmbedding(text)));
+        worker.postMessage({ id, texts: batch });
+        const batchResults = await p;
         results.push(...batchResults);
     }
     
     return results;
+}
+
+export async function getEmbedding(text: string): Promise<Float32Array> {
+    const res = await getEmbeddings([text]);
+    return res[0];
 }
 
 /**
