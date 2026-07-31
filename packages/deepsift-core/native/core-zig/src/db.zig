@@ -318,6 +318,7 @@ pub const Database = struct {
             try writer.writeAll(&chunk.embedding.packed_data);
         }
 
+        self.unmapData();
         const file = try std.Io.Dir.cwd().createFile(io, file_path, .{});
         defer file.close(io);
         

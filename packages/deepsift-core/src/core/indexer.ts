@@ -72,7 +72,30 @@ export class Indexer {
         try {
             const { unifiedWalk } = await import('./unified-walker.js');
             const walkResult = await unifiedWalk(rootDir);
-            const allFiles = walkResult.allFiles;
+            let allFiles = walkResult.allFiles;
+            
+            try {
+                const ignoreLib = (await import('ignore')).default;
+                const ig = ignoreLib();
+                ig.add(['node_modules', 'dist', 'build', 'out', 'web-remote', '*.min.js', '*.bundle.js']);
+                
+                try {
+                    const gitignorePath = path.join(rootDir, '.gitignore');
+                    const gitignoreContent = await fs.readFile(gitignorePath, 'utf-8');
+                    ig.add(gitignoreContent);
+                } catch (e) {}
+
+                try {
+                    const dsignorePath = path.join(rootDir, '.deepsiftignore');
+                    const dsignoreContent = await fs.readFile(dsignorePath, 'utf-8');
+                    ig.add(dsignoreContent);
+                } catch (e) {}
+
+                allFiles = allFiles.filter((file: string) => {
+                    const relPath = path.relative(rootDir, file);
+                    return !ig.ignores(relPath);
+                });
+            } catch(e) {}
             
             const allMetadata = await this.store.getAllMetadata();
 

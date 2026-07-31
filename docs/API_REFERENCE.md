@@ -1,6 +1,6 @@
 # 📖 DeepSift Source Code API Reference
 
-Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **134 TypeScript modules** in DeepSift.
+Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **135 TypeScript modules** in DeepSift.
 
 ---
 
@@ -746,6 +746,13 @@ Executes the `deepsift search` command across single or multiple queries.
 
 #### `function statusCommand`
 Retrieves database state, total indexed files, chunk counts, and indexing timestamps.
+
+---
+
+## 📄 [`sync-ignore`](file:///packages/deepsift-core/src/cli/commands/sync-ignore.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/sync-ignore.ts`  
+- **Description:** Differentially purges ignored files and indexes new files based on updated ignore rules across all realms.
 
 ---
 

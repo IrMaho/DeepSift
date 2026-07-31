@@ -19,7 +19,7 @@ import { taintCommand } from './commands/taint.js';
 import { featureCommand } from './commands/feature.js';
 import { historyCommand, cleanHistoryCommand, drillCommand } from './commands/history.js';
 import { initCommand } from './commands/init.js';
-
+import { syncIgnoreCommand } from './commands/sync-ignore.js';
 import { watchCommand } from './commands/watch.js';
 import { configCommand } from './commands/config.js';
 import { dnaCommand } from './commands/dna.js';
@@ -104,6 +104,7 @@ const HELP_TEXT = `
                                     --sync                Synchronize index before searching (skipped by default)
                                     --verbose, -v         Show file indexing progress
   sync-hashes                   Fast-generate file-hashes.json for previously indexed projects without running a full AST re-index
+  sync-ignore                   Differentially purge ignored files and index new files based on updated .deepsiftignore (<500ms)
   index [--force]               Index/re-index the project
                                   Options:
                                     --verbose, -v         Show files being processed
@@ -454,7 +455,11 @@ async function main() {
                 await editCommand(projectPath, commandArgs[0], format);
                 break;
 
-            
+            case 'sync-ignore':
+                const verboseSync = commandArgs.includes('--verbose') || commandArgs.includes('-v');
+                await syncIgnoreCommand(projectPath, { format, verbose: verboseSync });
+                break;
+
             case 'sync-hashes': {
                 const { unifiedWalk } = await import('../core/unified-walker.js');
                 const cryptoSync = await import('crypto');

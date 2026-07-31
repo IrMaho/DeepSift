@@ -540,14 +540,7 @@ pub fn searchHybridNative(
             raw_score *= 0.01;
         }
 
-        const line_breaks = countTermFrequency(chunk_content, "\n");
-        const avg_line_length = if (line_breaks > 0) chunk_content.len / line_breaks else chunk_content.len;
 
-        const is_minified_or_bundle = (avg_line_length > 180) or (chunk_content.len > 25000 and line_breaks < 100);
-
-        if (is_minified_or_bundle) {
-            raw_score *= 0.01;
-        }
 
         m.rrf_score = raw_score;
         if (raw_score > max_raw_score) {

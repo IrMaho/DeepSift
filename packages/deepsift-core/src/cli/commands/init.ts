@@ -422,6 +422,8 @@ export async function initCommand(projectPath: string, reset: boolean = false) {
 
     const gitignorePath = path.join(projectPath, '.gitignore');
     injectGitignoreEntry(gitignorePath);
+    
+    injectDeepsiftIgnore(projectPath);
 
     const agentsDir = path.join(projectPath, '.agents', 'rules');
     if (!fs.existsSync(agentsDir)) {
@@ -546,5 +548,32 @@ function injectGitignoreEntry(gitignorePath: string) {
     } else {
         fs.writeFileSync(gitignorePath, `# DeepSift local cache\n${entry}\n`);
         printSuccess('Created .gitignore with .deepsift/ entry');
+    }
+}
+function injectDeepsiftIgnore(projectPath: string) {
+    const dsignorePath = path.join(projectPath, '.deepsiftignore');
+    const defaultIgnores = `
+node_modules/
+dist/
+build/
+out/
+web-remote/
+.dart_tool/
+*.min.js
+*.bundle.js
+*.map
+`;
+
+    let content = defaultIgnores.trim() + '\n';
+    
+    const gitignorePath = path.join(projectPath, '.gitignore');
+    if (fs.existsSync(gitignorePath)) {
+        content += '\n# Imported from .gitignore\n';
+        content += fs.readFileSync(gitignorePath, 'utf-8');
+    }
+
+    if (!fs.existsSync(dsignorePath)) {
+        fs.writeFileSync(dsignorePath, content, 'utf-8');
+        printSuccess('Created .deepsiftignore with default exclusions and .gitignore sync');
     }
 }
