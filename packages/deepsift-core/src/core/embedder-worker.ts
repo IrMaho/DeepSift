@@ -27,6 +27,11 @@ if (env.remoteHost === 'https://huggingface.co') {
     env.remoteHost = 'https://hf-mirror.com';
 }
 
+// Restrict ONNX WASM to 1 thread per worker to avoid CPU core contention across worker threads
+if ((env as any).backends?.onnx?.wasm) {
+    (env as any).backends.onnx.wasm.numThreads = 1;
+}
+
 let extractor: any = null;
 
 async function getExtractor() {
@@ -36,7 +41,7 @@ async function getExtractor() {
             try {
                 extractor = await pipeline('feature-extraction', 'Xenova/bge-base-en-v1.5', { 
                     quantized: true,
-                    session_options: { executionProviders: ['directml', 'wasm', 'cpu'] }
+                    session_options: { executionProviders: ['wasm', 'cpu'] }
                 } as any);
                 break;
             } catch (err: any) {

@@ -28,11 +28,11 @@ function normalizeL2(vector: Float32Array): Float32Array {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Limit workers to 2 to prevent GPU/DirectML Out-Of-Memory (OOM) on systems with many cores
-const NUM_WORKERS = Math.min(2, Math.max(1, os.cpus().length - 1));
+// Cap worker pool to 4 worker threads to prevent ONNX Runtime memory allocation overhead while maximizing throughput
+const NUM_WORKERS = Math.min(4, Math.max(2, os.cpus().length));
 const workerJs = path.join(__dirname, 'embedder-worker.js');
-const workerTs = path.join(__dirname, 'embedder-worker.ts');
-const workerPath = fs.existsSync(workerJs) ? workerJs : (fs.existsSync(workerTs) ? workerTs : workerJs);
+const distWorkerJs = path.resolve(__dirname, '../../dist/core/embedder-worker.js');
+const workerPath = fs.existsSync(workerJs) ? workerJs : (fs.existsSync(distWorkerJs) ? distWorkerJs : workerJs);
 
 let workers: Worker[] = [];
 let nextWorkerIndex = 0;
@@ -42,25 +42,6 @@ let initPromise: Promise<void> | null = null;
 
 async function doInitWorkers() {
     if (initialized) return;
-    try {
-        console.log('[DeepSift] Pre-downloading embedding model on main thread...');
-        await import('./disable-sharp.js');
-        const { pipeline, env } = await import('@xenova/transformers');
-        
-        // Use mirror if fetch fails due to network restrictions
-        if (env.remoteHost === 'https://huggingface.co') {
-            env.remoteHost = 'https://hf-mirror.com';
-        }
-
-        await pipeline('feature-extraction', 'Xenova/bge-base-en-v1.5', { 
-            quantized: true,
-            session_options: { executionProviders: ['directml', 'wasm', 'cpu'] }
-        } as any);
-        console.log('[DeepSift] Embedding model cached. Starting workers...');
-    } catch (err) {
-        console.warn('[DeepSift] Failed to pre-download model, workers will attempt to download:', err);
-    }
-    
     for (let i = 0; i < NUM_WORKERS; i++) {
         const worker = new Worker(workerPath);
         worker.on('error', (err) => {
@@ -68,6 +49,8 @@ async function doInitWorkers() {
         });
         worker.unref();
         workers.push(worker);
+        // Stagger worker creation to prevent N-API native addon race conditions during ONNX initialization
+        await new Promise(r => setTimeout(r, 250));
     }
     initialized = true;
     setupWorkerListeners();
@@ -138,8 +121,8 @@ export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
         throw new Error('Unreachable');
     }
 
-    const results: Float32Array[] = [];
-    const BATCH_SIZE = 16; // Reduced to 16 to prevent DirectML/GPU out-of-memory (OOM) errors during FusedMatMul
+    const BATCH_SIZE = 32;
+    const batchPromises: Promise<Float32Array[]>[] = [];
     
     for (let i = 0; i < texts.length; i += BATCH_SIZE) {
         const batch = texts.slice(i, i + BATCH_SIZE);
@@ -152,8 +135,13 @@ export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
         nextWorkerIndex = (nextWorkerIndex + 1) % workers.length;
         
         worker.postMessage({ id, texts: batch });
-        const batchResults = await p;
-        results.push(...batchResults);
+        batchPromises.push(p);
+    }
+    
+    const batchResultsArray = await Promise.all(batchPromises);
+    const results: Float32Array[] = [];
+    for (const resBatch of batchResultsArray) {
+        results.push(...resBatch);
     }
     
     return results;

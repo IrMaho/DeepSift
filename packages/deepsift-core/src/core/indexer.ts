@@ -212,7 +212,7 @@ export class Indexer {
 
                     const validChunks = allChunks.filter(c => typeof c.content === 'string' && c.content.trim().length > 0);
                     if (validChunks.length > 0) {
-                        const EMBED_BATCH = 16;
+                        const EMBED_BATCH = 32;
                         for (let j = 0; j < validChunks.length; j += EMBED_BATCH) {
                             const chunkSlice = validChunks.slice(j, j + EMBED_BATCH);
                             const embedFraction = (j + chunkSlice.length) / validChunks.length;
@@ -260,7 +260,7 @@ export class Indexer {
                 }
             }
 
-            const DB_BATCH_LIMIT = 200;
+            const DB_BATCH_LIMIT = 5000;
             if (batchOperations.length > 0) {
                 const totalBatches = Math.ceil(batchOperations.length / DB_BATCH_LIMIT);
                 for (let b = 0; b < batchOperations.length; b += DB_BATCH_LIMIT) {

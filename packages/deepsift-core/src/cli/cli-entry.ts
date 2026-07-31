@@ -488,6 +488,7 @@ async function main() {
             case 'i':
                 const force = commandArgs.includes('--force') || commandArgs.includes('-f');
                 const verboseIndex = commandArgs.includes('--verbose') || commandArgs.includes('-v');
+                const clean = commandArgs.includes('--clean') || commandArgs.includes('-c');
                 
                 const allRealmsIdx = commandArgs.indexOf('--all-realms');
                 const allRealms = allRealmsIdx !== -1;
@@ -503,7 +504,8 @@ async function main() {
                     format, 
                     verbose: verboseIndex,
                     realm,
-                    allRealms 
+                    allRealms,
+                    clean
                 });
                 break;
 
