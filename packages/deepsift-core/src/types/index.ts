@@ -51,6 +51,7 @@ export interface SearchQuery {
     filterPath?: string;
     fast?: boolean;
     skipRerank?: boolean;
+    rerankCandidates?: number;
 }
 
 export interface IndexStatus {

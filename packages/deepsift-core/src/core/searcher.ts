@@ -131,11 +131,13 @@ export class Searcher {
         candidates.sort((a, b) => b.score - a.score);
 
         const topScore = candidates[0]?.score || 0;
-        if (searchQuery.fast || searchQuery.skipRerank || topScore >= 0.50) {
+        if (searchQuery.fast || searchQuery.skipRerank || topScore >= 0.55) {
             return candidates.slice(0, topK);
         }
 
-        const topCandidates = candidates.slice(0, Math.min(15, candidates.length));
+        const count = searchQuery.rerankCandidates !== undefined ? searchQuery.rerankCandidates : 4;
+        if (count === 0) return candidates.slice(0, topK);
+        const topCandidates = candidates.slice(0, Math.min(count, candidates.length));
 
         try {
             const rerankerPayload = topCandidates.map(c => {

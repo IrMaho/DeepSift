@@ -32,6 +32,7 @@ export interface SearchOptions {
     noVisual?: boolean;
     limit?: number;
     fast?: boolean;
+    rerankCandidates?: number;
 }
 
 /**
