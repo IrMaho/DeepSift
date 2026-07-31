@@ -74,17 +74,15 @@ export class Indexer {
             const walkResult = await unifiedWalk(rootDir);
             const allFiles = walkResult.allFiles;
             
-            const allMetadata = forceReindex ? new Map() : await this.store.getAllMetadata();
+            const allMetadata = await this.store.getAllMetadata();
 
             const filesToProcess: string[] = [];
             const fileHashesJsonPath = path.join(rootDir, '.deepsift', 'file-hashes.json');
             let savedHashes: Record<string, string> = {};
-            if (!forceReindex) {
-                try {
-                    const data = (await import('fs')).readFileSync(fileHashesJsonPath, 'utf-8');
-                    savedHashes = JSON.parse(data);
-                } catch (e) {}
-            }
+            try {
+                const data = (await import('fs')).readFileSync(fileHashesJsonPath, 'utf-8');
+                savedHashes = JSON.parse(data);
+            } catch (e) {}
             const fileHashes = new Map<string, string>();
             const currentFilesSet = new Set(allFiles);
 
@@ -113,7 +111,7 @@ export class Indexer {
 
                     const existingMeta = allMetadata.get(file);
                     const savedHash = savedHashes[file];
-                    if (!forceReindex && (savedHash === hash || (existingMeta && existingMeta.fileHash === hash))) {
+                    if (savedHash === hash || (existingMeta && existingMeta.fileHash === hash)) {
                         continue;
                     }
                     savedHashes[file] = hash;

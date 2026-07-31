@@ -154,6 +154,34 @@ fn extractBasename(file_path: []const u8) []const u8 {
     return basename;
 }
 
+fn matchesFilterPath(file_path: []const u8, filter: []const u8) bool {
+    var start: usize = 0;
+    while (start < filter.len) {
+        var end = start;
+        while (end < filter.len and filter[end] != ',') {
+            end += 1;
+        }
+        const rule = filter[start..end];
+        if (rule.len > 0) {
+            var path_part: []const u8 = rule;
+            var ext_part: ?[]const u8 = null;
+            if (std.mem.indexOf(u8, rule, "|")) |idx| {
+                path_part = rule[0..idx];
+                ext_part = rule[idx + 1..];
+            }
+
+            const match_path = if (path_part.len > 0) std.mem.indexOf(u8, file_path, path_part) != null else true;
+            const match_ext = if (ext_part) |ext| std.mem.endsWith(u8, file_path, ext) else true;
+
+            if (match_path and match_ext) {
+                return true;
+            }
+        }
+        start = end + 1;
+    }
+    return false;
+}
+
 pub fn searchHybridNative(
     allocator: std.mem.Allocator,
     chunks: []const db.Chunk,
@@ -251,7 +279,7 @@ pub fn searchHybridNative(
         var set_it = candidate_set.keyIterator();
         while (set_it.next()) |key| {
             if (filter_path) |fp| {
-                if (std.mem.indexOf(u8, chunks[key.*].file_path, fp) == null) continue;
+                if (!matchesFilterPath(chunks[key.*].file_path, fp)) continue;
             }
             candidate_indices.appendAssumeCapacity(key.*);
         }
@@ -259,7 +287,7 @@ pub fn searchHybridNative(
         try candidate_indices.ensureTotalCapacity(allocator, chunks.len);
         for (0..chunks.len) |ci| {
             if (filter_path) |fp| {
-                if (std.mem.indexOf(u8, chunks[ci].file_path, fp) == null) continue;
+                if (!matchesFilterPath(chunks[ci].file_path, fp)) continue;
             }
             candidate_indices.appendAssumeCapacity(ci);
         }
@@ -497,25 +525,18 @@ pub fn searchHybridNative(
 
         const is_explicit_intent = c_type.len > 0 and containsInsensitive(query, c_type);
 
-        const is_json_or_html = std.mem.endsWith(u8, chunk_file, ".json") or std.mem.endsWith(u8, chunk_file, ".html");
         const is_type_file = std.mem.endsWith(u8, chunk_file, ".types.ts") or std.mem.endsWith(u8, chunk_file, ".d.ts");
         const is_explicit_type_query = containsInsensitive(query, "type") or containsInsensitive(query, "types") or containsInsensitive(query, "interface") or containsInsensitive(query, "definition");
+        const is_hook_query = containsInsensitive(query, "hook") or containsInsensitive(query, "hooks");
 
-        if (semantic_kind == 3 or is_json_or_html) {
-            // KIND_DATA (data, translations, configs, html)
-            const is_explicit_data = containsInsensitive(query, "translation") or containsInsensitive(query, "i18n") or containsInsensitive(query, "locale") or containsInsensitive(query, "dictionary") or containsInsensitive(query, "config") or containsInsensitive(query, "json") or containsInsensitive(query, "html") or containsInsensitive(query, "ui");
-            if (!is_explicit_data) {
-                raw_score *= 0.01;
-            } else {
-                raw_score *= 0.8;
-            }
-        } else if (semantic_kind == 2 or is_type_file) {
-            // KIND_TYPE_DEF (interface, struct, type)
-            if (is_explicit_intent or is_explicit_type_query) {
-                raw_score *= 3.0;
+        if (semantic_kind == 2 or is_type_file) {
+            if (is_explicit_type_query or is_explicit_intent) {
+                raw_score *= 5.0;
             } else {
                 raw_score *= 0.35;
             }
+        } else if (std.mem.eql(u8, c_type, "hook_definition") and is_hook_query) {
+            raw_score *= 5.0;
         } else if (semantic_kind == 1) {
             // KIND_LOGIC (functions, methods)
             raw_score *= (1.4 + (ast_density * 0.2));
@@ -533,6 +554,13 @@ pub fn searchHybridNative(
             raw_score *= 1.15;
         } else if (content_len < 20) {
             raw_score *= 0.5;
+        }
+
+        const is_data_asset = std.mem.endsWith(u8, chunk_file, ".json") or std.mem.endsWith(u8, chunk_file, ".html");
+        const is_explicit_translation = containsInsensitive(query, "translation") or containsInsensitive(query, "i18n");
+
+        if ((semantic_kind == 3 or is_data_asset) and !is_explicit_translation) {
+            raw_score *= 0.01;
         }
 
         m.rrf_score = raw_score;
