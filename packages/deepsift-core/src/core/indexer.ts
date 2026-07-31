@@ -168,11 +168,11 @@ export class Indexer {
                                 } catch (err) {
                                     console.error(`[DeepSift] Failed to parse AST for ${file}:`, err);
                                     const rawChunks = await this.store.extractChunksBulkNative([file]);
-                                    astChunks.push(...rawChunks.map((c:any)=>({id:c.id,filePath:c.file_path,content:c.content,startLine:c.start_line,endLine:c.end_line,type:c.type,family:c.family,language:c.language})));
+                                    astChunks.push(...rawChunks.map((c:any)=>({id:c.id,filePath:c.file_path,content:c.content,startLine:c.start_line,endLine:c.end_line,type:c.type,family:c.family,language:c.language,semanticKind:3})));
                                 }
                             } else {
                                 const rawChunks = await this.store.extractChunksBulkNative([file]);
-                                astChunks.push(...rawChunks.map((c:any)=>({id:c.id,filePath:c.file_path,content:c.content,startLine:c.start_line,endLine:c.end_line,type:c.type,family:c.family,language:c.language})));
+                                astChunks.push(...rawChunks.map((c:any)=>({id:c.id,filePath:c.file_path,content:c.content,startLine:c.start_line,endLine:c.end_line,type:c.type,family:c.family,language:c.language,semanticKind:3})));
                             }
                         }
                         allChunks.push(...astChunks);

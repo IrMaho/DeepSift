@@ -123,25 +123,6 @@ fn countMatchedTerms(content: []const u8, file_path: []const u8, terms: []const 
     return matched;
 }
 
-fn isDefinitionChunk(content: []const u8) bool {
-    const markers = [_][]const u8{
-        "function ",  "function(",
-        "class ",     "class{",
-        "interface ", "interface{",
-        "export ",    "export{",
-        "const ",     "let ",
-        "var ",       "type ",
-        "enum ",      "struct ",
-        "pub fn ",    "fn ",
-        "def ",       "async ",
-        "=>",         "module.",
-    };
-    for (markers) |marker| {
-        if (std.mem.indexOf(u8, content, marker) != null) return true;
-    }
-    return false;
-}
-
 fn extractBasename(file_path: []const u8) []const u8 {
     var last_sep: usize = 0;
     for (file_path, 0..) |c, i| {
@@ -511,10 +492,6 @@ pub fn searchHybridNative(
             raw_score *= 3.0; // Increase exact chunk match boost to dominate embeddings
         }
 
-        if (isDefinitionChunk(chunk_content)) {
-            raw_score *= 1.3;
-        }
-
         const chunk = chunks[m.chunk_index];
         const c_type = chunk.chunk_type;
         const semantic_kind = chunk.semantic_kind;
@@ -523,20 +500,20 @@ pub fn searchHybridNative(
         // Boost logic-heavy chunks agnostic to folder structure
         raw_score *= (1.0 + (ast_density * 2.0));
 
-        const is_explicit_intent = c_type.len > 0 and containsInsensitive(query, c_type);
+        const is_explicit_intent = (c_type.len > 0 and containsInsensitive(query, c_type)) or
+            containsInsensitive(query, "type") or 
+            containsInsensitive(query, "types") or 
+            containsInsensitive(query, "interface") or 
+            containsInsensitive(query, "definition") or
+            containsInsensitive(query, "schema") or
+            containsInsensitive(query, "struct");
 
-        const is_type_file = std.mem.endsWith(u8, chunk_file, ".types.ts") or std.mem.endsWith(u8, chunk_file, ".d.ts");
-        const is_explicit_type_query = containsInsensitive(query, "type") or containsInsensitive(query, "types") or containsInsensitive(query, "interface") or containsInsensitive(query, "definition");
-        const is_hook_query = containsInsensitive(query, "hook") or containsInsensitive(query, "hooks");
-
-        if (semantic_kind == 2 or is_type_file) {
-            if (is_explicit_type_query or is_explicit_intent) {
-                raw_score *= 5.0;
+        if (semantic_kind == 2) {
+            if (is_explicit_intent) {
+                raw_score *= 5.0; // Dynamic 5.0x boost for types when explicitly asked
             } else {
                 raw_score *= 0.35;
             }
-        } else if (std.mem.eql(u8, c_type, "hook_definition") and is_hook_query) {
-            raw_score *= 5.0;
         } else if (semantic_kind == 1) {
             // KIND_LOGIC (functions, methods)
             raw_score *= (1.4 + (ast_density * 0.2));
@@ -544,6 +521,7 @@ pub fn searchHybridNative(
                 raw_score *= 1.5;
             }
         }
+
 
         if (std.mem.eql(u8, c_type, "import")) {
             raw_score *= 0.1;
@@ -556,10 +534,9 @@ pub fn searchHybridNative(
             raw_score *= 0.5;
         }
 
-        const is_data_asset = std.mem.endsWith(u8, chunk_file, ".json") or std.mem.endsWith(u8, chunk_file, ".html");
-        const is_explicit_translation = containsInsensitive(query, "translation") or containsInsensitive(query, "i18n");
+        const is_explicit_translation = containsInsensitive(query, "translation") or containsInsensitive(query, "i18n") or containsInsensitive(query, "locale");
 
-        if ((semantic_kind == 3 or is_data_asset) and !is_explicit_translation) {
+        if ((semantic_kind == 3 or std.mem.eql(u8, c_type, "text")) and !is_explicit_translation) {
             raw_score *= 0.01;
         }
 
