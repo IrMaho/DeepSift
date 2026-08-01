@@ -1,9 +1,10 @@
-﻿const std = @import("std");
+const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    // 1. HPC Engine Executable
     const exe = b.addExecutable(.{
         .name = "deepsift-math",
         .root_module = b.createModule(.{

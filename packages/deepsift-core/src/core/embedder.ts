@@ -11,6 +11,7 @@ import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import { nativeBridge } from './mmap-bridge.js';
 
 function normalizeL2(vector: Float32Array): Float32Array {
     let sumOfSquares = 0;
@@ -108,15 +109,36 @@ function cacheVector(text: string, vector: Float32Array) {
  */
 export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
     if (texts.length === 0) return [];
+    
+    // اطمینان از اجرای Daemon بومی Zig
+    if (!(nativeBridge as any).isConnected) {
+        try {
+            await nativeBridge.startDaemon();
+        } catch (e) {
+            console.error("⚠️ [HPC] Daemon failed to start, falling back to JS-only mode.");
+        }
+    }
+    
     await initWorkers();
     
     const results: Float32Array[] = new Array(texts.length);
     const uncachedIndices: number[] = [];
+    const textHashes: string[] = new Array(texts.length);
 
-    // 1. Check exact content cache
+    // 1. Generate ultra-fast BLAKE3 hashes via IPC Native Bridge
     for (let i = 0; i < texts.length; i++) {
-        const text = texts[i];
-        const cached = embeddingCache.get(text);
+        if ((nativeBridge as any).isConnected) {
+            textHashes[i] = await nativeBridge.getChunkHash(texts[i]);
+        } else {
+            // Fallback
+            textHashes[i] = texts[i]; // Store raw string if Daemon is down
+        }
+    }
+
+    // 2. Check exact content cache using BLAKE3 Hash
+    for (let i = 0; i < texts.length; i++) {
+        const hash = textHashes[i];
+        const cached = embeddingCache.get(hash);
         if (cached) {
             results[i] = cached;
         } else {
@@ -128,6 +150,27 @@ export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
         return results;
     }
 
+    // -------------------------------------------------------------------------
+    // ⚡ HPC FAST PATH: DIRECTML / AVX-512 VIA ZIG DAEMON IPC
+    // -------------------------------------------------------------------------
+    if ((nativeBridge as any).isConnected) {
+        // We blast all uncached chunks through the binary socket natively.
+        // The Zig daemon will batch and process them on the GPU in milliseconds.
+        const nativePromises = uncachedIndices.map(async (origIdx) => {
+            const vec = await nativeBridge.getEmbeddingsNative(texts[origIdx]);
+            // Normalize L2 natively or here
+            const normVec = normalizeL2(vec);
+            const hash = textHashes[origIdx];
+            cacheVector(hash, normVec);
+            results[origIdx] = normVec;
+        });
+        await Promise.all(nativePromises);
+        return results;
+    }
+
+    // -------------------------------------------------------------------------
+    // 🐌 SLOW PATH FALLBACK: WASM / JAVASCRIPT WORKERS
+    // -------------------------------------------------------------------------
     // Fallback if no workers available
     if (workers.length === 0) {
         let retries = 5;
@@ -148,7 +191,8 @@ export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
                 const norm = raw.map(normalizeL2);
                 uncachedIndices.forEach((origIdx, i) => {
                     const vec = norm[i];
-                    cacheVector(texts[origIdx], vec);
+                    const hash = textHashes[origIdx];
+                    cacheVector(hash, vec);
                     results[origIdx] = vec;
                 });
                 return results;
@@ -191,7 +235,8 @@ export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
         const resBatch = batchResultsArray[batchIdx];
         batchItem.indices.forEach((origIdx, itemIdx) => {
             const vec = resBatch[itemIdx];
-            cacheVector(texts[origIdx], vec);
+            const hash = textHashes[origIdx];
+            cacheVector(hash, vec);
             results[origIdx] = vec;
         });
     });

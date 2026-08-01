@@ -25,7 +25,7 @@ web_index/
 paper_index/
 *.faiss
 *.npz
-
+plan
 # Models & Heavy Assets (DO NOT COMMIT)
 models/
 *.safetensors

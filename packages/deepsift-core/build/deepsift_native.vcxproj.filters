@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="..">
+      <UniqueIdentifier>{13ED4249-1F9C-5F0F-2651-29A73F3A7059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\native">
+      <UniqueIdentifier>{751DE1B9-2CA6-B33D-2A40-92CBD5B002F3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\native\napi">
+      <UniqueIdentifier>{D7FFD6C8-8412-61D2-CE1C-03A513832EDE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:">
+      <UniqueIdentifier>{F87FD356-0FEB-9BC5-D1FA-368C81420008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users">
+      <UniqueIdentifier>{707347A1-1ABA-A9B2-9AF4-DE122F5D7F08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\ASUS">
+      <UniqueIdentifier>{A38DB7EC-928F-6E7C-9EC5-EC94014F1329}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\ASUS\Desktop">
+      <UniqueIdentifier>{68E47669-79A8-F716-44A9-E89748D1EB03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\ASUS\Desktop\flutter_project">
+      <UniqueIdentifier>{0D598BAE-296A-5ABE-5066-2078D615C202}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\ASUS\Desktop\flutter_project\mcp_search">
+      <UniqueIdentifier>{7AC73346-7241-CDE4-E280-9FBC6BDC34C3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\ASUS\Desktop\flutter_project\mcp_search\packages">
+      <UniqueIdentifier>{E33AD0C5-736D-EEE6-A9CD-6C5371634868}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\ASUS\Desktop\flutter_project\mcp_search\packages\deepsift-core">
+      <UniqueIdentifier>{303271A9-25CB-3832-BB47-E7EEB55AA02C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\ASUS\Desktop\flutter_project\mcp_search\packages\deepsift-core\node_modules">
+      <UniqueIdentifier>{126A39EA-1D28-5689-C126-0DA0AB5837A0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\ASUS\Desktop\flutter_project\mcp_search\packages\deepsift-core\node_modules\node-gyp">
+      <UniqueIdentifier>{49558BB4-6D34-CA91-A65D-85A65792DC11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\ASUS\Desktop\flutter_project\mcp_search\packages\deepsift-core\node_modules\node-gyp\src">
+      <UniqueIdentifier>{F1003AD6-4B6D-45DF-3F56-5CAC869BF55E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..">
+      <UniqueIdentifier>{13ED4249-1F9C-5F0F-2651-29A73F3A7059}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\native\napi\binding.cc">
+      <Filter>..\native\napi</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\ASUS\Desktop\flutter_project\mcp_search\packages\deepsift-core\node_modules\node-gyp\src\win_delay_load_hook.cc">
+      <Filter>C:\Users\ASUS\Desktop\flutter_project\mcp_search\packages\deepsift-core\node_modules\node-gyp\src</Filter>
+    </ClCompile>
+    <None Include="..\binding.gyp">
+      <Filter>..</Filter>
+    </None>
+  </ItemGroup>
+</Project>

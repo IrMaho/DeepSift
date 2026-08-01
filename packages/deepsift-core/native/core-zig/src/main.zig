@@ -513,6 +513,55 @@ pub fn main(init: std.process.Init) !void {
     if (args_iter.next()) |cmd| {
         if (std.mem.eql(u8, cmd, "server")) {
             // we start the server loop below
+        } else if (std.mem.eql(u8, cmd, "--daemon")) {
+            // --- HPC IPC SERVER (STDIO BINARY PROTOCOL) ---
+            const stdin_file = std.Io.File.stdin();
+            const stdout_file = std.Io.File.stdout();
+            
+            // Note: Since std.Io in 0.16 is threaded, we need to pass an IO instance to read/write, but wait, std.Io.File has direct unbuffered methods?
+            // Actually, we can use the same threaded_io we setup at the top!
+            const io_inst = threaded_io.io();
+            var out_buf_d: [65536]u8 = undefined;
+            var writer_d = stdout_file.writer(io_inst, &out_buf_d);
+            
+            var in_buf_d: [65536]u8 = undefined;
+            var reader_d = stdin_file.reader(io_inst, &in_buf_d);
+
+            // Send ready signal so JS knows we are online
+            _ = try writer_d.interface.writeAll("DeepSift IPC Server listening\n");
+            try writer_d.flush();
+            
+            var header: [5]u8 = undefined;
+            while (true) {
+                reader_d.interface.readSliceAll(&header) catch break;
+                
+                const command = header[0];
+                const length = std.mem.readInt(u32, header[1..5], .little);
+                
+                const payload = allocator.alloc(u8, length) catch break;
+                defer allocator.free(payload);
+                
+                reader_d.interface.readSliceAll(payload) catch break;
+                
+                if (command == 0x01) {
+                    // HASH (CMD 0x01)
+                    const FastHash = @import("fast_hash.zig").FastHash;
+                    var out_hash: [64]u8 = undefined;
+                    FastHash.blake3_hex(payload, &out_hash);
+                    _ = writer_d.interface.writeAll(&out_hash) catch break;
+                    try writer_d.flush();
+                } else if (command == 0x02) {
+                    // INFERENCE (CMD 0x02)
+                    var mock_vec: [384]f32 = undefined;
+                    for (&mock_vec, 0..) |*item, i| {
+                        item.* = 0.001 * @as(f32, @floatFromInt(i));
+                    }
+                    const bytes = std.mem.sliceAsBytes(mock_vec[0..]);
+                    _ = writer_d.interface.writeAll(bytes) catch break;
+                    try writer_d.flush();
+                }
+            }
+            return;
         }
     }
 
