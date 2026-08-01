@@ -15,6 +15,9 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
+    // ONNX Runtime C API
+    exe.root_module.addIncludePath(b.path("vendor/onnxruntime/include"));
+
     // Tree-sitter core
     exe.root_module.addIncludePath(b.path("vendor/tree-sitter/lib/include"));
     exe.root_module.addIncludePath(b.path("vendor/tree-sitter/lib/src"));
