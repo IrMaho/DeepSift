@@ -509,11 +509,35 @@ pub fn main(init: std.process.Init) !void {
     var args_iter = try std.process.Args.Iterator.initAllocator(init.minimal.args, allocator);
     defer args_iter.deinit();
     _ = args_iter.next(); // skip exe
+    var model_path: []const u8 = "bin/bge-base-en-v1.5.onnx";
     
     if (args_iter.next()) |cmd| {
         if (std.mem.eql(u8, cmd, "server")) {
             // we start the server loop below
         } else if (std.mem.eql(u8, cmd, "--daemon")) {
+            
+            // Check for --model arg
+            while (args_iter.next()) |arg| {
+                if (std.mem.eql(u8, arg, "--model")) {
+                    if (args_iter.next()) |val| {
+                        model_path = val;
+                    }
+                }
+            }
+            
+            // Set CPU Thread Affinity to warm cache (Windows Only)
+            const builtin = @import("builtin");
+            if (builtin.os.tag == .windows) {
+                const win = std.os.windows;
+                const getProcess = struct {
+                    extern "kernel32" fn GetCurrentProcess() win.HANDLE;
+                    extern "kernel32" fn SetProcessAffinityMask(hProcess: win.HANDLE, dwProcessAffinityMask: usize) win.BOOL;
+                };
+                const process = getProcess.GetCurrentProcess();
+                // 0xFF means first 8 logical cores
+                _ = getProcess.SetProcessAffinityMask(process, 0xFF);
+            }
+
             // --- HPC IPC SERVER (STDIO BINARY PROTOCOL) ---
             const stdin_file = std.Io.File.stdin();
             const stdout_file = std.Io.File.stdout();
@@ -531,34 +555,79 @@ pub fn main(init: std.process.Init) !void {
             _ = try writer_d.interface.writeAll("DeepSift IPC Server listening\n");
             try writer_d.flush();
             
-            var header: [5]u8 = undefined;
+            const OnnxEngine = @import("onnx_engine.zig").OnnxEngine;
+            // Note: CWD for Node is `packages/deepsift-core` so `bin/...`
+            var onnx_engine = OnnxEngine.init(allocator, model_path, false) catch |err| {
+                std.log.err("Failed to init ONNX: {}", .{err});
+                return;
+            };
+            
             while (true) {
-                reader_d.interface.readSliceAll(&header) catch break;
+                var cmd_byte: [1]u8 = undefined;
+                reader_d.interface.readSliceAll(&cmd_byte) catch break;
+                const command = cmd_byte[0];
                 
-                const command = header[0];
-                const length = std.mem.readInt(u32, header[1..5], .little);
-                
-                const payload = allocator.alloc(u8, length) catch break;
-                defer allocator.free(payload);
-                
-                reader_d.interface.readSliceAll(payload) catch break;
-                
-                if (command == 0x01) {
-                    // HASH (CMD 0x01)
-                    const FastHash = @import("fast_hash.zig").FastHash;
-                    var out_hash: [64]u8 = undefined;
-                    FastHash.blake3_hex(payload, &out_hash);
-                    _ = writer_d.interface.writeAll(&out_hash) catch break;
-                    try writer_d.flush();
-                } else if (command == 0x02) {
-                    // INFERENCE (CMD 0x02)
-                    var mock_vec: [384]f32 = undefined;
-                    for (&mock_vec, 0..) |*item, i| {
-                        item.* = 0.001 * @as(f32, @floatFromInt(i));
+                if (command == 0x01 or command == 0x02) {
+                    var len_bytes: [4]u8 = undefined;
+                    reader_d.interface.readSliceAll(&len_bytes) catch break;
+                    const length = std.mem.readInt(u32, &len_bytes, .little);
+                    
+                    const payload = allocator.alloc(u8, length) catch break;
+                    defer allocator.free(payload);
+                    
+                    reader_d.interface.readSliceAll(payload) catch break;
+                    
+                    if (command == 0x01) {
+                        const FastHash = @import("fast_hash.zig").FastHash;
+                        var out_hash: [64]u8 = undefined;
+                        FastHash.blake3_hex(payload, &out_hash);
+                        _ = writer_d.interface.writeAll(&out_hash) catch break;
+                        try writer_d.flush();
+                    } else if (command == 0x02) {
+                        var vector_out: [768]f32 = undefined;
+                        const num_tokens = length / @sizeOf(i64);
+                        const tokens = try allocator.alloc(i64, num_tokens);
+                        defer allocator.free(tokens);
+                        @memcpy(std.mem.sliceAsBytes(tokens), payload[0..length]);
+                        
+                        onnx_engine.embed_chunk(tokens, &vector_out) catch |err| {
+                            std.log.err("embed_chunk failed: {}", .{err});
+                            break;
+                        };
+                        
+                        const bytes = std.mem.sliceAsBytes(vector_out[0..]);
+                        _ = writer_d.interface.writeAll(bytes) catch break;
+                        try writer_d.flush();
                     }
-                    const bytes = std.mem.sliceAsBytes(mock_vec[0..]);
+                } else if (command == 0x03) {
+                    var meta_bytes: [12]u8 = undefined;
+                    reader_d.interface.readSliceAll(&meta_bytes) catch break;
+                    const length = std.mem.readInt(u32, meta_bytes[0..4], .little);
+                    const batch_size = std.mem.readInt(u32, meta_bytes[4..8], .little);
+                    const seq_len = std.mem.readInt(u32, meta_bytes[8..12], .little);
+                    
+                    const payload = allocator.alloc(u8, length) catch break;
+                    defer allocator.free(payload);
+                    reader_d.interface.readSliceAll(payload) catch break;
+                    
+                    const num_tokens = length / @sizeOf(i64);
+                    const tokens = try allocator.alloc(i64, num_tokens);
+                    defer allocator.free(tokens);
+                    @memcpy(std.mem.sliceAsBytes(tokens), payload[0..length]);
+                    
+                    const vectors_out = try allocator.alloc(f32, batch_size * 768);
+                    defer allocator.free(vectors_out);
+                    
+                    onnx_engine.embed_batch(tokens, batch_size, seq_len, vectors_out) catch |err| {
+                        std.log.err("embed_batch failed: {}", .{err});
+                        break;
+                    };
+                    
+                    const bytes = std.mem.sliceAsBytes(vectors_out);
                     _ = writer_d.interface.writeAll(bytes) catch break;
                     try writer_d.flush();
+                } else {
+                    break;
                 }
             }
             return;

@@ -1,6 +1,6 @@
 # 📖 DeepSift Source Code API Reference
 
-Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **135 TypeScript modules** in DeepSift.
+Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **136 TypeScript modules** in DeepSift.
 
 ---
 
@@ -851,6 +851,13 @@ Terminate all running worker threads.
 
 #### `class Indexer`
 Scans workspace files, generates AST chunks, computes vector embeddings,
+
+---
+
+## 📄 [`mmap-bridge`](file:///packages/deepsift-core/src/core/mmap-bridge.ts)
+
+- **Path:** `packages/deepsift-core/src/core/mmap-bridge.ts`  
+- **Description:** TypeScript source module.
 
 ---
 

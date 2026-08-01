@@ -47,7 +47,7 @@ pub const DeepSiftDaemon = struct {
             .config = config,
             .active_graph = try graph.GraphDB.init(arena_alloc),
             .vector_index = try ivf.IVFIndex.init(arena_alloc, 128), // 128-dim vectors
-            .onnx_engine = try OnnxEngine.init("bge-base-en-v1.5.onnx", true), // GPU enabled
+            .onnx_engine = try OnnxEngine.init(allocator, "packages/deepsift-core/bin/bge-base-en-v1.5.onnx", true), // GPU enabled
             .bpe_tokenizer = try tokenizer.BpeTokenizer.init(allocator),
             .job_queue = try RingBuffer([]const u8).init(allocator, 1024),
             .is_running = std.atomic.Value(bool).init(false),
@@ -195,12 +195,17 @@ pub const DeepSiftDaemon = struct {
                 _ = conn.stream.writeAll(&hash_out) catch break;
             } else if (cmd == 0x02) {
                 // Command 0x02: Run ONNX Inference
-                var vector_out: [384]f32 = undefined;
-                // Note: The input should ideally be pre-tokenized tokens, not raw bytes.
-                // We mock token slicing for the architecture roadmap.
-                self.onnx_engine.embed_chunk(&[_]i64{101, 2023, 102}, &vector_out) catch break;
+                var vector_out: [768]f32 = undefined;
                 
-                // Return 1536 bytes (384 * 4) directly as binary
+                const num_tokens = length / @sizeOf(i64);
+                const tokens = std.mem.bytesAsSlice(i64, @as(*align(1) const [65536]u8, &buf)[0..length]);
+                
+                self.onnx_engine.embed_chunk(tokens, &vector_out) catch |err| {
+                    std.log.err("embed_chunk failed: {}", .{err});
+                    break;
+                };
+                
+                // Return 3072 bytes (768 * 4) directly as binary
                 const vector_bytes = std.mem.sliceAsBytes(vector_out[0..]);
                 _ = conn.stream.writeAll(vector_bytes) catch break;
             } else {

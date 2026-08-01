@@ -156,15 +156,15 @@ export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
     if ((nativeBridge as any).isConnected) {
         // We blast all uncached chunks through the binary socket natively.
         // The Zig daemon will batch and process them on the GPU in milliseconds.
-        const nativePromises = uncachedIndices.map(async (origIdx) => {
-            const vec = await nativeBridge.getEmbeddingsNative(texts[origIdx]);
-            // Normalize L2 natively or here
-            const normVec = normalizeL2(vec);
+        const uncachedTexts = uncachedIndices.map(idx => texts[idx]);
+        const vecs = await nativeBridge.getEmbeddingsNativeBatch(uncachedTexts);
+        for (let i = 0; i < uncachedIndices.length; i++) {
+            const origIdx = uncachedIndices[i];
+            const normVec = normalizeL2(vecs[i]);
             const hash = textHashes[origIdx];
             cacheVector(hash, normVec);
             results[origIdx] = normVec;
-        });
-        await Promise.all(nativePromises);
+        }
         return results;
     }
 
