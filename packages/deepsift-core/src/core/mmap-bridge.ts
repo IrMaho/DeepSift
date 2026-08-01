@@ -166,24 +166,23 @@ export class ZigDaemonBridge {
                 }
 
                 try {
-                    await this.ensureTokenizer();
-                    const tokenOutput = await this.tokenizer(texts, { padding: true, truncation: true, max_length: 512 });
-                    const tokenData = tokenOutput.input_ids.data;
-                    const tokenIds = new BigInt64Array(tokenData.length);
-                    for (let i = 0; i < tokenData.length; i++) {
-                        tokenIds[i] = BigInt(tokenData[i]);
-                    }
-                    
                     const batchSize = texts.length;
-                    const seqLen = tokenData.length / batchSize;
+                    const lengths = texts.map(t => Buffer.byteLength(t));
+                    const totalLen = lengths.reduce((a, b) => a + b, 0);
+                    const payload = Buffer.alloc(totalLen + 4 * batchSize);
                     
-                    const payload = Buffer.from(tokenIds.buffer, tokenIds.byteOffset, tokenIds.byteLength);
+                    let offset = 0;
+                    for (let i = 0; i < batchSize; i++) {
+                        payload.writeUInt32LE(lengths[i], offset);
+                        offset += 4;
+                        payload.write(texts[i], offset);
+                        offset += lengths[i];
+                    }
 
-                    const header = Buffer.alloc(13);
-                    header.writeUInt8(0x03, 0); // CMD 0x03 (Batch ONNX Inference)
+                    const header = Buffer.alloc(9);
+                    header.writeUInt8(0x04, 0); // CMD 0x04 (Native Tokenize + Batch Inference)
                     header.writeUInt32LE(payload.length, 1);
                     header.writeUInt32LE(batchSize, 5);
-                    header.writeUInt32LE(seqLen, 9);
 
                     let resultBuffer = Buffer.alloc(0);
                     const expectedBytes = batchSize * 768 * 4;

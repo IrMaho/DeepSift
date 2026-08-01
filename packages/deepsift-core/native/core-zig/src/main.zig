@@ -561,6 +561,13 @@ pub fn main(init: std.process.Init) !void {
                 std.log.err("Failed to init ONNX: {}", .{err});
                 return;
             };
+
+            const TokenizerImpl = @import("wordpiece.zig").Tokenizer;
+            var wordpiece_tokenizer = TokenizerImpl.init(allocator) catch |err| {
+                std.log.err("Failed to init Tokenizer: {}", .{err});
+                return;
+            };
+            defer wordpiece_tokenizer.deinit();
             
             while (true) {
                 var cmd_byte: [1]u8 = undefined;
@@ -614,6 +621,42 @@ pub fn main(init: std.process.Init) !void {
                     const tokens = try allocator.alloc(i64, num_tokens);
                     defer allocator.free(tokens);
                     @memcpy(std.mem.sliceAsBytes(tokens), payload[0..length]);
+                    
+                    const vectors_out = try allocator.alloc(f32, batch_size * 768);
+                    defer allocator.free(vectors_out);
+                    
+                    onnx_engine.embed_batch(tokens, batch_size, seq_len, vectors_out) catch |err| {
+                        std.log.err("embed_batch failed: {}", .{err});
+                        break;
+                    };
+                    
+                    const bytes = std.mem.sliceAsBytes(vectors_out);
+                    _ = writer_d.interface.writeAll(bytes) catch break;
+                    try writer_d.flush();
+                } else if (command == 0x04) {
+                    var meta_bytes: [8]u8 = undefined;
+                    reader_d.interface.readSliceAll(&meta_bytes) catch break;
+                    const length = std.mem.readInt(u32, meta_bytes[0..4], .little);
+                    const batch_size = std.mem.readInt(u32, meta_bytes[4..8], .little);
+                    
+                    const payload = allocator.alloc(u8, length) catch break;
+                    defer allocator.free(payload);
+                    reader_d.interface.readSliceAll(payload) catch break;
+                    
+                    const seq_len: u32 = 512;
+                    const tokens = try allocator.alloc(i64, batch_size * seq_len);
+                    defer allocator.free(tokens);
+                    
+                    var offset: usize = 0;
+                    var b: usize = 0;
+                    while (b < batch_size) : (b += 1) {
+                        const str_len = std.mem.readInt(u32, payload[offset..offset+4][0..4], .little);
+                        offset += 4;
+                        const str = payload[offset..offset+str_len];
+                        offset += str_len;
+                        
+                        _ = wordpiece_tokenizer.tokenize(str, seq_len, tokens[b*seq_len..(b+1)*seq_len]);
+                    }
                     
                     const vectors_out = try allocator.alloc(f32, batch_size * 768);
                     defer allocator.free(vectors_out);
