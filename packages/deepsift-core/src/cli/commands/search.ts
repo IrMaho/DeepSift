@@ -145,7 +145,7 @@ export function astSymbolFallback(projectPath: string, query: string): { file: s
     function scan(dir: string) {
         if (!fs.existsSync(dir) || matches.length > 50) return;
         let items: fs.Dirent[];
-        try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+        try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { /* Intentionally silent: directory may not be readable */ return; }
 
         for (const item of items) {
             if (item.name.startsWith('.') || IGNORED_DIRS.has(item.name.toLowerCase())) continue;
@@ -194,7 +194,11 @@ export function astSymbolFallback(projectPath: string, query: string): { file: s
                                 }
                             }
                         }
-                    } catch {}
+                    } catch (e: any) {
+                        if (process.env.DEEPSIFT_DEBUG) {
+                            console.error(`[deepsift] Failed to scan ${fullPath}: ${e.message}`);
+                        }
+                    }
                 }
             }
         }
@@ -250,7 +254,10 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
                 displayEndLine = Math.min(lines.length, res.chunk.endLine + options.contextLines);
                 
                 contentToDisplay = lines.slice(displayStartLine - 1, displayEndLine).join('\n');
-            } catch (err) {
+            } catch (err: any) {
+                if (process.env.DEEPSIFT_DEBUG) {
+                    console.error(`[deepsift] Failed to expand context lines for ${res.chunk.filePath}: ${err.message}`);
+                }
             }
         }
 

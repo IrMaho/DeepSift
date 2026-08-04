@@ -767,8 +767,11 @@ Reads source file contents, extracts line ranges (e.g. file.ts:10-50), and forma
 #### `interface SearchOptions`
 Executes vector semantic search, BM25 lexical retrieval, Graphify PageRank boosting,
 
-#### `function astSymbolFallback`
+#### `function searchCommand`
 Executes the `deepsift search` command across single or multiple queries.
+
+#### `function astSymbolFallback`
+Exported symbol.
 
 ---
 

@@ -83,19 +83,27 @@ export class Indexer {
                     const gitignorePath = path.join(rootDir, '.gitignore');
                     const gitignoreContent = await fs.readFile(gitignorePath, 'utf-8');
                     ig.add(gitignoreContent);
-                } catch (e) {}
+                } catch {
+                    // Intentionally silent: .gitignore may not exist
+                }
 
                 try {
                     const dsignorePath = path.join(rootDir, '.deepsiftignore');
                     const dsignoreContent = await fs.readFile(dsignorePath, 'utf-8');
                     ig.add(dsignoreContent);
-                } catch (e) {}
+                } catch {
+                    // Intentionally silent: .deepsiftignore may not exist
+                }
 
                 allFiles = allFiles.filter((file: string) => {
                     const relPath = path.relative(rootDir, file);
                     return !ig.ignores(relPath);
                 });
-            } catch(e) {}
+            } catch (e: any) {
+                if (process.env.DEEPSIFT_DEBUG) {
+                    console.error(`[deepsift] Error during ignore file filtering: ${e.message}`);
+                }
+            }
             
             const allMetadata = await this.store.getAllMetadata();
 
@@ -105,7 +113,9 @@ export class Indexer {
             try {
                 const data = (await import('fs')).readFileSync(fileHashesJsonPath, 'utf-8');
                 savedHashes = JSON.parse(data);
-            } catch (e) {}
+            } catch {
+                // Intentionally silent: file-hashes.json may not exist yet
+            }
             const fileHashes = new Map<string, string>();
             const currentFilesSet = new Set(allFiles);
 
@@ -140,8 +150,10 @@ export class Indexer {
                     savedHashes[file] = hash;
 
                     filesToProcess.push(file);
-                } catch (err) {
-                    // Safe ignore
+                } catch (err: any) {
+                    if (process.env.DEEPSIFT_DEBUG) {
+                        console.error(`[deepsift] Failed to compute hash/read for ${file}: ${err.message}`);
+                    }
                 }
             }
 

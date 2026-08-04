@@ -61,8 +61,8 @@ export class Searcher {
                     structuralWeights = new Map<string, number>();
                     dna.architecture.coreFiles.forEach((f: string) => structuralWeights!.set(f, 1.5));
                 }
-            } catch (e) {
-                // Ignore if DNA is not available
+            } catch {
+                // Intentionally silent: DNA file may not be available yet
             }
 
             const combined = applyRRF(semanticResults, keywordResults, 60, structuralWeights);

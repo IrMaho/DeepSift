@@ -210,6 +210,7 @@ export class PlannerEngine {
                 }
             }
         } catch {
+            // Intentionally silent: keyword search in realms is optional
         }
         return matches;
     }
@@ -240,9 +241,11 @@ export class PlannerEngine {
                         });
                     }
                 } catch {
+                    // Intentionally silent: searching individual doc realm is optional
                 }
             }
         } catch {
+            // Intentionally silent: cross-reference realms is optional
         }
         return insights;
     }

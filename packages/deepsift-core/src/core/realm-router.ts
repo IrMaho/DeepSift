@@ -78,8 +78,8 @@ export class RealmRouter {
             try {
                 const results = await this.searchRealm(rid, query);
                 allResults.push(...results);
-            } catch (e) {
-                // skip realm on error
+            } catch (e: any) {
+                console.error(`[deepsift:warn] searchRealm failed for realm ${rid}: ${e.message}`);
             }
         }
 

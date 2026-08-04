@@ -210,8 +210,8 @@ function logError(projectPath: string, command: string, args: string[], err: any
             const logEntry = `\n[${timestamp}] ERROR executing: ${cmdStr}\n${errMsg}\n----------------------------------------\n`;
             fs.appendFileSync(logPath, logEntry, 'utf-8');
         }
-    } catch (e) {
-        // Ignore logging errors
+    } catch {
+        // Intentionally silent: error log file may not be writable
     }
 }
 
@@ -765,7 +765,7 @@ async function main() {
                     printInfo(`\x1b[36m👉 Close them when task is done: deepsift memo close "<tag>"\x1b[0m`);
                 }
             } catch {
-                // Safe ignore
+                // Intentionally silent: DRM tags may not exist
             }
         }
         process.exit(0);
