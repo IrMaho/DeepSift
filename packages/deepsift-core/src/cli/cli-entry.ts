@@ -350,6 +350,8 @@ async function main() {
                 const verboseSearch = commandArgs.includes('--verbose') || commandArgs.includes('-v');
                 const allRealmsSearch = commandArgs.includes('--all-realms');
                 const noVisual = commandArgs.includes('--no-visual') || commandArgs.includes('--plain') || format === 'plain' || !compress;
+                const showContext = commandArgs.includes('--context');
+                const allResults = commandArgs.includes('--all');
                 
                 let filterPath: string | undefined;
                 const includeIdx = commandArgs.findIndex(arg => arg === '--include' || arg === '-i' || arg === '--path' || arg === '--scope');
@@ -371,7 +373,7 @@ async function main() {
                 }
 
                 let searchLimit: number | undefined;
-                const searchLimitIdx = commandArgs.findIndex(arg => arg === '--limit' || arg === '-l');
+                const searchLimitIdx = commandArgs.findIndex(arg => arg === '--limit' || arg === '-l' || arg === '--top');
                 if (searchLimitIdx !== -1 && commandArgs[searchLimitIdx + 1]) {
                     searchLimit = parseInt(commandArgs[searchLimitIdx + 1], 10);
                     if (isNaN(searchLimit)) searchLimit = undefined;
@@ -382,7 +384,7 @@ async function main() {
                     if (idx > 0 && (commandArgs[idx - 1] === '--include' || commandArgs[idx - 1] === '-i' || commandArgs[idx - 1] === '--path' || commandArgs[idx - 1] === '--scope')) return false;
                     if (idx > 0 && (commandArgs[idx - 1] === '--context-lines' || commandArgs[idx - 1] === '-C')) return false;
                     if (idx > 0 && commandArgs[idx - 1] === '--realm') return false;
-                    if (idx > 0 && (commandArgs[idx - 1] === '--limit' || commandArgs[idx - 1] === '-l')) return false;
+                    if (idx > 0 && (commandArgs[idx - 1] === '--limit' || commandArgs[idx - 1] === '-l' || commandArgs[idx - 1] === '--top')) return false;
                     return true;
                 });
                 
@@ -398,7 +400,9 @@ async function main() {
                     realm: searchRealm,
                     allRealms: allRealmsSearch,
                     noVisual,
-                    limit: searchLimit
+                    limit: searchLimit,
+                    showContext,
+                    allResults
                 });
                 break;
 

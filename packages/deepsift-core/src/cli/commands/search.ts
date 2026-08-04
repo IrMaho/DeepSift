@@ -33,6 +33,19 @@ export interface SearchOptions {
     limit?: number;
     fast?: boolean;
     rerankCandidates?: number;
+    showContext?: boolean;
+    allResults?: boolean;
+}
+
+function formatSnippet(content: string, filePath: string, startLine: number, endLine: number): string {
+    const lines = content.split('\n');
+    if (lines.length <= 50) {
+        return content;
+    }
+    const omittedCount = lines.length - 40;
+    const first30 = lines.slice(0, 30).join('\n');
+    const last10 = lines.slice(lines.length - 10).join('\n');
+    return `${first30}\n// ... (${omittedCount} lines omitted ? use 'deepsift read "${filePath}:${startLine}-${endLine}"' for full code) ...\n${last10}`;
 }
 
 /**
@@ -214,7 +227,7 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
         return;
     }
 
-    const displayLimit = options.limit || 8;
+    const displayLimit = options.limit ? options.limit : (options.allResults ? 15 : 1);
     const cappedResults = results.slice(0, displayLimit);
 
     const formattedResults = cappedResults.map((res: CrossRealmResult, i: number) => {
@@ -235,19 +248,24 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
             } catch (err) {
             }
         }
-        
-        const debugScores = (res.bm25Score !== undefined && res.vectorScore !== undefined) 
-            ? `, bm25: ${res.bm25Score.toFixed(3)}, vec: ${res.vectorScore.toFixed(3)}` 
-            : ``;
-        return `${i + 1}. [${res.realmId}] [${res.chunk.filePath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)}${debugScores}, match: ${res.matchType})\n   Type: ${res.chunk.type}\n   \`\`\`${res.chunk.language}\n${contentToDisplay}\n   \`\`\``;
+
+        const relPath = path.isAbsolute(res.chunk.filePath)
+            ? path.relative(projectPath, res.chunk.filePath).replace(/\\/g, '/')
+            : res.chunk.filePath.replace(/\\/g, '/');
+        const snippet = formatSnippet(contentToDisplay, relPath, displayStartLine, displayEndLine);
+        const realmTag = (res.realmId && res.realmId !== 'default' && res.realmId !== 'workspace') ? `[${res.realmId}] ` : '';
+        return `${i + 1}. ${realmTag}[${relPath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)})\n   \`\`\`${res.chunk.language}\n${snippet}\n   \`\`\``;
     }).join('\n\n');
 
-    const injector = new ContextInjector(projectPath);
-    const contextStr = injector.formatForOutput(await injector.inject([query]));
+    let contextStr = '';
+    if (options.showContext) {
+        const injector = new ContextInjector(projectPath);
+        contextStr = injector.formatForOutput(await injector.inject([query]));
+    }
 
-    let rawOutput = `${contextStr}Found ${results.length} relevant code sections${results.length > displayLimit ? ` (Showing top ${displayLimit}, pass --limit ${results.length} to view all)` : ''}:\n\n${formattedResults}`;
-    if (results.length > displayLimit) {
-        rawOutput += `\n\n💡 **Pagination Notice**: Showing top ${displayLimit} of ${results.length} results. Pass \`--limit ${results.length}\` to expand full list.`;
+    let rawOutput = `${contextStr}Found ${results.length} relevant code sections${results.length > displayLimit ? ` (Showing top ${displayLimit}, pass --top ${results.length} or --all to view all)` : ''}:\n\n${formattedResults}`;
+    if (results.length > displayLimit && !options.allResults) {
+        rawOutput += `\n\n?? **Pagination Notice**: Showing top ${displayLimit} of ${results.length} results. Pass \`--top 5\` or \`--all\` to expand full list.`;
     }
     let finalOutput = rawOutput;
     
@@ -316,10 +334,16 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
             continue;
         }
 
-        results.slice(0, options.limit || 5).forEach((res, idx) => {
+        const displayLimit = options.limit ? options.limit : (options.allResults ? 5 : 1);
+        results.slice(0, displayLimit).forEach((res, idx) => {
             const key = `${res.realmId}:${res.chunk.filePath}:${res.chunk.startLine}`;
             allResultsMap.set(key, res);
-            combinedOutput += `${idx + 1}. [${res.realmId}] [${res.chunk.filePath}:${res.chunk.startLine}-${res.chunk.endLine}] (score: ${res.score.toFixed(3)})\n   \`\`\`${res.chunk.language}\n${res.chunk.content.substring(0, 200)}...\n   \`\`\`\n`;
+            const relPath = path.isAbsolute(res.chunk.filePath)
+                ? path.relative(projectPath, res.chunk.filePath).replace(/\\/g, '/')
+                : res.chunk.filePath.replace(/\\/g, '/');
+            const snippet = formatSnippet(res.chunk.content, relPath, res.chunk.startLine, res.chunk.endLine);
+            const realmTag = (res.realmId && res.realmId !== 'default' && res.realmId !== 'workspace') ? `[${res.realmId}] ` : '';
+            combinedOutput += `${idx + 1}. ${realmTag}[${relPath}:${res.chunk.startLine}-${res.chunk.endLine}] (score: ${res.score.toFixed(3)})\n   \`\`\`${res.chunk.language}\n${snippet}\n   \`\`\`\n`;
         });
         combinedOutput += '\n';
     }
