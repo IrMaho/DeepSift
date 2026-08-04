@@ -8,7 +8,7 @@
  */
 import { generateDNA } from '../../intelligence/project-dna.js';
 import { minePatterns } from '../../analyzers/pattern-miner.js';
-import { printError, printResult } from '../cli-output.js';
+import { printError } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';
 import fs from 'fs';
 import path from 'path';

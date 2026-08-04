@@ -8,7 +8,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { printResult, printInfo, OutputFormat } from '../cli-output.js';
+import { printResult, OutputFormat } from '../cli-output.js';
 
 export function resolveCommand(projectPath: string, token: string, format: OutputFormat) {
     const outputsDir = path.join(projectPath, '.deepsift', 'outputs');

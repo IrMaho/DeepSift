@@ -1,5 +1,5 @@
 import { NativeStore } from '../../storage/native-store.js';
-import { printSuccess, printError, printInfo } from '../cli-output.js';
+import { printSuccess, printError } from '../cli-output.js';
 import path from 'path';
 
 export async function taintCommand(symbol: string, projectPath: string) {

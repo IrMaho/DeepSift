@@ -1,7 +1,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as net from 'net';
-import { env, AutoTokenizer } from '@xenova/transformers';
+import { AutoTokenizer } from '@xenova/transformers';
 
 export class ZigDaemonBridge {
     private daemonProcess: ChildProcess | null = null;

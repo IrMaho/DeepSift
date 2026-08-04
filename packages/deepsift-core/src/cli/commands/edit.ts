@@ -8,7 +8,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { printResult, printSuccess, printError, printInfo, OutputFormat } from '../cli-output.js';
+import { printSuccess, printInfo, OutputFormat } from '../cli-output.js';
 
 export interface EditOperation {
     type: 'search' | 'line';

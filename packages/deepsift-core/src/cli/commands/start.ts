@@ -6,7 +6,6 @@
  * @category Utilities & Dashboard
  * @since 1.0.0
  */
-import { printSuccess } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 
 export function startCommand(compress: boolean = true) {

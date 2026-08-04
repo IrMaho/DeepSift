@@ -8,7 +8,7 @@
  */
 import path from 'path';
 import { TypeResolver } from '../../analyzers/type-resolver.js';
-import { printHeader, printBox, printSuccess, printError } from '../cli-output.js';
+import { printHeader, printBox, printError } from '../cli-output.js';
 
 export async function expandTypeCommand(symbolName: string, options: { json?: boolean } = {}) {
     if (!symbolName) {

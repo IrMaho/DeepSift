@@ -9,7 +9,7 @@
 import fs from 'fs';
 import path from 'path';
 import { DiscoveredToken, TokenCluster, PropertyType } from '../types/dna-types.js';
-import { classifyToken, classifyValue } from './value-classifier.js';
+import { classifyToken } from './value-classifier.js';
 
 const ASSIGNMENT_PATTERNS: RegExp[] = [
     /(?:const|final|static|let|val|var|#define)\s+([\w.]+)\s*[=:]\s*(.+?)(?:[;,]|$)/,

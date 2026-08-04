@@ -6,7 +6,7 @@
  * @category Architecture & Intelligence
  * @since 1.0.3
  */
-import { GraphifyNode, GraphifyEdge, SubgraphResult } from './graph-types.js';
+import { GraphifyNode } from './graph-types.js';
 
 const QUERY_STOPWORDS = new Set([
     // English

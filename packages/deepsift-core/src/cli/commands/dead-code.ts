@@ -12,7 +12,6 @@ import path from 'path';
 import fs from 'fs';
 import { printResult, OutputFormat } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';
-import { normalizePath } from '../../utils/outline.js';
 
 /**
  * Executes the `deepsift dead-code` command to identify unreferenced export symbols.

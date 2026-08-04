@@ -8,7 +8,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { DependencyGraphData, GraphNode, GraphEdge, FileCluster } from '../types/dna-types.js';
+import { GraphNode, GraphEdge, FileCluster } from '../types/dna-types.js';
 import { isBundledOrMinifiedFile } from './entropy-filter.js';
 
 const IGNORED_DIRS = new Set([

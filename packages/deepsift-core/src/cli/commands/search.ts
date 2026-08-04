@@ -66,8 +66,6 @@ function formatSnippet(content: string, filePath: string, startLine: number, end
  * await searchCommand(process.cwd(), ['authentication store'], 'markdown', { limit: 10 });
  * ```
  */
-import { fileURLToPath } from 'url';
-
 export async function searchCommand(
     projectPath: string, 
     queries: string[], 

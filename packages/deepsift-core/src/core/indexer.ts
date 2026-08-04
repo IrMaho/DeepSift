@@ -9,7 +9,7 @@
  * @since 1.0.0
  */
 
-import { NativeStore, BatchOperation } from '../storage/native-store.js';
+import { NativeStore } from '../storage/native-store.js';
 import { parseSkillFile } from '../parsers/skill-parser.js';
 import { parseWithAst } from '../parsers/ast-chunker.js';
 import { getEmbeddings } from './embedder.js';
@@ -138,9 +138,6 @@ export class Indexer {
                         continue;
                     }
                     savedHashes[file] = hash;
-                    if (false) {
-                        continue;
-                    }
 
                     filesToProcess.push(file);
                 } catch (err) {

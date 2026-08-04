@@ -12,7 +12,6 @@ import { Indexer } from './indexer.js';
 import { SearchQuery, SearchResult } from '../types/index.js';
 import { getRealmDbPath, getRealmGraphPath, ensureRealmDir, DEFAULT_REALM } from '../cli/cli-paths.js';
 import { loadConfig, DeepSiftConfig, RealmDefinition } from '../utils/config.js';
-import { applyRRF } from '../utils/similarity.js';
 
 export interface CrossRealmResult extends SearchResult {
     realmId: string;
@@ -80,8 +79,7 @@ export class RealmRouter {
                 const results = await this.searchRealm(rid, query);
                 allResults.push(...results);
             } catch (e) {
-                console.error(`[DEBUG] Error in searchRealm for ${rid}:`, e);
-                // skip realm
+                // skip realm on error
             }
         }
 
