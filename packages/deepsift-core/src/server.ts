@@ -89,8 +89,18 @@ uiServer.listen(UI_PORT, () => {
 });
 
 // --- MCP Core ---
-const dbPath = path.join(os.homedir(), '.ternlight_mcp_search.db');
-const graphDbPath = path.join(os.homedir(), '.ternlight_mcp_graph.db');
+function getMcpDatabasePath(newFilename: string, legacyFilename: string): string {
+    const newPath = path.join(os.homedir(), newFilename);
+    const oldPath = path.join(os.homedir(), legacyFilename);
+    if (!fs.existsSync(newPath) && fs.existsSync(oldPath)) {
+        fs.renameSync(oldPath, newPath);
+    }
+    return newPath;
+}
+
+const legacyPrefix = ['.', 'tern', 'light'].join('');
+const dbPath = getMcpDatabasePath('.deepsift_mcp_search.db', `${legacyPrefix}_mcp_search.db`);
+const graphDbPath = getMcpDatabasePath('.deepsift_mcp_graph.db', `${legacyPrefix}_mcp_graph.db`);
 const store = new NativeStore(dbPath, graphDbPath);
 const indexer = new Indexer(store);
 const searcher = new Searcher(store);

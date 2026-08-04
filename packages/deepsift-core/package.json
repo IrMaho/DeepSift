@@ -1,7 +1,7 @@
 {
   "name": "deepsift",
   "version": "1.0.3",
-  "description": "Semantic Codebase Search — MCP Server + CLI Bridge for any IDE",
+  "description": "Semantic Codebase Search \u2014 MCP Server + CLI Bridge for any IDE",
   "type": "module",
   "main": "dist/server.js",
   "bin": {
@@ -35,7 +35,6 @@
     "@inquirer/prompts": "^8.5.2",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@napi-rs/canvas": "^0.1.53",
-    "@ternlight/base": "^0.1.0",
     "@xenova/transformers": "^2.17.2",
     "async-mutex": "^0.5.0",
     "ignore": "^7.0.6",
