@@ -59,7 +59,8 @@ export const DEFAULT_CONFIG: DeepSiftConfig = {
             ".cache", ".dart_tool", ".gradle", ".idea", ".vscode",
             ".deepsift", ".mcp_search_outputs",
             ".zig-cache", "zig-out",
-            "windows", "android", "ios", "linux", "macos", "web", "public"
+            "windows", "android", "ios", "linux", "macos", "web", "public",
+            "skills", "native", "docs", "test-sandbox", "test-sandbox-30", "templates", "bin", "scripts", "ai", "temp"
         ],
         includeExtensions: [],
         excludeExtensions: [

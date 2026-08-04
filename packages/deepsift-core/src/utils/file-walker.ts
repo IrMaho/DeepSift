@@ -33,6 +33,22 @@ const DEFAULT_IGNORES = [
     'temp',
     'bin',
     'ide_nab',
+    'skills',
+    'skills/**',
+    'native',
+    'native/**',
+    'docs',
+    'docs/**',
+    'test-sandbox',
+    'test-sandbox/**',
+    'test-sandbox-30',
+    'test-sandbox-30/**',
+    'templates',
+    'templates/**',
+    'scripts',
+    'scripts/**',
+    'ai',
+    'ai/**',
     '**/*.min.js',
     '**/*.map',
     '**/*.svg',
@@ -60,11 +76,6 @@ const DEFAULT_IGNORES = [
     '**/*.mp4',
     '**/*.avi',
     '**/*.mov',
-    '**/*.lock',
-    '**/package-lock.json',
-    '**/pnpm-lock.yaml',
-    '**/yarn.lock',
-    '**/bun.lockb',
     '**/*.dll',
     '**/*.pdb',
     '**/*.exe',
@@ -100,6 +111,14 @@ export async function getFiles(rootDir: string): Promise<string[]> {
         ig.add(gitignoreContent);
     } catch (err) {
         // Ignore if .gitignore doesn't exist
+    }
+
+    try {
+        const parentGitignorePath = path.resolve(rootDir, '../../.gitignore');
+        const parentGitignoreContent = await fs.readFile(parentGitignorePath, 'utf-8');
+        ig.add(parentGitignoreContent);
+    } catch (err) {
+        // Ignore if parent .gitignore doesn't exist
     }
 
     const config = loadConfig(rootDir);

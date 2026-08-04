@@ -352,9 +352,9 @@ export class NativeStore {
     }
 
     public async searchSemantic(embedding: number[] | Float32Array, topK: number = 20): Promise<SearchResult[]> {
-        const siftEmbedding = (embedding.length === 384)
+        const siftEmbedding = (embedding.length === 768)
             ? this.quantizeF32ToSift(embedding)
-            : this.quantizeF32ToSift(new Float32Array(384));
+            : this.quantizeF32ToSift(new Float32Array(768));
 
         const data = await this.executeAction<SearchRow[] | null>('searchSemantic', {
             queryEmbedding: siftEmbedding,

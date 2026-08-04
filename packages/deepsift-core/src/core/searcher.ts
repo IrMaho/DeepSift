@@ -39,34 +39,26 @@ export class Searcher {
     public async search(searchQuery: SearchQuery): Promise<SearchResult[]> {
         const { query, topK = 10, filterType, filterPath } = searchQuery;
         
-        let candidates: SearchResult[] = [];
-        
+        const keywordResultsRaw = await this.store.searchKeyword(query, 50);
+        const keywordResults = this.filterResults(keywordResultsRaw, filterType, filterPath);
+
         const queryVectorF32 = await getEmbedding(query);
-        const hybridNativeRaw = await this.store.searchHybridNative(query, queryVectorF32, 400);
-        if (hybridNativeRaw && hybridNativeRaw.length > 0) {
-            candidates = this.filterResults(hybridNativeRaw, filterType, filterPath);
-        }
-        
-        if (candidates.length === 0) {
-            const keywordResultsRaw = await this.store.searchKeyword(query, 50);
-            const keywordResults = this.filterResults(keywordResultsRaw, filterType, filterPath);
+        const semanticResultsRaw = await this.store.searchSemantic(queryVectorF32, 50);
+        const semanticResults = this.filterResults(semanticResultsRaw, filterType, filterPath);
 
-            const semanticResultsRaw = await this.store.searchSemantic(queryVectorF32, 50);
-            const semanticResults = this.filterResults(semanticResultsRaw, filterType, filterPath);
-
-            let structuralWeights: Map<string, number> | undefined;
-            try {
-                const dna = await loadDNA(process.cwd());
-                if (dna && dna.architecture && dna.architecture.coreFiles) {
-                    structuralWeights = new Map<string, number>();
-                    dna.architecture.coreFiles.forEach((f: string) => structuralWeights!.set(f, 1.5));
-                }
-            } catch {
-                // Intentionally silent: DNA file may not be available yet
+        let structuralWeights: Map<string, number> | undefined;
+        try {
+            const dna = await loadDNA(process.cwd());
+            if (dna && dna.architecture && dna.architecture.coreFiles) {
+                structuralWeights = new Map<string, number>();
+                dna.architecture.coreFiles.forEach((f: string) => structuralWeights!.set(f, 1.5));
             }
+        } catch {
+            // Intentionally silent: DNA file may not be available yet
+        }
 
-            const combined = applyRRF(semanticResults, keywordResults, 60, structuralWeights);
-            candidates = combined;
+        const combined = applyRRF(semanticResults, keywordResults, 60, structuralWeights);
+        let candidates = combined;
 
             const tokens = Searcher.tokenizeQuery(query);
             if (tokens.length >= 2) {
@@ -98,22 +90,22 @@ export class Searcher {
 
                     for (const t of tokens) {
                         if (filePathLower.includes(t)) {
-                            res.score += 0.50; // High bonus for path matches
+                            res.score += 0.10; // High bonus for path matches
                             matchedTokenCount++;
                         } else if (contentLower.includes(t)) {
-                            res.score += 0.10; // Medium bonus for content matches
+                            res.score += 0.03; // Medium bonus for content matches
                             matchedTokenCount++;
                         }
                     }
 
                     if (matchedTokenCount === tokens.length) {
-                        res.score += 0.50; // High bonus for full match
+                        res.score += 0.10; // High bonus for full match
                     }
                 }
 
                 const relaxedSorted = Array.from(relaxedResultsMap.values());
                 if (relaxedSorted.length > 0) {
-                    const merged = [...combined, ...relaxedSorted];
+                    const merged = [...candidates, ...relaxedSorted];
                     const seenIds = new Set<string>();
                     const deduplicated: SearchResult[] = [];
 
@@ -126,16 +118,15 @@ export class Searcher {
                     candidates = deduplicated;
                 }
             }
-        }
         
         candidates.sort((a, b) => b.score - a.score);
 
         const topScore = candidates[0]?.score || 0;
-        if (searchQuery.fast || searchQuery.skipRerank || topScore >= 0.55) {
+        if (searchQuery.fast || searchQuery.skipRerank || topScore >= 0.90) {
             return candidates.slice(0, topK);
         }
 
-        const count = searchQuery.rerankCandidates !== undefined ? searchQuery.rerankCandidates : 4;
+        const count = searchQuery.rerankCandidates !== undefined ? searchQuery.rerankCandidates : 8;
         if (count === 0) return candidates.slice(0, topK);
         const topCandidates = candidates.slice(0, Math.min(count, candidates.length));
 
