@@ -9,8 +9,15 @@
  */
 import path from 'path';
 import { parseGlobalFlags, printError, printInfo } from './cli-output.js';
-import { searchCommand } from './commands/search.js';
-import { indexCommand } from './commands/index-cmd.js';
+import {
+    handleSearchCommand,
+    handleIndexCommand,
+    handleReadCommand,
+    handleSedCommand,
+    handlePatchCommand,
+    handleSyncCommand,
+    handleConfigCommand
+} from './commands/routing/index.js';
 import { statusCommand } from './commands/status.js';
 import { archCommand } from './commands/arch.js';
 import { depsCommand } from './commands/deps.js';
@@ -19,9 +26,7 @@ import { taintCommand } from './commands/taint.js';
 import { featureCommand } from './commands/feature.js';
 import { historyCommand, cleanHistoryCommand, drillCommand } from './commands/history.js';
 import { initCommand } from './commands/init.js';
-import { syncIgnoreCommand } from './commands/sync-ignore.js';
 import { watchCommand } from './commands/watch.js';
-import { configCommand } from './commands/config.js';
 import { dnaCommand } from './commands/dna.js';
 import { analyzeCommand } from './commands/analyze.js';
 import { realmCommand } from './commands/realm-cmd.js';
@@ -29,9 +34,6 @@ import { compareCommand } from './commands/compare-cmd.js';
 import { scanCommand } from './commands/scan.js';
 import { resolveCommand } from './commands/resolve.js';
 import { contextCommand } from './commands/context.js';
-import { readCommand } from './commands/read.js';
-import { readFeatureCommand } from './commands/read-feature.js';
-import { editCommand } from './commands/edit.js';
 import { comCommand } from './commands/com.js';
 import { planCommand } from './commands/plan.js';
 import { healCommand } from './commands/heal.js';
@@ -49,7 +51,6 @@ import { schemaDriftCommand } from './commands/schema-drift.js';
 import { patchDriftCommand } from './commands/patch-drift.js';
 import { deadCodeCommand } from './commands/dead-code.js';
 import { autoHealCommand } from './commands/auto-heal.js';
-import { cfgCommand } from './commands/cfg.js';
 import { checkLayersCommand } from './commands/check-layers.js';
 import { wireTraceCommand } from './commands/wire-trace.js';
 import { complexityCommand } from './commands/complexity.js';
@@ -59,13 +60,11 @@ import { genTestCommand } from './commands/gen-test.js';
 import { genAdrCommand } from './commands/gen-adr.js';
 import { expandTypeCommand } from './commands/expand-type.js';
 import { executiveSummaryCommand } from './commands/executive-summary.js';
-import { zoomCommand } from './commands/zoom.js';
 import { resolveErrorCommand } from './commands/resolve-error.js';
 import { launchWebDashboard } from '../ui/web-dashboard.js';
 import { impactCommand } from './commands/impact.js';
 import { planUiCommand } from './commands/plan-ui.js';
 import { docgenCommand } from './commands/docgen.js';
-import { learnCommand } from './commands/learn.js';
 import { QAGenerator } from '../analyzers/qa-generator.js';
 import { GitChurnMiner } from '../analyzers/git-churn-miner.js';
 import { terminateWorkers } from '../core/embedder.js';
@@ -247,7 +246,7 @@ async function main() {
                 break;
 
             case 'config':
-                await configCommand(projectPath);
+                await handleConfigCommand('config', commandArgs, projectPath, format, compress);
                 break;
 
             case 'dna': {
@@ -346,104 +345,21 @@ async function main() {
 
             case 'search':
             case 's':
-                const skipSync = !commandArgs.includes('--sync');
-                const verboseSearch = commandArgs.includes('--verbose') || commandArgs.includes('-v');
-                const allRealmsSearch = commandArgs.includes('--all-realms');
-                const noVisual = commandArgs.includes('--no-visual') || commandArgs.includes('--plain') || format === 'plain' || !compress;
-                const showContext = commandArgs.includes('--context');
-                const allResults = commandArgs.includes('--all');
-                
-                let filterPath: string | undefined;
-                const includeIdx = commandArgs.findIndex(arg => arg === '--include' || arg === '-i' || arg === '--path' || arg === '--scope');
-                if (includeIdx !== -1 && commandArgs[includeIdx + 1]) {
-                    filterPath = commandArgs[includeIdx + 1];
-                }
-
-                let contextLines: number | undefined;
-                const contextIdx = commandArgs.findIndex(arg => arg === '--context-lines' || arg === '-C');
-                if (contextIdx !== -1 && commandArgs[contextIdx + 1]) {
-                    contextLines = parseInt(commandArgs[contextIdx + 1], 10);
-                    if (isNaN(contextLines)) contextLines = undefined;
-                }
-                
-                let searchRealm: string | undefined = undefined;
-                const searchRealmIdx = commandArgs.indexOf('--realm');
-                if (searchRealmIdx !== -1 && searchRealmIdx + 1 < commandArgs.length) {
-                    searchRealm = commandArgs[searchRealmIdx + 1];
-                }
-
-                let searchLimit: number | undefined;
-                const searchLimitIdx = commandArgs.findIndex(arg => arg === '--limit' || arg === '-l' || arg === '--top');
-                if (searchLimitIdx !== -1 && commandArgs[searchLimitIdx + 1]) {
-                    searchLimit = parseInt(commandArgs[searchLimitIdx + 1], 10);
-                    if (isNaN(searchLimit)) searchLimit = undefined;
-                }
-
-                const searchQueries = commandArgs.filter((arg, idx) => {
-                    if (arg.startsWith('-')) return false;
-                    if (idx > 0 && (commandArgs[idx - 1] === '--include' || commandArgs[idx - 1] === '-i' || commandArgs[idx - 1] === '--path' || commandArgs[idx - 1] === '--scope')) return false;
-                    if (idx > 0 && (commandArgs[idx - 1] === '--context-lines' || commandArgs[idx - 1] === '-C')) return false;
-                    if (idx > 0 && commandArgs[idx - 1] === '--realm') return false;
-                    if (idx > 0 && (commandArgs[idx - 1] === '--limit' || commandArgs[idx - 1] === '-l' || commandArgs[idx - 1] === '--top')) return false;
-                    return true;
-                });
-                
-                if (searchQueries.length === 0) {
-                    throw new Error('Please provide at least one search query.\nUsage: deepsift search "your query"');
-                }
-                await searchCommand(projectPath, searchQueries, format, {
-                    skipSync,
-                    verbose: verboseSearch,
-                    filterPath,
-                    compress,
-                    contextLines,
-                    realm: searchRealm,
-                    allRealms: allRealmsSearch,
-                    noVisual,
-                    limit: searchLimit,
-                    showContext,
-                    allResults
-                });
+                await handleSearchCommand(commandArgs, projectPath, format, compress);
                 break;
 
             case 'read':
-                if (commandArgs.length === 0) {
-                    throw new Error('Please provide at least one target file.\nUsage: deepsift read "src/file.ts" or "src/file.ts:10-50"');
-                }
-                const targets = commandArgs.filter((arg) => !arg.startsWith('-'));
-                await readCommand(projectPath, targets, format, compress);
+                await handleReadCommand(commandArgs, projectPath, format, compress, false);
                 break;
 
             case 'read-feature':
             case 'rf':
-                if (commandArgs.length === 0) {
-                    throw new Error('Please provide a feature path.\nUsage: deepsift read-feature "src/path"');
-                }
-                await readFeatureCommand(projectPath, commandArgs[0], format, compress);
+                await handleReadCommand(commandArgs, projectPath, format, compress, true);
                 break;
 
-            case 'sed': {
-                const searchIdx = commandArgs.indexOf('--search');
-                const replaceIdx = commandArgs.indexOf('--replace');
-                
-                if (searchIdx === -1 || replaceIdx === -1) {
-                    throw new Error('Usage: deepsift sed <file_pattern> --search "text" --replace "replacement"');
-                }
-                
-                const searchStr = commandArgs[searchIdx + 1];
-                const replaceStr = commandArgs[replaceIdx + 1];
-                
-                const filePatterns = commandArgs.slice(0, searchIdx).filter(arg => !arg.startsWith('-'));
-                
-                const sedOptions = {
-                    all: commandArgs.includes('--all') || commandArgs.includes('-a'),
-                    dryRun: commandArgs.includes('--dry-run')
-                };
-                
-                const { sedCommand } = await import('./commands/sed.js');
-                await sedCommand(searchStr, replaceStr, filePatterns, sedOptions);
+            case 'sed':
+                await handleSedCommand(commandArgs);
                 break;
-            }
 
             case 'pipe': {
                 const { pipeCommand } = await import('./commands/pipe.js');
@@ -453,64 +369,20 @@ async function main() {
             case 'edit':
             case 'e':
             case 'patch':
-                if (commandArgs.length === 0) {
-                    throw new Error('Please provide a path to a patch file.\nUsage: deepsift patch "patch.json"');
-                }
-                await editCommand(projectPath, commandArgs[0], format);
+                await handlePatchCommand(commandArgs, projectPath, format);
                 break;
 
             case 'sync-ignore':
-                const verboseSync = commandArgs.includes('--verbose') || commandArgs.includes('-v');
-                await syncIgnoreCommand(projectPath, { format, verbose: verboseSync });
+                await handleSyncCommand('sync-ignore', commandArgs, projectPath, format);
                 break;
 
-            case 'sync-hashes': {
-                const { unifiedWalk } = await import('../core/unified-walker.js');
-                const cryptoSync = await import('crypto');
-                const fsSync = await import('fs');
-                const fileHashesJsonPath = path.join(projectPath, '.deepsift', 'file-hashes.json');
-                console.log('Generating file-hashes.json...');
-                const walkResultSync = await unifiedWalk(projectPath);
-                let newHashes: Record<string, string> = {};
-                let count = 0;
-                for (const file of walkResultSync.allFiles) {
-                    try {
-                        const stat = fsSync.statSync(file);
-                        if (stat.size > 1024 * 1024) continue;
-                        const fileContent = fsSync.readFileSync(file, 'utf-8');
-                        newHashes[file] = cryptoSync.createHash('md5').update(fileContent).digest('hex');
-                        count++;
-                    } catch(e) {}
-                }
-                fsSync.mkdirSync(path.dirname(fileHashesJsonPath), { recursive: true });
-                fsSync.writeFileSync(fileHashesJsonPath, JSON.stringify(newHashes, null, 2), 'utf-8');
-                console.log(`✅ file-hashes.json successfully generated with ${count} files without re-indexing!`);
+            case 'sync-hashes':
+                await handleSyncCommand('sync-hashes', commandArgs, projectPath, format);
                 break;
-            }
 
             case 'index':
             case 'i':
-                const force = commandArgs.includes('--force') || commandArgs.includes('-f');
-                const verboseIndex = commandArgs.includes('--verbose') || commandArgs.includes('-v');
-                const clean = commandArgs.includes('--clean') || commandArgs.includes('-c');
-                
-                const allRealmsIdx = commandArgs.indexOf('--all-realms');
-                const allRealms = allRealmsIdx !== -1;
-                
-                const realmFlagIdx = commandArgs.indexOf('--realm');
-                let realm: string | undefined = undefined;
-                if (realmFlagIdx !== -1 && realmFlagIdx + 1 < commandArgs.length) {
-                    realm = commandArgs[realmFlagIdx + 1];
-                }
-
-                await indexCommand(projectPath, { 
-                    force, 
-                    format, 
-                    verbose: verboseIndex,
-                    realm,
-                    allRealms,
-                    clean
-                });
+                await handleIndexCommand(commandArgs, projectPath, format, compress);
                 break;
 
             case 'watch':
@@ -715,10 +587,7 @@ async function main() {
                 break;
 
             case 'cfg':
-                if (commandArgs.length === 0) {
-                    throw new Error('Please provide a file:symbol target.\nUsage: deepsift cfg "file.ts:myFunction"');
-                }
-                await cfgCommand(projectPath, commandArgs[0], format);
+                await handleConfigCommand('cfg', commandArgs, projectPath, format, compress);
                 break;
 
             case 'check-layers':
@@ -731,11 +600,7 @@ async function main() {
                 break;
 
             case 'learn':
-                await learnCommand(projectPath, commandArgs[0] || '');
-                break;
-
-            case 'learn':
-                await learnCommand(projectPath, commandArgs[0] || '');
+                await handleConfigCommand('learn', commandArgs, projectPath, format, compress);
                 break;
 
             case 'decode':
@@ -781,12 +646,6 @@ async function main() {
                 await docgenCommand(projectPath, format);
                 break;
 
-            case 'cfg':
-                if (commandArgs.length === 0) {
-                    throw new Error('Please provide a file and scope.\nUsage: deepsift cfg "src/utils.ts:myFunction"');
-                }
-                await cfgCommand(projectPath, commandArgs[0], format);
-                break;
 
             case 'dead-code':
             case 'find-dead-code':
@@ -839,7 +698,7 @@ async function main() {
                 break;
 
             case 'zoom':
-                await zoomCommand(commandArgs[0], { json: format === 'json' });
+                await handleConfigCommand('zoom', commandArgs, projectPath, format, compress);
                 break;
 
             case 'resolve-error':
@@ -873,10 +732,6 @@ async function main() {
                 await planUiCommand(projectPath, commandArgs[0] || 'New UI Feature', format);
                 break;
 
-            case 'zoom':
-                if (commandArgs.length === 0) throw new Error('Specify a folder to zoom. Usage: deepsift zoom "src/features/auth"');
-                await analyzeCommand(projectPath, commandArgs[0], format, compress);
-                break;
 
             case 'memo':
             case 'm': {

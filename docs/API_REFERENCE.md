@@ -1,6 +1,6 @@
 # 📖 DeepSift Source Code API Reference
 
-Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **136 TypeScript modules** in DeepSift.
+Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **144 TypeScript modules** in DeepSift.
 
 ---
 
@@ -677,6 +677,62 @@ Reads source file contents, extracts line ranges (e.g. file.ts:10-50), and forma
 
 - **Path:** `packages/deepsift-core/src/cli/commands/resolve.ts`  
 - **Description:** Import and symbol path resolver across workspace files.
+
+---
+
+## 📄 [`config`](file:///packages/deepsift-core/src/cli/commands/routing/config.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/config.ts`  
+- **Description:** TypeScript source module.
+
+---
+
+## 📄 [`index-cmd`](file:///packages/deepsift-core/src/cli/commands/routing/index-cmd.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/index-cmd.ts`  
+- **Description:** TypeScript source module.
+
+---
+
+## 📄 [`index`](file:///packages/deepsift-core/src/cli/commands/routing/index.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/index.ts`  
+- **Description:** TypeScript source module.
+
+---
+
+## 📄 [`patch`](file:///packages/deepsift-core/src/cli/commands/routing/patch.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/patch.ts`  
+- **Description:** TypeScript source module.
+
+---
+
+## 📄 [`read`](file:///packages/deepsift-core/src/cli/commands/routing/read.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/read.ts`  
+- **Description:** TypeScript source module.
+
+---
+
+## 📄 [`search`](file:///packages/deepsift-core/src/cli/commands/routing/search.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/search.ts`  
+- **Description:** TypeScript source module.
+
+---
+
+## 📄 [`sed`](file:///packages/deepsift-core/src/cli/commands/routing/sed.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/sed.ts`  
+- **Description:** TypeScript source module.
+
+---
+
+## 📄 [`sync`](file:///packages/deepsift-core/src/cli/commands/routing/sync.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/sync.ts`  
+- **Description:** TypeScript source module.
 
 ---
 
