@@ -159,65 +159,51 @@ export class ZigDaemonBridge {
 
     public async getEmbeddingsNativeBatch(texts: string[]): Promise<Float32Array[]> {
         if (texts.length === 0) return [];
-        return new Promise((resolve, reject) => {
-            this.requestQueue = this.requestQueue.then(async () => {
-                if (!this.daemonProcess || !this.isConnected) {
-                    return reject(new Error("Daemon is not connected"));
-                }
+        if (!this.daemonProcess || !this.isConnected) {
+            throw new Error("Daemon is not connected");
+        }
 
-                try {
-                    const batchSize = texts.length;
-                    const lengths = texts.map(t => Buffer.byteLength(t));
-                    const totalLen = lengths.reduce((a, b) => a + b, 0);
-                    const payload = Buffer.alloc(totalLen + 4 * batchSize);
-                    
-                    let offset = 0;
-                    for (let i = 0; i < batchSize; i++) {
-                        payload.writeUInt32LE(lengths[i], offset);
-                        offset += 4;
-                        payload.write(texts[i], offset);
-                        offset += lengths[i];
+        const batchSize = texts.length;
+        const lengths = texts.map(t => Buffer.byteLength(t));
+        const totalLen = lengths.reduce((a, b) => a + b, 0);
+        const payload = Buffer.alloc(totalLen + 4 * batchSize);
+
+        let offset = 0;
+        for (let i = 0; i < batchSize; i++) {
+            payload.writeUInt32LE(lengths[i], offset);
+            offset += 4;
+            payload.write(texts[i], offset);
+            offset += lengths[i];
+        }
+
+        const header = Buffer.alloc(9);
+        header.writeUInt8(0x04, 0);
+        header.writeUInt32LE(payload.length, 1);
+        header.writeUInt32LE(batchSize, 5);
+
+        let resultBuffer = Buffer.alloc(0);
+        const expectedBytes = batchSize * 768 * 4;
+
+        return new Promise<Float32Array[]>((resolve, reject) => {
+            const onData = (data: Buffer) => {
+                resultBuffer = Buffer.concat([resultBuffer, data]);
+                if (resultBuffer.length >= expectedBytes) {
+                    this.daemonProcess?.stdout?.off('data', onData);
+                    const vectors: Float32Array[] = [];
+                    for (let b = 0; b < batchSize; b++) {
+                        vectors.push(new Float32Array(resultBuffer.buffer, resultBuffer.byteOffset + b * 768 * 4, 768));
                     }
-
-                    const header = Buffer.alloc(9);
-                    header.writeUInt8(0x04, 0); // CMD 0x04 (Native Tokenize + Batch Inference)
-                    header.writeUInt32LE(payload.length, 1);
-                    header.writeUInt32LE(batchSize, 5);
-
-                    let resultBuffer = Buffer.alloc(0);
-                    const expectedBytes = batchSize * 768 * 4;
-
-                    await new Promise<void>((innerResolve) => {
-                        const onData = (data: Buffer) => {
-                            resultBuffer = Buffer.concat([resultBuffer, data]);
-                            if (resultBuffer.length >= expectedBytes) {
-                                if (this.daemonProcess?.stdout) {
-                                    this.daemonProcess.stdout.off('data', onData);
-                                }
-                                
-                                const vectors: Float32Array[] = [];
-                                for (let b = 0; b < batchSize; b++) {
-                                    const vec = new Float32Array(resultBuffer.buffer, resultBuffer.byteOffset + (b * 768 * 4), 768);
-                                    vectors.push(vec);
-                                }
-                                resolve(vectors);
-                                innerResolve();
-                            }
-                        };
-                        
-                        if (this.daemonProcess?.stdout && this.daemonProcess?.stdin) {
-                            this.daemonProcess.stdout.on('data', onData);
-                            this.daemonProcess.stdin.write(header);
-                            this.daemonProcess.stdin.write(payload);
-                        } else {
-                            reject(new Error("Daemon stdio pipes not available"));
-                            innerResolve();
-                        }
-                    });
-                } catch (e) {
-                    reject(e);
+                    resolve(vectors);
                 }
-            }).catch(reject);
+            };
+
+            if (this.daemonProcess?.stdout && this.daemonProcess?.stdin) {
+                this.daemonProcess.stdout.on('data', onData);
+                this.daemonProcess.stdin.write(header);
+                this.daemonProcess.stdin.write(payload);
+            } else {
+                reject(new Error("Daemon stdio pipes not available"));
+            }
         });
     }
 }

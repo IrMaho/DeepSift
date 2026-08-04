@@ -1,0 +1,69 @@
+node_modules/
+dist/
+build/
+out/
+web-remote/
+.dart_tool/
+*.min.js
+*.bundle.js
+*.map
+
+# Imported from .gitignore
+# Node
+node_modules/
+dist/
+.npm-cache/
+.npmrc
+test
+# DeepSift core & output
+.deepsift/
+.agents.zip
+temp/
+Output/
+release/
+bin/
+ai/
+
+# Python & PixelRAG (deepsift-vision)
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+web_index/
+paper_index/
+*.faiss
+*.npz
+plan
+# Models & Heavy Assets (DO NOT COMMIT)
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.onnx
+
+# Tools & Local Environment
+.tools/
+.node-portable
+.env
+
+# Native / Zig Build Artifacts
+.zig-cache/
+zig-out/
+*.exe
+*.pdb
+*.obj
+*.dll
+*.so
+*.dylib
+
+# Databases
+*.db
+*.db-journal
+*.sqlite3
+
+Loading DeepSift Custom Skills.md
+

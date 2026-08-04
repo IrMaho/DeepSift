@@ -638,34 +638,47 @@ pub fn main(init: std.process.Init) !void {
                     reader_d.interface.readSliceAll(&meta_bytes) catch break;
                     const length = std.mem.readInt(u32, meta_bytes[0..4], .little);
                     const batch_size = std.mem.readInt(u32, meta_bytes[4..8], .little);
-                    
+
                     const payload = allocator.alloc(u8, length) catch break;
                     defer allocator.free(payload);
                     reader_d.interface.readSliceAll(payload) catch break;
-                    
-                    const seq_len: u32 = 512;
-                    const tokens = try allocator.alloc(i64, batch_size * seq_len);
-                    defer allocator.free(tokens);
-                    
+
+                    const vectors_out = try allocator.alloc(f32, batch_size * 768);
+                    defer allocator.free(vectors_out);
+
                     var offset: usize = 0;
                     var b: usize = 0;
+                    var failed = false;
                     while (b < batch_size) : (b += 1) {
                         const str_len = std.mem.readInt(u32, payload[offset..offset+4][0..4], .little);
                         offset += 4;
                         const str = payload[offset..offset+str_len];
                         offset += str_len;
-                        
-                        _ = wordpiece_tokenizer.tokenize(str, seq_len, tokens[b*seq_len..(b+1)*seq_len]);
+
+                        const max_seq: u32 = 512;
+                        const token_buf = allocator.alloc(i64, max_seq) catch { failed = true; break; };
+                        defer allocator.free(token_buf);
+
+                        _ = wordpiece_tokenizer.tokenize(str, max_seq, token_buf);
+
+                        var real_len: usize = max_seq;
+                        while (real_len > 1 and token_buf[real_len - 1] == 0) {
+                            real_len -= 1;
+                        }
+                        const tokens_slice = token_buf[0..real_len];
+
+                        var vec_out: [768]f32 = undefined;
+                        onnx_engine.embed_chunk(tokens_slice, &vec_out) catch |err| {
+                            std.log.err("embed_chunk failed: {}", .{err});
+                            failed = true;
+                            break;
+                        };
+
+                        @memcpy(vectors_out[b*768..(b+1)*768], &vec_out);
                     }
-                    
-                    const vectors_out = try allocator.alloc(f32, batch_size * 768);
-                    defer allocator.free(vectors_out);
-                    
-                    onnx_engine.embed_batch(tokens, batch_size, seq_len, vectors_out) catch |err| {
-                        std.log.err("embed_batch failed: {}", .{err});
-                        break;
-                    };
-                    
+
+                    if (failed) break;
+
                     const bytes = std.mem.sliceAsBytes(vectors_out);
                     _ = writer_d.interface.writeAll(bytes) catch break;
                     try writer_d.flush();

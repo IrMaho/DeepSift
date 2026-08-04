@@ -218,18 +218,16 @@ export class Indexer {
                             const embedFraction = (j + chunkSlice.length) / validChunks.length;
                             const currentProgress = batchBaseIndex + (0.05 + 0.95 * embedFraction) * batchFilesCount;
                             if (onProgress) {
-                                const currentFile = chunkSlice[0]?.filePath ? path.relative(rootDir, chunkSlice[0].filePath) : `Embedding chunks (${j + chunkSlice.length}/${validChunks.length})`;
-                                onProgress(currentProgress, totalFilesToProcess, currentFile);
+                                const label = chunkSlice[0]?.filePath
+                                    ? path.relative(rootDir, chunkSlice[0].filePath)
+                                    : `Chunks ${j + chunkSlice.length}/${validChunks.length}`;
+                                onProgress(currentProgress, totalFilesToProcess, label);
                             }
                             const texts = chunkSlice.map(c => c.content);
                             const embeddings = await getEmbeddings(texts);
-                            
-                            const embeddedChunks = chunkSlice.map((chunk, idx) => ({
-                                chunk,
-                                embedding: embeddings[idx]
-                            }));
-                            
-                            const formattedChunks = embeddedChunks.map(c => this.store.formatChunkForBatch(c));
+                            const formattedChunks = chunkSlice.map((chunk, idx) =>
+                                this.store.formatChunkForBatch({ chunk, embedding: embeddings[idx] })
+                            );
                             batchOperations.push({ action: 'saveChunks', chunks: formattedChunks });
                             chunksProcessed += chunkSlice.length;
                         }

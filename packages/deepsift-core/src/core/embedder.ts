@@ -11,6 +11,7 @@ import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import { createHash } from 'crypto';
 import { nativeBridge } from './mmap-bridge.js';
 
 function normalizeL2(vector: Float32Array): Float32Array {
@@ -123,22 +124,13 @@ export async function getEmbeddings(texts: string[]): Promise<Float32Array[]> {
     
     const results: Float32Array[] = new Array(texts.length);
     const uncachedIndices: number[] = [];
-    const textHashes: string[] = new Array(texts.length);
 
-    // 1. Generate ultra-fast BLAKE3 hashes via IPC Native Bridge
-    for (let i = 0; i < texts.length; i++) {
-        if ((nativeBridge as any).isConnected) {
-            textHashes[i] = await nativeBridge.getChunkHash(texts[i]);
-        } else {
-            // Fallback
-            textHashes[i] = texts[i]; // Store raw string if Daemon is down
-        }
-    }
+    const textHashes: string[] = texts.map(t =>
+        createHash('sha256').update(t).digest('hex').slice(0, 16)
+    );
 
-    // 2. Check exact content cache using BLAKE3 Hash
     for (let i = 0; i < texts.length; i++) {
-        const hash = textHashes[i];
-        const cached = embeddingCache.get(hash);
+        const cached = embeddingCache.get(textHashes[i]);
         if (cached) {
             results[i] = cached;
         } else {
