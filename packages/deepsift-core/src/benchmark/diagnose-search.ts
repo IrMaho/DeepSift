@@ -1,26 +1,28 @@
+/**
+ * @file diagnose-search.ts
+ * @description Diagnostic script for analyzing search quality and comparing Zig-native hybrid search with RRF fallback.
+ *
+ * @module benchmark/diagnose-search
+ * @category Quality & Diagnostics
+ * @since 1.0.3
+ */
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Searcher } from '../core/searcher.js';
+import { NativeStore } from '../storage/native-store.js';
 import { DEFAULT_REALM } from '../cli/cli-paths.js';
 import { RealmRouter } from '../core/realm-router.js';
 import { getEmbedding, terminateWorkers } from '../core/embedder.js';
+import { SearchResult } from '../types/index.js';
 import { applyRRF } from '../utils/similarity.js';
 import { loadDNA } from '../intelligence/project-dna.js';
-import { SearchResult } from '../types/index.js';
 
 interface BenchmarkQuery {
     query: string;
     expectedFiles: string[];
     expectedMinPosition: number;
     category: 'semantic' | 'keyword' | 'hybrid' | 'structural';
-}
-
-interface QueryMetrics {
-    recall1: number;
-    recall3: number;
-    recall5: number;
-    mrr: number;
-    hitRate: number;
 }
 
 const BENCHMARK_QUERIES: BenchmarkQuery[] = [
@@ -66,175 +68,210 @@ function matchesExpected(normalizedActual: string, expectedFiles: string[]): boo
     });
 }
 
-function calculateMetrics(actualTopFiles: string[], expectedFiles: string[]): QueryMetrics {
-    const uniqueActual = Array.from(new Set(actualTopFiles));
-    
-    const checkRecallK = (k: number): number => {
-        const topKFiles = actualTopFiles.slice(0, k);
-        return topKFiles.some(file => matchesExpected(file, expectedFiles)) ? 1 : 0;
-    };
-
-    const recall1 = checkRecallK(1);
-    const recall3 = checkRecallK(3);
-    const recall5 = checkRecallK(5);
-
-    let mrr = 0;
+function getMrrAndFirstRank(actualTopFiles: string[], expectedFiles: string[]): { mrr: number; firstRank: number | null } {
     for (let i = 0; i < actualTopFiles.length; i++) {
         if (matchesExpected(actualTopFiles[i], expectedFiles)) {
-            mrr = 1 / (i + 1);
-            break;
+            return { mrr: 1 / (i + 1), firstRank: i + 1 };
+        }
+    }
+    return { mrr: 0, firstRank: null };
+}
+
+async function runRrfFallback(store: NativeStore, query: string, queryVectorF32: Float32Array): Promise<SearchResult[]> {
+    const keywordResultsRaw = await store.searchKeyword(query, 50);
+    const semanticResultsRaw = await store.searchSemantic(queryVectorF32, 50);
+
+    let structuralWeights: Map<string, number> | undefined;
+    try {
+        const dna = await loadDNA(process.cwd());
+        if (dna && dna.architecture && dna.architecture.coreFiles) {
+            structuralWeights = new Map<string, number>();
+            dna.architecture.coreFiles.forEach((f: string) => structuralWeights!.set(f, 1.5));
+        }
+    } catch {}
+
+    const combined = applyRRF(semanticResultsRaw, keywordResultsRaw, 60, structuralWeights);
+    let candidates = combined;
+
+    const tokens = Searcher.tokenizeQuery(query);
+    if (tokens.length >= 2) {
+        const relaxedResultsMap = new Map<string, SearchResult>();
+
+        for (const token of tokens) {
+            const subKw = await store.searchKeyword(token, 20);
+            for (const item of subKw) {
+                const existing = relaxedResultsMap.get(item.chunk.id);
+                if (existing) {
+                    existing.score += 0.10;
+                } else {
+                    relaxedResultsMap.set(item.chunk.id, {
+                        ...item,
+                        score: 0.15,
+                        matchType: 'relaxed_keyword'
+                    });
+                }
+            }
+        }
+
+        for (const res of relaxedResultsMap.values()) {
+            const filePathLower = res.chunk.filePath.toLowerCase();
+            const contentLower = res.chunk.content.toLowerCase();
+            let matchedTokenCount = 0;
+
+            for (const t of tokens) {
+                if (filePathLower.includes(t)) {
+                    res.score += 0.10;
+                    matchedTokenCount++;
+                } else if (contentLower.includes(t)) {
+                    res.score += 0.03;
+                    matchedTokenCount++;
+                }
+            }
+
+            if (matchedTokenCount === tokens.length) {
+                res.score += 0.10;
+            }
+        }
+
+        const relaxedSorted = Array.from(relaxedResultsMap.values());
+        if (relaxedSorted.length > 0) {
+            const merged = [...candidates, ...relaxedSorted];
+            const seenIds = new Set<string>();
+            const deduplicated: SearchResult[] = [];
+
+            for (const item of merged) {
+                if (!seenIds.has(item.chunk.id)) {
+                    seenIds.add(item.chunk.id);
+                    deduplicated.push(item);
+                }
+            }
+            candidates = deduplicated;
         }
     }
 
-    const foundExpectedCount = expectedFiles.filter(exp => 
-        uniqueActual.some(act => matchesExpected(act, [exp]))
-    ).length;
-    const hitRate = expectedFiles.length > 0 ? foundExpectedCount / expectedFiles.length : 0;
-
-    return {
-        recall1,
-        recall3,
-        recall5,
-        mrr,
-        hitRate
-    };
+    candidates.sort((a, b) => b.score - a.score);
+    return candidates.slice(0, 10);
 }
 
-async function runDiagnostics() {
+async function runDiagnosis() {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     const defaultProjectPath = path.resolve(__dirname, '../..');
     const projectPath = path.resolve(process.argv[2] || defaultProjectPath);
 
     const router = new RealmRouter(projectPath);
+    console.log(`[Diagnostic] Indexing codebase (realm: '${DEFAULT_REALM}')...`);
     await router.indexRealm(DEFAULT_REALM, projectPath, false);
-    const store = router.getStore(DEFAULT_REALM);
+    const store = router.getStore('code');
     const searcher = new Searcher(store);
 
-    let structuralWeights: Map<string, number> | undefined;
-    try {
-        const dna = loadDNA(projectPath);
-        if (dna?.architecture?.coreFiles) {
-            structuralWeights = new Map<string, number>();
-            dna.architecture.coreFiles.forEach((f: string) => structuralWeights!.set(f, 1.5));
-        }
-    } catch {}
-
-    const queryDiagnoses: Array<{
-        id: number;
-        query: string;
-        expected: string[];
-        category: string;
-        mrr: number;
-        usedHybridNative: boolean;
-        nativeMrr: number;
-        rrfMrr: number;
-        topGot: string;
-    }> = [];
-
-    let totalHybridNativeMRR = 0;
-    let countHybridNativeUsed = 0;
-    let totalRrfMRR = 0;
-    let countRrfUsed = 0;
+    let hybridUsedCount = 0;
+    let rrfUsedCount = 0;
+    const hybridMrrs: number[] = [];
+    const rrfMrrs: number[] = [];
 
     const hybridWins: string[] = [];
     const rrfWins: string[] = [];
     const ties: string[] = [];
 
+    interface QueryReport {
+        id: string;
+        query: string;
+        expected: string;
+        got: string;
+        mrr: number;
+        usedPath: 'hybridNative' | 'RRF fallback';
+    }
+
+    const allReports: QueryReport[] = [];
+
     try {
         for (let idx = 0; idx < BENCHMARK_QUERIES.length; idx++) {
             const q = BENCHMARK_QUERIES[idx];
-            const qId = idx + 1;
-
+            const qId = `Q${idx + 1}`;
             const queryVector = await getEmbedding(q.query);
-            const directNativeResults = await store.searchHybridNative(q.query, queryVector, 10);
-            const nativeTopFiles = directNativeResults.map(r => r?.chunk?.filePath ? normalizeFilePath(projectPath, r.chunk.filePath) : '');
-            const nativeMetrics = calculateMetrics(nativeTopFiles, q.expectedFiles);
 
-            const keywordResultsRaw = await store.searchKeyword(q.query, 50);
-            const semanticResultsRaw = await store.searchSemantic(queryVector, 50);
-            const rrfCandidates = applyRRF(semanticResultsRaw, keywordResultsRaw, 60, structuralWeights);
-            const rrfTopFiles = rrfCandidates.slice(0, 10).map(r => r?.chunk?.filePath ? normalizeFilePath(projectPath, r.chunk.filePath) : '');
-            const rrfMetrics = calculateMetrics(rrfTopFiles, q.expectedFiles);
+            const directHybridRaw = await store.searchHybridNative(q.query, queryVector, 10);
+            const directHybrid = directHybridRaw || [];
 
-            if (nativeMetrics.mrr > rrfMetrics.mrr) {
-                hybridWins.push(`Q${qId}`);
-            } else if (rrfMetrics.mrr > nativeMetrics.mrr) {
-                rrfWins.push(`Q${qId}`);
-            } else {
-                ties.push(`Q${qId}`);
-            }
+            const rrfResults = await runRrfFallback(store, q.query, queryVector);
 
             const searchResults = await searcher.search({ query: q.query, topK: 10 });
-            const searchTopFiles = searchResults.map(r => r?.chunk?.filePath ? normalizeFilePath(projectPath, r.chunk.filePath) : '');
-            const searchMetrics = calculateMetrics(searchTopFiles, q.expectedFiles);
 
-            const usedHybridNative = directNativeResults.length > 0;
-            if (usedHybridNative) {
-                countHybridNativeUsed++;
-                totalHybridNativeMRR += searchMetrics.mrr;
+            const usedHybrid = directHybrid.length > 0;
+            if (usedHybrid) {
+                hybridUsedCount++;
             } else {
-                countRrfUsed++;
-                totalRrfMRR += searchMetrics.mrr;
+                rrfUsedCount++;
             }
 
-            let firstRank = 0;
-            for (let i = 0; i < searchTopFiles.length; i++) {
-                if (matchesExpected(searchTopFiles[i], q.expectedFiles)) {
-                    firstRank = i + 1;
-                    break;
-                }
+            const searchFiles = searchResults.map(r => r?.chunk?.filePath ? normalizeFilePath(projectPath, r.chunk.filePath) : '');
+            const searchMetrics = getMrrAndFirstRank(searchFiles, q.expectedFiles);
+
+            const directHybridFiles = directHybrid.map(r => r?.chunk?.filePath ? normalizeFilePath(projectPath, r.chunk.filePath) : '');
+            const hybridMetrics = getMrrAndFirstRank(directHybridFiles, q.expectedFiles);
+
+            const rrfFiles = rrfResults.map(r => r?.chunk?.filePath ? normalizeFilePath(projectPath, r.chunk.filePath) : '');
+            const rrfMetrics = getMrrAndFirstRank(rrfFiles, q.expectedFiles);
+
+            if (usedHybrid) {
+                hybridMrrs.push(searchMetrics.mrr);
+            } else {
+                rrfMrrs.push(searchMetrics.mrr);
             }
 
-            const uniqueSearchTopFiles = Array.from(new Set(searchTopFiles));
+            if (hybridMetrics.mrr > rrfMetrics.mrr) {
+                hybridWins.push(qId);
+            } else if (rrfMetrics.mrr > hybridMetrics.mrr) {
+                rrfWins.push(qId);
+            } else {
+                ties.push(qId);
+            }
+
             const foundCount = q.expectedFiles.filter(exp => 
-                uniqueSearchTopFiles.some(act => matchesExpected(act, [exp]))
+                searchFiles.some(act => matchesExpected(act, [exp]))
             ).length;
 
-            queryDiagnoses.push({
-                id: qId,
-                query: q.query,
-                expected: q.expectedFiles,
-                category: q.category,
-                mrr: searchMetrics.mrr,
-                usedHybridNative,
-                nativeMrr: nativeMetrics.mrr,
-                rrfMrr: rrfMetrics.mrr,
-                topGot: searchTopFiles[0] || 'none'
-            });
-
             console.log('================================================================================');
-            console.log(`Q${qId}: "${q.query}"`);
+            console.log(`${qId}: "${q.query}"`);
             console.log(`  Expected: ${q.expectedFiles.join(', ')}`);
             console.log(`  Category: ${q.category}`);
             console.log('--------------------------------------------------------------------------------');
 
-            if (directNativeResults.length > 0) {
-                console.log(`  [DIAGNOSTIC] hybridNative returned: ${directNativeResults.length} results`);
-                directNativeResults.slice(0, 5).forEach((r, i) => {
-                    const normPath = r?.chunk?.filePath ? normalizeFilePath(projectPath, r.chunk.filePath) : 'unknown';
+            if (directHybrid.length > 0) {
+                console.log(`  [DIAGNOSTIC] hybridNative returned: ${directHybrid.length} results`);
+                directHybrid.slice(0, 5).forEach((r, i) => {
+                    const normPath = normalizeFilePath(projectPath, r.chunk.filePath);
                     const lineInfo = r.chunk.startLine && r.chunk.endLine ? `:${r.chunk.startLine}-${r.chunk.endLine}` : '';
-                    console.log(`    #${i + 1} [score: ${(r.score || 0).toFixed(3)}] ${normPath}${lineInfo}`);
+                    const isExp = matchesExpected(normPath, q.expectedFiles) ? '  ← EXPECTED' : '';
+                    console.log(`    #${i + 1} [score: ${r.score.toFixed(3)}] ${normPath}${lineInfo}${isExp}`);
                 });
             } else {
-                console.log('  [DIAGNOSTIC] hybridNative returned: 0 results → fell through to RRF');
+                console.log(`  [DIAGNOSTIC] hybridNative returned: 0 results → fell through to RRF`);
             }
 
-            console.log('--------------------------------------------------------------------------------');
             console.log('  Top-10 Results:');
             searchResults.forEach((r, i) => {
-                const normPath = r?.chunk?.filePath ? normalizeFilePath(projectPath, r.chunk.filePath) : 'unknown';
+                const normPath = normalizeFilePath(projectPath, r.chunk.filePath);
                 const lineInfo = r.chunk.startLine && r.chunk.endLine ? `:${r.chunk.startLine}-${r.chunk.endLine}` : '';
-                const isExpected = matchesExpected(normPath, q.expectedFiles);
-                const marker = isExpected ? `  \u2190 EXPECTED (rank ${i + 1})` : '';
-                const scoreTag = `[score: ${(r.score || 0).toFixed(3)}, match: ${r.matchType || 'hybrid'}]`;
-                console.log(`    #${i + 1} ${scoreTag.padEnd(30)} ${normPath}${lineInfo}${marker}`);
+                const isExp = matchesExpected(normPath, q.expectedFiles) ? `  ← EXPECTED (rank ${i + 1})` : '';
+                const matchStr = r.matchType || 'hybrid';
+                console.log(`    #${i + 1} [score: ${r.score.toFixed(3)}, match: ${matchStr.padEnd(7)}]     ${normPath}${lineInfo}${isExp}`);
             });
 
             console.log(`  Expected files found: ${foundCount}/${q.expectedFiles.length}`);
-            console.log(`  First expected at rank: ${firstRank > 0 ? firstRank : 'not found'}`);
+            console.log(`  First expected at rank: ${searchMetrics.firstRank !== null ? searchMetrics.firstRank : 'None'}`);
             console.log(`  MRR: ${searchMetrics.mrr.toFixed(3)}`);
             console.log('================================================================================\n');
+
+            allReports.push({
+                id: qId,
+                query: q.query,
+                expected: q.expectedFiles.join(', '),
+                got: searchFiles[0] || 'none',
+                mrr: searchMetrics.mrr,
+                usedPath: usedHybrid ? 'hybridNative' : 'RRF fallback'
+            });
         }
     } finally {
         try {
@@ -243,36 +280,35 @@ async function runDiagnostics() {
         terminateWorkers();
     }
 
-    const avgHybridMRR = countHybridNativeUsed > 0 ? totalHybridNativeMRR / countHybridNativeUsed : 0;
-    const avgRrfMRR = countRrfUsed > 0 ? totalRrfMRR / countRrfUsed : 0;
+    const meanHybridMrr = hybridMrrs.length > 0 ? hybridMrrs.reduce((a, b) => a + b, 0) / hybridMrrs.length : 0;
+    const meanRrfMrr = rrfMrrs.length > 0 ? rrfMrrs.reduce((a, b) => a + b, 0) / rrfMrrs.length : 0;
 
-    const worstQueries = [...queryDiagnoses]
-        .sort((a, b) => a.mrr - b.mrr)
-        .slice(0, 5);
+    const worstQueries = [...allReports].sort((a, b) => a.mrr - b.mrr).slice(0, 5);
 
     console.log('================================================================================');
     console.log('DIAGNOSTIC SUMMARY');
     console.log('================================================================================');
-    console.log(`Queries where hybridNative was used: ${countHybridNativeUsed}/${BENCHMARK_QUERIES.length}`);
-    console.log(`Queries where RRF fallback was used: ${countRrfUsed}/${BENCHMARK_QUERIES.length}\n`);
-    console.log(`hybridNative MRR: ${avgHybridMRR.toFixed(3)} (${countHybridNativeUsed} queries)`);
-    console.log(`RRF fallback MRR: ${avgRrfMRR.toFixed(3)} (${countRrfUsed} queries)\n`);
+    console.log(`Queries where hybridNative was used: ${hybridUsedCount}/${BENCHMARK_QUERIES.length}`);
+    console.log(`Queries where RRF fallback was used: ${rrfUsedCount}/${BENCHMARK_QUERIES.length}\n`);
+
+    console.log(`hybridNative MRR: ${meanHybridMrr.toFixed(3)} (${hybridUsedCount} queries)`);
+    console.log(`RRF fallback MRR: ${meanRrfMrr.toFixed(3)} (${rrfUsedCount} queries)\n`);
+
     console.log('Per-query breakdown:');
-    console.log(`  hybridNative wins:  ${hybridWins.join(', ') || 'None'}`);
-    console.log(`  RRF fallback wins:  ${rrfWins.join(', ') || 'None'}`);
-    console.log(`  Ties:               ${ties.join(', ') || 'None'}\n`);
+    console.log(`  hybridNative wins:  ${hybridWins.length > 0 ? hybridWins.join(', ') : 'None'}`);
+    console.log(`  RRF fallback wins:  ${rrfWins.length > 0 ? rrfWins.join(', ') : 'None'}`);
+    console.log(`  Ties:               ${ties.length > 0 ? ties.join(', ') : 'None'}\n`);
+
     console.log('Worst 5 queries (lowest MRR):');
-    worstQueries.forEach(q => {
-        const expStr = q.expected.map(f => path.basename(f)).join(', ');
-        const gotStr = path.basename(q.topGot);
-        console.log(`  Q${q.id} "${q.query}" \u2014 MRR ${q.mrr.toFixed(3)} (expected: ${expStr}, got: ${gotStr})`);
+    worstQueries.forEach(w => {
+        console.log(`  ${w.id} "${w.query}" — MRR ${w.mrr.toFixed(3)} (expected: ${w.expected}, got: ${w.got}) [path: ${w.usedPath}]`);
     });
     console.log('================================================================================');
 }
 
-runDiagnostics().then(() => {
+runDiagnosis().then(() => {
     process.exit(0);
 }).catch(err => {
-    console.error('Fatal error:', err);
+    console.error('[Diagnostic] Fatal error:', err);
     process.exit(1);
 });
