@@ -11,6 +11,8 @@
 
 import fs from 'fs';
 import path from 'path';
+
+const BULB = '\u{1F4A1}';
 import { RealmRouter, CrossRealmResult } from '../../core/realm-router.js';
 import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';
@@ -38,14 +40,18 @@ export interface SearchOptions {
 }
 
 function formatSnippet(content: string, filePath: string, startLine: number, endLine: number): string {
-    const lines = content.split('\n');
+    const cleaned = content
+        .replace(/\/\* DEEPSIFT CONTEXT:?[\s\S]*?\*\//g, '')
+        .replace(/\/\/ DEEPSIFT CONTEXT:?.*(\r?\n|$)/g, '')
+        .trim();
+    const lines = cleaned.split('\n');
     if (lines.length <= 50) {
-        return content;
+        return cleaned;
     }
     const omittedCount = lines.length - 40;
-    const first30 = lines.slice(0, 30).join('\n');
-    const last10 = lines.slice(lines.length - 10).join('\n');
-    return `${first30}\n// ... (${omittedCount} lines omitted ? use 'deepsift read "${filePath}:${startLine}-${endLine}"' for full code) ...\n${last10}`;
+    const first35 = lines.slice(0, 35).join('\n');
+    const last5 = lines.slice(lines.length - 5).join('\n');
+    return `${first35}\n// ... (${omittedCount} lines omitted. Use 'deepsift read "${filePath}:${startLine}-${endLine}"' for full code) ...\n${last5}`;
 }
 
 /**
@@ -227,9 +233,10 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
         return;
     }
 
-    const displayLimit = options.limit ? options.limit : (options.allResults ? 15 : 1);
+    const displayLimit = options.limit ? options.limit : (options.allResults ? Math.min(20, results.length) : 1);
     const cappedResults = results.slice(0, displayLimit);
 
+    let anyTruncated = false;
     const formattedResults = cappedResults.map((res: CrossRealmResult, i: number) => {
         let contentToDisplay = res.chunk.content;
         let displayStartLine = res.chunk.startLine;
@@ -253,6 +260,7 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
             ? path.relative(projectPath, res.chunk.filePath).replace(/\\/g, '/')
             : res.chunk.filePath.replace(/\\/g, '/');
         const snippet = formatSnippet(contentToDisplay, relPath, displayStartLine, displayEndLine);
+        if (snippet !== contentToDisplay) anyTruncated = true;
         const realmTag = (res.realmId && res.realmId !== 'default' && res.realmId !== 'workspace') ? `[${res.realmId}] ` : '';
         return `${i + 1}. ${realmTag}[${relPath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)})\n   \`\`\`${res.chunk.language}\n${snippet}\n   \`\`\``;
     }).join('\n\n');
@@ -265,7 +273,10 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
 
     let rawOutput = `${contextStr}Found ${results.length} relevant code sections${results.length > displayLimit ? ` (Showing top ${displayLimit}, pass --top ${results.length} or --all to view all)` : ''}:\n\n${formattedResults}`;
     if (results.length > displayLimit && !options.allResults) {
-        rawOutput += `\n\n?? **Pagination Notice**: Showing top ${displayLimit} of ${results.length} results. Pass \`--top 5\` or \`--all\` to expand full list.`;
+        rawOutput += `\n\n${BULB} **Pagination Notice**: Showing top ${displayLimit} of ${results.length} results. Pass \`--top 5\` or \`--all\` to expand full list.`;
+    }
+    if (results.length > displayLimit || anyTruncated) {
+        rawOutput += `\n\n${BULB} Use \`deepsift read <file:line>\` for full file context.`;
     }
     let finalOutput = rawOutput;
     
@@ -334,7 +345,8 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
             continue;
         }
 
-        const displayLimit = options.limit ? options.limit : (options.allResults ? 5 : 1);
+        const displayLimit = options.limit ? options.limit : (options.allResults ? Math.min(10, results.length) : 1);
+        let anyTruncated = false;
         results.slice(0, displayLimit).forEach((res, idx) => {
             const key = `${res.realmId}:${res.chunk.filePath}:${res.chunk.startLine}`;
             allResultsMap.set(key, res);
@@ -342,9 +354,13 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
                 ? path.relative(projectPath, res.chunk.filePath).replace(/\\/g, '/')
                 : res.chunk.filePath.replace(/\\/g, '/');
             const snippet = formatSnippet(res.chunk.content, relPath, res.chunk.startLine, res.chunk.endLine);
+            if (snippet !== res.chunk.content) anyTruncated = true;
             const realmTag = (res.realmId && res.realmId !== 'default' && res.realmId !== 'workspace') ? `[${res.realmId}] ` : '';
             combinedOutput += `${idx + 1}. ${realmTag}[${relPath}:${res.chunk.startLine}-${res.chunk.endLine}] (score: ${res.score.toFixed(3)})\n   \`\`\`${res.chunk.language}\n${snippet}\n   \`\`\`\n`;
         });
+        if (results.length > displayLimit || anyTruncated) {
+            combinedOutput += `${BULB} Use \`deepsift read <file:line>\` for full file context.\n`;
+        }
         combinedOutput += '\n';
     }
 
