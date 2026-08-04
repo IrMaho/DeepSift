@@ -199,14 +199,14 @@ const HELP_TEXT = `
   deepsift analyze "src/features/auth"
 `;
 
-function logError(projectPath: string, command: string, args: string[], err: any) {
+function logError(projectPath: string, command: string, args: string[], err: unknown) {
     try {
         const deepsiftDir = path.join(projectPath, '.deepsift');
         if (fs.existsSync(deepsiftDir)) {
             const logPath = path.join(deepsiftDir, 'error_log.txt');
             const timestamp = new Date().toISOString();
             const cmdStr = `deepsift ${command} ${args.join(' ')}`;
-            const errMsg = err.stack || err.message || String(err);
+            const errMsg = err instanceof Error ? (err.stack || err.message) : String(err);
             const logEntry = `\n[${timestamp}] ERROR executing: ${cmdStr}\n${errMsg}\n----------------------------------------\n`;
             fs.appendFileSync(logPath, logEntry, 'utf-8');
         }
@@ -298,7 +298,7 @@ async function main() {
                 let type: 'code' | 'skill' | 'docs' | undefined;
                 const typeIdx = commandArgs.indexOf('--type');
                 if (typeIdx !== -1 && commandArgs[typeIdx + 1]) {
-                    type = commandArgs[typeIdx + 1] as any;
+                    type = commandArgs[typeIdx + 1] as 'code' | 'skill' | 'docs' | undefined;
                 }
                 
                 let source: string | undefined;
@@ -713,7 +713,7 @@ async function main() {
                 } else {
                     console.log(`\n\x1b[36m🔥 DeepSift Git Churn & Refactoring Heatmap\x1b[0m`);
                     console.log(`=================================================`);
-                    churn.slice(0, 10).forEach((c: any, idx: number) => {
+                    churn.slice(0, 10).forEach((c: { file: string; commitCount: number; lineCount: number; riskScore: number }, idx: number) => {
                         console.log(`${idx + 1}. \x1b[33m${c.file}\x1b[0m (Commits: ${c.commitCount}, Lines: ${c.lineCount}, Risk Score: \x1b[31m${c.riskScore}\x1b[0m)`);
                     });
                 }
@@ -748,9 +748,10 @@ async function main() {
 
                 throw new Error(`Unknown command: "${command}"\nRun 'deepsift --help' for available commands.`);
         }
-    } catch (err: any) {
+    } catch (err: unknown) {
         logError(projectPath, command, commandArgs, err);
-        printError(err.message || String(err));
+        const msg = err instanceof Error ? err.message : String(err);
+        printError(msg);
         process.exit(1);
     } finally {
         terminateWorkers();

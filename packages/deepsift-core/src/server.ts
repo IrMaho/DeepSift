@@ -756,7 +756,7 @@ interface BatchSedArgs {
             let logs = '';
             console.log = (msg: string) => { logs += msg + '\n'; };
             
-            const allFlag = replacements.some((r) => r.all && !r.regex); // regex 'all' is handled in the pattern string
+            const allFlag = Boolean(replacements.some((r) => r.all && !r.regex)); // regex 'all' is handled in the pattern string
             await pipeCommand(files, operations, { all: allFlag });
             
             console.log = originalLog;
