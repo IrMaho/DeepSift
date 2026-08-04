@@ -1,12 +1,3 @@
-/**
- * @file diagnose-search.ts
- * @description Diagnostic script for analyzing search quality and comparing Zig-native hybrid search with RRF fallback.
- *
- * @module benchmark/diagnose-search
- * @category Quality & Diagnostics
- * @since 1.0.3
- */
-
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Searcher } from '../core/searcher.js';
@@ -177,7 +168,7 @@ async function runDiagnosis() {
     interface QueryReport {
         id: string;
         query: string;
-        expected: string;
+        expectedFiles: string[];
         got: string;
         mrr: number;
         usedPath: 'hybridNative' | 'RRF fallback';
@@ -260,14 +251,14 @@ async function runDiagnosis() {
             });
 
             console.log(`  Expected files found: ${foundCount}/${q.expectedFiles.length}`);
-            console.log(`  First expected at rank: ${searchMetrics.firstRank !== null ? searchMetrics.firstRank : 'None'}`);
+            console.log(`  First expected at rank: ${searchMetrics.firstRank !== null ? searchMetrics.firstRank : 'none'}`);
             console.log(`  MRR: ${searchMetrics.mrr.toFixed(3)}`);
             console.log('================================================================================\n');
 
             allReports.push({
                 id: qId,
                 query: q.query,
-                expected: q.expectedFiles.join(', '),
+                expectedFiles: q.expectedFiles,
                 got: searchFiles[0] || 'none',
                 mrr: searchMetrics.mrr,
                 usedPath: usedHybrid ? 'hybridNative' : 'RRF fallback'
@@ -301,7 +292,9 @@ async function runDiagnosis() {
 
     console.log('Worst 5 queries (lowest MRR):');
     worstQueries.forEach(w => {
-        console.log(`  ${w.id} "${w.query}" — MRR ${w.mrr.toFixed(3)} (expected: ${w.expected}, got: ${w.got}) [path: ${w.usedPath}]`);
+        const expectedStr = w.expectedFiles.map(f => path.basename(f)).join(', ');
+        const gotStr = w.got !== 'none' ? path.basename(w.got) : 'none';
+        console.log(`  ${w.id} "${w.query}" — MRR ${w.mrr.toFixed(3)} (expected: ${expectedStr}, got: ${gotStr})`);
     });
     console.log('================================================================================');
 }

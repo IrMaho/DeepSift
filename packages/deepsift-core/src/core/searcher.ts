@@ -129,6 +129,34 @@ export class Searcher {
         
         candidates.sort((a, b) => b.score - a.score);
 
+        const fileScoreMap = new Map<string, { bestResult: SearchResult; maxScore: number; chunkCount: number }>();
+
+        for (const res of candidates) {
+            const filePath = res.chunk.filePath;
+            const existing = fileScoreMap.get(filePath);
+            if (existing) {
+                existing.maxScore = Math.max(existing.maxScore, res.score);
+                existing.chunkCount++;
+                if (res.score > existing.bestResult.score) {
+                    existing.bestResult = res;
+                }
+            } else {
+                fileScoreMap.set(filePath, {
+                    bestResult: res,
+                    maxScore: res.score,
+                    chunkCount: 1
+                });
+            }
+        }
+
+        candidates = Array.from(fileScoreMap.values())
+            .sort((a, b) => b.maxScore - a.maxScore)
+            .map(entry => ({
+                ...entry.bestResult,
+                score: entry.maxScore,
+                _fileChunkCount: entry.chunkCount
+            }));
+
         const topScore = candidates[0]?.score || 0;
         if (searchQuery.fast || searchQuery.skipRerank || topScore >= 0.90) {
             return candidates.slice(0, topK);

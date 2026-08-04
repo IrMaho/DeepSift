@@ -35,6 +35,7 @@ export interface SearchResult {
     bm25Score?: number;
     vectorScore?: number;
     matchType: 'semantic' | 'keyword' | 'hybrid' | 'relaxed_keyword';
+    _fileChunkCount?: number;
 }
 
 export interface IndexMetadata {
