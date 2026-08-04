@@ -16,7 +16,8 @@
     "start": "node dist/server.js",
     "start:cli": "node dist/cli/cli-entry.js",
     "test": "vitest run",
-    "benchmark:quality": "npx tsx src/benchmark/search-quality-benchmark.ts"
+    "benchmark:quality": "npx tsx src/benchmark/search-quality-benchmark.ts",
+    "benchmark:diagnose": "npx tsx src/benchmark/diagnose-search.ts"
   },
   "keywords": [
     "mcp",
