@@ -10,6 +10,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { NativeStore } from './storage/native-store.js';
+import { ChunkType, SearchResult } from './types/index.js';
 import { Indexer } from './core/indexer.js';
 import { Searcher } from './core/searcher.js';
 import path from 'path';
@@ -32,7 +33,7 @@ const __dirname = path.dirname(__filename);
 // --- SSE Broadcaster Setup ---
 const clients = new Set<http.ServerResponse>();
 
-function broadcastEvent(type: string, payload: any) {
+function broadcastEvent(type: string, payload: unknown) {
     const data = JSON.stringify({ type, payload });
     for (const client of clients) {
         client.write(`data: ${data}\n\n`);
@@ -110,6 +111,91 @@ const server = new McpServer({
     version: "1.0.0"
 });
 
+// --- Tool Handler Interfaces ---
+interface SearchCodeArgs {
+    query: string;
+    projectPath: string;
+    topK?: number;
+    filterType?: ChunkType[];
+}
+
+interface IndexProjectArgs {
+    projectPath: string;
+    forceReindex?: boolean;
+}
+
+interface MultiSearchQuery {
+    query: string;
+    topK?: number;
+    filterType?: ChunkType[];
+}
+
+interface MultiSearchArgs {
+    projectPath: string;
+    queries: MultiSearchQuery[];
+}
+
+interface ProjectPathArgs {
+    projectPath: string;
+}
+
+interface ReadSearchLogArgs {
+    projectPath: string;
+    filename: string;
+}
+
+interface ProjectArchitectureArgs {
+    projectPath: string;
+    maxDepth?: number;
+}
+
+interface AnalyzeDependenciesArgs {
+    projectPath: string;
+    targetName: string;
+}
+
+interface DeepIsolatedSearchArgs {
+    projectPath: string;
+    logFilename: string;
+    keyword: string;
+}
+
+interface ExploreFeatureArgs {
+    projectPath: string;
+    featureDir: string;
+}
+
+interface GetProjectDnaArgs {
+    projectPath: string;
+    section?: string;
+    query?: string;
+    limit?: number;
+    offset?: number;
+    pathFilter?: string;
+    showMetaOnly?: boolean;
+}
+
+interface GetCreationContextArgs {
+    projectPath: string;
+    targetPath: string;
+}
+
+interface HealGodNodeArgs {
+    filePath: string;
+}
+
+interface BatchSedReplacement {
+    search: string;
+    replace: string;
+    regex?: boolean;
+    all?: boolean;
+}
+
+interface BatchSedArgs {
+    files: string[];
+    replacements: BatchSedReplacement[];
+}
+
 // Tool 1: search_code
 (server as any).tool(
     "search_code",
@@ -120,7 +206,7 @@ const server = new McpServer({
         topK: z.number().optional().describe("Number of results to return (default 10)"),
         filterType: z.array(z.enum(['function', 'class', 'import', 'config', 'block', 'comment'])).optional()
     },
-    async (args: any) => {
+    async (args: SearchCodeArgs) => {
         const { query, projectPath, topK = 10, filterType } = args;
         broadcastEvent('tool_call', { tool: 'search_code', args, response: 'Processing...' });
         
@@ -134,7 +220,7 @@ const server = new McpServer({
         if (results.length === 0) {
             responseContent = { content: [{ type: "text", text: "No relevant code found." }] };
         } else {
-            const formattedResults = results.map((res: any, i: number) => {
+            const formattedResults = results.map((res: SearchResult, i: number) => {
                 return `${i + 1}. [${res.chunk.filePath}:${res.chunk.startLine}-${res.chunk.endLine}] (score: ${res.score.toFixed(3)}, match: ${res.matchType})\n   Type: ${res.chunk.type}\n   \`\`\`${res.chunk.language}\n${res.chunk.content}\n   \`\`\``;
             }).join('\n\n');
             responseContent = { content: [{ type: "text", text: `Found ${results.length} relevant code sections:\n\n${formattedResults}` }] };
@@ -159,7 +245,7 @@ const server = new McpServer({
         projectPath: z.string().describe("Absolute path to the root of the project"),
         forceReindex: z.boolean().optional()
     },
-    async (args: any) => {
+    async (args: IndexProjectArgs) => {
         const { projectPath, forceReindex = false } = args;
         broadcastEvent('tool_call', { tool: 'index_project', args, response: 'Processing...' });
         
@@ -170,8 +256,9 @@ const server = new McpServer({
             const response = { content: [{ type: "text", text: `Indexing complete. Processed ${stats.files} files and ${stats.chunks} chunks.` }] };
             broadcastEvent('tool_call', { tool: 'index_project', args, response: stats });
             return response;
-        } catch (err: any) {
-            return { content: [{ type: "text", text: `Error: ${err.message}` }], isError: true };
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            return { content: [{ type: "text", text: `Error: ${msg}` }], isError: true };
         }
     }
 );
@@ -190,7 +277,7 @@ const server = new McpServer({
             })
         ).describe("List of search queries to execute")
     },
-    async (args: any) => {
+    async (args: MultiSearchArgs) => {
         const { projectPath, queries } = args;
         broadcastEvent('tool_call', { tool: 'multi_search', args, response: 'Processing multiple queries...' });
         
@@ -198,7 +285,7 @@ const server = new McpServer({
         await indexer.indexProject(projectPath);
         broadcastEvent('status_update', indexer.getStatus());
 
-        const allResults: any[] = [];
+        const allResults: string[] = [];
         let totalHits = 0;
 
         for (let i = 0; i < queries.length; i++) {
@@ -206,7 +293,7 @@ const server = new McpServer({
             const results = await searcher.search({ query: q.query, topK: q.topK || 5, filterType: q.filterType });
             totalHits += results.length;
             
-            const formattedResults = results.map((res: any, j: number) => {
+            const formattedResults = results.map((res: SearchResult, j: number) => {
                 return `    ${j + 1}. [${res.chunk.filePath}:${res.chunk.startLine}-${res.chunk.endLine}] (score: ${res.score.toFixed(3)}, match: ${res.matchType})\n       \`\`\`${res.chunk.language}\n${res.chunk.content}\n       \`\`\``;
             }).join('\n\n');
             
@@ -221,7 +308,7 @@ const server = new McpServer({
         
         // Save to history
         if (totalHits > 0) {
-            await saveSearchLog(projectPath, queries.map((q: any) => q.query), responseContent.content[0].text);
+            await saveSearchLog(projectPath, queries.map((q) => q.query), responseContent.content[0].text);
         }
 
         return responseContent;
@@ -233,7 +320,7 @@ const server = new McpServer({
     "search_status",
     "Get the current status of the vector index",
     {},
-    async (args: any) => {
+    async (args: Record<string, unknown>) => {
         const status = await indexer.getStatus();
         broadcastEvent('tool_call', { tool: 'search_status', args, response: status });
         
@@ -254,7 +341,7 @@ const server = new McpServer({
     {
         projectPath: z.string().describe("Absolute path to the root of the project")
     },
-    async (args: any) => {
+    async (args: ProjectPathArgs) => {
         const { projectPath } = args;
         broadcastEvent('tool_call', { tool: 'get_search_history', args, response: 'Reading history...' });
         
@@ -273,7 +360,7 @@ const server = new McpServer({
         projectPath: z.string().describe("Absolute path to the root of the project"),
         filename: z.string().describe("The name of the log file (e.g. search_2026-07-13...md)")
     },
-    async (args: any) => {
+    async (args: ReadSearchLogArgs) => {
         const { projectPath, filename } = args;
         broadcastEvent('tool_call', { tool: 'read_search_log', args, response: 'Reading log file...' });
         
@@ -292,7 +379,7 @@ const server = new McpServer({
         projectPath: z.string().describe("Absolute path to the root of the project"),
         maxDepth: z.number().optional().describe("Max folder depth to scan (default 5)")
     },
-    async (args: any) => {
+    async (args: ProjectArchitectureArgs) => {
         const { projectPath, maxDepth = 5 } = args;
         broadcastEvent('tool_call', { tool: 'project_architecture', args, response: 'Scanning project architecture...' });
         
@@ -312,7 +399,7 @@ const server = new McpServer({
         projectPath: z.string().describe("Absolute path to the root of the project"),
         targetName: z.string().describe("The name of the file or module to trace dependencies for")
     },
-    async (args: any) => {
+    async (args: AnalyzeDependenciesArgs) => {
         const { projectPath, targetName } = args;
         broadcastEvent('tool_call', { tool: 'analyze_dependencies', args, response: `Tracing dependencies for ${targetName}...` });
         
@@ -324,7 +411,7 @@ const server = new McpServer({
         if (results.length === 0) {
             responseContent = `No files found that explicitly import '${targetName}'.`;
         } else {
-            const deps = results.map((r: any) => `- ${r.chunk.filePath} (Score: ${r.score.toFixed(3)}) \n  \`\`\`ts\n${r.chunk.content}\n  \`\`\``).join('\n\n');
+            const deps = results.map((r: SearchResult) => `- ${r.chunk.filePath} (Score: ${r.score.toFixed(3)}) \n  \`\`\`ts\n${r.chunk.content}\n  \`\`\``).join('\n\n');
             responseContent = `The following files depend on '${targetName}':\n\n${deps}`;
         }
 
@@ -343,7 +430,7 @@ const server = new McpServer({
         logFilename: z.string().describe("The history log file to search within (e.g. search_2026-07-13...md)"),
         keyword: z.string().describe("The exact keyword or concept to filter the log file by")
     },
-    async (args: any) => {
+    async (args: DeepIsolatedSearchArgs) => {
         const { projectPath, logFilename, keyword } = args;
         broadcastEvent('tool_call', { tool: 'deep_isolated_search', args, response: `Drilling down for '${keyword}'...` });
         
@@ -383,7 +470,7 @@ const server = new McpServer({
         projectPath: z.string().describe("Absolute path to the root of the project"),
         featureDir: z.string().describe("Relative or absolute path to the feature directory (e.g., 'lib/presentation/screens/task')")
     },
-    async (args: any) => {
+    async (args: ExploreFeatureArgs) => {
         const { projectPath, featureDir } = args;
         broadcastEvent('tool_call', { tool: 'explore_feature', args, response: `Analyzing feature surface for '${featureDir}'...` });
         
@@ -407,7 +494,7 @@ const server = new McpServer({
     {
         projectPath: z.string().describe("Absolute path to the root of the project")
     },
-    async (args: any) => {
+    async (args: ProjectPathArgs) => {
         const { projectPath } = args;
         broadcastEvent('tool_call', { tool: 'generate_project_dna', args, response: 'Generating DNA...' });
         
@@ -418,8 +505,9 @@ const server = new McpServer({
             const msg = `Successfully generated Project DNA for ${dna.identity.name}.`;
             broadcastEvent('tool_call', { tool: 'generate_project_dna', args, response: msg });
             return { content: [{ type: "text", text: msg }] };
-        } catch (e: any) {
-            return { content: [{ type: "text", text: `Error generating DNA: ${e.message}` }] };
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            return { content: [{ type: "text", text: `Error generating DNA: ${msg}` }] };
         }
     }
 );
@@ -437,7 +525,7 @@ const server = new McpServer({
         pathFilter: z.string().optional().describe("Optional: Filter DNA records by file path prefix"),
         showMetaOnly: z.boolean().optional().describe("Optional: Only return metadata and record counts (no content) to analyze size first")
     },
-    async (args: any) => {
+    async (args: GetProjectDnaArgs) => {
         const { projectPath, section, query, limit, offset, pathFilter, showMetaOnly } = args;
         broadcastEvent('tool_call', { tool: 'get_project_dna', args, response: 'Retrieving DNA...' });
         
@@ -446,7 +534,7 @@ const server = new McpServer({
             return { content: [{ type: "text", text: "Project DNA not found. Run `generate_project_dna` first." }] };
         }
         
-        let resultObj: any = dna;
+        let resultObj: unknown = dna;
         if (section) {
             const sectionMap: Record<string, string> = {
                 identity: 'identity',
@@ -462,8 +550,8 @@ const server = new McpServer({
                 assets: 'assets'
             };
             const key = sectionMap[section.toLowerCase()];
-            if (key && (dna as any)[key]) {
-                resultObj = (dna as any)[key];
+            if (key && (dna as unknown as Record<string, unknown>)[key]) {
+                resultObj = (dna as unknown as Record<string, unknown>)[key];
             } else {
                 return { content: [{ type: "text", text: `Unknown section "${section}". Available: ${Object.keys(sectionMap).join(', ')}` }] };
             }
@@ -503,7 +591,7 @@ const server = new McpServer({
         projectPath: z.string().describe("Absolute path to the root of the project"),
         targetPath: z.string().describe("The relative path of the file you are about to create (e.g. src/components/button.tsx)")
     },
-    async (args: any) => {
+    async (args: GetCreationContextArgs) => {
         const { projectPath, targetPath } = args;
         broadcastEvent('tool_call', { tool: 'get_creation_context', args, response: 'Generating creation context...' });
         
@@ -511,8 +599,9 @@ const server = new McpServer({
             const contextText = getContextText(projectPath, targetPath, false);
             broadcastEvent('tool_call', { tool: 'get_creation_context', args, response: contextText });
             return { content: [{ type: "text", text: contextText }] };
-        } catch (e: any) {
-            return { content: [{ type: "text", text: `Error generating context: ${e.message}` }] };
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            return { content: [{ type: "text", text: `Error generating context: ${msg}` }] };
         }
     }
 );
@@ -524,7 +613,7 @@ const server = new McpServer({
     {
         projectPath: z.string().describe("Absolute path to the root of the project")
     },
-    async (args: any) => {
+    async (args: ProjectPathArgs) => {
         const { projectPath } = args;
         broadcastEvent('tool_call', { tool: 'analyze_ai_regressions', args, response: 'Analyzing regressions...' });
         
@@ -549,8 +638,9 @@ const server = new McpServer({
 
             broadcastEvent('tool_call', { tool: 'analyze_ai_regressions', args, response: 'Regression analysis complete.' });
             return { content: [{ type: "text", text: report }] };
-        } catch (e: any) {
-            return { content: [{ type: "text", text: `Error analyzing regressions: ${e.message}` }] };
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            return { content: [{ type: "text", text: `Error analyzing regressions: ${msg}` }] };
         }
     }
 );
@@ -563,7 +653,7 @@ const server = new McpServer({
         projectPath: z.string().describe("Absolute path to the root of the project"),
         request: z.string().describe("The feature request or task description from the user")
     },
-    async (args: any) => {
+    async (args: { projectPath: string; request: string }) => {
         const { projectPath, request } = args;
         broadcastEvent('tool_call', { tool: 'generate_smart_plan', args, response: 'Generating smart plan...' });
         
@@ -581,8 +671,9 @@ const server = new McpServer({
 
             broadcastEvent('tool_call', { tool: 'generate_smart_plan', args, response: 'Smart plan generated.' });
             return { content: [{ type: "text", text: `✔ Plan Generated.\n\n${compressed}\n\n[MANDATORY]: You MUST read the visual cache at ${link} before writing your implementation_plan.md. Expand your plan to at least 500 lines with high detail.` }] };
-        } catch (e: any) {
-            return { content: [{ type: "text", text: `Error generating smart plan: ${e.message}` }] };
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            return { content: [{ type: "text", text: `Error generating smart plan: ${msg}` }] };
         }
     }
 );
@@ -594,7 +685,7 @@ const server = new McpServer({
     {
         filePath: z.string().describe("Absolute path to the file to heal")
     },
-    async (args: any) => {
+    async (args: HealGodNodeArgs) => {
         const { filePath } = args;
         broadcastEvent('tool_call', { tool: 'heal_god_node', args, response: 'Scanning God Node...' });
         
@@ -630,8 +721,9 @@ const server = new McpServer({
 
             broadcastEvent('tool_call', { tool: 'heal_god_node', args, response: 'Healer proposal generated.' });
             return { content: [{ type: "text", text: `✔ Healer Proposal Generated.\n\n${compressed}\n\n[MANDATORY]: You MUST read the visual cache at ${link} before writing the patch.` }] };
-        } catch (e: any) {
-            return { content: [{ type: "text", text: `Error generating heal proposal: ${e.message}` }] };
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            return { content: [{ type: "text", text: `Error generating heal proposal: ${msg}` }] };
         }
     }
 );
@@ -649,12 +741,12 @@ const server = new McpServer({
             all: z.boolean().optional().describe("If true, replaces all occurrences. Default is false (only first occurrence).")
         }))
     },
-    async (args: any) => {
+    async (args: BatchSedArgs) => {
         const { files, replacements } = args;
         broadcastEvent('tool_call', { tool: 'batch_sed', args, response: 'Running batch replacement...' });
         try {
             const { pipeCommand } = await import('./cli/commands/pipe.js');
-            const operations = replacements.map((r: any) => ({
+            const operations = replacements.map((r) => ({
                 pattern: r.regex ? `/${r.search}/${r.all ? 'g' : ''}` : r.search,
                 replacement: r.replace
             }));
@@ -664,14 +756,15 @@ const server = new McpServer({
             let logs = '';
             console.log = (msg: string) => { logs += msg + '\n'; };
             
-            const allFlag = replacements.some((r: any) => r.all && !r.regex); // regex 'all' is handled in the pattern string
+            const allFlag = replacements.some((r) => r.all && !r.regex); // regex 'all' is handled in the pattern string
             await pipeCommand(files, operations, { all: allFlag });
             
             console.log = originalLog;
             
             return { content: [{ type: "text", text: logs.trim() || "Batch replacement complete." }] };
-        } catch (e: any) {
-            return { content: [{ type: "text", text: `Error running batch sed: ${e.message}` }] };
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            return { content: [{ type: "text", text: `Error running batch sed: ${msg}` }] };
         }
     }
 );

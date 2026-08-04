@@ -54,16 +54,18 @@ export async function analyzeCommand(
         // We use the relative path for matching inside DNA
         const relPath = path.relative(projectPath, targetPath).replace(/\\/g, '/');
         
-        let filteredDna = processDnaFilters(dna, relPath, undefined, limit, offset ?? 0, false);
+        let filteredDna: Record<string, unknown> | null = processDnaFilters(dna, relPath, undefined, limit, offset ?? 0, false) as Record<string, unknown> | null;
         
         // Deep prune using recursive query to avoid context bloat from irrelevant DNA branches
         const { recursiveQueryDna } = await import('./dna.js');
-        filteredDna = recursiveQueryDna(filteredDna, relPath);
+        filteredDna = recursiveQueryDna(filteredDna, relPath) as Record<string, unknown> | null;
         
         if (filteredDna && typeof filteredDna === 'object') {
             // Prune graph data
-            if (filteredDna.graph) delete filteredDna.graph;
-            if (filteredDna.architecture && filteredDna.architecture.graph) delete filteredDna.architecture.graph;
+            if ('graph' in filteredDna) delete filteredDna.graph;
+            if (filteredDna.architecture && typeof filteredDna.architecture === 'object' && 'graph' in filteredDna.architecture) {
+                delete (filteredDna.architecture as Record<string, unknown>).graph;
+            }
             
             dnaText = `### DNA Intelligence for \`${relPath}\`\n\n\`\`\`json\n` + JSON.stringify(filteredDna, null, 2) + `\n\`\`\`\n`;
         } else {

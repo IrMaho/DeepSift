@@ -11,13 +11,59 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { createRequire } from 'module';
-import { EmbeddedChunk, IndexMetadata, SearchResult } from '../types/index.js';
+import { EmbeddedChunk, IndexMetadata, SearchResult, ChunkType } from '../types/index.js';
+import { GraphifyNode, GraphifyEdge } from '../graphify/graph-types.js';
 
 export interface BatchOperation {
     action: 'saveMetadata' | 'deleteFileChunks' | 'saveChunks';
-    metadata?: any;
+    metadata?: IndexMetadata;
     filePath?: string;
-    chunks?: any[];
+    chunks?: Record<string, unknown>[];
+}
+
+export interface CalltreeRow {
+    file_path: string;
+    line: number;
+    snippet: string;
+    role?: string;
+    [key: string]: unknown;
+}
+
+interface SearchRow {
+    id: string;
+    filePath: string;
+    content: string;
+    startLine: number;
+    endLine: number;
+    type: ChunkType;
+    language: string;
+    score: number;
+    bm25Score?: number;
+    vectorScore?: number;
+    matchType?: SearchResult['matchType'];
+}
+
+interface ChunkDbRow {
+    id: string;
+    file_path: string;
+    content: string;
+    start_line: number;
+    end_line: number;
+    chunk_type: ChunkType;
+    language: string;
+    embedding: number[];
+}
+
+interface EmbeddingRow {
+    id: string;
+    embedding: number[] | Buffer;
+}
+
+interface MetadataRow {
+    file_path: string;
+    file_hash: string;
+    last_indexed: number;
+    chunk_count: number;
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -82,7 +128,7 @@ export class NativeStore {
         }
     }
 
-    private async executeAction(action: string, payload: any = {}): Promise<any> {
+    private async executeAction<T = unknown>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
         const req = {
             action,
             dbPath: this.dbPath,
@@ -117,7 +163,7 @@ export class NativeStore {
     }
 
     public async getMetadata(filePath: string): Promise<IndexMetadata | undefined> {
-        const data = await this.executeAction('getMetadata', { filePath });
+        const data = await this.executeAction<MetadataRow | null>('getMetadata', { filePath });
         if (!data) return undefined;
         return {
             filePath: data.file_path,
@@ -128,7 +174,7 @@ export class NativeStore {
     }
 
     public async getAllMetadata(): Promise<Map<string, IndexMetadata>> {
-        const data = await this.executeAction('getAllMetadata');
+        const data = await this.executeAction<MetadataRow[] | null>('getAllMetadata');
         const map = new Map<string, IndexMetadata>();
         if (!data) return map;
         
@@ -148,8 +194,8 @@ export class NativeStore {
         await this.syncToDisk();
     }
 
-    public async extractChunksNative(content: string, filePath: string, language: string): Promise<any[]> {
-        const result = await this.executeAction('extractChunksNative', {
+    public async extractChunksNative(content: string, filePath: string, language: string): Promise<Record<string, unknown>[]> {
+        const result = await this.executeAction<Record<string, unknown>[] | null>('extractChunksNative', {
             content,
             filePath,
             language
@@ -157,27 +203,27 @@ export class NativeStore {
         return result || [];
     }
 
-    public async extractChunksBulkNative(filePaths: string[]): Promise<any[]> {
-        const result = await this.executeAction('extractChunksBulkNative', {
+    public async extractChunksBulkNative(filePaths: string[]): Promise<Record<string, unknown>[]> {
+        const result = await this.executeAction<Record<string, unknown>[] | null>('extractChunksBulkNative', {
             filePaths
         });
         return result || [];
     }
 
-    public async extractCalltreeBulkNative(filePaths: string[], symbol: string): Promise<any[]> {
-        const result = await this.executeAction('extractCalltreeBulkNative', {
+    public async extractCalltreeBulkNative(filePaths: string[], symbol: string): Promise<CalltreeRow[]> {
+        const result = await this.executeAction<CalltreeRow[] | null>('extractCalltreeBulkNative', {
             filePaths,
             symbol
         });
         return result || [];
     }
 
-    public async addGraphNode(node: any) {
+    public async addGraphNode(node: GraphifyNode) {
         await this.executeAction('saveGraph', { graphNodes: [node] });
         await this.syncGraphToDisk();
     }
 
-    public async addGraphEdge(edge: any) {
+    public async addGraphEdge(edge: GraphifyEdge) {
         await this.executeAction('saveGraph', { graphEdges: [edge] });
         await this.syncGraphToDisk();
     }
@@ -192,8 +238,8 @@ export class NativeStore {
         await this.syncGraphToDisk();
     }
 
-    public async expandContext(startNodes: number[], depth: number = 2, hubThreshold: number = 50) {
-        const result = await this.executeAction('expandContextNative', {
+    public async expandContext(startNodes: number[], depth: number = 2, hubThreshold: number = 50): Promise<number[]> {
+        const result = await this.executeAction<number[] | null>('expandContextNative', {
             startNodes,
             depth,
             hubThreshold
@@ -281,7 +327,7 @@ export class NativeStore {
         await this.syncToDisk();
     }
 
-    public formatChunkForBatch(c: EmbeddedChunk): any {
+    public formatChunkForBatch(c: EmbeddedChunk): Record<string, unknown> {
         let siftEmbedding;
         if (c.embedding instanceof Float32Array || Array.isArray(c.embedding)) {
             if (c.embedding.length === 768) {
@@ -310,12 +356,12 @@ export class NativeStore {
             ? this.quantizeF32ToSift(embedding)
             : this.quantizeF32ToSift(new Float32Array(384));
 
-        const data = await this.executeAction('searchSemantic', {
+        const data = await this.executeAction<SearchRow[] | null>('searchSemantic', {
             queryEmbedding: siftEmbedding,
             topK
         });if (!data) return [];
         
-        return data.map((row: any) => ({
+        return data.map((row: SearchRow) => ({
             chunk: {
                 id: row.id,
                 filePath: row.filePath,
@@ -334,10 +380,10 @@ export class NativeStore {
 
 
     public async searchKeyword(query: string, topK: number = 20): Promise<SearchResult[]> {
-        const data = await this.executeAction('searchKeyword', { query, topK });
+        const data = await this.executeAction<SearchRow[] | null>('searchKeyword', { query, topK });
         if (!data) return [];
         
-        return data.map((row: any) => ({
+        return data.map((row: SearchRow) => ({
             chunk: {
                 id: row.id,
                 filePath: row.filePath,
@@ -362,14 +408,14 @@ export class NativeStore {
                 : this.quantizeF32ToSift(new Float32Array(768).fill(0));
         }
 
-        const data = await this.executeAction('searchHybridNative', {
+        const data = await this.executeAction<SearchRow[] | null>('searchHybridNative', {
             query,
             queryEmbedding: siftEmbedding,
             topK,
             filterPath
         });if (!data) return [];
         
-        return data.map((row: any) => ({
+        return data.map((row: SearchRow) => ({
             chunk: {
                 id: row.id,
                 filePath: row.filePath,
@@ -382,95 +428,95 @@ export class NativeStore {
             score: row.score,
             bm25Score: row.bm25Score,
             vectorScore: row.vectorScore,
-            matchType: row.matchType || 'hybrid-native'
+            matchType: row.matchType || 'hybrid'
         }));
     }
 
-    public async extractSymbolsNative(content: string): Promise<any[]> {
-        const data = await this.executeAction('extractSymbolsNative', { content });
+    public async extractSymbolsNative(content: string): Promise<string[]> {
+        const data = await this.executeAction<string[] | null>('extractSymbolsNative', { content });
         return data || [];
     }
 
-    public async computeCloneHashesNative(content: string, minLines: number = 5): Promise<any[]> {
-        const data = await this.executeAction('computeCloneHashesNative', { content, minLines });
+    public async computeCloneHashesNative(content: string, minLines: number = 5): Promise<Record<string, unknown>[]> {
+        const data = await this.executeAction<Record<string, unknown>[] | null>('computeCloneHashesNative', { content, minLines });
         return data || [];
     }
 
-    public async walkDirectoryNative(projectPath: string): Promise<any[]> {
-        const data = await this.executeAction('walkDirectoryNative', { projectPath });
+    public async walkDirectoryNative(projectPath: string): Promise<string[]> {
+        const data = await this.executeAction<string[] | null>('walkDirectoryNative', { projectPath });
         return data || [];
     }
 
-    public async computeSimilarityMatrixNative(threshold: number = 0.70, limit: number = 50): Promise<any[]> {
-        const data = await this.executeAction('computeSimilarityMatrixNative', { threshold, topK: limit });
+    public async computeSimilarityMatrixNative(threshold: number = 0.70, limit: number = 50): Promise<number[][]> {
+        const data = await this.executeAction<number[][] | null>('computeSimilarityMatrixNative', { threshold, topK: limit });
         return data || [];
     }
 
-    public async mineColorTokensNative(content: string): Promise<any[]> {
-        const data = await this.executeAction('mineColorTokensNative', { content });
+    public async mineColorTokensNative(content: string): Promise<Record<string, unknown>[]> {
+        const data = await this.executeAction<Record<string, unknown>[] | null>('mineColorTokensNative', { content });
         return data || [];
     }
 
-    public async analyzeNamingConventionsNative(content: string): Promise<any> {
-        const data = await this.executeAction('analyzeNamingConventionsNative', { content });
+    public async analyzeNamingConventionsNative(content: string): Promise<Record<string, number>> {
+        const data = await this.executeAction<Record<string, number> | null>('analyzeNamingConventionsNative', { content });
         return data || { camel_case: 0, pascal_case: 0, snake_case: 0, kebab_case: 0 };
     }
 
-    public async parseLcovNative(content: string): Promise<any[]> {
-        const data = await this.executeAction('parseLcovNative', { content });
+    public async parseLcovNative(content: string): Promise<Record<string, unknown>[]> {
+        const data = await this.executeAction<Record<string, unknown>[] | null>('parseLcovNative', { content });
         return data || [];
     }
 
-    public async analyzeCallTreeNative(content: string, symbol: string): Promise<any[]> {
-        const data = await this.executeAction('analyzeCallTreeNative', { content, symbol });
+    public async analyzeCallTreeNative(content: string, symbol: string): Promise<Record<string, unknown>[]> {
+        const data = await this.executeAction<Record<string, unknown>[] | null>('analyzeCallTreeNative', { content, symbol });
         return data || [];
     }
 
-    public async extractControlFlowNative(content: string): Promise<any[]> {
-        const data = await this.executeAction('extractControlFlowNative', { content });
+    public async extractControlFlowNative(content: string): Promise<Record<string, unknown>[]> {
+        const data = await this.executeAction<Record<string, unknown>[] | null>('extractControlFlowNative', { content });
         return data || [];
     }
 
-    public async classifyFileNative(filePath: string, content?: string): Promise<any> {
-        const data = await this.executeAction('classifyFileNative', { filePath, content });
+    public async classifyFileNative(filePath: string, content?: string): Promise<Record<string, unknown>> {
+        const data = await this.executeAction<Record<string, unknown> | null>('classifyFileNative', { filePath, content });
         return data || { file_name: filePath, category: 'Core', weight: 1.0 };
     }
 
-    public async buildInsightGraphNative(notes: any[], minWeight: number = 0.30): Promise<any[]> {
-        const data = await this.executeAction('buildInsightGraphNative', { notes, threshold: minWeight });
+    public async buildInsightGraphNative(notes: Record<string, unknown>[], minWeight: number = 0.30): Promise<Record<string, unknown>[]> {
+        const data = await this.executeAction<Record<string, unknown>[] | null>('buildInsightGraphNative', { notes, threshold: minWeight });
         return data || [];
     }
 
-    public async extractL10nKeysNative(content: string): Promise<any[]> {
-        const data = await this.executeAction('extractL10nKeysNative', { content });
+    public async extractL10nKeysNative(content: string): Promise<Record<string, unknown>[]> {
+        const data = await this.executeAction<Record<string, unknown>[] | null>('extractL10nKeysNative', { content });
         return data || [];
     }
 
-    public async mapResourceRefsNative(content: string): Promise<any[]> {
-        const data = await this.executeAction('mapResourceRefsNative', { content });
+    public async mapResourceRefsNative(content: string): Promise<Record<string, unknown>[]> {
+        const data = await this.executeAction<Record<string, unknown>[] | null>('mapResourceRefsNative', { content });
         return data || [];
     }
 
-    public async findDeadCodeNative(symbols: any[], contents: string[]): Promise<any[]> {
-        const data = await this.executeAction('findDeadCodeNative', { symbols, contents });
+    public async findDeadCodeNative(symbols: Record<string, unknown>[], contents: string[]): Promise<Record<string, unknown>[]> {
+        const data = await this.executeAction<Record<string, unknown>[] | null>('findDeadCodeNative', { symbols, contents });
         return data || [];
     }
 
     public async serializeToonTabularNative(headers: string[], rows: string[][]): Promise<string> {
-        const data = await this.executeAction('serializeToonTabularNative', { headers, rows });
+        const data = await this.executeAction<string | null>('serializeToonTabularNative', { headers, rows });
         return data || '';
     }
 
     public async renderTextBitmapNative(content: string, width: number = 640, height: number = 480): Promise<Buffer> {
-        const data = await this.executeAction('renderTextBitmapNative', { content, width, height });
+        const data = await this.executeAction<number[] | null>('renderTextBitmapNative', { content, width, height });
         return Buffer.from(data || []);
     }
 
     public async getAllChunks(): Promise<EmbeddedChunk[]> {
-        const data = await this.executeAction('getAllChunks');
+        const data = await this.executeAction<ChunkDbRow[] | null>('getAllChunks');
         if (!data) return [];
         
-        return data.map((row: any) => ({
+        return data.map((row: ChunkDbRow) => ({
             chunk: {
                 id: row.id,
                 filePath: row.file_path,
@@ -485,10 +531,10 @@ export class NativeStore {
     }
 
     public async getChunkEmbeddings(): Promise<{ id: string; embedding: Buffer }[]> {
-        const data = await this.executeAction('getChunkEmbeddings');
+        const data = await this.executeAction<EmbeddingRow[] | null>('getChunkEmbeddings');
         if (!data) return [];
         
-        return data.map((row: any) => ({
+        return data.map((row: EmbeddingRow) => ({
             id: row.id,
             embedding: Buffer.from(row.embedding)
         }));
@@ -496,10 +542,10 @@ export class NativeStore {
 
     public async getChunksByIds(ids: string[]): Promise<EmbeddedChunk[]> {
         if (ids.length === 0) return [];
-        const data = await this.executeAction('getChunksByIds', { ids });
+        const data = await this.executeAction<ChunkDbRow[] | null>('getChunksByIds', { ids });
         if (!data) return [];
         
-        return data.map((row: any) => ({
+        return data.map((row: ChunkDbRow) => ({
             chunk: {
                 id: row.id,
                 filePath: row.file_path,
@@ -515,18 +561,18 @@ export class NativeStore {
 
     
   public async extractCycleNative(): Promise<string[]> {
-    return this.executeAction('extractCycleNative');
+    return this.executeAction<string[]>('extractCycleNative');
   }
 
   public async extractTaintNative(symbol: string): Promise<string[]> {
-    return this.executeAction('extractTaintNative', { symbol });
+    return this.executeAction<string[]>('extractTaintNative', { symbol });
   }
 
   public close() {
         // No-op for the native store, as the process exits after each request.
     }
 
-    public async saveGraph(nodes: any[], edges: any[]) {
+    public async saveGraph(nodes: GraphifyNode[], edges: GraphifyEdge[]) {
         const nodeIndexMap = new Map<string, number>();
         const mappedNodes = nodes.map((node, index) => {
             nodeIndexMap.set(node.id, index);
@@ -555,8 +601,8 @@ export class NativeStore {
         });
     }
 
-    public async getStatus(): Promise<any> {
-        const data = await this.executeAction('getStatus');
+    public async getStatus(): Promise<{ totalFiles: number; totalChunks: number; lastUpdated: number; isIndexing: boolean }> {
+        const data = await this.executeAction<Record<string, unknown> | null>('getStatus');
         if (!data) {
             return {
                 totalFiles: 0,
@@ -566,9 +612,9 @@ export class NativeStore {
             };
         }
         return {
-            totalFiles: data.totalFiles || 0,
-            totalChunks: data.totalChunks || 0,
-            lastUpdated: data.lastUpdated || 0,
+            totalFiles: (data.totalFiles as number) || 0,
+            totalChunks: (data.totalChunks as number) || 0,
+            lastUpdated: (data.lastUpdated as number) || 0,
             isIndexing: false
         };
     }

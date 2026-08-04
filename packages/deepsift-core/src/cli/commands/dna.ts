@@ -7,6 +7,7 @@
  * @since 1.0.3
  */
 import { generateDNA, loadDNA, formatDNASummary } from '../../intelligence/project-dna.js';
+import { ProjectDNA } from '../../types/dna-types.js';
 import { printError, printResult, OutputFormat } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
@@ -46,14 +47,14 @@ export async function dnaCommand(
 
     outputDNAFiltered(dna, format, undefined, undefined, compress, undefined, undefined, undefined, false);
 
-    const summary = formatDNASummary(dna);
+    const summary = `Generated Project DNA fingerprint: ${dna.fingerprint}`;
     await saveSearchLog(projectPath, ['[DNA Generation]'], summary, { skipVisuals: !compress });
 
     process.stdout.write('\x1b[32m✓ DNA saved and compressed to .deepsift/project-dna.toon\x1b[0m\n');
 }
 
 function outputDNAFiltered(
-    dna: any, 
+    dna: ProjectDNA, 
     format: OutputFormat, 
     section?: string, 
     query?: string, 
@@ -63,7 +64,7 @@ function outputDNAFiltered(
     pathFilter?: string,
     showMetaOnly: boolean = false
 ): void {
-    let resultObj = dna;
+    let resultObj: unknown = dna;
 
     // 1. Filter by Section
     if (section) {
@@ -81,8 +82,9 @@ function outputDNAFiltered(
             assets: 'assets'
         };
         const key = sectionMap[section.toLowerCase()];
-        if (key && dna[key]) {
-            resultObj = dna[key];
+        const dnaRecord = dna as unknown as Record<string, unknown>;
+        if (key && dnaRecord[key]) {
+            resultObj = dnaRecord[key];
         } else {
             printError(`Unknown section "${section}". Available: ${Object.keys(sectionMap).join(', ')}`);
             return;
@@ -112,7 +114,7 @@ function outputDNAFiltered(
         outputText = JSON.stringify(resultObj, null, 2);
     } else {
         if (!section && !query && !pathFilter && !showMetaOnly && limit === undefined && offset === undefined) {
-            outputText = formatDNASummary(resultObj);
+            outputText = formatDNASummary(resultObj as ProjectDNA);
         } else {
             outputText = formatCleanMarkdownDNA(resultObj, section || 'custom');
         }
@@ -127,13 +129,13 @@ function outputDNAFiltered(
 }
 
 export function processDnaFilters(
-    obj: any, 
+    obj: unknown, 
     pathFilter?: string, 
     query?: string, 
     limit?: number, 
     offset: number = 0, 
     showMetaOnly: boolean = false
-): any {
+): unknown {
     if (obj === null || obj === undefined) return obj;
 
     if (Array.isArray(obj)) {
@@ -143,8 +145,8 @@ export function processDnaFilters(
         if (pathFilter) {
             const pf = pathFilter.toLowerCase();
             processed = processed.filter(item => {
-                if (item && typeof item === 'object' && typeof item.filePath === 'string') {
-                    return item.filePath.toLowerCase().includes(pf);
+                if (item && typeof item === 'object' && 'filePath' in item && typeof (item as Record<string, unknown>).filePath === 'string') {
+                    return ((item as Record<string, unknown>).filePath as string).toLowerCase().includes(pf);
                 }
                 return true;
             });
@@ -189,9 +191,10 @@ export function processDnaFilters(
     }
 
     if (typeof obj === 'object') {
-        const result: any = {};
-        for (const key of Object.keys(obj)) {
-            result[key] = processDnaFilters(obj[key], pathFilter, query, limit, offset, showMetaOnly);
+        const result: Record<string, unknown> = {};
+        const objRecord = obj as Record<string, unknown>;
+        for (const key of Object.keys(objRecord)) {
+            result[key] = processDnaFilters(objRecord[key], pathFilter, query, limit, offset, showMetaOnly);
         }
         return result;
     }
@@ -199,7 +202,7 @@ export function processDnaFilters(
     return obj;
 }
 
-export function recursiveQueryDna(obj: any, term: string): any {
+export function recursiveQueryDna(obj: unknown, term: string): unknown {
     const t = term.toLowerCase().replace(/\\/g, '/');
     if (typeof obj === 'string') {
         return obj.toLowerCase().replace(/\\/g, '/').includes(t) ? obj : null;
@@ -212,14 +215,15 @@ export function recursiveQueryDna(obj: any, term: string): any {
         return matched.length > 0 ? matched : null;
     }
     if (typeof obj === 'object' && obj !== null) {
-        const res: any = {};
+        const res: Record<string, unknown> = {};
+        const objRecord = obj as Record<string, unknown>;
         let hasMatch = false;
-        for (const key of Object.keys(obj)) {
+        for (const key of Object.keys(objRecord)) {
             if (key.toLowerCase().includes(t)) {
-                res[key] = obj[key];
+                res[key] = objRecord[key];
                 hasMatch = true;
             } else {
-                const valMatch = recursiveQueryDna(obj[key], term);
+                const valMatch = recursiveQueryDna(objRecord[key], term);
                 if (valMatch !== null) {
                     res[key] = valMatch;
                     hasMatch = true;
@@ -231,12 +235,12 @@ export function recursiveQueryDna(obj: any, term: string): any {
     return null;
 }
 
-export function formatCleanMarkdownDNA(data: any, sectionName: string): string {
+export function formatCleanMarkdownDNA(data: unknown, sectionName: string): string {
     const lines: string[] = [];
     lines.push(`### 🧬 DNA Section: ${sectionName.toUpperCase()}`);
     lines.push('');
 
-    function renderNode(val: any, depth: number = 0): void {
+    function renderNode(val: unknown, depth: number = 0): void {
         const indent = '  '.repeat(depth);
         if (val === null || val === undefined) return;
 
@@ -248,9 +252,10 @@ export function formatCleanMarkdownDNA(data: any, sectionName: string): string {
         if (Array.isArray(val)) {
             val.forEach(item => {
                 if (typeof item === 'object' && item !== null) {
-                    const title = item.name || item.filePath || item.id || item.pattern || item.category || 'Item';
+                    const itemRec = item as Record<string, unknown>;
+                    const title = itemRec.name || itemRec.filePath || itemRec.id || itemRec.pattern || itemRec.category || 'Item';
                     lines.push(`${indent}- **${title}**`);
-                    for (const [k, v] of Object.entries(item)) {
+                    for (const [k, v] of Object.entries(itemRec)) {
                         if (['name', 'id'].includes(k)) continue;
                         if (typeof v === 'object' && v !== null) {
                             lines.push(`${indent}  - **${k}**:`);

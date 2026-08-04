@@ -11,7 +11,13 @@
  * Lossless text-based serialization designed specifically to reduce LLM token count.
  */
 
-export function jsonToToon(val: any, indent: number = 0): string {
+export type ToonPrimitive = string | number | boolean | null | undefined;
+export type ToonValue =
+    | ToonPrimitive
+    | ToonValue[]
+    | { [key: string]: ToonValue };
+
+export function jsonToToon(val: unknown, indent: number = 0): string {
     const spacing = ' '.repeat(indent);
 
     if (val === null) return 'null';
@@ -38,13 +44,14 @@ export function jsonToToon(val: any, indent: number = 0): string {
             // Tabular format
             // Collect all unique keys
             const keysSet = new Set<string>();
-            val.forEach(item => Object.keys(item).forEach(k => keysSet.add(k)));
+            val.forEach(item => Object.keys(item as Record<string, unknown>).forEach(k => keysSet.add(k)));
             const keys = Array.from(keysSet);
 
             let result = `${spacing}[${val.length}]{${keys.join(',')}}:\n`;
             for (const item of val) {
+                const itemObj = item as Record<string, unknown>;
                 const row = keys.map(k => {
-                    const v = item[k];
+                    const v = itemObj[k];
                     if (v === undefined || v === null) return '';
                     const str = typeof v === 'object' ? JSON.stringify(v) : String(v);
                     // escape comma
@@ -72,12 +79,13 @@ export function jsonToToon(val: any, indent: number = 0): string {
     }
 
     if (typeof val === 'object') {
-        const keys = Object.keys(val);
+        const objVal = val as Record<string, unknown>;
+        const keys = Object.keys(objVal);
         if (keys.length === 0) return '{}';
 
         let result = '';
         for (const key of keys) {
-            const v = val[key];
+            const v = objVal[key];
             const serializedValue = jsonToToon(v, indent + 2);
             if (serializedValue.includes('\n')) {
                 result += `${spacing}${key}:\n${serializedValue}\n`;
@@ -91,11 +99,11 @@ export function jsonToToon(val: any, indent: number = 0): string {
     return String(val);
 }
 
-export function toonToJson(toonText: string): any {
+export function toonToJson(toonText: string): unknown {
     const lines = toonText.split(/\r?\n/);
     let lineIdx = 0;
 
-    function parseValue(currentIndent: number): any {
+    function parseValue(currentIndent: number): ToonValue {
         if (lineIdx >= lines.length) return null;
         let line = lines[lineIdx];
 
@@ -132,7 +140,7 @@ export function toonToJson(toonText: string): any {
             const keys = tabArrayMatch[3].split(',');
             lineIdx++;
 
-            const arr: any[] = [];
+            const arr: ToonValue[] = [];
             for (let i = 0; i < size; i++) {
                 if (lineIdx >= lines.length) break;
                 const rowLine = lines[lineIdx].trim();
@@ -144,7 +152,7 @@ export function toonToJson(toonText: string): any {
                 
                 // Parse CSV row respecting quotes
                 const rowValues = parseCsvRow(rowLine);
-                const obj: any = {};
+                const obj: Record<string, ToonValue> = {};
                 keys.forEach((k, idx) => {
                     const rawVal = rowValues[idx] || '';
                     obj[k] = parsePrimitive(rawVal);
@@ -160,7 +168,7 @@ export function toonToJson(toonText: string): any {
         if (stdArrayMatch) {
             const size = parseInt(stdArrayMatch[2], 10);
             lineIdx++;
-            const arr: any[] = [];
+            const arr: ToonValue[] = [];
             
             while (lineIdx < lines.length) {
                 const nextLine = lines[lineIdx];
@@ -192,7 +200,7 @@ export function toonToJson(toonText: string): any {
         // Object property or nested object: key: value or key:
         const colonIdx = trimmed.indexOf(':');
         if (colonIdx !== -1) {
-            const obj: any = {};
+            const obj: Record<string, ToonValue> = {};
             
             while (lineIdx < lines.length) {
                 const currLine = lines[lineIdx];
@@ -258,7 +266,7 @@ function parseCsvRow(row: string): string[] {
     });
 }
 
-function parsePrimitive(val: string): any {
+function parsePrimitive(val: string): ToonPrimitive {
     const trimmed = val.trim();
     if (trimmed === 'null') return null;
     if (trimmed === 'undefined') return undefined;
