@@ -39,26 +39,34 @@ export class Searcher {
     public async search(searchQuery: SearchQuery): Promise<SearchResult[]> {
         const { query, topK = 10, filterType, filterPath } = searchQuery;
         
-        const keywordResultsRaw = await this.store.searchKeyword(query, 50);
-        const keywordResults = this.filterResults(keywordResultsRaw, filterType, filterPath);
-
+        let candidates: SearchResult[] = [];
+        
         const queryVectorF32 = await getEmbedding(query);
-        const semanticResultsRaw = await this.store.searchSemantic(queryVectorF32, 50);
-        const semanticResults = this.filterResults(semanticResultsRaw, filterType, filterPath);
-
-        let structuralWeights: Map<string, number> | undefined;
-        try {
-            const dna = await loadDNA(process.cwd());
-            if (dna && dna.architecture && dna.architecture.coreFiles) {
-                structuralWeights = new Map<string, number>();
-                dna.architecture.coreFiles.forEach((f: string) => structuralWeights!.set(f, 1.5));
-            }
-        } catch {
-            // Intentionally silent: DNA file may not be available yet
+        const hybridNativeRaw = await this.store.searchHybridNative(query, queryVectorF32, 400);
+        if (hybridNativeRaw && hybridNativeRaw.length > 0) {
+            candidates = this.filterResults(hybridNativeRaw, filterType, filterPath);
         }
+        
+        if (candidates.length === 0) {
+            const keywordResultsRaw = await this.store.searchKeyword(query, 50);
+            const keywordResults = this.filterResults(keywordResultsRaw, filterType, filterPath);
 
-        const combined = applyRRF(semanticResults, keywordResults, 60, structuralWeights);
-        let candidates = combined;
+            const semanticResultsRaw = await this.store.searchSemantic(queryVectorF32, 50);
+            const semanticResults = this.filterResults(semanticResultsRaw, filterType, filterPath);
+
+            let structuralWeights: Map<string, number> | undefined;
+            try {
+                const dna = await loadDNA(process.cwd());
+                if (dna && dna.architecture && dna.architecture.coreFiles) {
+                    structuralWeights = new Map<string, number>();
+                    dna.architecture.coreFiles.forEach((f: string) => structuralWeights!.set(f, 1.5));
+                }
+            } catch {
+                // Intentionally silent: DNA file may not be available yet
+            }
+
+            const combined = applyRRF(semanticResults, keywordResults, 60, structuralWeights);
+            candidates = combined;
 
             const tokens = Searcher.tokenizeQuery(query);
             if (tokens.length >= 2) {
@@ -82,7 +90,6 @@ export class Searcher {
                     }
                 }
 
-                // Path & Token Alignment Bonus (Reduced weights to prevent BM25 UI Bias)
                 for (const res of relaxedResultsMap.values()) {
                     const filePathLower = res.chunk.filePath.toLowerCase();
                     const contentLower = res.chunk.content.toLowerCase();
@@ -90,16 +97,16 @@ export class Searcher {
 
                     for (const t of tokens) {
                         if (filePathLower.includes(t)) {
-                            res.score += 0.10; // High bonus for path matches
+                            res.score += 0.10;
                             matchedTokenCount++;
                         } else if (contentLower.includes(t)) {
-                            res.score += 0.03; // Medium bonus for content matches
+                            res.score += 0.03;
                             matchedTokenCount++;
                         }
                     }
 
                     if (matchedTokenCount === tokens.length) {
-                        res.score += 0.10; // High bonus for full match
+                        res.score += 0.10;
                     }
                 }
 
@@ -118,6 +125,7 @@ export class Searcher {
                     candidates = deduplicated;
                 }
             }
+        }
         
         candidates.sort((a, b) => b.score - a.score);
 
