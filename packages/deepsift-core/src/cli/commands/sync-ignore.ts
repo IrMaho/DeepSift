@@ -11,7 +11,7 @@ import { NativeStore, BatchOperation } from '../../storage/native-store.js';
 import { RealmRouter } from '../../core/realm-router.js';
 import path from 'path';
 import fs from 'fs';
-import { printSuccess, printError, printInfo } from '../cli-output.js';
+import { printSuccess, printInfo } from '../cli-output.js';
 import { indexCommand } from './index-cmd.js';
 
 export async function syncIgnoreCommand(projectPath: string, options: any) {

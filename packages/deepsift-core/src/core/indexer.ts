@@ -9,7 +9,7 @@
  * @since 1.0.0
  */
 
-import { NativeStore, BatchOperation } from '../storage/native-store.js';
+import { NativeStore } from '../storage/native-store.js';
 import { parseSkillFile } from '../parsers/skill-parser.js';
 import { parseWithAst } from '../parsers/ast-chunker.js';
 import { getEmbeddings } from './embedder.js';
@@ -83,19 +83,27 @@ export class Indexer {
                     const gitignorePath = path.join(rootDir, '.gitignore');
                     const gitignoreContent = await fs.readFile(gitignorePath, 'utf-8');
                     ig.add(gitignoreContent);
-                } catch (e) {}
+                } catch {
+                    // Intentionally silent: .gitignore may not exist
+                }
 
                 try {
                     const dsignorePath = path.join(rootDir, '.deepsiftignore');
                     const dsignoreContent = await fs.readFile(dsignorePath, 'utf-8');
                     ig.add(dsignoreContent);
-                } catch (e) {}
+                } catch {
+                    // Intentionally silent: .deepsiftignore may not exist
+                }
 
                 allFiles = allFiles.filter((file: string) => {
                     const relPath = path.relative(rootDir, file);
                     return !ig.ignores(relPath);
                 });
-            } catch(e) {}
+            } catch (e: any) {
+                if (process.env.DEEPSIFT_DEBUG) {
+                    console.error(`[deepsift] Error during ignore file filtering: ${e.message}`);
+                }
+            }
             
             const allMetadata = await this.store.getAllMetadata();
 
@@ -105,7 +113,9 @@ export class Indexer {
             try {
                 const data = (await import('fs')).readFileSync(fileHashesJsonPath, 'utf-8');
                 savedHashes = JSON.parse(data);
-            } catch (e) {}
+            } catch {
+                // Intentionally silent: file-hashes.json may not exist yet
+            }
             const fileHashes = new Map<string, string>();
             const currentFilesSet = new Set(allFiles);
 
@@ -138,13 +148,12 @@ export class Indexer {
                         continue;
                     }
                     savedHashes[file] = hash;
-                    if (false) {
-                        continue;
-                    }
 
                     filesToProcess.push(file);
-                } catch (err) {
-                    // Safe ignore
+                } catch (err: any) {
+                    if (process.env.DEEPSIFT_DEBUG) {
+                        console.error(`[deepsift] Failed to compute hash/read for ${file}: ${err.message}`);
+                    }
                 }
             }
 
@@ -212,24 +221,22 @@ export class Indexer {
 
                     const validChunks = allChunks.filter(c => typeof c.content === 'string' && c.content.trim().length > 0);
                     if (validChunks.length > 0) {
-                        const EMBED_BATCH = 16;
+                        const EMBED_BATCH = 32;
                         for (let j = 0; j < validChunks.length; j += EMBED_BATCH) {
                             const chunkSlice = validChunks.slice(j, j + EMBED_BATCH);
                             const embedFraction = (j + chunkSlice.length) / validChunks.length;
                             const currentProgress = batchBaseIndex + (0.05 + 0.95 * embedFraction) * batchFilesCount;
                             if (onProgress) {
-                                const currentFile = chunkSlice[0]?.filePath ? path.relative(rootDir, chunkSlice[0].filePath) : `Embedding chunks (${j + chunkSlice.length}/${validChunks.length})`;
-                                onProgress(currentProgress, totalFilesToProcess, currentFile);
+                                const label = chunkSlice[0]?.filePath
+                                    ? path.relative(rootDir, chunkSlice[0].filePath)
+                                    : `Chunks ${j + chunkSlice.length}/${validChunks.length}`;
+                                onProgress(currentProgress, totalFilesToProcess, label);
                             }
                             const texts = chunkSlice.map(c => c.content);
                             const embeddings = await getEmbeddings(texts);
-                            
-                            const embeddedChunks = chunkSlice.map((chunk, idx) => ({
-                                chunk,
-                                embedding: embeddings[idx]
-                            }));
-                            
-                            const formattedChunks = embeddedChunks.map(c => this.store.formatChunkForBatch(c));
+                            const formattedChunks = chunkSlice.map((chunk, idx) =>
+                                this.store.formatChunkForBatch({ chunk, embedding: embeddings[idx] })
+                            );
                             batchOperations.push({ action: 'saveChunks', chunks: formattedChunks });
                             chunksProcessed += chunkSlice.length;
                         }
@@ -260,7 +267,7 @@ export class Indexer {
                 }
             }
 
-            const DB_BATCH_LIMIT = 200;
+            const DB_BATCH_LIMIT = 5000;
             if (batchOperations.length > 0) {
                 const totalBatches = Math.ceil(batchOperations.length / DB_BATCH_LIMIT);
                 for (let b = 0; b < batchOperations.length; b += DB_BATCH_LIMIT) {

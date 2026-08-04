@@ -11,6 +11,8 @@
 
 import fs from 'fs';
 import path from 'path';
+
+const BULB = '\u{1F4A1}';
 import { RealmRouter, CrossRealmResult } from '../../core/realm-router.js';
 import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-output.js';
 import { saveSearchLog } from '../../utils/history.js';
@@ -31,6 +33,25 @@ export interface SearchOptions {
     allRealms?: boolean;
     noVisual?: boolean;
     limit?: number;
+    fast?: boolean;
+    rerankCandidates?: number;
+    showContext?: boolean;
+    allResults?: boolean;
+}
+
+function formatSnippet(content: string, filePath: string, startLine: number, endLine: number): string {
+    const cleaned = content
+        .replace(/\/\* DEEPSIFT CONTEXT:?[\s\S]*?\*\//g, '')
+        .replace(/\/\/ DEEPSIFT CONTEXT:?.*(\r?\n|$)/g, '')
+        .trim();
+    const lines = cleaned.split('\n');
+    if (lines.length <= 50) {
+        return cleaned;
+    }
+    const omittedCount = lines.length - 40;
+    const first35 = lines.slice(0, 35).join('\n');
+    const last5 = lines.slice(lines.length - 5).join('\n');
+    return `${first35}\n// ... (${omittedCount} lines omitted. Use 'deepsift read "${filePath}:${startLine}-${endLine}"' for full code) ...\n${last5}`;
 }
 
 /**
@@ -45,8 +66,6 @@ export interface SearchOptions {
  * await searchCommand(process.cwd(), ['authentication store'], 'markdown', { limit: 10 });
  * ```
  */
-import { fileURLToPath } from 'url';
-
 export async function searchCommand(
     projectPath: string, 
     queries: string[], 
@@ -126,7 +145,7 @@ export function astSymbolFallback(projectPath: string, query: string): { file: s
     function scan(dir: string) {
         if (!fs.existsSync(dir) || matches.length > 50) return;
         let items: fs.Dirent[];
-        try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+        try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { /* Intentionally silent: directory may not be readable */ return; }
 
         for (const item of items) {
             if (item.name.startsWith('.') || IGNORED_DIRS.has(item.name.toLowerCase())) continue;
@@ -175,7 +194,11 @@ export function astSymbolFallback(projectPath: string, query: string): { file: s
                                 }
                             }
                         }
-                    } catch {}
+                    } catch (e: any) {
+                        if (process.env.DEEPSIFT_DEBUG) {
+                            console.error(`[deepsift] Failed to scan ${fullPath}: ${e.message}`);
+                        }
+                    }
                 }
             }
         }
@@ -212,9 +235,10 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
         return;
     }
 
-    const displayLimit = options.limit || 8;
+    const displayLimit = options.limit ? options.limit : (options.allResults ? Math.min(20, results.length) : 1);
     const cappedResults = results.slice(0, displayLimit);
 
+    let anyTruncated = false;
     const formattedResults = cappedResults.map((res: CrossRealmResult, i: number) => {
         let contentToDisplay = res.chunk.content;
         let displayStartLine = res.chunk.startLine;
@@ -230,22 +254,34 @@ async function executeSingleSearch(router: RealmRouter, projectPath: string, que
                 displayEndLine = Math.min(lines.length, res.chunk.endLine + options.contextLines);
                 
                 contentToDisplay = lines.slice(displayStartLine - 1, displayEndLine).join('\n');
-            } catch (err) {
+            } catch (err: any) {
+                if (process.env.DEEPSIFT_DEBUG) {
+                    console.error(`[deepsift] Failed to expand context lines for ${res.chunk.filePath}: ${err.message}`);
+                }
             }
         }
-        
-        const debugScores = (res.bm25Score !== undefined && res.vectorScore !== undefined) 
-            ? `, bm25: ${res.bm25Score.toFixed(3)}, vec: ${res.vectorScore.toFixed(3)}` 
-            : ``;
-        return `${i + 1}. [${res.realmId}] [${res.chunk.filePath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)}${debugScores}, match: ${res.matchType})\n   Type: ${res.chunk.type}\n   \`\`\`${res.chunk.language}\n${contentToDisplay}\n   \`\`\``;
+
+        const relPath = path.isAbsolute(res.chunk.filePath)
+            ? path.relative(projectPath, res.chunk.filePath).replace(/\\/g, '/')
+            : res.chunk.filePath.replace(/\\/g, '/');
+        const snippet = formatSnippet(contentToDisplay, relPath, displayStartLine, displayEndLine);
+        if (snippet !== contentToDisplay) anyTruncated = true;
+        const realmTag = (res.realmId && res.realmId !== 'default' && res.realmId !== 'workspace') ? `[${res.realmId}] ` : '';
+        return `${i + 1}. ${realmTag}[${relPath}:${displayStartLine}-${displayEndLine}] (score: ${res.score.toFixed(3)})\n   \`\`\`${res.chunk.language}\n${snippet}\n   \`\`\``;
     }).join('\n\n');
 
-    const injector = new ContextInjector(projectPath);
-    const contextStr = injector.formatForOutput(await injector.inject([query]));
+    let contextStr = '';
+    if (options.showContext) {
+        const injector = new ContextInjector(projectPath);
+        contextStr = injector.formatForOutput(await injector.inject([query]));
+    }
 
-    let rawOutput = `${contextStr}Found ${results.length} relevant code sections${results.length > displayLimit ? ` (Showing top ${displayLimit}, pass --limit ${results.length} to view all)` : ''}:\n\n${formattedResults}`;
-    if (results.length > displayLimit) {
-        rawOutput += `\n\n💡 **Pagination Notice**: Showing top ${displayLimit} of ${results.length} results. Pass \`--limit ${results.length}\` to expand full list.`;
+    let rawOutput = `${contextStr}Found ${results.length} relevant code sections${results.length > displayLimit ? ` (Showing top ${displayLimit}, pass --top ${results.length} or --all to view all)` : ''}:\n\n${formattedResults}`;
+    if (results.length > displayLimit && !options.allResults) {
+        rawOutput += `\n\n${BULB} **Pagination Notice**: Showing top ${displayLimit} of ${results.length} results. Pass \`--top 5\` or \`--all\` to expand full list.`;
+    }
+    if (results.length > displayLimit || anyTruncated) {
+        rawOutput += `\n\n${BULB} Use \`deepsift read <file:line>\` for full file context.`;
     }
     let finalOutput = rawOutput;
     
@@ -314,11 +350,22 @@ async function executeMultiSearch(router: RealmRouter, projectPath: string, quer
             continue;
         }
 
-        results.slice(0, options.limit || 5).forEach((res, idx) => {
+        const displayLimit = options.limit ? options.limit : (options.allResults ? Math.min(10, results.length) : 1);
+        let anyTruncated = false;
+        results.slice(0, displayLimit).forEach((res, idx) => {
             const key = `${res.realmId}:${res.chunk.filePath}:${res.chunk.startLine}`;
             allResultsMap.set(key, res);
-            combinedOutput += `${idx + 1}. [${res.realmId}] [${res.chunk.filePath}:${res.chunk.startLine}-${res.chunk.endLine}] (score: ${res.score.toFixed(3)})\n   \`\`\`${res.chunk.language}\n${res.chunk.content.substring(0, 200)}...\n   \`\`\`\n`;
+            const relPath = path.isAbsolute(res.chunk.filePath)
+                ? path.relative(projectPath, res.chunk.filePath).replace(/\\/g, '/')
+                : res.chunk.filePath.replace(/\\/g, '/');
+            const snippet = formatSnippet(res.chunk.content, relPath, res.chunk.startLine, res.chunk.endLine);
+            if (snippet !== res.chunk.content) anyTruncated = true;
+            const realmTag = (res.realmId && res.realmId !== 'default' && res.realmId !== 'workspace') ? `[${res.realmId}] ` : '';
+            combinedOutput += `${idx + 1}. ${realmTag}[${relPath}:${res.chunk.startLine}-${res.chunk.endLine}] (score: ${res.score.toFixed(3)})\n   \`\`\`${res.chunk.language}\n${snippet}\n   \`\`\`\n`;
         });
+        if (results.length > displayLimit || anyTruncated) {
+            combinedOutput += `${BULB} Use \`deepsift read <file:line>\` for full file context.\n`;
+        }
         combinedOutput += '\n';
     }
 

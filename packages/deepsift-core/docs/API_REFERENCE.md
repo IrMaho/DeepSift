@@ -1,858 +1,1303 @@
 # 📖 DeepSift Source Code API Reference
 
-Automatically extracted API documentation generated from TSDoc comments across DeepSift modules.
+Automatically extracted API documentation generated directly from JSDoc/TSDoc metadata across **144 TypeScript modules** in DeepSift.
 
-## 📄 [`complexity-analyzer`](file:///src/analyzers/complexity-analyzer.ts)
-**Path:** `src/analyzers/complexity-analyzer.ts`  
-**Description:** TypeScript source module.
+---
+
+## 📄 [`complexity-analyzer`](file:///packages/deepsift-core/src/analyzers/complexity-analyzer.ts)
+
+- **Path:** `packages/deepsift-core/src/analyzers/complexity-analyzer.ts`  
+- **Description:** Cyclomatic & Cognitive Complexity Heatmap Analyzer Engine.
+
+### Exported Symbols
+
+#### `interface FunctionComplexity`
+Calculates branch complexity scores for functions, methods, and modules to flag high-risk refactoring targets.
+
+#### `interface ComplexityReport`
+Summary report containing complexity metrics across target codebase directory.
+
+#### `class ComplexityAnalyzer`
+Analyzer that scans source code and calculates Cyclomatic and Cognitive complexity scores.
+
+---
+
+## 📄 [`convention-miner`](file:///packages/deepsift-core/src/analyzers/convention-miner.ts)
+
+- **Path:** `packages/deepsift-core/src/analyzers/convention-miner.ts`  
+- **Description:** Project Naming Convention & Directory Architecture Miner Engine.
+
+### Exported Symbols
+
+#### `interface ConventionResult`
+Analyzes case styles (camelCase, PascalCase, kebab-case, snake_case) across files, classes,
+
+#### `function mineConventions`
+Mines project-wide naming conventions and structural architecture templates.
+
+---
+
+## 📄 [`entropy-filter`](file:///packages/deepsift-core/src/analyzers/entropy-filter.ts)
+
+- **Path:** `packages/deepsift-core/src/analyzers/entropy-filter.ts`  
+- **Description:** Shannon Entropy & Minified Code Filter Engine.
+
+### Exported Symbols
+
+#### `function calculateEntropy`
+Detects bundled JS files, minified code artifacts, and high-entropy text chunks to prevent indexing noise.
+
+#### `function isBundledOrMinifiedFile`
+Determines whether a file path or file content represents a minified or bundled artifact.
+
+---
+
+## 📄 [`git-churn-miner`](file:///packages/deepsift-core/src/analyzers/git-churn-miner.ts)
+
+- **Path:** `packages/deepsift-core/src/analyzers/git-churn-miner.ts`  
+- **Description:** Git Hotspot Heatmap & Churn Risk Miner Engine.
+
+### Exported Symbols
+
+#### `interface GitChurnItem`
+Combines commit change frequency with file size complexity to calculate refactoring risk scores.
+
+#### `class GitChurnMiner`
+Miner that extracts commit frequency and churn hotspots from Git repository history.
+
+---
+
+## 📄 [`graph-analyzer`](file:///packages/deepsift-core/src/analyzers/graph-analyzer.ts)
+
+- **Path:** `packages/deepsift-core/src/analyzers/graph-analyzer.ts`  
+- **Description:** Graphify dependency graph topology analyzer for community detection and hub identification.
+
+---
+
+## 📄 [`impact-analyzer`](file:///packages/deepsift-core/src/analyzers/impact-analyzer.ts)
+
+- **Path:** `packages/deepsift-core/src/analyzers/impact-analyzer.ts`  
+- **Description:** Breaking Change Impact Analyzer Module.
+
+### Exported Symbols
 
+#### `interface ImpactReport`
+Traces symbol references across source files, calculates breaking risk scores,
+
+#### `class ImpactAnalyzer`
+Analyzer that evaluates breaking change risk for code symbols across the codebase.
+
 ---
 
-## 📄 [`convention-miner`](file:///src/analyzers/convention-miner.ts)
-**Path:** `src/analyzers/convention-miner.ts`  
-**Description:** TypeScript source module.
+## 📄 [`l10n-detector`](file:///packages/deepsift-core/src/analyzers/l10n-detector.ts)
 
+- **Path:** `packages/deepsift-core/src/analyzers/l10n-detector.ts`  
+- **Description:** Internationalization (i18n) signal detector and hardcoded string auditor.
+
 ---
+
+## 📄 [`layer-watchdog`](file:///packages/deepsift-core/src/analyzers/layer-watchdog.ts)
 
-## 📄 [`entropy-filter`](file:///src/analyzers/entropy-filter.ts)
-**Path:** `src/analyzers/entropy-filter.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/analyzers/layer-watchdog.ts`  
+- **Description:** Clean Architecture layer boundary enforcer detecting cross-layer import violations.
 
 ---
 
-## 📄 [`git-churn-miner`](file:///src/analyzers/git-churn-miner.ts)
-**Path:** `src/analyzers/git-churn-miner.ts`  
-**Description:** TypeScript source module.
+## 📄 [`pattern-miner`](file:///packages/deepsift-core/src/analyzers/pattern-miner.ts)
 
+- **Path:** `packages/deepsift-core/src/analyzers/pattern-miner.ts`  
+- **Description:** Project pattern miner extracting recurring code structures and conventions.
+
 ---
+
+## 📄 [`property-miner`](file:///packages/deepsift-core/src/analyzers/property-miner.ts)
 
-## 📄 [`graph-analyzer`](file:///src/analyzers/graph-analyzer.ts)
-**Path:** `src/analyzers/graph-analyzer.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/analyzers/property-miner.ts`  
+- **Description:** Design token and CSS/Dart property value extractor for design system discovery.
 
 ---
+
+## 📄 [`qa-generator`](file:///packages/deepsift-core/src/analyzers/qa-generator.ts)
+
+- **Path:** `packages/deepsift-core/src/analyzers/qa-generator.ts`  
+- **Description:** QA Test Boilerplate & Mock Data Generator Engine.
 
-## 📄 [`impact-analyzer`](file:///src/analyzers/impact-analyzer.ts)
-**Path:** `src/analyzers/impact-analyzer.ts`  
-**Description:** Breaking Change Impact Analyzer Module.
+### Exported Symbols
 
-### Exports
+#### `interface TestGeneratorOptions`
+Generates unit test stubs (Vitest, PyTest, GoTest), mock data definitions, and test-to-production line ratios.
 
-- **`interface ImpactReport`**: Traces symbol references across source files, calculates breaking risk scores, and compiles call-site impact reports before performing refactoring. / import fs from 'fs'; import path from 'path'; /** Report containing calculated impact metrics for a symbol modification.
-- **`class ImpactAnalyzer`**: Analyzer that evaluates breaking change risk for code symbols across the codebase.
+#### `class QAGenerator`
+Engine that generates test stubs, mock data types, and calculates test production line ratios.
 
 ---
 
-## 📄 [`l10n-detector`](file:///src/analyzers/l10n-detector.ts)
-**Path:** `src/analyzers/l10n-detector.ts`  
-**Description:** TypeScript source module.
+## 📄 [`refactor-engine`](file:///packages/deepsift-core/src/analyzers/refactor-engine.ts)
 
+- **Path:** `packages/deepsift-core/src/analyzers/refactor-engine.ts`  
+- **Description:** AST-safe code refactoring engine for symbol renames and function extractions.
+
 ---
+
+## 📄 [`refactor-guide`](file:///packages/deepsift-core/src/analyzers/refactor-guide.ts)
+
+- **Path:** `packages/deepsift-core/src/analyzers/refactor-guide.ts`  
+- **Description:** God Node Decomposition Roadmap Generator Engine.
+
+### Exported Symbols
+
+#### `interface RefactorStep`
+Analyzes large monolithic files and auto-generates step-by-step Clean Architecture (SoC) refactoring roadmaps.
 
-## 📄 [`layer-watchdog`](file:///src/analyzers/layer-watchdog.ts)
-**Path:** `src/analyzers/layer-watchdog.ts`  
-**Description:** TypeScript source module.
+#### `interface RefactorGuideReport`
+Complete decomposition roadmap report for a monolithic file.
 
+#### `class RefactorGuideEngine`
+Engine that generates architectural decomposition blueprints for large God Nodes.
+
 ---
+
+## 📄 [`registry-miner`](file:///packages/deepsift-core/src/analyzers/registry-miner.ts)
 
-## 📄 [`pattern-miner`](file:///src/analyzers/pattern-miner.ts)
-**Path:** `src/analyzers/pattern-miner.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/analyzers/registry-miner.ts`  
+- **Description:** Feature registry and UI tab miner for project capability and route discovery.
 
 ---
 
-## 📄 [`property-miner`](file:///src/analyzers/property-miner.ts)
-**Path:** `src/analyzers/property-miner.ts`  
-**Description:** TypeScript source module.
+## 📄 [`resource-mapper`](file:///packages/deepsift-core/src/analyzers/resource-mapper.ts)
 
+- **Path:** `packages/deepsift-core/src/analyzers/resource-mapper.ts`  
+- **Description:** Static resource and asset mapper for image, font, and media file discovery.
+
 ---
+
+## 📄 [`security-auditor`](file:///packages/deepsift-core/src/analyzers/security-auditor.ts)
+
+- **Path:** `packages/deepsift-core/src/analyzers/security-auditor.ts`  
+- **Description:** Security Vulnerability & Sandbox Leak Auditor Engine.
+
+### Exported Symbols
+
+#### `interface SecurityFinding`
+Scans codebases for sandbox boundary leaks (window in core sandbox), hardcoded API keys/secrets,
+
+#### `interface SecurityReport`
+Complete security audit report summary.
 
-## 📄 [`qa-generator`](file:///src/analyzers/qa-generator.ts)
-**Path:** `src/analyzers/qa-generator.ts`  
-**Description:** TypeScript source module.
+#### `class SecurityAuditor`
+Auditor that performs CWE security analysis, sandbox isolation checks, and secret scans.
 
 ---
 
-## 📄 [`refactor-engine`](file:///src/analyzers/refactor-engine.ts)
-**Path:** `src/analyzers/refactor-engine.ts`  
-**Description:** TypeScript source module.
+## 📄 [`similarity-engine`](file:///packages/deepsift-core/src/analyzers/similarity-engine.ts)
 
+- **Path:** `packages/deepsift-core/src/analyzers/similarity-engine.ts`  
+- **Description:** AST code clone and duplication detection engine using token hash fingerprinting.
+
 ---
+
+## 📄 [`test-analyzer`](file:///packages/deepsift-core/src/analyzers/test-analyzer.ts)
 
-## 📄 [`refactor-guide`](file:///src/analyzers/refactor-guide.ts)
-**Path:** `src/analyzers/refactor-guide.ts`  
-**Description:** God Node Decomposition Roadmap Generator Engine.
+- **Path:** `packages/deepsift-core/src/analyzers/test-analyzer.ts`  
+- **Description:** Source-to-test file mapping analyzer identifying untested and partially covered modules.
+
+---
 
-### Exports
+## 📄 [`type-resolver`](file:///packages/deepsift-core/src/analyzers/type-resolver.ts)
 
-- **`interface RefactorStep`**: Analyzes large monolithic files and auto-generates step-by-step Clean Architecture (SoC) refactoring roadmaps. / import fs from 'fs'; import path from 'path'; /** Step detail in a refactoring guide roadmap.
-- **`interface RefactorGuideReport`**: Complete decomposition roadmap report for a monolithic file.
-- **`class RefactorGuideEngine`**: Engine that generates architectural decomposition blueprints for large God Nodes.
+- **Path:** `packages/deepsift-core/src/analyzers/type-resolver.ts`  
+- **Description:** TypeScript type resolution engine for expanding complex intersection and generic types.
 
 ---
 
-## 📄 [`registry-miner`](file:///src/analyzers/registry-miner.ts)
-**Path:** `src/analyzers/registry-miner.ts`  
-**Description:** TypeScript source module.
+## 📄 [`value-classifier`](file:///packages/deepsift-core/src/analyzers/value-classifier.ts)
 
+- **Path:** `packages/deepsift-core/src/analyzers/value-classifier.ts`  
+- **Description:** Code value and constant classifier categorizing numeric and string literal semantics.
+
 ---
+
+## 📄 [`wire-tracer`](file:///packages/deepsift-core/src/analyzers/wire-tracer.ts)
 
-## 📄 [`resource-mapper`](file:///src/analyzers/resource-mapper.ts)
-**Path:** `src/analyzers/resource-mapper.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/analyzers/wire-tracer.ts`  
+- **Description:** Cross-environment IPC and postMessage wire trace analyzer for event channel mapping.
 
 ---
 
-## 📄 [`security-auditor`](file:///src/analyzers/security-auditor.ts)
-**Path:** `src/analyzers/security-auditor.ts`  
-**Description:** TypeScript source module.
+## 📄 [`benchmark`](file:///packages/deepsift-core/src/benchmark.ts)
 
+- **Path:** `packages/deepsift-core/src/benchmark.ts`  
+- **Description:** Performance benchmarking harness for indexing throughput and embedding speed measurement.
+
 ---
 
-## 📄 [`similarity-engine`](file:///src/analyzers/similarity-engine.ts)
-**Path:** `src/analyzers/similarity-engine.ts`  
-**Description:** TypeScript source module.
+## 📄 [`benchmark_web`](file:///packages/deepsift-core/src/benchmark_web.ts)
 
+- **Path:** `packages/deepsift-core/src/benchmark_web.ts`  
+- **Description:** Web-worker performance benchmarking harness for browser embedding throughput.
+
 ---
+
+## 📄 [`cli-entry`](file:///packages/deepsift-core/src/cli/cli-entry.ts)
 
-## 📄 [`test-analyzer`](file:///src/analyzers/test-analyzer.ts)
-**Path:** `src/analyzers/test-analyzer.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/cli-entry.ts`  
+- **Description:** Main CLI entry point and command routing dispatcher for all DeepSift commands.
 
 ---
 
-## 📄 [`type-resolver`](file:///src/analyzers/type-resolver.ts)
-**Path:** `src/analyzers/type-resolver.ts`  
-**Description:** TypeScript source module.
+## 📄 [`cli-output`](file:///packages/deepsift-core/src/cli/cli-output.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/cli-output.ts`  
+- **Description:** CLI output formatting utilities for color-coded results, info, success, and error messages.
+
+### Exported Symbols
+
+#### `type OutputFormat`
+Exported symbol.
+
 ---
+
+## 📄 [`cli-paths`](file:///packages/deepsift-core/src/cli/cli-paths.ts)
 
-## 📄 [`value-classifier`](file:///src/analyzers/value-classifier.ts)
-**Path:** `src/analyzers/value-classifier.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/cli-paths.ts`  
+- **Description:** CLI path resolution utilities for workspace root and config directory discovery.
 
 ---
 
-## 📄 [`wire-tracer`](file:///src/analyzers/wire-tracer.ts)
-**Path:** `src/analyzers/wire-tracer.ts`  
-**Description:** TypeScript source module.
+## 📄 [`analyze`](file:///packages/deepsift-core/src/cli/commands/analyze.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/analyze.ts`  
+- **Description:** Deep dive analysis super-command combining AST feature outline and DNA topology.
+
+### Exported Symbols
+
+#### `function analyzeCommand`
+Super-command: Analyzes a specific path by combining Feature Outline and DNA Intelligence.
+
 ---
+
+## 📄 [`arch`](file:///packages/deepsift-core/src/cli/commands/arch.ts)
 
-## 📄 [`benchmark`](file:///src/benchmark.ts)
-**Path:** `src/benchmark.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/arch.ts`  
+- **Description:** Project Directory Blueprint & Graphify Community Blueprint Command.
 
+### Exported Symbols
+
+#### `function archCommand`
+Generates directory tree blueprints utilizing Graphify communities, module counts, and noise pruning.
+
 ---
 
-## 📄 [`benchmark_web`](file:///src/benchmark_web.ts)
-**Path:** `src/benchmark_web.ts`  
-**Description:** TypeScript source module.
+## 📄 [`auto-heal`](file:///packages/deepsift-core/src/cli/commands/auto-heal.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/auto-heal.ts`  
+- **Description:** Autonomous 4-step healing loop (diff -> build check -> auto-patch -> re-verify).
+
 ---
+
+## 📄 [`calltree`](file:///packages/deepsift-core/src/cli/commands/calltree.ts)
 
-## 📄 [`cli-entry`](file:///src/cli/cli-entry.ts)
-**Path:** `src/cli/cli-entry.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/calltree.ts`  
+- **Description:** Call Graph & Event-Driven Message Traversal Command.
 
+### Exported Symbols
+
+#### `function calltreeCommand`
+Traces upstream callers, downstream callee scopes, and event-driven message channels (postMessage, IPC, EventEmitters).
+
 ---
+
+## 📄 [`cfg`](file:///packages/deepsift-core/src/cli/commands/cfg.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/cfg.ts`  
+- **Description:** Control Flow Graph (CFG) Generator Command.
 
-## 📄 [`cli-output`](file:///src/cli/cli-output.ts)
-**Path:** `src/cli/cli-output.ts`  
-**Description:** TypeScript source module.
+### Exported Symbols
 
+#### `interface CFGNode`
+Extracts function boundaries, decision branches, switch statements, and try/catch blocks
+
+#### `interface CFGEdge`
+Edge connection between nodes in a Control Flow Graph.
+
+#### `function cfgCommand`
+Executes the `deepsift cfg` command to analyze a function's control flow and print a Mermaid branch diagram.
+
 ---
+
+## 📄 [`check-layers`](file:///packages/deepsift-core/src/cli/commands/check-layers.ts)
 
-## 📄 [`cli-paths`](file:///src/cli/cli-paths.ts)
-**Path:** `src/cli/cli-paths.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/check-layers.ts`  
+- **Description:** Clean Architecture layer boundary checker detecting import rule violations.
 
 ---
 
-## 📄 [`analyze`](file:///src/cli/commands/analyze.ts)
-**Path:** `src/cli/commands/analyze.ts`  
-**Description:** TypeScript source module.
+## 📄 [`clones`](file:///packages/deepsift-core/src/cli/commands/clones.ts)
 
-### Exports
+- **Path:** `packages/deepsift-core/src/cli/commands/clones.ts`  
+- **Description:** AST Code Clone Detector & DRY Compliance Command.
 
-- **`function analyzeCommand`**: Super-command: Analyzes a specific path by combining Feature Outline and DNA Intelligence.
+### Exported Symbols
 
+#### `function clonesCommand`
+Scans files for structural code duplicates, copy-paste clusters, and block-level redundancies.
+
 ---
+
+## 📄 [`com`](file:///packages/deepsift-core/src/cli/commands/com.ts)
 
-## 📄 [`arch`](file:///src/cli/commands/arch.ts)
-**Path:** `src/cli/commands/arch.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/com.ts`  
+- **Description:** Community cluster explorer and god node viewer for Graphify topology.
+
+---
 
-### Exports
+## 📄 [`compare-cmd`](file:///packages/deepsift-core/src/cli/commands/compare-cmd.ts)
 
-- **`function archCommand`**: Executes the project architecture mapping command. Outputs are token-compressed by default.
+- **Path:** `packages/deepsift-core/src/cli/commands/compare-cmd.ts`  
+- **Description:** Vector knowledge comparison command between two realms.
 
 ---
 
-## 📄 [`auto-heal`](file:///src/cli/commands/auto-heal.ts)
-**Path:** `src/cli/commands/auto-heal.ts`  
-**Description:** TypeScript source module.
+## 📄 [`complexity`](file:///packages/deepsift-core/src/cli/commands/complexity.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/complexity.ts`  
+- **Description:** Cyclomatic & Cognitive Complexity heatmap CLI command handler.
+
 ---
+
+## 📄 [`config`](file:///packages/deepsift-core/src/cli/commands/config.ts)
 
-## 📄 [`calltree`](file:///src/cli/commands/calltree.ts)
-**Path:** `src/cli/commands/calltree.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/config.ts`  
+- **Description:** CLI configuration management and project settings command.
 
 ---
 
-## 📄 [`cfg`](file:///src/cli/commands/cfg.ts)
-**Path:** `src/cli/commands/cfg.ts`  
-**Description:** TypeScript source module.
+## 📄 [`context`](file:///packages/deepsift-core/src/cli/commands/context.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/context.ts`  
+- **Description:** Pre-creation checklist generator for design tokens, rules, and naming standards.
+
 ---
+
+## 📄 [`cycle`](file:///packages/deepsift-core/src/cli/commands/cycle.ts)
 
-## 📄 [`check-layers`](file:///src/cli/commands/check-layers.ts)
-**Path:** `src/cli/commands/check-layers.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/cycle.ts`  
+- **Description:** TypeScript source module.
 
 ---
 
-## 📄 [`clones`](file:///src/cli/commands/clones.ts)
-**Path:** `src/cli/commands/clones.ts`  
-**Description:** TypeScript source module.
+## 📄 [`dead-code`](file:///packages/deepsift-core/src/cli/commands/dead-code.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/dead-code.ts`  
+- **Description:** Dead Code Elimination & Unreferenced Export Audit Command.
+
 ---
+
+## 📄 [`decode`](file:///packages/deepsift-core/src/cli/commands/decode.ts)
 
-## 📄 [`com`](file:///src/cli/commands/com.ts)
-**Path:** `src/cli/commands/com.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/decode.ts`  
+- **Description:** DEC_v2 visual token decoder and decompressor command.
 
 ---
+
+## 📄 [`deps`](file:///packages/deepsift-core/src/cli/commands/deps.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/deps.ts`  
+- **Description:** Inbound and outbound module dependency tracer command.
+
+### Exported Symbols
 
-## 📄 [`compare-cmd`](file:///src/cli/commands/compare-cmd.ts)
-**Path:** `src/cli/commands/compare-cmd.ts`  
-**Description:** TypeScript source module.
+#### `function depsCommand`
+Traces file dependents and outputs them as a tree.
 
 ---
 
-## 📄 [`complexity`](file:///src/cli/commands/complexity.ts)
-**Path:** `src/cli/commands/complexity.ts`  
-**Description:** TypeScript source module.
+## 📄 [`diag`](file:///packages/deepsift-core/src/cli/commands/diag.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/diag.ts`  
+- **Description:** System diagnostics reporter with environment and configuration checks.
+
 ---
+
+## 📄 [`dna`](file:///packages/deepsift-core/src/cli/commands/dna.ts)
 
-## 📄 [`config`](file:///src/cli/commands/config.ts)
-**Path:** `src/cli/commands/config.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/dna.ts`  
+- **Description:** Project DNA topology generator and community cluster visualizer command.
 
 ---
+
+## 📄 [`docgen-helpers`](file:///packages/deepsift-core/src/cli/commands/docgen-helpers.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/docgen-helpers.ts`  
+- **Description:** Command Metadata Registry and Markdown Generators for DeepSift DocGen Engine.
 
-## 📄 [`context`](file:///src/cli/commands/context.ts)
-**Path:** `src/cli/commands/context.ts`  
-**Description:** TypeScript source module.
+### Exported Symbols
 
+#### `function getFullCliCommandRegistry`
+Returns complete, exhaustive metadata for all DeepSift CLI commands.
+
+#### `function buildFullCommandsMarkdown`
+Renders full, exhaustive Markdown for docs/COMMANDS.md.
+
+#### `function buildFullApiReferenceMarkdown`
+Renders full, exhaustive Markdown for docs/API_REFERENCE.md.
+
 ---
+
+## 📄 [`docgen`](file:///packages/deepsift-core/src/cli/commands/docgen.ts)
 
-## 📄 [`dead-code`](file:///src/cli/commands/dead-code.ts)
-**Path:** `src/cli/commands/dead-code.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/docgen.ts`  
+- **Description:** DeepSift Automated Documentation Generator Engine.
 
+### Exported Symbols
+
+#### `interface CliCommandMetadata`
+Parses source code metadata, CLI commands, TSDoc comments, and architecture topology
+
+#### `interface TSDocModuleMetadata`
+Interface representing extracted TSDoc module documentation.
+
+#### `function docgenCommand`
+Executes the `deepsift docgen` command to parse the codebase and regenerate all documentation artifacts.
+
+#### `function extractCliCommands`
+Extracts comprehensive CLI command definitions and usage metadata.
+
+#### `function scanTsDocModules`
+Scans TypeScript source files and extracts TSDoc metadata.
+
 ---
+
+## 📄 [`doctor`](file:///packages/deepsift-core/src/cli/commands/doctor.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/doctor.ts`  
+- **Description:** Health Diagnostics & Self-Healing Doctor Command.
+
+### Exported Symbols
 
-## 📄 [`decode`](file:///src/cli/commands/decode.ts)
-**Path:** `src/cli/commands/decode.ts`  
-**Description:** TypeScript source module.
+#### `function doctorCommand`
+Runs system health checks, database index diagnostics, configuration checks,
 
 ---
 
-## 📄 [`deps`](file:///src/cli/commands/deps.ts)
-**Path:** `src/cli/commands/deps.ts`  
-**Description:** TypeScript source module.
+## 📄 [`edit`](file:///packages/deepsift-core/src/cli/commands/edit.ts)
 
-### Exports
+- **Path:** `packages/deepsift-core/src/cli/commands/edit.ts`  
+- **Description:** In-place source code file editing command using patch specifications.
 
-- **`function depsCommand`**: Traces file dependents and outputs them as a tree. Outputs are token-compressed by default.
+---
+
+## 📄 [`executive-summary`](file:///packages/deepsift-core/src/cli/commands/executive-summary.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/executive-summary.ts`  
+- **Description:** Executive summary generator for code quality and architecture health reports.
+
 ---
+
+## 📄 [`expand-type`](file:///packages/deepsift-core/src/cli/commands/expand-type.ts)
 
-## 📄 [`diag`](file:///src/cli/commands/diag.ts)
-**Path:** `src/cli/commands/diag.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/expand-type.ts`  
+- **Description:** TypeScript type expansion and resolution command.
 
 ---
 
-## 📄 [`dna`](file:///src/cli/commands/dna.ts)
-**Path:** `src/cli/commands/dna.ts`  
-**Description:** TypeScript source module.
+## 📄 [`feature`](file:///packages/deepsift-core/src/cli/commands/feature.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/feature.ts`  
+- **Description:** AST Feature Outline Generator Command.
+
+### Exported Symbols
+
+#### `function featureCommand`
+Extracts function signatures, exported classes, dependencies, and file purpose summaries for targeted directories.
+
 ---
+
+## 📄 [`gen-adr`](file:///packages/deepsift-core/src/cli/commands/gen-adr.ts)
 
-## 📄 [`docgen`](file:///src/cli/commands/docgen.ts)
-**Path:** `src/cli/commands/docgen.ts`  
-**Description:** DeepSift Automated Documentation Generator Engine.
+- **Path:** `packages/deepsift-core/src/cli/commands/gen-adr.ts`  
+- **Description:** Architecture Decision Record (ADR) template generator command.
 
-### Exports
+---
+
+## 📄 [`gen-test`](file:///packages/deepsift-core/src/cli/commands/gen-test.ts)
 
-- **`interface CliCommandMetadata`**: Parses source code metadata, CLI commands, TSDoc comments, and architecture topology to generate and update full documentation suites for GitHub users and AI Agents. / import fs from 'fs'; import path from 'path'; import { printInfo, printSuccess, printError, OutputFormat } from '../cli-output.js'; import { normalizePath } from '../../utils/outline.js'; /** Interface representing metadata extracted from a CLI Command.
-- **`interface TSDocModuleMetadata`**: Interface representing extracted TSDoc module documentation.
-- **`function docgenCommand`**: Executes the `deepsift docgen` command to parse the codebase and regenerate all documentation artifacts. ```ts await docgenCommand(process.cwd(), 'markdown'); ```
-- **`function extractCliCommands`**: Extracts comprehensive CLI command definitions and usage metadata.
-- **`function scanTsDocModules`**: Scans TypeScript source files and extracts TSDoc metadata.
+- **Path:** `packages/deepsift-core/src/cli/commands/gen-test.ts`  
+- **Description:** Automatic unit test and mock file generator command.
 
 ---
 
-## 📄 [`doctor`](file:///src/cli/commands/doctor.ts)
-**Path:** `src/cli/commands/doctor.ts`  
-**Description:** TypeScript source module.
+## 📄 [`heal`](file:///packages/deepsift-core/src/cli/commands/heal.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/heal.ts`  
+- **Description:** DNA-based auto-refactoring and lint healing command handler.
+
 ---
+
+## 📄 [`history`](file:///packages/deepsift-core/src/cli/commands/history.ts)
 
-## 📄 [`edit`](file:///src/cli/commands/edit.ts)
-**Path:** `src/cli/commands/edit.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/history.ts`  
+- **Description:** Search and read result history log viewer command.
 
 ---
 
-## 📄 [`executive-summary`](file:///src/cli/commands/executive-summary.ts)
-**Path:** `src/cli/commands/executive-summary.ts`  
-**Description:** TypeScript source module.
+## 📄 [`impact`](file:///packages/deepsift-core/src/cli/commands/impact.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/impact.ts`  
+- **Description:** Breaking change risk calculator and caller site tracer command.
+
 ---
+
+## 📄 [`index-cmd`](file:///packages/deepsift-core/src/cli/commands/index-cmd.ts)
 
-## 📄 [`expand-type`](file:///src/cli/commands/expand-type.ts)
-**Path:** `src/cli/commands/expand-type.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/index-cmd.ts`  
+- **Description:** Manual codebase indexer and incremental sync trigger command.
 
 ---
 
-## 📄 [`feature`](file:///src/cli/commands/feature.ts)
-**Path:** `src/cli/commands/feature.ts`  
-**Description:** TypeScript source module.
+## 📄 [`init`](file:///packages/deepsift-core/src/cli/commands/init.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/init.ts`  
+- **Description:** Workspace initialization and first-run indexing bootstrap command.
+
+---
 
-### Exports
+## 📄 [`learn`](file:///packages/deepsift-core/src/cli/commands/learn.ts)
 
-- **`function featureCommand`**: Generates outline stats and imports for a specific folder feature. Outputs are token-compressed by default.
+- **Path:** `packages/deepsift-core/src/cli/commands/learn.ts`  
+- **Description:** Adaptive learning command for project pattern and token discovery.
 
 ---
 
-## 📄 [`gen-adr`](file:///src/cli/commands/gen-adr.ts)
-**Path:** `src/cli/commands/gen-adr.ts`  
-**Description:** TypeScript source module.
+## 📄 [`memo-prompt`](file:///packages/deepsift-core/src/cli/commands/memo-prompt.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/memo-prompt.ts`  
+- **Description:** Interactive and auto-save Research Memory (DRM) prompt facilitator.
+
 ---
+
+## 📄 [`memo`](file:///packages/deepsift-core/src/cli/commands/memo.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/memo.ts`  
+- **Description:** Dynamic Research Memory (DRM) Command Line Interface.
+
+### Exported Symbols
 
-## 📄 [`gen-test`](file:///src/cli/commands/gen-test.ts)
-**Path:** `src/cli/commands/gen-test.ts`  
-**Description:** TypeScript source module.
+#### `function memoCommand`
+Manages active research tags, research note additions, semantic queries, graph generation,
 
 ---
 
-## 📄 [`heal`](file:///src/cli/commands/heal.ts)
-**Path:** `src/cli/commands/heal.ts`  
-**Description:** TypeScript source module.
+## 📄 [`overview`](file:///packages/deepsift-core/src/cli/commands/overview.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/overview.ts`  
+- **Description:** Single-Step Project Blueprint Overview Super-Command.
+
+### Exported Symbols
+
+#### `function overviewCommand`
+Consolidates directory trees, Central God Nodes, feature summaries, and AST outlines into a single output.
+
 ---
+
+## 📄 [`patch-drift`](file:///packages/deepsift-core/src/cli/commands/patch-drift.ts)
 
-## 📄 [`history`](file:///src/cli/commands/history.ts)
-**Path:** `src/cli/commands/history.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/patch-drift.ts`  
+- **Description:** Auto-heals schema drift by automatically injecting missing fields.
 
 ---
 
-## 📄 [`impact`](file:///src/cli/commands/impact.ts)
-**Path:** `src/cli/commands/impact.ts`  
-**Description:** TypeScript source module.
+## 📄 [`pipe`](file:///packages/deepsift-core/src/cli/commands/pipe.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/pipe.ts`  
+- **Description:** Stdin pipe reader for chaining DeepSift commands with shell pipelines.
+
 ---
+
+## 📄 [`plan-ui`](file:///packages/deepsift-core/src/cli/commands/plan-ui.ts)
 
-## 📄 [`index-cmd`](file:///src/cli/commands/index-cmd.ts)
-**Path:** `src/cli/commands/index-cmd.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/plan-ui.ts`  
+- **Description:** Visual UI specification and design token palette generator command.
 
 ---
 
-## 📄 [`init`](file:///src/cli/commands/init.ts)
-**Path:** `src/cli/commands/init.ts`  
-**Description:** TypeScript source module.
+## 📄 [`plan`](file:///packages/deepsift-core/src/cli/commands/plan.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/plan.ts`  
+- **Description:** AI Agent implementation plan generator based on DNA, skills, and architecture.
+
 ---
+
+## 📄 [`read-feature`](file:///packages/deepsift-core/src/cli/commands/read-feature.ts)
 
-## 📄 [`learn`](file:///src/cli/commands/learn.ts)
-**Path:** `src/cli/commands/learn.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/read-feature.ts`  
+- **Description:** Combined file reader and AST feature outline extractor command.
 
+### Exported Symbols
+
+#### `function readFeatureCommand`
+Reads all relevant code files within a feature directory.
+
 ---
+
+## 📄 [`read`](file:///packages/deepsift-core/src/cli/commands/read.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/read.ts`  
+- **Description:** File Reader Command with Token Compression & Line Range Support.
 
-## 📄 [`memo-prompt`](file:///src/cli/commands/memo-prompt.ts)
-**Path:** `src/cli/commands/memo-prompt.ts`  
-**Description:** TypeScript source module.
+### Exported Symbols
 
+#### `function readCommand`
+Reads source file contents, extracts line ranges (e.g. file.ts:10-50), and formats
+
 ---
+
+## 📄 [`realm-cmd`](file:///packages/deepsift-core/src/cli/commands/realm-cmd.ts)
 
-## 📄 [`memo`](file:///src/cli/commands/memo.ts)
-**Path:** `src/cli/commands/memo.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/realm-cmd.ts`  
+- **Description:** External knowledge realm management command (list, add, mount, snapshot).
 
 ---
+
+## 📄 [`refactor`](file:///packages/deepsift-core/src/cli/commands/refactor.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/refactor.ts`  
+- **Description:** AST-safe symbol renaming and function extraction refactoring command.
 
-## 📄 [`overview`](file:///src/cli/commands/overview.ts)
-**Path:** `src/cli/commands/overview.ts`  
-**Description:** TypeScript source module.
+---
 
-### Exports
+## 📄 [`resolve-error`](file:///packages/deepsift-core/src/cli/commands/resolve-error.ts)
 
-- **`function overviewCommand`**: Super Command: deepsift overview [path] Consolidates Architecture Tree + Feature Summary + Core Files/God Nodes into a single, high-efficiency output.
+- **Path:** `packages/deepsift-core/src/cli/commands/resolve-error.ts`  
+- **Description:** Automatic TypeScript error resolution and suggestion generator command.
 
 ---
+
+## 📄 [`resolve`](file:///packages/deepsift-core/src/cli/commands/resolve.ts)
 
-## 📄 [`pipe`](file:///src/cli/commands/pipe.ts)
-**Path:** `src/cli/commands/pipe.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/resolve.ts`  
+- **Description:** Import and symbol path resolver across workspace files.
 
 ---
 
-## 📄 [`plan-ui`](file:///src/cli/commands/plan-ui.ts)
-**Path:** `src/cli/commands/plan-ui.ts`  
-**Description:** TypeScript source module.
+## 📄 [`config`](file:///packages/deepsift-core/src/cli/commands/routing/config.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/config.ts`  
+- **Description:** TypeScript source module.
+
 ---
+
+## 📄 [`index-cmd`](file:///packages/deepsift-core/src/cli/commands/routing/index-cmd.ts)
 
-## 📄 [`plan`](file:///src/cli/commands/plan.ts)
-**Path:** `src/cli/commands/plan.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/index-cmd.ts`  
+- **Description:** TypeScript source module.
 
 ---
 
-## 📄 [`read-feature`](file:///src/cli/commands/read-feature.ts)
-**Path:** `src/cli/commands/read-feature.ts`  
-**Description:** TypeScript source module.
+## 📄 [`index`](file:///packages/deepsift-core/src/cli/commands/routing/index.ts)
 
-### Exports
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/index.ts`  
+- **Description:** TypeScript source module.
 
-- **`function readFeatureCommand`**: Reads all relevant code files within a feature directory. Combines them and optionally token-compresses the output.
+---
+
+## 📄 [`patch`](file:///packages/deepsift-core/src/cli/commands/routing/patch.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/patch.ts`  
+- **Description:** TypeScript source module.
+
 ---
+
+## 📄 [`read`](file:///packages/deepsift-core/src/cli/commands/routing/read.ts)
 
-## 📄 [`read`](file:///src/cli/commands/read.ts)
-**Path:** `src/cli/commands/read.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/read.ts`  
+- **Description:** TypeScript source module.
 
 ---
 
-## 📄 [`realm-cmd`](file:///src/cli/commands/realm-cmd.ts)
-**Path:** `src/cli/commands/realm-cmd.ts`  
-**Description:** TypeScript source module.
+## 📄 [`search`](file:///packages/deepsift-core/src/cli/commands/routing/search.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/search.ts`  
+- **Description:** TypeScript source module.
+
 ---
+
+## 📄 [`sed`](file:///packages/deepsift-core/src/cli/commands/routing/sed.ts)
 
-## 📄 [`refactor`](file:///src/cli/commands/refactor.ts)
-**Path:** `src/cli/commands/refactor.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/sed.ts`  
+- **Description:** TypeScript source module.
 
 ---
 
-## 📄 [`resolve-error`](file:///src/cli/commands/resolve-error.ts)
-**Path:** `src/cli/commands/resolve-error.ts`  
-**Description:** TypeScript source module.
+## 📄 [`sync`](file:///packages/deepsift-core/src/cli/commands/routing/sync.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/routing/sync.ts`  
+- **Description:** TypeScript source module.
+
 ---
 
-## 📄 [`resolve`](file:///src/cli/commands/resolve.ts)
-**Path:** `src/cli/commands/resolve.ts`  
-**Description:** TypeScript source module.
+## 📄 [`scan`](file:///packages/deepsift-core/src/cli/commands/scan.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/scan.ts`  
+- **Description:** Full workspace scan and batch index repair command.
+
 ---
+
+## 📄 [`schema-drift`](file:///packages/deepsift-core/src/cli/commands/schema-drift.ts)
 
-## 📄 [`scan`](file:///src/cli/commands/scan.ts)
-**Path:** `src/cli/commands/scan.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/schema-drift.ts`  
+- **Description:** Schema drift detection between client UI and backend definitions.
 
 ---
 
-## 📄 [`schema-drift`](file:///src/cli/commands/schema-drift.ts)
-**Path:** `src/cli/commands/schema-drift.ts`  
-**Description:** TypeScript source module.
+## 📄 [`scope`](file:///packages/deepsift-core/src/cli/commands/scope.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/scope.ts`  
+- **Description:** Workspace scope and search boundary configuration command.
+
 ---
+
+## 📄 [`search`](file:///packages/deepsift-core/src/cli/commands/search.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/search.ts`  
+- **Description:** Hybrid Semantic & BM25 Search Command Engine.
+
+### Exported Symbols
 
-## 📄 [`scope`](file:///src/cli/commands/scope.ts)
-**Path:** `src/cli/commands/scope.ts`  
-**Description:** TypeScript source module.
+#### `interface SearchOptions`
+Executes vector semantic search, BM25 lexical retrieval, Graphify PageRank boosting,
 
+#### `function astSymbolFallback`
+Executes the `deepsift search` command across single or multiple queries.
+
 ---
+
+## 📄 [`security-scan`](file:///packages/deepsift-core/src/cli/commands/security-scan.ts)
 
-## 📄 [`search`](file:///src/cli/commands/search.ts)
-**Path:** `src/cli/commands/search.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/security-scan.ts`  
+- **Description:** CWE vulnerability scanner for sandbox leaks, secrets, and XSS risks.
 
 ---
 
-## 📄 [`security-scan`](file:///src/cli/commands/security-scan.ts)
-**Path:** `src/cli/commands/security-scan.ts`  
-**Description:** TypeScript source module.
+## 📄 [`sed`](file:///packages/deepsift-core/src/cli/commands/sed.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/sed.ts`  
+- **Description:** Stream editor command for in-place line-range file content substitution.
+
 ---
+
+## 📄 [`start`](file:///packages/deepsift-core/src/cli/commands/start.ts)
 
-## 📄 [`sed`](file:///src/cli/commands/sed.ts)
-**Path:** `src/cli/commands/sed.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/start.ts`  
+- **Description:** DeepSift server and MCP service startup command.
 
 ---
 
-## 📄 [`start`](file:///src/cli/commands/start.ts)
-**Path:** `src/cli/commands/start.ts`  
-**Description:** TypeScript source module.
+## 📄 [`status`](file:///packages/deepsift-core/src/cli/commands/status.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/status.ts`  
+- **Description:** Index Statistics & System Status Command.
+
+### Exported Symbols
+
+#### `function statusCommand`
+Retrieves database state, total indexed files, chunk counts, and indexing timestamps.
+
 ---
+
+## 📄 [`sync-ignore`](file:///packages/deepsift-core/src/cli/commands/sync-ignore.ts)
 
-## 📄 [`status`](file:///src/cli/commands/status.ts)
-**Path:** `src/cli/commands/status.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/sync-ignore.ts`  
+- **Description:** Differentially purges ignored files and indexes new files based on updated ignore rules across all realms.
 
 ---
 
-## 📄 [`testmap`](file:///src/cli/commands/testmap.ts)
-**Path:** `src/cli/commands/testmap.ts`  
-**Description:** TypeScript source module.
+## 📄 [`taint`](file:///packages/deepsift-core/src/cli/commands/taint.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/taint.ts`  
+- **Description:** TypeScript source module.
+
 ---
+
+## 📄 [`testmap`](file:///packages/deepsift-core/src/cli/commands/testmap.ts)
 
-## 📄 [`watch`](file:///src/cli/commands/watch.ts)
-**Path:** `src/cli/commands/watch.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/testmap.ts`  
+- **Description:** Source-to-Test Coverage Mapping Command.
 
-### Exports
+### Exported Symbols
 
-- **`function watchCommand`**: Starts a directory watcher that automatically and incrementally keeps the DeepSift semantic index updated in real-time as the developer saves files.
+#### `function testmapCommand`
+Maps source files to corresponding unit/integration test files and identifies untested modules.
 
 ---
+
+## 📄 [`watch`](file:///packages/deepsift-core/src/cli/commands/watch.ts)
+
+- **Path:** `packages/deepsift-core/src/cli/commands/watch.ts`  
+- **Description:** File system watcher for incremental auto-indexing on source changes.
+
+### Exported Symbols
 
-## 📄 [`wire-trace`](file:///src/cli/commands/wire-trace.ts)
-**Path:** `src/cli/commands/wire-trace.ts`  
-**Description:** TypeScript source module.
+#### `function watchCommand`
+Starts a directory watcher that automatically and incrementally keeps the DeepSift
 
 ---
 
-## 📄 [`zoom`](file:///src/cli/commands/zoom.ts)
-**Path:** `src/cli/commands/zoom.ts`  
-**Description:** TypeScript source module.
+## 📄 [`wire-trace`](file:///packages/deepsift-core/src/cli/commands/wire-trace.ts)
 
+- **Path:** `packages/deepsift-core/src/cli/commands/wire-trace.ts`  
+- **Description:** Cross-Environment IPC & Event Wire Tracer Command.
+
+### Exported Symbols
+
+#### `function wireTraceCommand`
+Maps postMessage, EventEmitters, WebSocket, and IPC message channels between environments.
+
 ---
+
+## 📄 [`zoom`](file:///packages/deepsift-core/src/cli/commands/zoom.ts)
 
-## 📄 [`context-injector`](file:///src/core/context-injector.ts)
-**Path:** `src/core/context-injector.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/cli/commands/zoom.ts`  
+- **Description:** Deep inspection command for a specific file, class, or symbol scope.
 
 ---
 
-## 📄 [`embedder-worker`](file:///src/core/embedder-worker.ts)
-**Path:** `src/core/embedder-worker.ts`  
-**Description:** TypeScript source module.
+## 📄 [`context-injector`](file:///packages/deepsift-core/src/core/context-injector.ts)
 
+- **Path:** `packages/deepsift-core/src/core/context-injector.ts`  
+- **Description:** Context injection engine that auto-prepends architectural rules before search results.
+
 ---
+
+## 📄 [`disable-sharp`](file:///packages/deepsift-core/src/core/disable-sharp.ts)
 
-## 📄 [`embedder`](file:///src/core/embedder.ts)
-**Path:** `src/core/embedder.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/core/disable-sharp.ts`  
+- **Description:** TypeScript source module.
+
+---
 
-### Exports
+## 📄 [`embedder-worker`](file:///packages/deepsift-core/src/core/embedder-worker.ts)
 
-- **`function getEmbedding`**: Generates an embedding for a given text asynchronously using worker threads.
-- **`function getEmbeddings`**: Generates embeddings for an array of texts asynchronously and in parallel.
-- **`function terminateWorkers`**: Terminate all running worker threads.
+- **Path:** `packages/deepsift-core/src/core/embedder-worker.ts`  
+- **Description:** Worker thread for parallel vector embedding computation.
 
 ---
 
-## 📄 [`indexer`](file:///src/core/indexer.ts)
-**Path:** `src/core/indexer.ts`  
-**Description:** TypeScript source module.
+## 📄 [`embedder`](file:///packages/deepsift-core/src/core/embedder.ts)
 
+- **Path:** `packages/deepsift-core/src/core/embedder.ts`  
+- **Description:** Neural text embedding engine using local ONNX transformer models.
+
+### Exported Symbols
+
+#### `function getEmbeddings`
+function normalizeL2(vector: Float32Array): Float32Array {
+
+#### `function terminateWorkers`
+Terminate all running worker threads.
+
 ---
 
-## 📄 [`realm-router`](file:///src/core/realm-router.ts)
-**Path:** `src/core/realm-router.ts`  
-**Description:** TypeScript source module.
+## 📄 [`indexer`](file:///packages/deepsift-core/src/core/indexer.ts)
 
+- **Path:** `packages/deepsift-core/src/core/indexer.ts`  
+- **Description:** Codebase Incremental Indexer & AST Vector Embedder Engine.
+
+### Exported Symbols
+
+#### `class Indexer`
+Scans workspace files, generates AST chunks, computes vector embeddings,
+
 ---
 
-## 📄 [`searcher`](file:///src/core/searcher.ts)
-**Path:** `src/core/searcher.ts`  
-**Description:** TypeScript source module.
+## 📄 [`mmap-bridge`](file:///packages/deepsift-core/src/core/mmap-bridge.ts)
 
+- **Path:** `packages/deepsift-core/src/core/mmap-bridge.ts`  
+- **Description:** TypeScript source module.
+
 ---
+
+## 📄 [`realm-router`](file:///packages/deepsift-core/src/core/realm-router.ts)
 
-## 📄 [`unified-walker`](file:///src/core/unified-walker.ts)
-**Path:** `src/core/unified-walker.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/core/realm-router.ts`  
+- **Description:** Multi-realm search router coordinating queries across mounted knowledge bases.
 
 ---
 
-## 📄 [`graph-builder`](file:///src/graphify/graph-builder.ts)
-**Path:** `src/graphify/graph-builder.ts`  
-**Description:** TypeScript source module.
+## 📄 [`reranker`](file:///packages/deepsift-core/src/core/reranker.ts)
 
+- **Path:** `packages/deepsift-core/src/core/reranker.ts`  
+- **Description:** TypeScript source module.
+
 ---
+
+## 📄 [`searcher`](file:///packages/deepsift-core/src/core/searcher.ts)
 
-## 📄 [`graph-cluster`](file:///src/graphify/graph-cluster.ts)
-**Path:** `src/graphify/graph-cluster.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/core/searcher.ts`  
+- **Description:** Hybrid vector cosine + BM25 lexical result combiner and relevance scorer.
 
 ---
 
-## 📄 [`graph-enhancer`](file:///src/graphify/graph-enhancer.ts)
-**Path:** `src/graphify/graph-enhancer.ts`  
-**Description:** TypeScript source module.
+## 📄 [`unified-walker`](file:///packages/deepsift-core/src/core/unified-walker.ts)
 
+- **Path:** `packages/deepsift-core/src/core/unified-walker.ts`  
+- **Description:** Parallel file system walker with intelligent noise filtering and .gitignore awareness.
+
 ---
+
+## 📄 [`graph-builder`](file:///packages/deepsift-core/src/graphify/graph-builder.ts)
 
-## 📄 [`graph-extractor`](file:///src/graphify/graph-extractor.ts)
-**Path:** `src/graphify/graph-extractor.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/graphify/graph-builder.ts`  
+- **Description:** Graphify Topology & Graph Construction Engine.
 
+### Exported Symbols
+
+#### `class GraphBuilder`
+Resolves symbol labels, cross-file imports, and node edges to construct code dependency graphs.
+
 ---
 
-## 📄 [`graph-query-engine`](file:///src/graphify/graph-query-engine.ts)
-**Path:** `src/graphify/graph-query-engine.ts`  
-**Description:** TypeScript source module.
+## 📄 [`graph-cluster`](file:///packages/deepsift-core/src/graphify/graph-cluster.ts)
 
+- **Path:** `packages/deepsift-core/src/graphify/graph-cluster.ts`  
+- **Description:** Louvain community detection and PageRank scoring for code dependency graphs.
+
 ---
+
+## 📄 [`graph-enhancer`](file:///packages/deepsift-core/src/graphify/graph-enhancer.ts)
 
-## 📄 [`graph-report`](file:///src/graphify/graph-report.ts)
-**Path:** `src/graphify/graph-report.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/graphify/graph-enhancer.ts`  
+- **Description:** Graph topology enhancer adding metadata and inferring missing cross-file edges.
 
 ---
 
-## 📄 [`graph-types`](file:///src/graphify/graph-types.ts)
-**Path:** `src/graphify/graph-types.ts`  
-**Description:** TypeScript source module.
+## 📄 [`graph-extractor`](file:///packages/deepsift-core/src/graphify/graph-extractor.ts)
 
+- **Path:** `packages/deepsift-core/src/graphify/graph-extractor.ts`  
+- **Description:** AST import/export symbol extractor for code dependency graph construction.
+
 ---
+
+## 📄 [`graph-query-engine`](file:///packages/deepsift-core/src/graphify/graph-query-engine.ts)
 
-## 📄 [`learning-overlay`](file:///src/graphify/learning-overlay.ts)
-**Path:** `src/graphify/learning-overlay.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/graphify/graph-query-engine.ts`  
+- **Description:** Graph query engine for traversal, neighbor lookup, and shortest path finding.
 
 ---
 
-## 📄 [`heal-engine`](file:///src/intelligence/heal-engine.ts)
-**Path:** `src/intelligence/heal-engine.ts`  
-**Description:** TypeScript source module.
+## 📄 [`graph-report`](file:///packages/deepsift-core/src/graphify/graph-report.ts)
 
+- **Path:** `packages/deepsift-core/src/graphify/graph-report.ts`  
+- **Description:** Markdown graph report generator for community clusters and god node summaries.
+
 ---
+
+## 📄 [`graph-types`](file:///packages/deepsift-core/src/graphify/graph-types.ts)
 
-## 📄 [`internal-graph`](file:///src/intelligence/internal-graph.ts)
-**Path:** `src/intelligence/internal-graph.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/graphify/graph-types.ts`  
+- **Description:** Shared TypeScript type definitions for Graphify node, edge, and cluster data structures.
 
+### Exported Symbols
+
+#### `interface GraphifyNode`
+Exported symbol.
+
 ---
 
-## 📄 [`plan-engine`](file:///src/intelligence/plan-engine.ts)
-**Path:** `src/intelligence/plan-engine.ts`  
-**Description:** TypeScript source module.
+## 📄 [`learning-overlay`](file:///packages/deepsift-core/src/graphify/learning-overlay.ts)
 
+- **Path:** `packages/deepsift-core/src/graphify/learning-overlay.ts`  
+- **Description:** Adaptive learning overlay enriching graph nodes with discovered project pattern metadata.
+
 ---
 
-## 📄 [`project-dna`](file:///src/intelligence/project-dna.ts)
-**Path:** `src/intelligence/project-dna.ts`  
-**Description:** TypeScript source module.
+## 📄 [`heal-engine`](file:///packages/deepsift-core/src/intelligence/heal-engine.ts)
 
+- **Path:** `packages/deepsift-core/src/intelligence/heal-engine.ts`  
+- **Description:** Self-healing refactoring engine applying DNA-aware patches to resolve lint and type errors.
+
 ---
+
+## 📄 [`internal-graph`](file:///packages/deepsift-core/src/intelligence/internal-graph.ts)
 
-## 📄 [`temporal-analyzer`](file:///src/intelligence/temporal-analyzer.ts)
-**Path:** `src/intelligence/temporal-analyzer.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/intelligence/internal-graph.ts`  
+- **Description:** Internal in-memory symbol graph for fast cross-file type and reference resolution.
 
-### Exports
+---
+
+## 📄 [`plan-engine`](file:///packages/deepsift-core/src/intelligence/plan-engine.ts)
 
-- **`function integrateTemporalMiner`**: Executes a git command safely and returns its stdout. Returns null if the command fails (e.g. not a git repo). / function runGitCmd(cmd: string, cwd: string): string | null { try { const result = execSync(cmd, { cwd, encoding: 'utf-8', stdio: 'pipe' }); return result.trim(); } catch { return null; } } /** Integrates temporal data (git history) into the project DNA.
+- **Path:** `packages/deepsift-core/src/intelligence/plan-engine.ts`  
+- **Description:** AI Agent implementation plan generator integrating DNA, skills, and knowledge realms.
 
 ---
 
-## 📄 [`insight-graph`](file:///src/memo/insight-graph.ts)
-**Path:** `src/memo/insight-graph.ts`  
-**Description:** TypeScript source module.
+## 📄 [`project-dna`](file:///packages/deepsift-core/src/intelligence/project-dna.ts)
 
+- **Path:** `packages/deepsift-core/src/intelligence/project-dna.ts`  
+- **Description:** Project DNA topology persistence, loading, and community cluster management.
+
 ---
+
+## 📄 [`temporal-analyzer`](file:///packages/deepsift-core/src/intelligence/temporal-analyzer.ts)
 
-## 📄 [`manifest-manager`](file:///src/memo/manifest-manager.ts)
-**Path:** `src/memo/manifest-manager.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/intelligence/temporal-analyzer.ts`  
+- **Description:** Temporal file change history analyzer for churn risk and velocity metrics.
 
+### Exported Symbols
+
+#### `function integrateTemporalMiner`
+Executes a git command safely and returns its stdout.
+
 ---
+
+## 📄 [`insight-graph`](file:///packages/deepsift-core/src/memo/insight-graph.ts)
+
+- **Path:** `packages/deepsift-core/src/memo/insight-graph.ts`  
+- **Description:** Research insight knowledge graph builder linking memo entries by semantic similarity.
 
-## 📄 [`memo-engine`](file:///src/memo/memo-engine.ts)
-**Path:** `src/memo/memo-engine.ts`  
-**Description:** Dynamic Research Memory (DRM) Engine Core facade.
+---
 
-### Exports
+## 📄 [`manifest-manager`](file:///packages/deepsift-core/src/memo/manifest-manager.ts)
 
-- **`class MemoEngine`**: Coordinates research tag tracking, entry insertion, semantic querying, insight graph construction, and Markdown export for AI Agents. / import { MemoManifestManager } from './manifest-manager.js'; import { NoteProcessor } from './note-processor.js'; import { MemoSearcher } from './memo-searcher.js'; import { InsightGraphBuilder } from './insight-graph.js'; import { MemoTag, MemoEntry, MemoEntryType, MemoQueryResult, MemoInsightGraph } from '../types/memo-types.js'; /** Facade class providing public API for Dynamic Research Memory operations.
+- **Path:** `packages/deepsift-core/src/memo/manifest-manager.ts`  
+- **Description:** DRM tag manifest persistence and metadata serialization manager.
 
 ---
+
+## 📄 [`memo-engine`](file:///packages/deepsift-core/src/memo/memo-engine.ts)
+
+- **Path:** `packages/deepsift-core/src/memo/memo-engine.ts`  
+- **Description:** Dynamic Research Memory (DRM) Engine Core facade.
+
+### Exported Symbols
 
-## 📄 [`memo-searcher`](file:///src/memo/memo-searcher.ts)
-**Path:** `src/memo/memo-searcher.ts`  
-**Description:** TypeScript source module.
+#### `class MemoEngine`
+Coordinates research tag tracking, entry insertion, semantic querying,
 
 ---
 
-## 📄 [`note-processor`](file:///src/memo/note-processor.ts)
-**Path:** `src/memo/note-processor.ts`  
-**Description:** TypeScript source module.
+## 📄 [`memo-searcher`](file:///packages/deepsift-core/src/memo/memo-searcher.ts)
 
+- **Path:** `packages/deepsift-core/src/memo/memo-searcher.ts`  
+- **Description:** Semantic search engine for querying entries within DRM research tags.
+
 ---
+
+## 📄 [`note-processor`](file:///packages/deepsift-core/src/memo/note-processor.ts)
 
-## 📄 [`heuristic-parser`](file:///src/parsers/heuristic-parser.ts)
-**Path:** `src/parsers/heuristic-parser.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/memo/note-processor.ts`  
+- **Description:** Research note preprocessor for content normalization and type classification.
 
 ---
 
-## 📄 [`simple-parser`](file:///src/parsers/simple-parser.ts)
-**Path:** `src/parsers/simple-parser.ts`  
-**Description:** TypeScript source module.
+## 📄 [`ast-chunker`](file:///packages/deepsift-core/src/parsers/ast-chunker.ts)
+
+- **Path:** `packages/deepsift-core/src/parsers/ast-chunker.ts`  
+- **Description:** TypeScript source module.
+
+---
 
-### Exports
+## 📄 [`heuristic-parser`](file:///packages/deepsift-core/src/parsers/heuristic-parser.ts)
 
-- **`function parseSimple`**: Fallback parser that splits text into simple chunks based on lines. Useful for languages without Tree-sitter grammar or plain text files.
+- **Path:** `packages/deepsift-core/src/parsers/heuristic-parser.ts`  
+- **Description:** Heuristic regex-based code chunker for languages without tree-sitter grammars.
 
 ---
 
-## 📄 [`skill-parser`](file:///src/parsers/skill-parser.ts)
-**Path:** `src/parsers/skill-parser.ts`  
-**Description:** TypeScript source module.
+## 📄 [`simple-parser`](file:///packages/deepsift-core/src/parsers/simple-parser.ts)
 
+- **Path:** `packages/deepsift-core/src/parsers/simple-parser.ts`  
+- **Description:** Simple line-based code chunker for plain text and markdown documents.
+
+### Exported Symbols
+
+#### `function parseSimple`
+Fallback parser that splits text into simple chunks based on lines.
+
 ---
+
+## 📄 [`skill-parser`](file:///packages/deepsift-core/src/parsers/skill-parser.ts)
 
-## 📄 [`tree-sitter-parser`](file:///src/parsers/tree-sitter-parser.ts)
-**Path:** `src/parsers/tree-sitter-parser.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/parsers/skill-parser.ts`  
+- **Description:** SKILL.md and markdown knowledge document parser for agent knowledge realms.
 
-### Exports
+---
+
+## 📄 [`generate-docs`](file:///packages/deepsift-core/src/scripts/generate-docs.ts)
 
-- **`function parseAST`**: Parses code using Tree-sitter and returns meaningful semantic chunks. Falls back to simple parsing if the language is unsupported.
+- **Path:** `packages/deepsift-core/src/scripts/generate-docs.ts`  
+- **Description:** Build script for auto-generating DeepSift documentation artifacts during compile / build lifecycle.
 
 ---
 
-## 📄 [`server`](file:///src/server.ts)
-**Path:** `src/server.ts`  
-**Description:** TypeScript source module.
+## 📄 [`server`](file:///packages/deepsift-core/src/server.ts)
 
+- **Path:** `packages/deepsift-core/src/server.ts`  
+- **Description:** DeepSift MCP server entry point implementing Model Context Protocol tool handlers.
+
 ---
+
+## 📄 [`native-store`](file:///packages/deepsift-core/src/storage/native-store.ts)
 
-## 📄 [`native-store`](file:///src/storage/native-store.ts)
-**Path:** `src/storage/native-store.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/storage/native-store.ts`  
+- **Description:** SQLite native store for vector chunks, graph topology, and metadata persistence.
 
 ---
 
-## 📄 [`zig-bridge`](file:///src/storage/zig-bridge.ts)
-**Path:** `src/storage/zig-bridge.ts`  
-**Description:** TypeScript source module.
+## 📄 [`zig-bridge`](file:///packages/deepsift-core/src/storage/zig-bridge.ts)
 
+- **Path:** `packages/deepsift-core/src/storage/zig-bridge.ts`  
+- **Description:** Native Zig SIMD math bridge for accelerated vector cosine similarity computation.
+
 ---
+
+## 📄 [`dna-types`](file:///packages/deepsift-core/src/types/dna-types.ts)
+
+- **Path:** `packages/deepsift-core/src/types/dna-types.ts`  
+- **Description:** Shared TypeScript type definitions for Project DNA, naming conventions, and architecture patterns.
+
+### Exported Symbols
 
-## 📄 [`dna-types`](file:///src/types/dna-types.ts)
-**Path:** `src/types/dna-types.ts`  
-**Description:** TypeScript source module.
+#### `type PropertyType`
+Exported symbol.
 
 ---
 
-## 📄 [`index`](file:///src/types/index.ts)
-**Path:** `src/types/index.ts`  
-**Description:** TypeScript source module.
+## 📄 [`index`](file:///packages/deepsift-core/src/types/index.ts)
 
+- **Path:** `packages/deepsift-core/src/types/index.ts`  
+- **Description:** Central type barrel export index for all DeepSift public type definitions.
+
 ---
+
+## 📄 [`memo-types`](file:///packages/deepsift-core/src/types/memo-types.ts)
 
-## 📄 [`memo-types`](file:///src/types/memo-types.ts)
-**Path:** `src/types/memo-types.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/types/memo-types.ts`  
+- **Description:** Shared TypeScript type definitions for DRM tags, entries, and manifest structures.
 
+### Exported Symbols
+
+#### `type MemoTagStatus`
+Exported symbol.
+
 ---
+
+## 📄 [`web-dashboard`](file:///packages/deepsift-core/src/ui/web-dashboard.ts)
 
-## 📄 [`web-dashboard`](file:///src/ui/web-dashboard.ts)
-**Path:** `src/ui/web-dashboard.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/ui/web-dashboard.ts`  
+- **Description:** Local Express web server providing interactive graph and DRM visualization dashboard on port 3333.
 
 ---
 
-## 📄 [`architecture`](file:///src/utils/architecture.ts)
-**Path:** `src/utils/architecture.ts`  
-**Description:** TypeScript source module.
+## 📄 [`architecture`](file:///packages/deepsift-core/src/utils/architecture.ts)
 
+- **Path:** `packages/deepsift-core/src/utils/architecture.ts`  
+- **Description:** Directory tree architecture blueprint generator with Graphify community pruning.
+
 ---
+
+## 📄 [`binary-check`](file:///packages/deepsift-core/src/utils/binary-check.ts)
 
-## 📄 [`binary-check`](file:///src/utils/binary-check.ts)
-**Path:** `src/utils/binary-check.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/utils/binary-check.ts`  
+- **Description:** Binary file detection utility to skip non-text files during indexing scans.
 
 ---
+
+## 📄 [`config`](file:///packages/deepsift-core/src/utils/config.ts)
+
+- **Path:** `packages/deepsift-core/src/utils/config.ts`  
+- **Description:** DeepSift Configuration Management Module.
 
-## 📄 [`config`](file:///src/utils/config.ts)
-**Path:** `src/utils/config.ts`  
-**Description:** DeepSift Configuration Management Module.
+### Exported Symbols
 
-### Exports
+#### `interface RealmDefinition`
+Manages loading, merging, defaults, and saving of deepsift.config.json settings.
 
-- **`interface RealmDefinition`**: Manages loading, merging, defaults, and saving of deepsift.config.json settings. / import fs from 'fs'; import path from 'path'; /** Definition for a Knowledge Realm within DeepSift.
-- **`interface DeepSiftConfig`**: Root DeepSift Configuration Interface.
-- **`const DEFAULT_CONFIG`**: Default global configuration values for DeepSift.
-- **`function loadConfig`**: Loads project configuration from deepsift.config.json or returns default configuration. ```ts const config = loadConfig(process.cwd()); ```
-- **`function saveConfig`**: Saves updated DeepSift configuration to deepsift.config.json in the project root. ```ts saveConfig(process.cwd(), updatedConfig); ```
+#### `interface DeepSiftConfig`
+Root DeepSift Configuration Interface.
 
+#### `const DEFAULT_CONFIG`
+Default global configuration values for DeepSift.
+
+#### `function loadConfig`
+Loads project configuration from deepsift.config.json or returns default configuration.
+
+#### `function saveConfig`
+Saves updated DeepSift configuration to deepsift.config.json in the project root.
+
 ---
+
+## 📄 [`file-walker`](file:///packages/deepsift-core/src/utils/file-walker.ts)
 
-## 📄 [`file-walker`](file:///src/utils/file-walker.ts)
-**Path:** `src/utils/file-walker.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/utils/file-walker.ts`  
+- **Description:** Recursive directory file walker with .gitignore and noise exclusion support.
 
-### Exports
+### Exported Symbols
 
-- **`function getFiles`**: ', '.mcp_search_outputs', '.zig-cache', 'zig-out', 'pxpipe-main', 'scratch', 'temp', 'bin', 'ide_nab', '**/*.min.js', '**/*.map', '**/*.svg', '**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif', '**/*.ico', '**/*.woff', '**/*.woff2', '**/*.ttf', '**/*.otf', '**/*.otb', '**/*.eot', '**/*.pdf', '**/*.zip', '**/*.tar', '**/*.gz', '**/*.rar', '**/*.7z', '**/*.sqlite', '**/*.db', '**/*.log', '**/logs/**', '**/*.mp4', '**/*.avi', '**/*.mov', '**/*.lock', '**/package-lock.json', '**/pnpm-lock.yaml', '**/yarn.lock', '**/bun.lockb', '**/*.dll', '**/*.pdb', '**/*.exe', '**/*.so', '**/*.dylib', '**/*.lib', '**/*.exp', '**/*.obj', '**/*.o', '**/*.a', '**/*.bak', '**/*.wasm', '**/*.pb.go', '**/*.pb.cc', '**/*.pb.h', '**/*.csv', '**/*.tsv', '**/*.xlsx', '**/*.parquet' ]; /** Recursively walks a directory and returns a list of files that are not ignored. Evaluates .gitignore if present in the root directory.
+#### `function getFiles`
+const DEFAULT_IGNORES = [
 
 ---
 
-## 📄 [`history`](file:///src/utils/history.ts)
-**Path:** `src/utils/history.ts`  
-**Description:** TypeScript source module.
+## 📄 [`history`](file:///packages/deepsift-core/src/utils/history.ts)
 
+- **Path:** `packages/deepsift-core/src/utils/history.ts`  
+- **Description:** Search and read result log persistence and paginated output image saver.
+
 ---
+
+## 📄 [`native-renderer`](file:///packages/deepsift-core/src/utils/native-renderer.ts)
 
-## 📄 [`native-renderer`](file:///src/utils/native-renderer.ts)
-**Path:** `src/utils/native-renderer.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/utils/native-renderer.ts`  
+- **Description:** Native PNG and image renderer for search result visualization pages.
 
 ---
 
-## 📄 [`outline`](file:///src/utils/outline.ts)
-**Path:** `src/utils/outline.ts`  
-**Description:** TypeScript source module.
+## 📄 [`outline`](file:///packages/deepsift-core/src/utils/outline.ts)
 
+- **Path:** `packages/deepsift-core/src/utils/outline.ts`  
+- **Description:** AST feature outline extractor generating file purpose, class, function, and dependency summaries.
+
 ---
+
+## 📄 [`similarity`](file:///packages/deepsift-core/src/utils/similarity.ts)
 
-## 📄 [`similarity`](file:///src/utils/similarity.ts)
-**Path:** `src/utils/similarity.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/utils/similarity.ts`  
+- **Description:** Cosine similarity and vector distance computation utilities for search ranking.
 
-### Exports
+### Exported Symbols
 
-- **`function calculateCosineSimilarity`**: Calculates cosine similarity between two 384-dim Float32Arrays. We use the optimized version provided by @ternlight/base.
-- **`function applyRRF`**: Calculates Reciprocal Rank Fusion (RRF) scores to combine semantic and keyword search results. RRF(d) = Σ 1 / (k + rank_i(d))
-- **`function quantizeF32ToBQ`**: Quantizes a 384-dimensional Float32Array into a 48-byte Buffer (Binary Quantization). Maps values > 0.0 to 1 and <= 0.0 to 0.
-- **`function calculateHammingSimilarityBatch`**: Calculates Hamming similarity for a batch of BQ candidate vectors using the compiled Zig binary for native speed. Falls back to TypeScript if the binary is missing or errors out.
+#### `function calculateCosineSimilarity`
+Calculates cosine similarity between two 384-dim Float32Arrays.
 
+#### `function applyRRF`
+Calculates Reciprocal Rank Fusion (RRF) scores to combine semantic and keyword search results.
+
+#### `function quantizeF32ToBQ`
+Quantizes a 384-dimensional Float32Array into a 48-byte Buffer (Binary Quantization).
+
+#### `function calculateHammingSimilarityBatch`
+Calculates Hamming similarity for a batch of BQ candidate vectors using the compiled Zig binary
+
 ---
 
-## 📄 [`token-compressor`](file:///src/utils/token-compressor.ts)
-**Path:** `src/utils/token-compressor.ts`  
-**Description:** TypeScript source module.
+## 📄 [`token-compressor`](file:///packages/deepsift-core/src/utils/token-compressor.ts)
 
+- **Path:** `packages/deepsift-core/src/utils/token-compressor.ts`  
+- **Description:** DEC_v2 visual token compression engine for AI Agent context window optimization.
+
 ---
+
+## 📄 [`toon-serializer`](file:///packages/deepsift-core/src/utils/toon-serializer.ts)
 
-## 📄 [`toon-serializer`](file:///src/utils/toon-serializer.ts)
-**Path:** `src/utils/toon-serializer.ts`  
-**Description:** TypeScript source module.
+- **Path:** `packages/deepsift-core/src/utils/toon-serializer.ts`  
+- **Description:** TOON-Patch JSON specification serializer and deserializer for structured code edits.
 
-### Exports
+### Exported Symbols
 
-- **`function jsonToToon`**: Token-Oriented Object Notation (TOON) Serializer Lossless text-based serialization designed specifically to reduce LLM token count.
+#### `function jsonToToon`
+Token-Oriented Object Notation (TOON) Serializer
 
 ---
 

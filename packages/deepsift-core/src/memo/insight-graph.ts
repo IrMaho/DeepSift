@@ -9,8 +9,7 @@
 import fs from 'fs';
 import { MemoManifestManager } from './manifest-manager.js';
 import { NoteProcessor } from './note-processor.js';
-import { MemoEntry, MemoInsightGraph, MemoInsightNode, MemoInsightEdge, MemoEntryType } from '../types/memo-types.js';
-import { NativeStore } from '../storage/native-store.js';
+import { MemoEntry, MemoInsightGraph, MemoInsightNode, MemoInsightEdge } from '../types/memo-types.js';
 import { getEmbedding } from '../core/embedder.js';
 
 interface CachedEmbedding {

@@ -9,7 +9,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { MemoManifest, MemoTag, MemoTagStatus } from '../types/memo-types.js';
+import { MemoManifest, MemoTag } from '../types/memo-types.js';
 
 const MEMO_DIR = 'memo';
 const TAGS_DIR = 'tags';

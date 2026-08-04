@@ -122,8 +122,10 @@ export function detectSchemaDrifts(projectPath: string): { reports: DriftReport[
                     fullPath: schema.fullPath
                 });
             }
-        } catch (e) {
-            // ignore unreadable
+        } catch (e: any) {
+            if (process.env.DEEPSIFT_DEBUG) {
+                console.error(`[deepsift] Failed to read schema file in check-schema-drift: ${e.message}`);
+            }
         }
     }
     

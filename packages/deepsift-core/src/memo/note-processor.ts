@@ -11,7 +11,7 @@ import crypto from 'crypto';
 import { MemoManifestManager } from './manifest-manager.js';
 import { MemoEntry, MemoEntryType, MemoEntriesFile } from '../types/memo-types.js';
 import { NativeStore } from '../storage/native-store.js';
-import { getEmbedding, getEmbeddings } from '../core/embedder.js';
+import { getEmbeddings } from '../core/embedder.js';
 import { EmbeddedChunk, CodeChunk } from '../types/index.js';
 
 const MAX_CHUNK_LENGTH = 1500;

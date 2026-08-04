@@ -8,10 +8,9 @@
  */
 import path from 'path';
 import fs from 'fs';
-import { SmartPlan, PlanMilestone, PlanRisk } from '../types/dna-types.js';
+import { SmartPlan, PlanRisk } from '../types/dna-types.js';
 import { loadDNA } from './project-dna.js';
 import { RealmRouter } from '../core/realm-router.js';
-import { ContextInjector } from '../core/context-injector.js';
 import { MemoEngine } from '../memo/memo-engine.js';
 import crypto from 'crypto';
 
@@ -211,6 +210,7 @@ export class PlannerEngine {
                 }
             }
         } catch {
+            // Intentionally silent: keyword search in realms is optional
         }
         return matches;
     }
@@ -241,9 +241,11 @@ export class PlannerEngine {
                         });
                     }
                 } catch {
+                    // Intentionally silent: searching individual doc realm is optional
                 }
             }
         } catch {
+            // Intentionally silent: cross-reference realms is optional
         }
         return insights;
     }

@@ -61,8 +61,8 @@ export class Searcher {
                     structuralWeights = new Map<string, number>();
                     dna.architecture.coreFiles.forEach((f: string) => structuralWeights!.set(f, 1.5));
                 }
-            } catch (e) {
-                // Ignore if DNA is not available
+            } catch {
+                // Intentionally silent: DNA file may not be available yet
             }
 
             const combined = applyRRF(semanticResults, keywordResults, 60, structuralWeights);
@@ -128,28 +128,32 @@ export class Searcher {
             }
         }
         
-        // Ensure candidates are sorted by their initial scores before truncation
         candidates.sort((a, b) => b.score - a.score);
-        const topCandidates = candidates.slice(0, 150); // Get top 50 for Reranker
-        
-        // Cross-Encoder Reranking
+
+        const topScore = candidates[0]?.score || 0;
+        if (searchQuery.fast || searchQuery.skipRerank || topScore >= 0.55) {
+            return candidates.slice(0, topK);
+        }
+
+        const count = searchQuery.rerankCandidates !== undefined ? searchQuery.rerankCandidates : 4;
+        if (count === 0) return candidates.slice(0, topK);
+        const topCandidates = candidates.slice(0, Math.min(count, candidates.length));
+
         try {
-            // We map SearchResult to { content: string } for the Reranker
-            // Add a critical prefix to bridge the Semantic Gap for code definitions
             const rerankerPayload = topCandidates.map(c => {
                 return {
                     content: c.chunk.content,
                     original: c
                 };
             });
-            
+
             const { Reranker } = await import('./reranker.js');
             const reranked = await Reranker.rerank(query, rerankerPayload, topK);
-            
+
             return reranked.map(r => ({
                 ...r.original,
-                score: r.crossScore, // Replace with the highly accurate cross score
-                matchType: 'hybrid' 
+                score: r.crossScore,
+                matchType: 'hybrid'
             }));
         } catch (err) {
             console.error("[DeepSift] Reranking failed, falling back to basic scoring.", err);

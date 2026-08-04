@@ -8,7 +8,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { ProjectDNA, FileCoverage, TestDNA, TimeBomb } from '../types/dna-types.js';
+import { ProjectDNA, FileCoverage, TimeBomb } from '../types/dna-types.js';
 
 function parseLcov(lcovContent: string, projectRoot: string): FileCoverage[] {
     const files: FileCoverage[] = [];

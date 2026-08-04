@@ -8,7 +8,6 @@
  */
 import path from 'path';
 import { getFiles } from '../utils/file-walker.js';
-import { ProjectDNA } from '../types/dna-types.js';
 
 export interface WalkResult {
     allFiles: string[];

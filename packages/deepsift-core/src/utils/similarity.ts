@@ -6,13 +6,11 @@
  * @category Core Search & Discovery
  * @since 1.0.0
  */
-import { cosineSim } from '@ternlight/base';
 import { SearchResult } from '../types/index.js';
 import path from 'path';
 
 /**
  * Calculates cosine similarity between two 384-dim Float32Arrays.
- * We use the optimized version provided by @ternlight/base.
  */
 export function calculateCosineSimilarity(a: Float32Array, b: Float32Array): number {
     let dotProduct = 0;

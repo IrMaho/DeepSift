@@ -11,7 +11,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { createRequire } from 'module';
-import { EmbeddedChunk, IndexMetadata, SearchResult, ChunkType } from '../types/index.js';
+import { EmbeddedChunk, IndexMetadata, SearchResult } from '../types/index.js';
 
 export interface BatchOperation {
     action: 'saveMetadata' | 'deleteFileChunks' | 'saveChunks';

@@ -7,7 +7,7 @@
  * @since 1.0.3
  */
 import path from 'path';
-import { ProjectDNA, CreationContext } from '../../types/dna-types.js';
+import { CreationContext } from '../../types/dna-types.js';
 import fs from 'fs';
 import { printResult, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';

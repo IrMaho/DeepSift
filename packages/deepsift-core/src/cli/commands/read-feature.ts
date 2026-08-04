@@ -10,7 +10,7 @@ import path from 'path';
 import fs from 'fs';
 import { getFiles } from '../../utils/file-walker.js';
 import { saveSearchLog } from '../../utils/history.js';
-import { printResult, printSuccess, printError, OutputFormat } from '../cli-output.js';
+import { printResult, printSuccess, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 
 /**

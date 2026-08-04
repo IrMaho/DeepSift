@@ -3,6 +3,11 @@ const graph = @import("graph.zig");
 const similarity = @import("similarity_simd.zig");
 const ivf = @import("ivf.zig");
 const db = @import("db.zig");
+const FastHash = @import("fast_hash.zig").FastHash;
+const OnnxEngine = @import("onnx_engine.zig").OnnxEngine;
+const RingBuffer = @import("ring_buffer.zig").RingBuffer;
+const core_pinning = @import("core_pinning.zig");
+const tokenizer = @import("bpe_tokenizer.zig");
 
 pub const DaemonConfig = struct {
     port: u16 = 3334,
@@ -25,6 +30,9 @@ pub const DeepSiftDaemon = struct {
     config: DaemonConfig,
     active_graph: *graph.GraphDB,
     vector_index: *ivf.IVFIndex,
+    onnx_engine: OnnxEngine,
+    bpe_tokenizer: *tokenizer.BpeTokenizer,
+    job_queue: *RingBuffer([]const u8), // LMAX Disruptor Pattern
     is_running: std.atomic.Value(bool),
 
     pub fn init(allocator: std.mem.Allocator, config: DaemonConfig) !*DeepSiftDaemon {
@@ -39,14 +47,40 @@ pub const DeepSiftDaemon = struct {
             .config = config,
             .active_graph = try graph.GraphDB.init(arena_alloc),
             .vector_index = try ivf.IVFIndex.init(arena_alloc, 128), // 128-dim vectors
+            .onnx_engine = try OnnxEngine.init(allocator, "packages/deepsift-core/bin/bge-base-en-v1.5.onnx", true), // GPU enabled
+            .bpe_tokenizer = try tokenizer.BpeTokenizer.init(allocator),
+            .job_queue = try RingBuffer([]const u8).init(allocator, 1024),
             .is_running = std.atomic.Value(bool).init(false),
         };
+        
+        // Spawn HPC Worker Threads and pin them to CPU Cores
+        _ = try std.Thread.spawn(.{}, hpcWorkerThread, .{daemon});
+        
         return daemon;
     }
 
     pub fn deinit(self: *DeepSiftDaemon) void {
         self.is_running.store(false, .seq_cst);
+        self.bpe_tokenizer.deinit();
+        self.job_queue.deinit();
         self.arena.deinit();
+    }
+
+    /// Background Worker that runs continuously on a pinned CPU core
+    fn hpcWorkerThread(self: *DeepSiftDaemon) void {
+        // Pin this inference thread to Core 2 to avoid cache eviction
+        core_pinning.pinCurrentThreadToCore(2) catch |err| {
+            std.log.warn("Could not pin thread: {}", .{err});
+        };
+        
+        while (self.is_running.load(.seq_cst)) {
+            // Lock-free pop
+            if (self.job_queue.pop()) |job_text| {
+                _ = job_text; // In Phase 5, we will tokenize and insert to SQLite here
+            } else {
+                std.time.sleep(1 * std.time.ns_per_ms); // Micro-sleep
+            }
+        }
     }
 
     /// Feature 12: Background File Watcher (Cross-platform polling fallback for MVP)
@@ -75,6 +109,7 @@ pub const DeepSiftDaemon = struct {
     }
 
     fn syncLatentChanges(self: *DeepSiftDaemon) !void {
+        _ = self;
         // Implementation for incremental AST re-indexing goes here.
         // It uses memory-mapped files to diff against the active_graph.
     }
@@ -133,15 +168,50 @@ pub const DeepSiftDaemon = struct {
 
     fn handleConnection(self: *DeepSiftDaemon, conn: std.net.Server.Connection) void {
         defer conn.stream.close();
-        var buf: [4096]u8 = undefined;
+        var buf: [65536]u8 = undefined; // 64KB buffer for text chunks
         
         while (true) {
-            const bytes_read = conn.stream.read(&buf) catch break;
-            if (bytes_read == 0) break; // Client disconnected
+            // Binary Protocol: [1 byte CMD] [4 bytes LENGTH] [PAYLOAD]
+            // CMD 0x01 = Hash Chunk with BLAKE3
+            
+            var header: [5]u8 = undefined;
+            const h_read = conn.stream.readAll(&header) catch break;
+            if (h_read < 5) break;
 
-            // Process REPL query natively in RAM!
-            _ = self; 
-            _ = conn.stream.write("{\"status\": \"ok\", \"latency_ms\": 0.1}\n") catch break;
+            const cmd = header[0];
+            const length = std.mem.readInt(u32, header[1..5], .little);
+
+            if (length > buf.len) {
+                std.log.err("Chunk too large for buffer", .{});
+                break;
+            }
+
+            const p_read = conn.stream.readAll(buf[0..length]) catch break;
+            if (p_read < length) break;
+
+            if (cmd == 0x01) {
+                var hash_out: [64]u8 = undefined;
+                FastHash.blake3_hex(buf[0..length], &hash_out);
+                _ = conn.stream.writeAll(&hash_out) catch break;
+            } else if (cmd == 0x02) {
+                // Command 0x02: Run ONNX Inference
+                var vector_out: [768]f32 = undefined;
+                
+                const num_tokens = length / @sizeOf(i64);
+                const tokens = std.mem.bytesAsSlice(i64, @as(*align(1) const [65536]u8, &buf)[0..length]);
+                
+                self.onnx_engine.embed_chunk(tokens, &vector_out) catch |err| {
+                    std.log.err("embed_chunk failed: {}", .{err});
+                    break;
+                };
+                
+                // Return 3072 bytes (768 * 4) directly as binary
+                const vector_bytes = std.mem.sliceAsBytes(vector_out[0..]);
+                _ = conn.stream.writeAll(vector_bytes) catch break;
+            } else {
+                // Unknown command
+                break;
+            }
         }
     }
 };

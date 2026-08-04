@@ -53,7 +53,7 @@ export class ContextInjector {
             if (fullQuery.includes('component') || fullQuery.includes('similar') || fullQuery.includes('create') || fullQuery.includes('new')) {
                 let groups = this.dna.components?.similarityGroups || [];
                 if (typeof groups === 'string') {
-                    try { groups = JSON.parse(groups); } catch (e) { groups = []; }
+                    try { groups = JSON.parse(groups); } catch { /* Intentionally silent: fallback if JSON parse fails */ groups = []; }
                 }
                 if (Array.isArray(groups) && groups.length > 0) {
                     const topGroups = groups.slice(0, 3);
@@ -61,7 +61,7 @@ export class ContextInjector {
                         let membersArr = [];
                         if (Array.isArray(g.members)) membersArr = g.members;
                         else if (typeof g.members === 'string') {
-                            try { membersArr = JSON.parse(g.members); } catch (e) {}
+                            try { membersArr = JSON.parse(g.members); } catch { /* Intentionally silent: fallback if JSON parse fails */ }
                         }
                         const names = Array.isArray(membersArr) ? membersArr.map((m: any) => m.name || m).join(', ') : '';
                         return `- ${g.recommendation} (e.g. ${names})`;
@@ -128,8 +128,8 @@ export class ContextInjector {
                     });
                 }
             }
-        } catch (e) {
-            // Ignore if skills realm is not available or locked
+        } catch (e: any) {
+            console.error(`[deepsift:warn] injectSkillsContext failed: ${e.message}`);
         }
 
         return blocks;

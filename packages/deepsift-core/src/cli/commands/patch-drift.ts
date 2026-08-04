@@ -8,7 +8,7 @@
  */
 import fs from 'fs';
 import { printResult, OutputFormat } from '../cli-output.js';
-import { detectSchemaDrifts, FieldMeta, DriftReport } from './schema-drift.js';
+import { detectSchemaDrifts, FieldMeta } from './schema-drift.js';
 import { saveSearchLog } from '../../utils/history.js';
 import path from 'path';
 

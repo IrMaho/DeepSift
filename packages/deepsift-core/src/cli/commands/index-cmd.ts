@@ -8,6 +8,8 @@
  */
 import { RealmRouter } from '../../core/realm-router.js';
 import readline from 'readline';
+import fs from 'fs';
+import path from 'path';
 import { printResult, printInfo, printSuccess, OutputFormat } from '../cli-output.js';
 import { DEFAULT_REALM } from '../cli-paths.js';
 
@@ -17,9 +19,22 @@ export interface IndexOptions {
     verbose?: boolean;
     realm?: string;
     allRealms?: boolean;
+    clean?: boolean;
 }
 
 export async function indexCommand(projectPath: string, options: IndexOptions) {
+    if (options.clean) {
+        const dsDir = path.join(projectPath, '.deepsift');
+        if (fs.existsSync(dsDir)) {
+            try {
+                fs.rmSync(dsDir, { recursive: true, force: true });
+                printInfo(`Hard clean: Successfully deleted local storage ${dsDir}`);
+            } catch (e: any) {
+                printInfo(`Warning during hard clean: ${e.message}`);
+            }
+        }
+    }
+
     const router = new RealmRouter(projectPath);
     const realmsToSchema = router.listRealms();
     

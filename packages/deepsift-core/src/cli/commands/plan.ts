@@ -7,7 +7,7 @@
  * @since 1.0.3
  */
 import { PlannerEngine } from '../../intelligence/plan-engine.js';
-import { printResult, printSuccess, printError, OutputFormat } from '../cli-output.js';
+import { printResult, printSuccess, OutputFormat } from '../cli-output.js';
 import { TokenOptimizerService } from '../../utils/token-compressor.js';
 import { saveSearchLog } from '../../utils/history.js';
 

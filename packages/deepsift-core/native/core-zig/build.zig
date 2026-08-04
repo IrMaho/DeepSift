@@ -1,9 +1,10 @@
-﻿const std = @import("std");
+const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    // 1. HPC Engine Executable
     const exe = b.addExecutable(.{
         .name = "deepsift-math",
         .root_module = b.createModule(.{
@@ -13,6 +14,11 @@ pub fn build(b: *std.Build) void {
             .link_libc = true,
         }),
     });
+
+    // ONNX Runtime C API
+    exe.root_module.addIncludePath(b.path("vendor/onnxruntime/include"));
+    exe.root_module.addLibraryPath(b.path("../../bin"));
+    exe.root_module.linkSystemLibrary("onnxruntime", .{});
 
     // Tree-sitter core
     exe.root_module.addIncludePath(b.path("vendor/tree-sitter/lib/include"));

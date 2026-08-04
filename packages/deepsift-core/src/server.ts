@@ -17,7 +17,7 @@ import os from 'os';
 import * as fs from 'fs';
 import * as http from 'http';
 import { fileURLToPath } from 'url';
-import { resolve, dirname } from 'path';
+import { dirname } from 'path';
 import { saveSearchLog, getSearchHistory, getSearchLog } from './utils/history.js';
 import { getProjectArchitecture } from './utils/architecture.js';
 import { getFeatureOutline } from './utils/outline.js';
@@ -89,8 +89,18 @@ uiServer.listen(UI_PORT, () => {
 });
 
 // --- MCP Core ---
-const dbPath = path.join(os.homedir(), '.ternlight_mcp_search.db');
-const graphDbPath = path.join(os.homedir(), '.ternlight_mcp_graph.db');
+function getMcpDatabasePath(newFilename: string, legacyFilename: string): string {
+    const newPath = path.join(os.homedir(), newFilename);
+    const oldPath = path.join(os.homedir(), legacyFilename);
+    if (!fs.existsSync(newPath) && fs.existsSync(oldPath)) {
+        fs.renameSync(oldPath, newPath);
+    }
+    return newPath;
+}
+
+const LEGACY_NAME = '.ternlight'; // Legacy project name before rebrand to DeepSift
+const dbPath = getMcpDatabasePath('.deepsift_mcp_search.db', `${LEGACY_NAME}_mcp_search.db`);
+const graphDbPath = getMcpDatabasePath('.deepsift_mcp_graph.db', `${LEGACY_NAME}_mcp_graph.db`);
 const store = new NativeStore(dbPath, graphDbPath);
 const indexer = new Indexer(store);
 const searcher = new Searcher(store);
