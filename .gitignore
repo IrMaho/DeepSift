@@ -12,6 +12,7 @@ Output/
 release/
 bin/
 ai/
+benchmark-results.json
 
 # Python & PixelRAG (deepsift-vision)
 venv/
